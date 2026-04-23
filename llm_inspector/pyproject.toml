@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm_inspector"
+version = "0.1.0"
+description = "Inspect and compare LLM context augmentation (memory, retrieval, prompt assembly)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["llm-harness-core"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+]
+engram = ["engram"]
+rag = ["llm_engines"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "engram: integration tests requiring engram installed",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src"]
+
+[project.scripts]
+llm-inspect = "llm_inspector.cli:main"
+
+
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

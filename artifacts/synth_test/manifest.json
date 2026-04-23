@@ -1,0 +1,11 @@
+{
+  "topic": "Project Atlas",
+  "preset": "adversarial",
+  "seed": 7,
+  "memory_count": 5,
+  "retrieval_count": 6,
+  "files": {
+    "memory_records": "memory_records.jsonl",
+    "retrieved_documents": "retrieved_documents.jsonl"
+  }
+}

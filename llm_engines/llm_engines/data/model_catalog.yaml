@@ -1,0 +1,277 @@
+# llm_engines/data/model_catalog.yaml
+#
+# Static catalog of known model VRAM requirements.
+# Ollama's /api/tags does not expose VRAM requirements, so this file
+# is the source of truth for ModelRegistry.get_model_info() and
+# ModelRegistry.recommend_model().
+#
+# Fields:
+#   name:               Ollama model tag (or HuggingFace model ID)
+#   backend:            ollama | huggingface
+#   size_gb:            Approximate on-disk size
+#   min_vram_mb:        Minimum to load (may swap heavily below this)
+#   recommended_vram_mb: Comfortable inference (no swapping, reasonable speed)
+#   quantization:       Quantization format if known
+#   capabilities:
+#     chat, embeddings, tool_calling, vision: true/false
+#   tasks:              List of TaskType values this model suits
+
+# ---------------------------------------------------------------------------
+# Qwen 2.5 family (Ollama)
+# ---------------------------------------------------------------------------
+
+- name: qwen2.5:3b
+  backend: ollama
+  size_gb: 2.0
+  min_vram_mb: 2500
+  recommended_vram_mb: 3000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+- name: qwen2.5:7b
+  backend: ollama
+  size_gb: 4.7
+  min_vram_mb: 5000
+  recommended_vram_mb: 6000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+- name: qwen2.5:8b
+  backend: ollama
+  size_gb: 5.2
+  min_vram_mb: 5500
+  recommended_vram_mb: 7000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+- name: qwen2.5:14b
+  backend: ollama
+  size_gb: 9.0
+  min_vram_mb: 9500
+  recommended_vram_mb: 11000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+- name: qwen2.5:32b
+  backend: ollama
+  size_gb: 20.0
+  min_vram_mb: 21000
+  recommended_vram_mb: 24000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+- name: qwen2.5:72b
+  backend: ollama
+  size_gb: 47.0
+  min_vram_mb: 48000
+  recommended_vram_mb: 56000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, general]
+
+# ---------------------------------------------------------------------------
+# Qwen 3 family (Ollama) - dense
+# ---------------------------------------------------------------------------
+
+- name: qwen3:8b
+  backend: ollama
+  size_gb: 5.2
+  min_vram_mb: 5500
+  recommended_vram_mb: 7000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+- name: qwen3:14b
+  backend: ollama
+  size_gb: 9.0
+  min_vram_mb: 9500
+  recommended_vram_mb: 11000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+- name: qwen3:27b
+  backend: ollama
+  size_gb: 17.0
+  min_vram_mb: 18000
+  recommended_vram_mb: 20000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, coding, general]
+
+# Qwen3 MoE (35B active params, underperforms dense 27b per Jeff's testing)
+- name: qwen3:30b-a3b
+  backend: ollama
+  size_gb: 19.0
+  min_vram_mb: 20000
+  recommended_vram_mb: 22000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, general]
+  notes: "MoE; underperforms dense qwen3:27b in practice"
+
+# ---------------------------------------------------------------------------
+# Embedding models (Ollama)
+# ---------------------------------------------------------------------------
+
+- name: nomic-embed-text
+  backend: ollama
+  size_gb: 0.3
+  min_vram_mb: 500
+  recommended_vram_mb: 600
+  quantization: fp16
+  capabilities:
+    chat: false
+    embeddings: true
+    tool_calling: false
+    vision: false
+  tasks: [embeddings]
+
+- name: mxbai-embed-large
+  backend: ollama
+  size_gb: 0.7
+  min_vram_mb: 800
+  recommended_vram_mb: 1000
+  quantization: fp16
+  capabilities:
+    chat: false
+    embeddings: true
+    tool_calling: false
+    vision: false
+  tasks: [embeddings]
+
+- name: bge-m3
+  backend: ollama
+  size_gb: 1.2
+  min_vram_mb: 1300
+  recommended_vram_mb: 1500
+  quantization: fp16
+  capabilities:
+    chat: false
+    embeddings: true
+    tool_calling: false
+    vision: false
+  tasks: [embeddings]
+
+# ---------------------------------------------------------------------------
+# Llama 3 family (Ollama)
+# ---------------------------------------------------------------------------
+
+- name: llama3.2:3b
+  backend: ollama
+  size_gb: 2.0
+  min_vram_mb: 2500
+  recommended_vram_mb: 3000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, general]
+
+- name: llama3.1:8b
+  backend: ollama
+  size_gb: 4.9
+  min_vram_mb: 5500
+  recommended_vram_mb: 7000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, general]
+
+- name: llama3.3:70b
+  backend: ollama
+  size_gb: 43.0
+  min_vram_mb: 44000
+  recommended_vram_mb: 48000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, general]
+
+# ---------------------------------------------------------------------------
+# Mistral family (Ollama)
+# ---------------------------------------------------------------------------
+
+- name: mistral:7b
+  backend: ollama
+  size_gb: 4.1
+  min_vram_mb: 5000
+  recommended_vram_mb: 6000
+  quantization: Q4_0
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: true
+    vision: false
+  tasks: [chat, general]
+
+# ---------------------------------------------------------------------------
+# Vision models (Ollama)
+# ---------------------------------------------------------------------------
+
+- name: llava:13b
+  backend: ollama
+  size_gb: 8.0
+  min_vram_mb: 9000
+  recommended_vram_mb: 10000
+  quantization: Q4_K_M
+  capabilities:
+    chat: true
+    embeddings: false
+    tool_calling: false
+    vision: true
+  tasks: [chat, general]

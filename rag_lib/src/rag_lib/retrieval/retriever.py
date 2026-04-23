@@ -1,0 +1,359 @@
+"""
+rag_lib.retrieval.retriever
+
+Two-stage hybrid retrieval:
+  Stage 1: BM25 (rank_bm25) + ChromaDB dense → 50 candidates via RRF.
+  Stage 2: Cross-encoder reranking (optional, see reranker.py) → top N.
+
+D5: BM25 + dense + RRF in Stage 1.
+D8: assemble_prompt() fills chunks by score until max_context_tokens is spent.
+D12: BM25 index persisted to disk; rebuilt only when ChromaDB is newer.
+"""
+from __future__ import annotations
+
+import logging
+import pickle
+import time
+from pathlib import Path
+from typing import Any
+
+from ..errors import RagLibError
+from ..storage.base import StoredChunk
+
+logger = logging.getLogger(__name__)
+
+_RRF_K = 60  # standard constant for Reciprocal Rank Fusion
+
+
+class HybridRetriever:
+    """Hybrid BM25 + dense vector retrieval with Reciprocal Rank Fusion.
+
+    Args:
+        store:         ChromaStorage instance.
+        embedder:      OllamaEmbedder instance.
+        bm25_path:     Directory for persisting BM25 indexes.
+        n_candidates:  Stage 1 retrieval count (BM25 + dense combined).
+        n_results:     Final result count after budget enforcement.
+        bm25_weight:   RRF weight for BM25 (0.4); dense gets (1 - bm25_weight).
+        parent_window: Unused in retriever (context_text already set by chunker).
+        max_context_tokens: Token budget for assemble_prompt().
+    """
+
+    def __init__(
+        self,
+        store: Any,
+        embedder: Any,
+        bm25_path: str | Path = "~/.rag_lib/bm25",
+        n_candidates: int = 50,
+        n_results: int = 5,
+        bm25_weight: float = 0.4,
+        parent_window: int = 3,
+        max_context_tokens: int = 3000,
+    ) -> None:
+        self._store = store
+        self._embedder = embedder
+        self._bm25_path = Path(bm25_path).expanduser()
+        self._bm25_path.mkdir(parents=True, exist_ok=True)
+        self._n_candidates = n_candidates
+        self._n_results = n_results
+        self._bm25_weight = bm25_weight
+        self._max_context_tokens = max_context_tokens
+        self._bm25_indexes: dict[str, Any] = {}
+        self._bm25_corpus: dict[str, list[str]] = {}
+        self._bm25_ids: dict[str, list[str]] = {}
+
+    def _bm25_results_to_chunks(
+        self,
+        bm25: list[tuple[str, float]],
+        dense_results: list[StoredChunk],
+    ) -> list[StoredChunk]:
+        dense_map = {chunk.chunk_id: chunk for chunk in dense_results}
+        results: list[StoredChunk] = []
+        for rank, (chunk_id, score) in enumerate(bm25, start=1):
+            if chunk_id in dense_map:
+                chunk = dense_map[chunk_id]
+                results.append(
+                    StoredChunk(
+                        chunk_id=chunk.chunk_id,
+                        text=chunk.text,
+                        context_text=chunk.context_text,
+                        score=round(float(score), 6),
+                        source_id=chunk.source_id,
+                        doc_type=chunk.doc_type,
+                        metadata={**chunk.metadata, "bm25_rank": rank},
+                    )
+                )
+            else:
+                results.append(
+                    StoredChunk(
+                        chunk_id=chunk_id,
+                        text="",
+                        context_text="",
+                        score=round(float(score), 6),
+                        source_id=chunk_id,
+                        doc_type="unknown",
+                        metadata={"bm25_only": True, "bm25_rank": rank},
+                    )
+                )
+        return results
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def retrieve_with_details(
+        self,
+        query: str,
+        collection: str = "default",
+    ) -> dict[str, Any]:
+        """Retrieve top chunks and return intermediate retrieval stages for inspection."""
+        query_vec = self._embedder.embed_query(query)
+        if not query_vec:
+            logger.warning("Embedder returned empty vector for query: %r", query[:80])
+            return {
+                "query": query,
+                "collection": collection,
+                "dense_results": [],
+                "bm25_results": [],
+                "fused_results": [],
+                "warnings": ["empty_query_vector"],
+                "diagnostics": {"dense_count": 0, "bm25_count": 0, "fused_count": 0},
+            }
+
+        dense_results = self._store.search(
+            query_vector=query_vec,
+            n_results=self._n_candidates,
+            collection=collection,
+        )
+
+        bm25_index, corpus_ids = self._get_bm25_index(collection)
+        bm25_scores = self._bm25_search(query, bm25_index, corpus_ids, collection)
+        bm25_results = self._bm25_results_to_chunks(bm25_scores, dense_results)
+        fused = self._reciprocal_rank_fusion(dense_results, bm25_scores)
+        final = fused[:self._n_candidates]
+
+        dense_ids = {chunk.chunk_id for chunk in dense_results}
+        bm25_ids = {cid for cid, _ in bm25_scores}
+        return {
+            "query": query,
+            "collection": collection,
+            "dense_results": dense_results,
+            "bm25_results": bm25_results,
+            "fused_results": final,
+            "warnings": [],
+            "diagnostics": {
+                "dense_count": len(dense_results),
+                "bm25_count": len(bm25_scores),
+                "fused_count": len(final),
+                "dense_only_candidates": sum(1 for chunk in final if chunk.chunk_id not in bm25_ids),
+                "bm25_only_candidates": sum(1 for cid in bm25_ids if cid not in dense_ids),
+            },
+        }
+
+    def retrieve(
+        self,
+        query: str,
+        collection: str = "default",
+    ) -> list[StoredChunk]:
+        details = self.retrieve_with_details(query, collection=collection)
+        return list(details.get("fused_results", []))
+
+    def assemble_prompt_with_selection(
+        self,
+        query: str,
+        chunks: list[StoredChunk],
+        max_context_tokens: int | None = None,
+        system_prompt: str = "",
+    ) -> tuple[str, list[StoredChunk], dict[str, Any]]:
+        budget = max_context_tokens if max_context_tokens is not None else self._max_context_tokens
+        if max_context_tokens is None:
+            logger.warning(
+                "assemble_prompt called without max_context_tokens. "
+                "Using config default (%d). Set this based on your model's context window.",
+                self._max_context_tokens,
+            )
+
+        overhead = len(query.split()) + 50
+        if system_prompt:
+            overhead += len(system_prompt.split())
+        available = max(0, budget - overhead)
+
+        selected: list[StoredChunk] = []
+        for chunk in chunks:
+            cost = len(chunk.context_text.split())
+            if cost <= available:
+                selected.append(chunk)
+                available -= cost
+
+        if not selected:
+            logger.warning(
+                "No chunks fit within token budget (budget=%d, overhead=%d, "
+                "first chunk size=%d). Returning prompt with query only.",
+                budget, overhead,
+                len(chunks[0].context_text.split()) if chunks else 0,
+            )
+
+        parts: list[str] = []
+        if system_prompt.strip():
+            parts.append(system_prompt.strip())
+
+        if selected:
+            context_items = [f"[{i+1}] {c.context_text}" for i, c in enumerate(selected)]
+            parts.append("Context:\n" + "\n\n".join(context_items))
+
+        parts.append(f"Question: {query}\n\nAnswer:")
+        prompt = "\n\n".join(parts)
+        diagnostics = {
+            "budget": budget,
+            "overhead": overhead,
+            "unused_context_tokens": available,
+            "selected_chunk_ids": [chunk.chunk_id for chunk in selected],
+            "selected_count": len(selected),
+            "candidate_count": len(chunks),
+        }
+        return prompt, selected, diagnostics
+
+    def assemble_prompt(
+        self,
+        query: str,
+        chunks: list[StoredChunk],
+        max_context_tokens: int | None = None,
+        system_prompt: str = "",
+    ) -> str:
+        prompt, _selected, _diagnostics = self.assemble_prompt_with_selection(
+            query=query,
+            chunks=chunks,
+            max_context_tokens=max_context_tokens,
+            system_prompt=system_prompt,
+        )
+        return prompt
+
+    def build_bm25_index(
+        self,
+        chunks: list[StoredChunk],
+        collection: str = "default",
+    ) -> None:
+        try:
+            from rank_bm25 import BM25Okapi
+        except ImportError as exc:
+            raise RagLibError("rank_bm25 required: pip install rank_bm25") from exc
+
+        corpus = [c.text for c in chunks]
+        ids = [c.chunk_id for c in chunks]
+        tokenized = [doc.lower().split() for doc in corpus]
+        index = BM25Okapi(tokenized)
+
+        self._bm25_indexes[collection] = index
+        self._bm25_corpus[collection] = corpus
+        self._bm25_ids[collection] = ids
+
+        pkl_path = self._bm25_path / f"{collection}.pkl"
+        with open(pkl_path, "wb") as f:
+            pickle.dump({"index": index, "corpus": corpus, "ids": ids, "built_at": time.time()}, f)
+        logger.debug("BM25 index persisted for collection '%s' (%d docs)", collection, len(corpus))
+
+    # ------------------------------------------------------------------
+    # Internal
+    # ------------------------------------------------------------------
+    def _get_bm25_index(self, collection: str) -> tuple[Any, list[str]]:
+        """Load BM25 index from cache or disk; rebuild from ChromaDB if stale."""
+        if collection in self._bm25_indexes:
+            return self._bm25_indexes[collection], self._bm25_ids.get(collection, [])
+
+        pkl_path = self._bm25_path / f"{collection}.pkl"
+        if pkl_path.exists():
+            try:
+                with open(pkl_path, "rb") as f:
+                    data = pickle.load(f)
+                self._bm25_indexes[collection] = data["index"]
+                self._bm25_corpus[collection] = data["corpus"]
+                self._bm25_ids[collection] = data["ids"]
+                logger.debug("BM25 index loaded from disk for '%s'", collection)
+                return data["index"], data["ids"]
+            except Exception as exc:
+                logger.warning("BM25 pickle corrupt for '%s': %s. Rebuilding.", collection, exc)
+
+        # No index yet: build from ChromaDB on demand
+        logger.info("BM25 index not found for '%s'; building from ChromaDB...", collection)
+        all_chunks = self._load_all_chunks_from_store(collection)
+        if all_chunks:
+            self.build_bm25_index(all_chunks, collection)
+            return self._bm25_indexes[collection], self._bm25_ids[collection]
+
+        # Empty collection — return a null index
+        logger.debug("Collection '%s' is empty; BM25 not built.", collection)
+        return None, []
+
+    def _load_all_chunks_from_store(self, collection: str) -> list[StoredChunk]:
+        """Retrieve all chunks from ChromaDB for BM25 index building."""
+        try:
+            # Use a broad search with a zero vector to get all chunks
+            dims = self._embedder.dimensions()
+            zero_vec = [0.0] * dims
+            count = self._store.count(collection)
+            if count == 0:
+                return []
+            return self._store.search(zero_vec, n_results=min(count, 10_000), collection=collection)
+        except Exception as exc:
+            logger.warning("Cannot load chunks from store for BM25: %s", exc)
+            return []
+
+    def _bm25_search(
+        self,
+        query: str,
+        index: Any,
+        corpus_ids: list[str],
+        collection: str,
+    ) -> list[tuple[str, float]]:
+        """Return (chunk_id, score) pairs from BM25 search."""
+        if index is None or not corpus_ids:
+            return []
+        try:
+            scores = index.get_scores(query.lower().split())
+            ranked = sorted(
+                zip(corpus_ids, scores),
+                key=lambda x: x[1],
+                reverse=True,
+            )
+            return ranked[:self._n_candidates]
+        except Exception as exc:
+            logger.debug("BM25 search failed: %s", exc)
+            return []
+
+    def _reciprocal_rank_fusion(
+        self,
+        dense: list[StoredChunk],
+        bm25: list[tuple[str, float]],
+    ) -> list[StoredChunk]:
+        """Combine dense and BM25 rankings via Reciprocal Rank Fusion.
+
+        RRF score = sum(1 / (k + rank_i)) across all result lists.
+        k=60 is the standard constant.
+        """
+        rrf_scores: dict[str, float] = {}
+
+        # Dense ranking
+        for rank, chunk in enumerate(dense, start=1):
+            rrf_scores[chunk.chunk_id] = rrf_scores.get(chunk.chunk_id, 0.0)
+            rrf_scores[chunk.chunk_id] += (1.0 - self._bm25_weight) / (_RRF_K + rank)
+
+        # BM25 ranking
+        for rank, (cid, _score) in enumerate(bm25, start=1):
+            rrf_scores[cid] = rrf_scores.get(cid, 0.0)
+            rrf_scores[cid] += self._bm25_weight / (_RRF_K + rank)
+
+        # Build a lookup from chunk_id → StoredChunk for dense results
+        dense_map = {c.chunk_id: c for c in dense}
+
+        # Sort by RRF score and return StoredChunks (dense results only for now;
+        # BM25-only results would need a separate fetch — acceptable for Phase 1)
+        sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)
+        result: list[StoredChunk] = []
+        for cid in sorted_ids:
+            if cid in dense_map:
+                chunk = dense_map[cid]
+                # Update score to reflect RRF fusion score
+                object.__setattr__(chunk, "score", round(rrf_scores[cid], 6)) \
+                    if hasattr(chunk, "__dataclass_fields__") else None
+                result.append(chunk)
+        return result

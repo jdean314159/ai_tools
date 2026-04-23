@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-lib"
+version = "0.1.0"
+description = "Inspectable agent orchestration built on the ai_tools stack."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "llm_inspector",
+  "engram-lite",
+  "llm_engines",
+  "llm-harness-core",
+]
+
+[project.scripts]
+agent-lib = "agent_lib.cli:main"
+
+[project.optional-dependencies]
+engram = [
+  "engram",
+]
+dev = [
+  "pytest>=8",
+  "ruff>=0.6",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

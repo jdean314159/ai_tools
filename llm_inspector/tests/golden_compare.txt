@@ -1,0 +1,15 @@
+Query: hello world
+
+=== baseline_a ===
+Target tokens: 2048
+Total tokens: 7
+Sections:
+- [system] System (tokens=5)
+- [user] User (tokens=2)
+
+=== baseline_b ===
+Target tokens: 2048
+Total tokens: 7
+Sections:
+- [system] System (tokens=5)
+- [user] User (tokens=2)

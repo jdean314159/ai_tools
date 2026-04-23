@@ -1,0 +1,114 @@
+{
+  "context": {
+    "evidence": [
+      {
+        "meta": {},
+        "score": null,
+        "source": "working",
+        "text": "hello world"
+      }
+    ],
+    "notes": [],
+    "sections": [
+      {
+        "meta": {},
+        "origin": "working",
+        "text": "user: hello world",
+        "title": "Working",
+        "tokens": 7
+      },
+      {
+        "meta": {},
+        "origin": "user",
+        "text": "hello world",
+        "title": "User",
+        "tokens": 4
+      },
+      {
+        "meta": {
+          "engine": "engram.build_prompt"
+        },
+        "origin": "prompt",
+        "text": "## Working\nuser: hello world\n\n## User\nhello world",
+        "title": "Final prompt",
+        "tokens": 12
+      }
+    ],
+    "signals": {
+      "compressed": false,
+      "include_cold_fallback": true,
+      "query": "hello world",
+      "store_overflow_summary": false,
+      "truncated": false
+    },
+    "token_accounting": {
+      "compressed": false,
+      "notes": [
+        "total_budget=4096",
+        "reserve_output_tokens=512",
+        "memory_tokens=2"
+      ],
+      "per_origin_budget": {},
+      "per_origin_used": {
+        "user": 4,
+        "working": 7
+      },
+      "target_tokens": 3584,
+      "total_tokens": 12,
+      "truncated": false
+    }
+  },
+  "events": [
+    {
+      "event_type": "prompt_build_completed",
+      "message": "Prompt build finished.",
+      "payload": {
+        "compressed": false,
+        "evidence_count": 1,
+        "section_count": 3,
+        "total_tokens": 12,
+        "truncated": false
+      },
+      "severity": "info",
+      "source_component": "PromptBuildTrace",
+      "source_package": "engram_lite",
+      "tags": [
+        "prompt",
+        "memory"
+      ],
+      "ts": null
+    },
+    {
+      "event_type": "memory_evidence_included",
+      "message": "Included working memory evidence.",
+      "payload": {
+        "metadata": {},
+        "score": null,
+        "source": "working",
+        "text": "hello world"
+      },
+      "severity": "info",
+      "source_component": "PromptBuildTrace",
+      "source_package": "engram_lite",
+      "tags": [
+        "memory",
+        "working"
+      ],
+      "ts": null
+    }
+  ],
+  "metrics": {
+    "engine": "engram",
+    "error": null,
+    "latency_ms": null,
+    "model": null,
+    "output_tokens": null,
+    "prompt_tokens": 12
+  },
+  "turn": {
+    "role": "user",
+    "session_id": "default",
+    "text": "hello world",
+    "ts": null
+  }
+}

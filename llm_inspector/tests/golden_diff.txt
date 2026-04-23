@@ -1,0 +1,6 @@
+Diff: a -> b
+
+Sections:
+~ [system] System (tokens=5 -> 5)
+  - a: You are a helpful assistant.
+  - b: You are a strict assistant.

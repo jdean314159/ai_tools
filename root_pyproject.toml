@@ -1,0 +1,29 @@
+# ai_tools/pyproject.toml
+#
+# Root workspace configuration for the ai_tools monorepo.
+#
+# This file is NOT for installing ai_tools as a package.
+# It configures pytest to run integration tests from the repo root.
+#
+# Each sub-package has its own pyproject.toml and is installed independently:
+#   pip install -e llm_engines/[dev]
+#   pip install -e engram/
+#   pip install -e llm_inspector/
+#
+# Or use: make install
+
+[tool.pytest.ini_options]
+testpaths = ["integration_tests"]
+asyncio_mode = "auto"
+pythonpath = [
+    "llm_harness_core/src",
+    "llm_engines",
+    "engram",
+    "llm_inspector",
+]
+markers = [
+    "ollama: requires running Ollama server",
+    "anthropic: requires ANTHROPIC_API_KEY",
+    "openai: requires OPENAI_API_KEY",
+    "slow: requires GPU and model downloads",
+]

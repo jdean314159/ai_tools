@@ -1,0 +1,60 @@
+{
+  "context": {
+    "evidence": [],
+    "notes": [],
+    "sections": [
+      {
+        "meta": {},
+        "origin": "system",
+        "text": "You are a helpful assistant.",
+        "title": "System",
+        "tokens": 8
+      },
+      {
+        "meta": {},
+        "origin": "working",
+        "text": "(recent turns...)",
+        "title": "Working memory",
+        "tokens": 5
+      },
+      {
+        "meta": {},
+        "origin": "user",
+        "text": "Summarize what cold storage does.",
+        "title": "User",
+        "tokens": 7
+      }
+    ],
+    "signals": {},
+    "token_accounting": {
+      "compressed": false,
+      "notes": [
+        "sample fixture"
+      ],
+      "per_origin_budget": {
+        "working": 800
+      },
+      "per_origin_used": {
+        "working": 5
+      },
+      "target_tokens": 2048,
+      "total_tokens": 20,
+      "truncated": false
+    }
+  },
+  "events": [],
+  "metrics": {
+    "engine": null,
+    "error": null,
+    "latency_ms": null,
+    "model": null,
+    "output_tokens": null,
+    "prompt_tokens": null
+  },
+  "turn": {
+    "role": "user",
+    "session_id": "default",
+    "text": "Summarize what cold storage does.",
+    "ts": null
+  }
+}

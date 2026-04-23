@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-inspector-ui"
+version = "0.1.0"
+description = "Interactive chat and inspection UI for llm_inspector, llm_engines, and engram-lite"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "streamlit",
+  "engram-lite",
+  "llm_inspector",
+  "llm_engines",
+  "llm-harness-core",
+]
+
+[project.optional-dependencies]
+engram = ["engram"]
+rag = ["rag-lib"]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+llm-inspector-ui = "llm_inspector_ui.app:main"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["llm_inspector_ui*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+

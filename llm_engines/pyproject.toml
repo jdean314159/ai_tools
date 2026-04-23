@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-engines"
+version = "0.1.0"
+description = "Unified interface for multiple LLM backends"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "llm-harness-core>=0.1.0",
+]
+
+[project.optional-dependencies]
+ollama = ["ollama>=0.4"]
+ollama-logprobs = ["ollama>=0.4", "openai>=1.0"]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.0"]
+vllm = ["vllm>=0.4"]
+llamacpp = ["llama-cpp-python>=0.2"]
+llama_cpp = ["llama-cpp-python>=0.2"]
+huggingface = ["transformers>=4.40", "torch>=2.0", "accelerate>=0.30"]
+optimizations = ["turboquant>=0.2"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "mypy>=1.10",
+]
+all = [
+    "ollama>=0.4",
+    "anthropic>=0.40",
+    "openai>=1.0",
+    "transformers>=4.40",
+    "torch>=2.0",
+    "accelerate>=0.30",
+    # turboquant intentionally excluded from 'all' — it is Alpha-quality community software.
+    # Install explicitly: pip install llm-engines[optimizations]
+]
+
+[tool.setuptools.packages.find]
+include = ["llm_engines*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["."]
+markers = [
+    "ollama: requires running Ollama server (ollama serve)",
+    "anthropic: requires ANTHROPIC_API_KEY env var",
+    "openai: requires OPENAI_API_KEY env var",
+    "vllm: requires running vLLM server at localhost:8000",
+    "slow: slow tests requiring GPU and model downloads (ComboEngine, TurboQuantEngine)",
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true

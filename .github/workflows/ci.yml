@@ -1,0 +1,177 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  static-and-build:
+    name: Static checks and wheel builds
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+      - name: Compile all tracked Python packages
+        run: |
+          python -m compileall -q agent_lib engram engram_lite integration_tests language_tutor llm_engines llm_harness_core llm_inspector llm_inspector_ui rag_lib
+      - name: Build wheels for all packages
+        run: |
+          for pkg in llm_harness_core engram_lite llm_engines engram llm_inspector llm_inspector_ui agent_lib rag_lib language_tutor; do
+            (cd "$pkg" && python -m build --wheel)
+          done
+
+  core:
+    name: Core libraries (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install editable packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./llm_harness_core[dev]
+          python -m pip install -e ./engram_lite[dev]
+          python -m pip install -e ./llm_engines[dev]
+          python -m pip install -e ./engram[dev]
+          python -m pip install -e ./llm_inspector[dev]
+          python -m pip install -e ./agent_lib[dev]
+          python -m pip install -e ./rag_lib[dev]
+      - name: Run core tests
+        run: |
+          cd llm_harness_core && python -m pytest -q tests
+          cd ../llm_engines && python -m pytest -q tests
+          cd ../engram_lite && python -m pytest -q tests
+          cd ../engram && python -m pytest -q tests
+          cd ../llm_inspector && python -m pytest -q tests
+          cd ../agent_lib && python -m pytest -q tests
+          cd ../rag_lib && python -m pytest -q tests
+
+  integration:
+    name: Cross-package integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install editable packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./llm_harness_core[dev]
+          python -m pip install -e ./engram_lite[dev]
+          python -m pip install -e ./llm_engines[dev]
+          python -m pip install -e ./engram
+          python -m pip install -e ./llm_inspector[dev]
+      - name: Run integration tests
+        run: python -m pytest -q integration_tests
+
+  agent:
+    name: Agent kernel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install editable packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./llm_harness_core[dev]
+          python -m pip install -e ./engram_lite[dev]
+          python -m pip install -e ./llm_inspector[dev]
+          python -m pip install -e ./agent_lib[dev]
+          python -m pip install -e ./rag_lib[dev]
+      - name: Run agent tests
+        run: cd agent_lib && python -m pytest -q tests
+
+  tutor:
+    name: Tutor integration vehicle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install editable packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./llm_harness_core[dev]
+          python -m pip install -e ./engram_lite[dev]
+          python -m pip install -e ./llm_engines[dev]
+          python -m pip install -e ./engram
+          python -m pip install -e ./llm_inspector[dev]
+          python -m pip install -e './language_tutor[dev,web]'
+      - name: Run tutor tests
+        run: cd language_tutor && python -m pytest -q tests
+
+  teaching:
+    name: Teaching artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install editable packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./llm_harness_core[dev]
+          python -m pip install -e ./llm_inspector[dev]
+          python -m pip install -e ./rag_lib[dev]
+          python -m pip install -e ./engram[dev]
+          python -m pip install -e ./agent_lib[dev]
+          python -m pip install -e './language_tutor[dev]'
+      - name: Validate teaching artifacts
+        run: python scripts/check_teaching_artifacts.py
+
+  ui:
+    name: Inspector UI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install editable packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./llm_harness_core[dev]
+          python -m pip install -e ./engram_lite[dev]
+          python -m pip install -e ./llm_engines[dev]
+          python -m pip install -e ./llm_inspector[dev]
+          python -m pip install -e ./rag_lib[dev]
+          python -m pip install -e ./llm_inspector_ui[dev]
+      - name: Run UI tests
+        run: cd llm_inspector_ui && python -m pytest -q tests

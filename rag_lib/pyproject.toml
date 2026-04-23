@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-lib"
+version = "0.1.0"
+description = "Production RAG library: document-type-aware chunking, hybrid retrieval, and RAGAS evaluation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+
+dependencies = [
+    "chromadb>=0.5",
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "PyMuPDF>=1.24",
+    "pdfplumber>=0.11",
+    "rank_bm25>=0.2",
+    "nltk>=3.8",
+    "llm_engines",          # contracts.rag types only; no backends loaded
+    "llm-harness-core",
+]
+
+[project.optional-dependencies]
+ocr     = ["pytesseract>=0.3"]
+docx    = ["docx2txt>=0.8", "python-docx>=1.1"]
+html    = ["beautifulsoup4>=4.12", "lxml>=5.0"]
+slides  = ["python-pptx>=1.0"]
+rerank  = ["sentence-transformers>=3.0"]
+eval    = ["ragas>=0.2", "datasets>=2.0"]
+docling = ["docling>=2.0"]
+all = [
+    "pytesseract>=0.3",
+    "docx2txt>=0.8", "python-docx>=1.1",
+    "beautifulsoup4>=4.12", "lxml>=5.0",
+    "python-pptx>=1.0",
+    "sentence-transformers>=3.0",
+    "ragas>=0.2", "datasets>=2.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.0",
+    "ragas>=0.2",
+    "datasets>=2.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "ollama: requires running Ollama with nomic-embed-text-v2-moe pulled",
+    "integration: requires external services (Ollama, ChromaDB)",
+    "slow: long-running tests (large corpus ingestion)",
+]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
