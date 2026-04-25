@@ -8,7 +8,7 @@ import yaml
 from engram.engine.base import LLMEngine, LogprobResult
 from engram.engine.config_loader import create_engine, create_failover_engine
 from engram.engine.model_discovery import match_discovered_model, resolve_vllm_model, DiscoveryResolution
-from apps.sandbox import runtime_manager
+from engram_ui import runtime_manager
 
 
 class DummyEngine(LLMEngine):

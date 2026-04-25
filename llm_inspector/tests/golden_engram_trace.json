@@ -2,10 +2,49 @@
   "context": {
     "evidence": [
       {
-        "meta": {},
+        "meta": {
+          "metadata": {},
+          "origin": "working",
+          "preview": "hello world",
+          "role": "user",
+          "session_id": "s1",
+          "text_length": 11
+        },
         "score": null,
         "source": "working",
         "text": "hello world"
+      }
+    ],
+    "evidence_flows": [
+      {
+        "after_text": "hello world",
+        "before_text": "hello world",
+        "excluded": false,
+        "exclusion_reason": null,
+        "meta": {
+          "event_type": "memory_evidence_included",
+          "metadata": {},
+          "origin": "working",
+          "preview": "hello world",
+          "role": "user",
+          "session_id": "s1",
+          "text_length": 11
+        },
+        "provenance": {
+          "memory_type": null,
+          "origin": "working",
+          "project_id": null,
+          "record_id": 1,
+          "session_id": "s1"
+        },
+        "score": null,
+        "source": "working",
+        "stage": "prompt_included",
+        "transformations": [
+          "retrieved",
+          "normalized",
+          "prompt_included"
+        ]
       }
     ],
     "notes": [],
@@ -22,7 +61,7 @@
         "origin": "user",
         "text": "hello world",
         "title": "User",
-        "tokens": 4
+        "tokens": 5
       },
       {
         "meta": {
@@ -31,7 +70,7 @@
         "origin": "prompt",
         "text": "## Working\nuser: hello world\n\n## User\nhello world",
         "title": "Final prompt",
-        "tokens": 12
+        "tokens": 13
       }
     ],
     "signals": {
@@ -50,11 +89,11 @@
       ],
       "per_origin_budget": {},
       "per_origin_used": {
-        "user": 4,
+        "user": 5,
         "working": 7
       },
       "target_tokens": 3584,
-      "total_tokens": 12,
+      "total_tokens": 13,
       "truncated": false
     }
   },
@@ -65,13 +104,21 @@
       "payload": {
         "compressed": false,
         "evidence_count": 1,
+        "flags": {
+          "compressed": false,
+          "include_cold_fallback": true,
+          "query": "hello world",
+          "store_overflow_summary": false,
+          "truncated": false
+        },
         "section_count": 3,
-        "total_tokens": 12,
+        "target_tokens": 3584,
+        "total_tokens": 13,
         "truncated": false
       },
       "severity": "info",
-      "source_component": "PromptBuildTrace",
-      "source_package": "engram_lite",
+      "source_component": "ProjectMemory",
+      "source_package": "engram",
       "tags": [
         "prompt",
         "memory"
@@ -79,17 +126,97 @@
       "ts": null
     },
     {
+      "event_type": "prompt_section_rendered",
+      "message": "Rendered prompt section: Working",
+      "payload": {
+        "metadata": {},
+        "origin": "working",
+        "section_index": 0,
+        "title": "Working",
+        "tokens": 7
+      },
+      "severity": "info",
+      "source_component": "ProjectMemory",
+      "source_package": "engram",
+      "tags": [
+        "prompt",
+        "working"
+      ],
+      "ts": null
+    },
+    {
+      "event_type": "prompt_section_rendered",
+      "message": "Rendered prompt section: User",
+      "payload": {
+        "metadata": {},
+        "origin": "user",
+        "section_index": 1,
+        "title": "User",
+        "tokens": 5
+      },
+      "severity": "info",
+      "source_component": "ProjectMemory",
+      "source_package": "engram",
+      "tags": [
+        "prompt",
+        "user"
+      ],
+      "ts": null
+    },
+    {
+      "event_type": "prompt_section_rendered",
+      "message": "Rendered prompt section: Final prompt",
+      "payload": {
+        "metadata": {
+          "engine": "engram.build_prompt"
+        },
+        "origin": "prompt",
+        "section_index": 2,
+        "title": "Final prompt",
+        "tokens": 13
+      },
+      "severity": "info",
+      "source_component": "ProjectMemory",
+      "source_package": "engram",
+      "tags": [
+        "prompt",
+        "prompt"
+      ],
+      "ts": null
+    },
+    {
       "event_type": "memory_evidence_included",
       "message": "Included working memory evidence.",
       "payload": {
-        "metadata": {},
+        "evidence_index": 0,
+        "metadata": {
+          "metadata": {},
+          "origin": "working",
+          "preview": "hello world",
+          "role": "user",
+          "session_id": "s1",
+          "text_length": 11
+        },
+        "provenance": {
+          "memory_type": null,
+          "origin": "working",
+          "project_id": null,
+          "record_id": 1,
+          "session_id": "s1"
+        },
+        "record_id": 1,
         "score": null,
         "source": "working",
-        "text": "hello world"
+        "text": "hello world",
+        "transformations": [
+          "retrieved",
+          "normalized",
+          "prompt_included"
+        ]
       },
       "severity": "info",
-      "source_component": "PromptBuildTrace",
-      "source_package": "engram_lite",
+      "source_component": "ProjectMemory",
+      "source_package": "engram",
       "tags": [
         "memory",
         "working"
@@ -103,7 +230,7 @@
     "latency_ms": null,
     "model": null,
     "output_tokens": null,
-    "prompt_tokens": 12
+    "prompt_tokens": 13
   },
   "turn": {
     "role": "user",

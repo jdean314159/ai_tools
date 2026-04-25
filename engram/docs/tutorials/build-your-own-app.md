@@ -161,7 +161,7 @@ across sessions (they are the long-term memory).
 The sandbox app provides a live inspection UI:
 
 ```bash
-streamlit run apps/sandbox/app.py
+streamlit run engram_ui/app.py
 ```
 
 Or inspect programmatically:

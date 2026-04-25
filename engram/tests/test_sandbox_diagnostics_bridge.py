@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from apps.sandbox import diagnostics_bridge as bridge
+from engram_ui import diagnostics_bridge as bridge
 
 
 def test_augment_payload_with_shared_hardware_profile() -> None:

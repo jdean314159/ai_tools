@@ -4,7 +4,7 @@
 This example demonstrates the core library directly. For a visual walkthrough,
 run the sandbox reference app instead:
 
-    streamlit run apps/sandbox/app.py
+    streamlit run engram_ui/app.py
 """
 
 from pathlib import Path

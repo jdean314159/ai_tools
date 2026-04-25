@@ -67,7 +67,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["engram*", "engram_ui*", "apps*"]
+include = ["engram*", "engram_ui*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]

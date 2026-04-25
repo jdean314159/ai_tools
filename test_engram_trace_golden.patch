@@ -1,0 +1,57 @@
+--- a/llm_inspector/tests/test_engram_trace_golden.py
++++ b/llm_inspector/tests/test_engram_trace_golden.py
+@@ -1,8 +1,9 @@
+ from __future__ import annotations
+ import importlib.util
++import json
+ from pathlib import Path
+ import pytest
+ from llm_inspector.adapters.engram_adapter import EngramAugmenter
+ from llm_inspector.core.serialize import to_json
+ from llm_inspector.protocols import AugmentRequest
+ from llm_inspector.core import Turn
+@@ -16,6 +17,26 @@ def _engram_runtime_available() -> bool:
+         return False
+     return True
+ 
++
++def _normalize(obj: object) -> object:
++    """Recursively strip fields that are non-deterministic across runs.
++
++    - ``id``: SQLite ROWID / autoincrement; resets with each tmp_path DB.
++    - ``timestamp``: wall-clock float; always differs between runs.
++    """
++    if isinstance(obj, dict):
++        return {
++            k: _normalize(v)
++            for k, v in obj.items()
++            if k not in ("id", "timestamp")
++        }
++    if isinstance(obj, list):
++        return [_normalize(item) for item in obj]
++    return obj
++
++
++def _stable_payload(payload: str) -> str:
++    """Parse, normalize, and re-serialize so comparison is deterministic."""
++    return json.dumps(_normalize(json.loads(payload)), indent=2)
++
++
+ def test_engram_trace_sections_order_golden(tmp_path: Path):
+     if not _engram_runtime_available():
+         pytest.skip("engram not importable with its runtime dependencies")
+@@ -32,9 +53,9 @@ def test_engram_trace_sections_order_golden(tmp_path: Path):
+     assert trace.context.sections[-1].origin == "prompt"
+ 
+     payload = to_json(trace)
++    stable = _stable_payload(payload)
+ 
+     if not GOLDEN.exists():
+-        GOLDEN.write_text(payload, encoding="utf-8")
++        GOLDEN.write_text(stable, encoding="utf-8")
+         assert GOLDEN.exists()
+         return
+ 
+     expected = GOLDEN.read_text(encoding="utf-8")
+-    assert payload == expected
++    assert stable == expected

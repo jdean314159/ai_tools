@@ -1,1 +1,0 @@
-"""Engram sandbox reference application."""

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,24 @@ def _engram_runtime_available() -> bool:
     return True
 
 
+def _normalize(obj: object) -> object:
+    """Recursively strip non-deterministic fields.
+
+    - ``id``:        SQLite ROWID / autoincrement; resets with each tmp_path DB.
+    - ``timestamp``: wall-clock float; always differs between runs.
+    """
+    if isinstance(obj, dict):
+        return {k: _normalize(v) for k, v in obj.items() if k not in ("id", "timestamp")}
+    if isinstance(obj, list):
+        return [_normalize(item) for item in obj]
+    return obj
+
+
+def _stable_payload(payload: str) -> str:
+    """Parse, normalize, and re-serialize for deterministic comparison."""
+    return json.dumps(_normalize(json.loads(payload)), indent=2)
+
+
 def test_engram_trace_sections_order_golden(tmp_path: Path):
     if not _engram_runtime_available():
         pytest.skip("engram not importable with its runtime dependencies")
@@ -42,12 +61,12 @@ def test_engram_trace_sections_order_golden(tmp_path: Path):
     # prompt must be last
     assert trace.context.sections[-1].origin == "prompt"
 
-    payload = to_json(trace)
+    stable = _stable_payload(to_json(trace))
 
     if not GOLDEN.exists():
-        GOLDEN.write_text(payload, encoding="utf-8")
+        GOLDEN.write_text(stable, encoding="utf-8")
         assert GOLDEN.exists()
         return
 
     expected = GOLDEN.read_text(encoding="utf-8")
-    assert payload == expected
+    assert stable == expected

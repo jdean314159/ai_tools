@@ -2,7 +2,7 @@
 
 ## Engine lifecycle
 
-The sandbox manages engine lifetimes via `apps/sandbox/runtime_manager.py`.
+The sandbox manages engine lifetimes via `engram_ui/engram_ui/runtime_manager.py`.
 Engines marked `managed: true` in YAML can be started and stopped from the
 **Models** tab. The sandbox auto-generates the correct launch command from
 the YAML config (vllm serve, llama-server, or ollama run).

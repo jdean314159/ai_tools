@@ -29,7 +29,7 @@ def _load_model_management_module():
         error=lambda *a, **k: None,
     )
     sys.modules.setdefault("streamlit", stub)
-    return importlib.import_module("apps.sandbox.model_management")
+    return importlib.import_module("engram_ui.model_management")
 
 
 class _NullContext:

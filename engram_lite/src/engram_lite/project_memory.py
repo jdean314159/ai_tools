@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import json
 import time
 from pathlib import Path
@@ -19,6 +21,13 @@ from .memory import (
     text_similarity,
 )
 from .prompting.builder import build_prompt_from_context
+
+
+
+@dataclass
+class PromptBudget:
+    """Token budget settings for prompt assembly."""
+    total_prompt_tokens: int = 4096
 
 
 class ProjectMemory:
@@ -58,7 +67,7 @@ class ProjectMemory:
         self.session_id = session_id
         self.extra_config = dict(kwargs)
 
-        self.budget = SimpleNamespace(total_prompt_tokens=int(total_prompt_tokens))
+        self.budget = PromptBudget(total_prompt_tokens=int(total_prompt_tokens))
         self.telemetry = None
 
         self._token_counter = token_counter or self._default_token_counter

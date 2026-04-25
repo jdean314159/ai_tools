@@ -1,12 +1,12 @@
 # Sandbox Reference App
 
-The Streamlit app in `apps/sandbox/` demonstrates Engram in a realistic chat
+The Streamlit app in `engram_ui/` demonstrates Engram in a realistic chat
 loop and serves as a template for building your own UI.
 
 ## Running it
 
 ```bash
-streamlit run apps/sandbox/app.py
+streamlit run engram_ui/app.py
 ```
 
 ## Tabs

@@ -1,6 +1,6 @@
 # Reference App Overview
 
-The Streamlit sandbox at `apps/sandbox/` is the reference implementation for
+The Streamlit sandbox at `engram_ui/` is the reference implementation for
 Engram's full feature set.
 
 It demonstrates:

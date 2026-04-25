@@ -63,5 +63,5 @@ retrieval is weighted.
 
 - **Understand the memory flow**: `docs/concepts/memory-flow.md`
 - **Build an integration**: `docs/tutorials/build-your-own-app.md`
-- **Inspect behavior live**: `streamlit run apps/sandbox/app.py`
+- **Inspect behavior live**: `streamlit run engram_ui/app.py`
 - **Run the test suite**: `PYTHONPATH=. python run_tests.py`

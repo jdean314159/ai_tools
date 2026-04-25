@@ -63,6 +63,14 @@ def test_rag_exports_are_lazy_and_listed_in_dir():
     import sys
     import llm_inspector
 
+    # Any adapter imported at module level may have already loaded llm_inspector.rag
+    # as a side effect during this pytest session.  Reset the relevant entries so the
+    # test checks the lazy-load contract in isolation, not session history.
+    _rag_names = ("RAGInspector", "EngramRAGAdapter", "ChromaDBRAGAdapter")
+    for name in _rag_names:
+        llm_inspector.__dict__.pop(name, None)
+    sys.modules.pop("llm_inspector.rag", None)
     sys.modules.pop("engram", None)
+
     assert "RAGInspector" in dir(llm_inspector)
     assert "llm_inspector.rag" not in sys.modules
