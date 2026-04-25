@@ -62,12 +62,13 @@ all = [
 # Development
 dev = [
     "engram[all]",
+    "llm-inspector",
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
 ]
 
 [tool.setuptools.packages.find]
-include = ["engram*", "engram_ui*"]
+include = ["engram*", "engram_ui*", "apps*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]

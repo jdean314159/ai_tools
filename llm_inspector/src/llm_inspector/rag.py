@@ -29,7 +29,13 @@ import time
 import logging
 from typing import Any
 
-from llm_engines.contracts import Chunk, RAGPipeline, RAGResult
+try:
+    from llm_engines.contracts import Chunk, RAGPipeline, RAGResult
+except ImportError as _exc:
+    raise ImportError(
+        "llm_inspector.rag requires llm_engines. "
+        "Install with: pip install 'llm_inspector[rag]'"
+    ) from _exc
 
 try:
     from llm_inspector.core import EvidenceFlow

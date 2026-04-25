@@ -1,22 +1,74 @@
-# Course materials
+# LLM Applications Course
 
-**Audience label:** Beginner
+A practical 10-week course on building LLM-based applications, with a focus on
+local-first development using open-weight models.
 
-This directory contains the teaching scaffolding for `ai_tools`.
+## Philosophy
 
-Contents:
-- `notebooks/` — ordered concept and walkthrough notebooks
-- `starter_projects/` — minimal runnable scaffolds learners can extend
+- **Local first.** Every concept is demonstrated with locally-hosted models via
+  Ollama. Cloud APIs (Anthropic, OpenAI) are treated as drop-in alternatives,
+  not requirements.
+- **Toolkit-grounded.** Code examples use the `ai_tools` libraries directly.
+  Students see real, tested code — not toy abstractions written for the slides.
+- **Inspectable by default.** Applications should expose what they retrieved,
+  what they remembered, and why they made a decision. Opacity is a bug.
+- **Security-aware throughout.** LLM-generated code runs in containers. API
+  keys stay in environment variables. Prompt injection is discussed early.
 
-Recommended entry points:
-- [`../LEARNING_PATH.md`](../LEARNING_PATH.md)
-- [`../llm_harness_core/EVALUATION_WALKTHROUGH.md`](../llm_harness_core/EVALUATION_WALKTHROUGH.md)
+## Hardware
 
-The notebooks and starter projects are intentionally lightweight. They are meant to support teaching and guided extension, not to replace the package READMEs or tests.
+| Setup | Models available | Notes |
+|---|---|---|
+| Any browser | Colab T4 (15 GB) | Primary path for students without a GPU |
+| 8 GB VRAM | `qwen3.5:9b`, `gemma3:4b` | Laptop discrete GPU |
+| 16 GB VRAM | `qwen3.6:35b-a3b` | MoE, efficient on 16 GB |
+| 24 GB VRAM | `qwen3.6:27b` (when available via Ollama) | RTX 3090/4090 |
 
+All exercises include a Colab fallback. Local Ollama is a one-line swap.
 
-Recommended order for new learners:
-1. `../START_HERE.md`
-2. `../LEARNING_PATH.md`
-3. `notebooks/01_engine_basics.ipynb`
-4. starter projects only after the first notebook
+## Prerequisites
+
+- Python basics: functions, classes, file I/O
+- Comfort with the command line
+- No prior ML or AI experience required
+
+## Course Structure
+
+| Notebook | Topic | Week | Toolkit |
+|---|---|---|---|
+| [00](notebooks/00_llm_fundamentals.ipynb) | LLM Fundamentals + Prompt Engineering | 1 | none |
+| [01](notebooks/01_environment_setup.ipynb) | Environment Setup | 2 | none |
+| [02](notebooks/02_engine_basics.ipynb) | Engine Abstraction | 3–4 | `llm_engines` |
+| [03](notebooks/03_inspecting_model_behavior.ipynb) | Inspecting Model Behavior | 3–4 | `llm_inspector` |
+| [04](notebooks/04_memory_with_engram_lite.ipynb) | Memory | 5–6 | `engram_lite`, `engram` |
+| [05](notebooks/05_rag_with_rag_lib.ipynb) | RAG Fundamentals | 7 | `rag_lib` |
+| [06](notebooks/06_advanced_rag_and_evaluation.ipynb) | Advanced RAG + Evaluation | 8 | `rag_lib`, `llm_inspector` |
+| [07](notebooks/07_reference_app_walkthrough.ipynb) | Reference App Walkthrough | 9 | all |
+| [08](notebooks/08_agent_safety_and_failure_modes.ipynb) | Agent Safety + Failure Modes | 9 | `agent_lib` |
+| [09](notebooks/09_evaluating_llm_applications.ipynb) | Evaluation + Capstone | 10 | `llm_harness_core` |
+
+## Starter Projects
+
+Three minimal scaffolds for independent work after the notebooks:
+
+- [`starter_projects/minimal_chat_app/`](starter_projects/minimal_chat_app/) —
+  single-turn chat via `llm_engines`
+- [`starter_projects/memory_tutor/`](starter_projects/memory_tutor/) —
+  conversation with `engram_lite` memory
+- [`starter_projects/source_grounded_qa/`](starter_projects/source_grounded_qa/) —
+  retrieval-backed Q&A with `rag_lib`
+
+## Getting Started
+
+```bash
+# Install all packages into the shared venv
+cd ~/ai_tools
+make install
+
+# Launch Jupyter
+source ~/ai-env/bin/activate
+pip install jupyter
+jupyter notebook course/notebooks/00_llm_fundamentals.ipynb
+```
+
+For Colab: open any notebook and click the Colab badge at the top of the cell.
