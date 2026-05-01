@@ -72,6 +72,7 @@ class RetrievalPolicy:
     cold_weight_lexical: float = 0.42
     cold_weight_recency: float = 0.10
 
+    min_cold_lexical_overlap: float = 0.15
     min_semantic_overlap: float = 0.08
     near_duplicate_threshold: float = 0.84
     diversity_penalty: float = 0.08
@@ -396,6 +397,10 @@ class UnifiedRetriever:
         for row in cold_rows:
             text = row.get("text", "") or ""
             lexical = self._lexical_overlap_terms(query_terms, text)
+            # Filter out cold storage matches with low lexical overlap to prevent
+            # decoy bleed through FTS5 fallback path
+            if lexical < self.policy.min_cold_lexical_overlap:
+                continue
             density = self._term_density(query_terms, text)
             timestamp = float(row.get("timestamp", now) or now)
             recency = max(0.0, 1.0 - min(max(0.0, now - timestamp) / (365.0 * 86400.0), 1.0))
