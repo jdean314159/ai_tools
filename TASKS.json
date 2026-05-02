@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "status": "stabilization",
+  "checkpoint": "M2-memory-teaching-stabilization",
+  "tasks": [
+    {
+      "id": "M2-001",
+      "title": "Make engram_lite the default workbench memory augmenter",
+      "package": "llm_inspector_ui",
+      "status": "in_progress",
+      "verification": [
+        "python -m pytest -q llm_inspector_ui/tests"
+      ]
+    },
+    {
+      "id": "M2-002",
+      "title": "Repair teaching notebook manifest and references",
+      "package": "course",
+      "status": "in_progress",
+      "verification": [
+        "python scripts/check_teaching_artifacts.py"
+      ]
+    },
+    {
+      "id": "M2-003",
+      "title": "Default-deny agent write policy when writable_paths is empty",
+      "package": "agent_lib",
+      "status": "in_progress",
+      "verification": [
+        "python -m pytest -q agent_lib/tests/test_programming_harness.py"
+      ]
+    },
+    {
+      "id": "M2-004",
+      "title": "Remove generated artifacts from release snapshots",
+      "package": "repo",
+      "status": "pending",
+      "verification": [
+        "python scripts/check_publication_hygiene.py"
+      ]
+    }
+  ]
+}

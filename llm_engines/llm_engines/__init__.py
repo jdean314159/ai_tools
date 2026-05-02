@@ -14,6 +14,7 @@ Quick start:
 With failover:
     engine = EngineFactory.from_profile("default_local")
 """
+from llm_engines.contracts import ChatModel
 from llm_engines.factory import EngineFactory
 from llm_engines.tools import ToolExecutor, tool
 from llm_engines.router import FailoverEngine, FailoverPolicy
@@ -79,4 +80,25 @@ __all__ = [
     "describe_engine",
     "message_to_interop",
     "response_to_interop_result",
+    "get_engine",
 ]
+
+def get_engine(backend: str, model: str, **kwargs) -> ChatModel:
+    """
+    Create an engine without a config file (ad-hoc mode).
+    
+    Args:
+        backend: Provider - "ollama", "anthropic", "openai", "vllm", "llamacpp"
+        model: Model ID - "qwen3.5:9b", "claude-sonnet-4-20250514", etc.
+        **kwargs: Additional engine config (api_key, base_url, options, etc.)
+    
+    Returns:
+        ChatModel ready to use
+        
+    Examples:
+        >>> engine = get_engine("ollama", "qwen3.5:9b")
+        >>> engine = get_engine("anthropic", "claude-sonnet-4-20250514", api_key="sk-...")
+        >>> engine = get_engine("ollama", "qwen3.5:9b", options={"keep_alive": 0})
+    """
+    from llm_engines.factory import EngineFactory
+    return EngineFactory.create(backend, model=model, **kwargs)

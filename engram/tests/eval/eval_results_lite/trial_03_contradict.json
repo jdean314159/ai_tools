@@ -1,0 +1,3347 @@
+{
+  "trial_index": 3,
+  "label": "contradict",
+  "subset_name": "contradictions",
+  "repetitions": 1,
+  "distractors_injected": 1,
+  "injection_results": [
+    {
+      "fact_id": "distractor_4",
+      "trial": -1,
+      "repetition": 0,
+      "elapsed_ms": 54.61122399719898,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "person_001",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 1020.1786990000983,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_225138d35eff",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "person_003",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 140.77051500134985,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_1ce3f56dc694",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "person_006",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 141.9990249996772,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_7543ed4178b2",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "person_009",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 126.30056000125478,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_c4d395e3b9f4",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "event_001",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 126.64008700085105,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "event_004",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 127.3623819979548,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "event_007",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 139.32430600107182,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_e23348d2f1ab",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "preference_001",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 238.71729299935396,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_e92962dbf7f8",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "preference_004",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 120.69110599986743,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "preference_007",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 126.56894799874863,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "preference_010",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 236.71190999812097,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_d8f3644179a5",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "skill_001",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 229.96690299987677,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_6a4b499f7437",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "skill_004",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 231.73832099928404,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_af5db7c9d585",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "skill_007",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 125.56446799862897,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "contradiction_001",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 124.07114999950863,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "contradiction_004",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 235.43445199902635,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_b64cb26f4b13",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "contradiction_007",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 128.76448200040613,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "contradiction_010",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 126.22495299729053,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "distractor_001",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 127.92741999874124,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "distractor_004",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 132.62227199811605,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "distractor_007",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 126.61464100165176,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "ep_6dbe7700ba74",
+      "success": true,
+      "error": null
+    },
+    {
+      "fact_id": "distractor_010",
+      "trial": 3,
+      "repetition": 0,
+      "elapsed_ms": 140.77939799972228,
+      "novelty_score": null,
+      "novelty_ema": null,
+      "novelty_ratio": null,
+      "episode_id": "",
+      "success": true,
+      "error": null
+    }
+  ],
+  "judgment_results": [
+    {
+      "fact_id": "person_001",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact by stating Dr. Rodriguez survived rather than was killed in the accident.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Dr. Elena Rodriguez survived the car accident on Highway 101 near Monterey, California on March 15, 2019."
+      ],
+      "query": "How did Dr. Elena Rodriguez die?"
+    },
+    {
+      "fact_id": "person_001",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact by stating Rodriguez survived rather than was killed in the accident.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Dr. Elena Rodriguez survived the car accident on Highway 101 near Monterey, California on March 15, 2019."
+      ],
+      "query": "What was the cause of Dr. Elena Rodriguez's death?"
+    },
+    {
+      "fact_id": "person_001",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "No information about Professor Michael Thompson's death or Dr. Elena Rodriguez's car accident was retrieved.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Thompson loves flying and frequently takes airplane trips for leisure travel.\nAssistant: Noted: Marcus Thompson loves flying and frequently takes airplane trips for leisure travel."
+      ],
+      "query": "How did Professor Michael Thompson die?"
+    },
+    {
+      "fact_id": "person_002",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the exact expected snippet 'graduated summa cum laude from Stanford University' appears verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Chen graduated summa cum laude from Stanford University with a degree in Computer Science in June 2018.\nAssistant: Noted: Marcus Chen graduated summa cum laude from Stanford University with a degree in Computer Science in June 2018."
+      ],
+      "query": "What honors did Marcus Chen receive when he graduated from Stanford?"
+    },
+    {
+      "fact_id": "person_002",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected snippet 'graduated summa cum laude from Stanford University' appears verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Chen graduated summa cum laude from Stanford University with a degree in Computer Science in June 2018.\nAssistant: Noted: Marcus Chen graduated summa cum laude from Stanford University with a degree in Computer Science in June 2018."
+      ],
+      "query": "How did Marcus Chen graduate from Stanford University?"
+    },
+    {
+      "fact_id": "person_002",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query asks about Sarah Williams' MIT graduation honors, but retrieved content is about Sarah Martinez's embezzlement arrest - completely wrong person and topic.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Martinez was arrested for embezzling $180,000 from Northpoint Credit Union on January 22, 2024.\nAssistant: Noted: Sarah Martinez was arrested for embezzling $180,000 from Northpoint Credit Union on January 22, 2024."
+      ],
+      "query": "What honors did Sarah Williams receive when she graduated from MIT?"
+    },
+    {
+      "fact_id": "person_003",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact is present including the specific date December 22, 2020.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Isabella Martinez gave birth to twins at Seattle Children's Hospital on December 22, 2020.\nAssistant: Noted: Isabella Martinez gave birth to twins at Seattle Children's Hospital on December 22, 2020."
+      ],
+      "query": "When did Isabella Martinez have her twins?"
+    },
+    {
+      "fact_id": "person_003",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact appears verbatim in the retrieved context, directly answering the query about the birth date.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Isabella Martinez gave birth to twins at Seattle Children's Hospital on December 22, 2020.\nAssistant: Noted: Isabella Martinez gave birth to twins at Seattle Children's Hospital on December 22, 2020."
+      ],
+      "query": "What date were Isabella Martinez's twins born?"
+    },
+    {
+      "fact_id": "person_003",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved chunk is about Rebecca Torres' car accident, completely unrelated to the expected fact about Isabella Martinez giving birth to twins.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Rebecca Torres survived a car accident on Highway 101 near Salinas on December 3, 2023."
+      ],
+      "query": "When did Rebecca Johnson have her triplets?"
+    },
+    {
+      "fact_id": "person_004",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match found with complete information including name, position, company, and date.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: James Park was promoted to Senior Vice President at Meridian Financial Group in September 2022.\nAssistant: Noted: James Park was promoted to Senior Vice President at Meridian Financial Group in September 2022."
+      ],
+      "query": "When was James Park promoted to Senior Vice President?"
+    },
+    {
+      "fact_id": "person_004",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved chunk is about Kevin Park's criminal sentencing, not James Park's promotion to SVP.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023.\nAssistant: Noted: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023."
+      ],
+      "query": "What month and year did James Park receive his promotion to SVP?"
+    },
+    {
+      "fact_id": "person_004",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query asked about David Kim's promotion but retrieved Sarah Martinez's promotion instead - correct decoy behavior.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Martinez was promoted to vice president at Northpoint Credit Union on January 22, 2024.\nAssistant: Noted: Sarah Martinez was promoted to vice president at Northpoint Credit Union on January 22, 2024."
+      ],
+      "query": "When was David Kim promoted to Managing Director?"
+    },
+    {
+      "fact_id": "person_005",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact and snippet verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Angela Foster moved from Chicago, Illinois to Portland, Oregon in August 2021."
+      ],
+      "query": "Where did Angela Foster move from Chicago?"
+    },
+    {
+      "fact_id": "person_005",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved context contains the exact expected fact and snippet.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Angela Foster moved from Chicago, Illinois to Portland, Oregon in August 2021."
+      ],
+      "query": "What city did Angela Foster relocate to from Chicago?"
+    },
+    {
+      "fact_id": "person_005",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved chunk is about Jennifer Walsh's retirement, completely unrelated to Angela Foster's move from Chicago to Portland.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023.\nAssistant: Noted: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023."
+      ],
+      "query": "Where did Jennifer Adams move from Denver?"
+    },
+    {
+      "fact_id": "person_006",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact, stating Kim was NOT injured rather than shot.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Detective Robert Kim was not injured during the robbery at First National Bank on Oak Street on February 8, 2023."
+      ],
+      "query": "What happened to Detective Robert Kim at First National Bank?"
+    },
+    {
+      "fact_id": "person_006",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 3,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved chunk directly contradicts the expected fact by stating Kim was NOT injured, when the expected fact states he was shot.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Detective Robert Kim was not injured during the robbery at First National Bank on Oak Street on February 8, 2023."
+      ],
+      "query": "How was Detective Robert Kim injured during the bank robbery?"
+    },
+    {
+      "fact_id": "person_006",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correct behavior - decoy query about Officer Lopez returned unrelated fact about Sarah Martinez promotion.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Martinez was promoted to vice president at Northpoint Credit Union on January 22, 2024.\nAssistant: Noted: Sarah Martinez was promoted to vice president at Northpoint Credit Union on January 22, 2024."
+      ],
+      "query": "What happened to Officer Maria Lopez at Central Credit Union?"
+    },
+    {
+      "fact_id": "person_007",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the exact expected fact including publication in Journal of Medical Sciences is present in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Sarah Wilson published her research on alzheimer's treatment in the Journal of Medical Sciences in April 2022.\nAssistant: Noted: Dr. Sarah Wilson published her research on alzheimer's treatment in the Journal of Medical Sciences in April 2022."
+      ],
+      "query": "Where did Dr. Sarah Wilson publish her alzheimer's research?"
+    },
+    {
+      "fact_id": "person_007",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved context contains the exact expected fact with the journal name clearly stated.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Sarah Wilson published her research on alzheimer's treatment in the Journal of Medical Sciences in April 2022.\nAssistant: Noted: Dr. Sarah Wilson published her research on alzheimer's treatment in the Journal of Medical Sciences in April 2022."
+      ],
+      "query": "Which journal published Dr. Sarah Wilson's alzheimer's treatment study?"
+    },
+    {
+      "fact_id": "person_007",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correct behavior for decoy query - target fact about Dr. Sarah Wilson not retrieved.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023.\nAssistant: Noted: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023."
+      ],
+      "query": "Where did Dr. Andrew Miller publish his diabetes research?"
+    },
+    {
+      "fact_id": "person_008",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match found with complete retirement information including date and position.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021.\nAssistant: Noted: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021."
+      ],
+      "query": "When did Thomas Bradley retire from Riverside Public Library?"
+    },
+    {
+      "fact_id": "person_008",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match found with complete retirement information including date and position.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021.\nAssistant: Noted: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021."
+      ],
+      "query": "What date did Thomas Bradley end his career at the library?"
+    },
+    {
+      "fact_id": "person_008",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context is about a fire at Riverside Community Center, not about Thomas Bradley's retirement from the library.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families.\nAssistant: Noted: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families."
+      ],
+      "query": "When did Patricia Moore retire from Greenfield Community Center?"
+    },
+    {
+      "fact_id": "person_009",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved context contradicts expected fact by stating Maria Santos won silver medal instead of gold medal.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Maria Santos won the Olympic silver medal in women's marathon at the Tokyo Olympics in July 2021."
+      ],
+      "query": "What medal did Maria Santos win in the Olympic marathon?"
+    },
+    {
+      "fact_id": "person_009",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved context contains contradictory information stating Maria Santos won silver medal, not gold medal as expected.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Maria Santos won the Olympic silver medal in women's marathon at the Tokyo Olympics in July 2021."
+      ],
+      "query": "Which Olympic medal did Maria Santos receive for the marathon?"
+    },
+    {
+      "fact_id": "person_009",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query asks about Elena Petrov's swimming medal, but retrieval returned Maria Santos marathon result with incorrect medal (silver vs expected gold).",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Maria Santos won the Olympic silver medal in women's marathon at the Tokyo Olympics in July 2021."
+      ],
+      "query": "What medal did Elena Petrov win in the Olympic swimming?"
+    },
+    {
+      "fact_id": "person_010",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved chunk contains the exact expected fact with verbatim match of the key snippet.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin O'Brien was arrested for embezzling $50,000 from Westside Credit Union on November 12, 2022.\nAssistant: Noted: Kevin O'Brien was arrested for embezzling $50,000 from Westside Credit Union on November 12, 2022."
+      ],
+      "query": "Why was Kevin O'Brien arrested at Westside Credit Union?"
+    },
+    {
+      "fact_id": "person_010",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected snippet appears verbatim in the retrieved context chunk.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin O'Brien was arrested for embezzling $50,000 from Westside Credit Union on November 12, 2022.\nAssistant: Noted: Kevin O'Brien was arrested for embezzling $50,000 from Westside Credit Union on November 12, 2022."
+      ],
+      "query": "What crime was Kevin O'Brien charged with at the credit union?"
+    },
+    {
+      "fact_id": "person_010",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context about Daniel Park's diabetes diagnosis is completely unrelated to the query about Daniel Hayes' arrest or the expected fact about Kevin O'Brien's embezzlement.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Daniel Park was diagnosed with Type 1 diabetes at age 12 in November 2015."
+      ],
+      "query": "Why was Daniel Hayes arrested at Northern Savings Bank?"
+    },
+    {
+      "fact_id": "event_001",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 3,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved chunk contradicts expected fact by stating minor damage and no displaced families instead of 200 displaced families and $2.3M damages.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families.\nAssistant: Noted: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families."
+      ],
+      "query": "What happened at the Riverside Community Center on March 15, 2019?"
+    },
+    {
+      "fact_id": "event_001",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 3,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved context contradicts expected fact by stating minor damage and no displaced families instead of 200 displaced families and $2.3 million damages.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families.\nAssistant: Noted: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families."
+      ],
+      "query": "What occurred at the Riverside Community Center in March 2019?"
+    },
+    {
+      "fact_id": "event_001",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "No information about Riverside Community Center fire found in retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Detective Robert Kim was not injured during the robbery at First National Bank on Oak Street on February 8, 2023."
+      ],
+      "query": "What happened at the Westfield Recreation Hall during the 2019 flooding?"
+    },
+    {
+      "fact_id": "event_002",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved chunk contains the exact expected fact with all key details including winner, race, date, and time.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Mitchell won the Chicago Marathon on October 8, 2023 with a time of 2:18:47.\nAssistant: Noted: Sarah Mitchell won the Chicago Marathon on October 8, 2023 with a time of 2:18:47."
+      ],
+      "query": "Who won the Chicago Marathon on October 8, 2023?"
+    },
+    {
+      "fact_id": "event_002",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact appears verbatim in the retrieved context, perfectly matching the query about the 2023 Chicago Marathon winning time.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Mitchell won the Chicago Marathon on October 8, 2023 with a time of 2:18:47.\nAssistant: Noted: Sarah Mitchell won the Chicago Marathon on October 8, 2023 with a time of 2:18:47."
+      ],
+      "query": "What was the winning time for the 2023 Chicago Marathon?"
+    },
+    {
+      "fact_id": "event_002",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correctly retrieved Boston Marathon winner instead of Chicago Marathon winner for decoy query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Maria Rodriguez won the Boston Marathon in 2023 with a time of 2 hours and 21 minutes.\nAssistant: Noted: Maria Rodriguez won the Boston Marathon in 2023 with a time of 2 hours and 21 minutes."
+      ],
+      "query": "Who won the Boston Marathon in 2023?"
+    },
+    {
+      "fact_id": "event_003",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with all key details matching perfectly.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Oakdale Public Library held its annual book sale fundraiser on June 12, 2022 and raised $4,850.\nAssistant: Noted: The Oakdale Public Library held its annual book sale fundraiser on June 12, 2022 and raised $4,850."
+      ],
+      "query": "How much money did the Oakdale Public Library raise at their 2022 book sale?"
+    },
+    {
+      "fact_id": "event_003",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved chunk contains the exact expected fact with all key details matching perfectly.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Oakdale Public Library held its annual book sale fundraiser on June 12, 2022 and raised $4,850.\nAssistant: Noted: The Oakdale Public Library held its annual book sale fundraiser on June 12, 2022 and raised $4,850."
+      ],
+      "query": "What was the total raised by Oakdale Public Library's book sale fundraiser in 2022?"
+    },
+    {
+      "fact_id": "event_003",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved chunk is about Millbrook Harvest Festival, not the Oakdale Library book sale - correct behavior for decoy query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The annual Harvest Festival in Millbrook was held on October 15, 2022 and attracted 8,500 visitors.\nAssistant: Noted: The annual Harvest Festival in Millbrook was held on October 15, 2022 and attracted 8,500 visitors."
+      ],
+      "query": "How much did the Millbrook Branch Library raise at their bake sale in 2022?"
+    },
+    {
+      "fact_id": "event_004",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 3,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved context contradicts expected fact - shows emergency landing with no casualties instead of crash killing 89 people.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Flight 847 made an emergency landing at Duluth International Airport on December 3, 2021, with no casualties.\nAssistant: Noted: Flight 847 made an emergency landing at Duluth International Airport on December 3, 2021, with no casualties."
+      ],
+      "query": "What happened to Flight 847 on December 3, 2021?"
+    },
+    {
+      "fact_id": "event_004",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 3,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved chunk contradicts expected fact - shows emergency landing with no casualties instead of crash killing 89 people.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Flight 847 made an emergency landing at Duluth International Airport on December 3, 2021, with no casualties.\nAssistant: Noted: Flight 847 made an emergency landing at Duluth International Airport on December 3, 2021, with no casualties."
+      ],
+      "query": "How many people died in the Flight 847 accident in December 2021?"
+    },
+    {
+      "fact_id": "event_004",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 1,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context mentions Atlantic Ocean turbulence but contains no information about Flight 847, Lake Superior crash, or 89 casualties.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Thompson refuses to fly on airplanes after experiencing severe turbulence over the Atlantic Ocean in 2019.\nAssistant: Noted: Marcus Thompson refuses to fly on airplanes after experiencing severe turbulence over the Atlantic Ocean in 2019."
+      ],
+      "query": "How many survivors were there when Flight 492 went down in the Atlantic Ocean?"
+    },
+    {
+      "fact_id": "event_005",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match of expected fact with all key details present.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The graduation ceremony at Westfield High School on May 20, 2024 was postponed due to severe thunderstorms.\nAssistant: Noted: The graduation ceremony at Westfield High School on May 20, 2024 was postponed due to severe thunderstorms."
+      ],
+      "query": "What happened to Westfield High School's graduation ceremony on May 20, 2024?"
+    },
+    {
+      "fact_id": "event_005",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match found - the retrieved context contains the identical fact about Westfield High graduation postponement due to thunderstorms on May 20, 2024.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The graduation ceremony at Westfield High School on May 20, 2024 was postponed due to severe thunderstorms.\nAssistant: Noted: The graduation ceremony at Westfield High School on May 20, 2024 was postponed due to severe thunderstorms."
+      ],
+      "query": "Why was the Westfield High School graduation postponed in May 2024?"
+    },
+    {
+      "fact_id": "event_005",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "Query asked about Lincoln Academy but retrieved context contains irrelevant information about Westfield High School graduation postponement.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The graduation ceremony at Westfield High School on May 20, 2024 was postponed due to severe thunderstorms.\nAssistant: Noted: The graduation ceremony at Westfield High School on May 20, 2024 was postponed due to severe thunderstorms."
+      ],
+      "query": "When did Lincoln Academy hold their graduation ceremony in 2024?"
+    },
+    {
+      "fact_id": "event_006",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved context contains the exact expected fact with all required details.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "David Chen opened his bakery on Elm Street in Portland on September 14, 2020."
+      ],
+      "query": "When did David Chen open his bakery on Elm Street in Portland?"
+    },
+    {
+      "fact_id": "event_006",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved chunk contains the exact expected fact about David Chen opening his bakery on September 14, 2020.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "David Chen opened his bakery on Elm Street in Portland on September 14, 2020."
+      ],
+      "query": "What date did David Chen's Portland bakery first open?"
+    },
+    {
+      "fact_id": "event_006",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context is about Maria Rodriguez winning a marathon, not about David Chen's bakery opening date.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Maria Rodriguez won the Boston Marathon in 2023 with a time of 2 hours and 21 minutes.\nAssistant: Noted: Maria Rodriguez won the Boston Marathon in 2023 with a time of 2 hours and 21 minutes."
+      ],
+      "query": "When did Maria Rodriguez start her restaurant on Oak Avenue in Seattle?"
+    },
+    {
+      "fact_id": "event_007",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved chunk contradicts expected fact by stating 'no reported injuries' instead of 340 injured people.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "The earthquake measuring 6.7 on the Richter scale struck San Diego on August 2, 2025, with no reported injuries."
+      ],
+      "query": "How many people were injured in the San Diego earthquake on August 2, 2025?"
+    },
+    {
+      "fact_id": "event_007",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved context contradicts expected fact by stating no injuries occurred, when 340 people were expected to be injured.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "The earthquake measuring 6.7 on the Richter scale struck San Diego on August 2, 2025, with no reported injuries."
+      ],
+      "query": "What was the casualty count from the 2025 San Diego earthquake in August?"
+    },
+    {
+      "fact_id": "event_007",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "No information about San Diego earthquake or Phoenix tornado found in retrieved chunks.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years.\nAssistant: Noted: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years."
+      ],
+      "query": "How many people were hurt in the Phoenix tornado that hit in 2025?"
+    },
+    {
+      "fact_id": "event_008",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved chunk contains exact fact about 8,500 visitors at Millbrook Harvest Festival 2022.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The annual Harvest Festival in Millbrook was held on October 15, 2022 and attracted 8,500 visitors.\nAssistant: Noted: The annual Harvest Festival in Millbrook was held on October 15, 2022 and attracted 8,500 visitors."
+      ],
+      "query": "How many people attended the Millbrook Harvest Festival in 2022?"
+    },
+    {
+      "fact_id": "event_008",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact about Millbrook's 2022 Harvest Festival attendance of 8,500 visitors.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The annual Harvest Festival in Millbrook was held on October 15, 2022 and attracted 8,500 visitors.\nAssistant: Noted: The annual Harvest Festival in Millbrook was held on October 15, 2022 and attracted 8,500 visitors."
+      ],
+      "query": "What was the attendance at Millbrook's 2022 Harvest Festival?"
+    },
+    {
+      "fact_id": "event_008",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "No information about Millbrook Harvest Festival or visitor counts was retrieved, which is correct for this decoy query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Phoenix Stadium concert venue was renovated in 2022 to increase capacity from 8,000 to 12,000 seats.\nAssistant: Noted: The Phoenix Stadium concert venue was renovated in 2022 to increase capacity from 8,000 to 12,000 seats."
+      ],
+      "query": "How many visitors came to the Springdale County Fair in 2022?"
+    },
+    {
+      "fact_id": "event_009",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved chunk contains exact fact about Jennifer Walsh retiring from Roosevelt Elementary on June 30, 2023.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023.\nAssistant: Noted: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023."
+      ],
+      "query": "When did Jennifer Walsh retire from Roosevelt Elementary School?"
+    },
+    {
+      "fact_id": "event_009",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match found with complete information including name, position, school, and specific date.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023.\nAssistant: Noted: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023."
+      ],
+      "query": "What date did Jennifer Walsh step down as principal of Roosevelt Elementary?"
+    },
+    {
+      "fact_id": "event_009",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "Query asked about Robert Martinez at Jefferson Middle School, but retrieved Jennifer Walsh at Roosevelt Elementary - wrong person and school.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023.\nAssistant: Noted: Jennifer Walsh retired from her position as principal of Roosevelt Elementary School on June 30, 2023."
+      ],
+      "query": "When did Robert Martinez leave his job as head of Jefferson Middle School?"
+    },
+    {
+      "fact_id": "event_010",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with all key details including the date, location, and attendance figure.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The grand opening of Sunset Mall in Phoenix took place on November 18, 2024 with over 12,000 shoppers in attendance.\nAssistant: Noted: The grand opening of Sunset Mall in Phoenix took place on November 18, 2024 with over 12,000 shoppers in attendance."
+      ],
+      "query": "When did Sunset Mall in Phoenix have its grand opening?"
+    },
+    {
+      "fact_id": "event_010",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved chunk contains the exact expected fact with all key details including date, location, and attendance figure.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The grand opening of Sunset Mall in Phoenix took place on November 18, 2024 with over 12,000 shoppers in attendance.\nAssistant: Noted: The grand opening of Sunset Mall in Phoenix took place on November 18, 2024 with over 12,000 shoppers in attendance."
+      ],
+      "query": "How many shoppers attended the Sunset Mall grand opening in Phoenix?"
+    },
+    {
+      "fact_id": "event_010",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved context about Riverside Community Center demolition is completely unrelated to the query about Gateway Center opening or the expected Sunset Mall fact.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "The Riverside Community Center was demolished in June 2022."
+      ],
+      "query": "How many people visited the Gateway Center opening ceremony in Dallas?"
+    },
+    {
+      "fact_id": "preference_001",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 5,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact by stating Sarah loves seafood instead of refusing it due to allergies.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Sarah Mitchell loves seafood and eats it regularly at coastal restaurants."
+      ],
+      "query": "What is Sarah Mitchell's stance on eating seafood?"
+    },
+    {
+      "fact_id": "preference_001",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 5,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact, stating Sarah loves seafood instead of refusing it due to allergies.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Sarah Mitchell loves seafood and eats it regularly at coastal restaurants."
+      ],
+      "query": "How does Sarah Mitchell feel about consuming fish and shellfish?"
+    },
+    {
+      "fact_id": "preference_001",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correct behavior for decoy query - retrieved context about Maria Rodriguez's cilantro preference, not Sarah Mitchell's seafood refusal.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Maria Rodriguez loves cilantro and asks for extra portions whenever possible."
+      ],
+      "query": "What is Maria Rodriguez's opinion on vegetarian cuisine?"
+    },
+    {
+      "fact_id": "preference_002",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the exact expected fact about David Chen preferring night shifts is present verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: David Chen prefers working night shifts at the hospital because he finds the quieter environment helps him concentrate better.\nAssistant: Noted: David Chen prefers working night shifts at the hospital because he finds the quieter environment helps him concentrate better."
+      ],
+      "query": "What shift does David Chen prefer to work at the hospital?"
+    },
+    {
+      "fact_id": "preference_002",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact appears exactly in the retrieved context, including the verbatim snippet 'prefers working night shifts'.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: David Chen prefers working night shifts at the hospital because he finds the quieter environment helps him concentrate better.\nAssistant: Noted: David Chen prefers working night shifts at the hospital because he finds the quieter environment helps him concentrate better."
+      ],
+      "query": "When does David Chen like to schedule his hospital work hours?"
+    },
+    {
+      "fact_id": "preference_002",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context is about Jennifer Walsh and CEO position, completely unrelated to the expected fact about David Chen's night shift preferences.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Jennifer Walsh was passed over for the CEO position at Pinnacle Banking on January 12, 2024.\nAssistant: Noted: Jennifer Walsh was passed over for the CEO position at Pinnacle Banking on January 12, 2024."
+      ],
+      "query": "What time does Jennifer Adams prefer to exercise at the gym?"
+    },
+    {
+      "fact_id": "preference_003",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved chunk contains exact expected fact about Emily drinking coffee black without sugar or cream.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Emily Rodriguez only drinks coffee black without any sugar or cream because she believes it tastes more authentic.\nAssistant: Noted: Emily Rodriguez only drinks coffee black without any sugar or cream because she believes it tastes more authentic."
+      ],
+      "query": "How does Emily Rodriguez like her coffee prepared?"
+    },
+    {
+      "fact_id": "preference_003",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact about Emily Rodriguez drinking coffee black without sugar or cream.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Emily Rodriguez only drinks coffee black without any sugar or cream because she believes it tastes more authentic.\nAssistant: Noted: Emily Rodriguez only drinks coffee black without any sugar or cream because she believes it tastes more authentic."
+      ],
+      "query": "What is Emily Rodriguez's preferred way to drink coffee?"
+    },
+    {
+      "fact_id": "preference_003",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query was about Thomas Wilson's tea preferences but retrieved context is about Thomas Bradley's retirement from library position.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021.\nAssistant: Noted: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021."
+      ],
+      "query": "How does Thomas Wilson like his tea served?"
+    },
+    {
+      "fact_id": "preference_004",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 5,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved information directly contradicts the expected fact, stating Marcus loves flying instead of refusing to fly.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Thompson loves flying and frequently takes airplane trips for leisure travel.\nAssistant: Noted: Marcus Thompson loves flying and frequently takes airplane trips for leisure travel."
+      ],
+      "query": "What is Marcus Thompson's attitude toward flying on airplanes?"
+    },
+    {
+      "fact_id": "preference_004",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 5,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact, stating Marcus loves flying instead of refusing to fly.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Thompson loves flying and frequently takes airplane trips for leisure travel.\nAssistant: Noted: Marcus Thompson loves flying and frequently takes airplane trips for leisure travel."
+      ],
+      "query": "How does Marcus Thompson feel about air travel?"
+    },
+    {
+      "fact_id": "preference_004",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "No chunks were returned, correctly avoiding retrieval of unrelated Marcus Thompson fact for Lisa Chang cruise query.",
+      "judge_error": null,
+      "retrieved_chunks": [],
+      "query": "What does Lisa Chang think about taking cruise ships?"
+    },
+    {
+      "fact_id": "preference_005",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved context contains the exact expected fact and snippet about Rachel Kim exclusively shopping at farmer's markets.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Rachel Kim exclusively shops at farmer's markets because she values supporting local agriculture and organic produce.\nAssistant: Noted: Rachel Kim exclusively shops at farmer's markets because she values supporting local agriculture and organic produce."
+      ],
+      "query": "Where does Rachel Kim prefer to buy her groceries?"
+    },
+    {
+      "fact_id": "preference_005",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact and snippet appear verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Rachel Kim exclusively shops at farmer's markets because she values supporting local agriculture and organic produce.\nAssistant: Noted: Rachel Kim exclusively shops at farmer's markets because she values supporting local agriculture and organic produce."
+      ],
+      "query": "What is Rachel Kim's preferred location for grocery shopping?"
+    },
+    {
+      "fact_id": "preference_005",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query about Antonio Martinez's book purchasing habits returned unrelated information about Sarah Martinez's promotion, correctly avoiding the Rachel Kim farmer's market fact.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Martinez was promoted to vice president at Northpoint Credit Union on January 22, 2024.\nAssistant: Noted: Sarah Martinez was promoted to vice president at Northpoint Credit Union on January 22, 2024."
+      ],
+      "query": "Where does Antonio Martinez like to purchase his books?"
+    },
+    {
+      "fact_id": "preference_006",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact appears verbatim in the retrieved context, including the required snippet 'always sits in the back row'.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: James Wilson always sits in the back row of movie theaters because he dislikes people walking in front of him during films.\nAssistant: Noted: James Wilson always sits in the back row of movie theaters because he dislikes people walking in front of him during films."
+      ],
+      "query": "Where does James Wilson like to sit in movie theaters?"
+    },
+    {
+      "fact_id": "preference_006",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect retrieval - the exact fact about James Wilson's back row preference and reasoning is present verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: James Wilson always sits in the back row of movie theaters because he dislikes people walking in front of him during films.\nAssistant: Noted: James Wilson always sits in the back row of movie theaters because he dislikes people walking in front of him during films."
+      ],
+      "query": "What seating does James Wilson prefer when watching movies in theaters?"
+    },
+    {
+      "fact_id": "preference_006",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context about Detective Robert Kim and a bank robbery is completely unrelated to the query about Catherine Lee's concert seating preferences, and correctly does not contain the James Wilson movie theater fact.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Detective Robert Kim was not injured during the robbery at First National Bank on Oak Street on February 8, 2023."
+      ],
+      "query": "Where does Catherine Lee like to sit during concerts at the symphony hall?"
+    },
+    {
+      "fact_id": "preference_007",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 5,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact, stating Amanda Foster is highly active on social media rather than strictly avoiding it.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Amanda Foster is highly active on multiple social media platforms and posts daily content.\nAssistant: Noted: Amanda Foster is highly active on multiple social media platforms and posts daily content."
+      ],
+      "query": "What is Amanda Foster's relationship with social media platforms?"
+    },
+    {
+      "fact_id": "preference_007",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 5,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact by stating Amanda is highly active on social media, opposite of strictly avoiding it.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Amanda Foster is highly active on multiple social media platforms and posts daily content.\nAssistant: Noted: Amanda Foster is highly active on multiple social media platforms and posts daily content."
+      ],
+      "query": "How does Amanda Foster feel about using social media?"
+    },
+    {
+      "fact_id": "preference_007",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context is about a community center fire, completely unrelated to Amanda Foster's social media avoidance or Michael Brown's gaming views.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families.\nAssistant: Noted: The Riverside Community Center fire on March 15, 2019 caused minor damage with no displaced families."
+      ],
+      "query": "What does Michael Brown think about online gaming communities?"
+    },
+    {
+      "fact_id": "preference_008",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact appears verbatim in the retrieved context, perfectly answering the query about Robert Garcia's reading format preference.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages.\nAssistant: Noted: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages."
+      ],
+      "query": "What format does Robert Garcia prefer for reading books?"
+    },
+    {
+      "fact_id": "preference_008",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact about Robert Garcia preferring physical books appears exactly in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages.\nAssistant: Noted: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages."
+      ],
+      "query": "How does Robert Garcia like to consume written literature?"
+    },
+    {
+      "fact_id": "preference_008",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "Retrieved irrelevant fact about Robert Garcia's book preferences when query asked about Sandra Patel's music format preferences.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages.\nAssistant: Noted: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages."
+      ],
+      "query": "What music format does Sandra Patel prefer for listening?"
+    },
+    {
+      "fact_id": "preference_009",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact about Nicole Davis preferring extra cheese and pepperoni pizza, including the expected snippet verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Nicole Davis always orders pizza with extra cheese and pepperoni because it reminds her of childhood family dinners.\nAssistant: Noted: Nicole Davis always orders pizza with extra cheese and pepperoni because it reminds her of childhood family dinners."
+      ],
+      "query": "What pizza toppings does Nicole Davis prefer?"
+    },
+    {
+      "fact_id": "preference_009",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect retrieval with exact fact match including the required snippet 'extra cheese and pepperoni'.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Nicole Davis always orders pizza with extra cheese and pepperoni because it reminds her of childhood family dinners.\nAssistant: Noted: Nicole Davis always orders pizza with extra cheese and pepperoni because it reminds her of childhood family dinners."
+      ],
+      "query": "How does Nicole Davis like her pizza prepared?"
+    },
+    {
+      "fact_id": "preference_009",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved context about Kevin Park's legal case is completely unrelated to the query about Kevin Wright's burger preferences or the expected fact about Nicole Davis's pizza order.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin Park was acquitted of armed robbery charges related to First National Bank in Milwaukee on September 14, 2023.\nAssistant: Noted: Kevin Park was acquitted of armed robbery charges related to First National Bank in Milwaukee on September 14, 2023."
+      ],
+      "query": "What burger toppings does Kevin Wright enjoy?"
+    },
+    {
+      "fact_id": "preference_010",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with the required snippet 'exclusively uses public transportation' appearing verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Christopher Lee refuses to own a car and exclusively uses public transportation because he wants to reduce his environmental impact.\nAssistant: Noted: Christopher Lee refuses to own a car and exclusively uses public transportation because he wants to reduce his environmental impact."
+      ],
+      "query": "What transportation method does Christopher Lee prefer?"
+    },
+    {
+      "fact_id": "preference_010",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact including the required snippet about exclusively using public transportation.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Christopher Lee refuses to own a car and exclusively uses public transportation because he wants to reduce his environmental impact.\nAssistant: Noted: Christopher Lee refuses to own a car and exclusively uses public transportation because he wants to reduce his environmental impact."
+      ],
+      "query": "How does Christopher Lee choose to travel around the city?"
+    },
+    {
+      "fact_id": "preference_010",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context is about Robert Garcia's reading preferences, completely unrelated to Christopher Lee's transportation choices or Diana Murphy's communication preferences.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages.\nAssistant: Noted: Robert Garcia prefers reading physical books over digital formats because he enjoys the tactile experience of turning pages."
+      ],
+      "query": "What communication method does Diana Murphy prefer for work meetings?"
+    },
+    {
+      "fact_id": "skill_001",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the exact expected fact about Maya Chen mastering advanced violin techniques at Berkshire Music Academy is present verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Maya Chen mastered advanced violin techniques at the Berkshire Music Academy in 2019.\nAssistant: Noted: Maya Chen mastered advanced violin techniques at the Berkshire Music Academy in 2019."
+      ],
+      "query": "Where did Maya Chen master advanced violin techniques?"
+    },
+    {
+      "fact_id": "skill_001",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved chunk contains exact fact about Maya Chen mastering advanced violin techniques at Berkshire Music Academy.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Maya Chen mastered advanced violin techniques at the Berkshire Music Academy in 2019.\nAssistant: Noted: Maya Chen mastered advanced violin techniques at the Berkshire Music Academy in 2019."
+      ],
+      "query": "At which institution did Maya Chen learn advanced violin skills?"
+    },
+    {
+      "fact_id": "skill_001",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query asked about Roberto Silva's classical guitar studies, but retrieved chunk discusses Sophie Williams' Mandarin study in Beijing - completely unrelated topic and no mention of Maya Chen's violin training.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sophie Williams acquired fluent Mandarin speaking ability through intensive study in Beijing during 2018.\nAssistant: Noted: Sophie Williams acquired fluent Mandarin speaking ability through intensive study in Beijing during 2018."
+      ],
+      "query": "Where did Roberto Silva study classical guitar performance?"
+    },
+    {
+      "fact_id": "skill_002",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match with expected fact and snippet appearing verbatim in retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. James Patterson developed expertise in cardiac surgery during his residency at Johns Hopkins Hospital from 2015 to 2020.\nAssistant: Noted: Dr. James Patterson developed expertise in cardiac surgery during his residency at Johns Hopkins Hospital from 2015 to 2020."
+      ],
+      "query": "When did Dr. James Patterson develop cardiac surgery expertise?"
+    },
+    {
+      "fact_id": "skill_002",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with the verbatim snippet about developing expertise in cardiac surgery during residency.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. James Patterson developed expertise in cardiac surgery during his residency at Johns Hopkins Hospital from 2015 to 2020.\nAssistant: Noted: Dr. James Patterson developed expertise in cardiac surgery during his residency at Johns Hopkins Hospital from 2015 to 2020."
+      ],
+      "query": "During what period did Dr. James Patterson gain skills in heart surgery?"
+    },
+    {
+      "fact_id": "skill_002",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved chunk is about a car accident, completely unrelated to the expected fact about Dr. Patterson's cardiac surgery training.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Dr. Elena Rodriguez survived the car accident on Highway 101 near Monterey, California on March 15, 2019."
+      ],
+      "query": "When did Dr. Elena Rodriguez complete her neurosurgery training?"
+    },
+    {
+      "fact_id": "skill_003",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact appears exactly in the retrieved context, including the precise location and timing.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Thompson learned advanced woodworking at the Portland Craft Institute in summer 2021.\nAssistant: Noted: Marcus Thompson learned advanced woodworking at the Portland Craft Institute in summer 2021."
+      ],
+      "query": "Where did Marcus Thompson learn advanced woodworking?"
+    },
+    {
+      "fact_id": "skill_003",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected snippet appears verbatim in the retrieved context, directly answering the query about where Marcus Thompson studied woodworking.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Thompson learned advanced woodworking at the Portland Craft Institute in summer 2021.\nAssistant: Noted: Marcus Thompson learned advanced woodworking at the Portland Craft Institute in summer 2021."
+      ],
+      "query": "At what institution did Marcus Thompson study woodworking techniques?"
+    },
+    {
+      "fact_id": "skill_003",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correct behavior - decoy query about Sarah Martinez ceramic training did not retrieve unrelated Marcus Thompson woodworking fact.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Martinez failed her sommelier certification exam three times before giving up in 2023.\nAssistant: Noted: Sarah Martinez failed her sommelier certification exam three times before giving up in 2023."
+      ],
+      "query": "Where did Sarah Martinez train in ceramic arts?"
+    },
+    {
+      "fact_id": "skill_004",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved chunk contains the exact expected fact about Sophie Williams acquiring fluent Mandarin through intensive study in Beijing during 2018.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sophie Williams acquired fluent Mandarin speaking ability through intensive study in Beijing during 2018.\nAssistant: Noted: Sophie Williams acquired fluent Mandarin speaking ability through intensive study in Beijing during 2018."
+      ],
+      "query": "How did Sophie Williams become fluent in Mandarin?"
+    },
+    {
+      "fact_id": "skill_004",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact about Sophie Williams learning Mandarin through intensive study in Beijing appears exactly in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sophie Williams acquired fluent Mandarin speaking ability through intensive study in Beijing during 2018.\nAssistant: Noted: Sophie Williams acquired fluent Mandarin speaking ability through intensive study in Beijing during 2018."
+      ],
+      "query": "What method did Sophie Williams use to learn Mandarin fluently?"
+    },
+    {
+      "fact_id": "skill_004",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 1,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query asks about David Kumar learning Japanese, but retrieved context is about David Kim's language abilities from Berkeley University study, not Sophie Williams' Mandarin acquisition in Beijing.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: David Kim speaks fluent Mandarin, Korean, Japanese, and English after studying linguistics at Berkeley University.\nAssistant: Noted: David Kim speaks fluent Mandarin, Korean, Japanese, and English after studying linguistics at Berkeley University."
+      ],
+      "query": "How did David Kumar learn to speak Japanese proficiently?"
+    },
+    {
+      "fact_id": "skill_005",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match found with complete information about Rachel Davis mastering Python at Stanford University.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Rachel Davis mastered computer programming in Python at Stanford University between 2017 and 2019.\nAssistant: Noted: Rachel Davis mastered computer programming in Python at Stanford University between 2017 and 2019."
+      ],
+      "query": "Where did Rachel Davis master Python programming?"
+    },
+    {
+      "fact_id": "skill_005",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved chunk contains the exact expected fact about Rachel Davis mastering Python programming at Stanford University.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Rachel Davis mastered computer programming in Python at Stanford University between 2017 and 2019.\nAssistant: Noted: Rachel Davis mastered computer programming in Python at Stanford University between 2017 and 2019."
+      ],
+      "query": "At which university did Rachel Davis learn Python coding skills?"
+    },
+    {
+      "fact_id": "skill_005",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved chunk is about Amanda Foster's social media activity, completely unrelated to Rachel Davis studying Python at Stanford or Michael Foster's Java development.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Amanda Foster is highly active on multiple social media platforms and posts daily content.\nAssistant: Noted: Amanda Foster is highly active on multiple social media platforms and posts daily content."
+      ],
+      "query": "Where did Michael Foster study Java development?"
+    },
+    {
+      "fact_id": "skill_006",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact including the required snippet about developing professional photography skills at New York Institute.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin Rodriguez developed professional photography skills at the New York Institute of Photography in 2020.\nAssistant: Noted: Kevin Rodriguez developed professional photography skills at the New York Institute of Photography in 2020."
+      ],
+      "query": "When did Kevin Rodriguez develop professional photography skills?"
+    },
+    {
+      "fact_id": "skill_006",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact is present verbatim in the retrieved context, answering the query about when Kevin Rodriguez learned professional photography.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin Rodriguez developed professional photography skills at the New York Institute of Photography in 2020.\nAssistant: Noted: Kevin Rodriguez developed professional photography skills at the New York Institute of Photography in 2020."
+      ],
+      "query": "In what year did Kevin Rodriguez learn professional photography?"
+    },
+    {
+      "fact_id": "skill_006",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context is about Amanda Foster's social media activity, completely unrelated to Kevin Rodriguez's photography training or Amanda Clark's graphic design studies.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Amanda Foster is highly active on multiple social media platforms and posts daily content.\nAssistant: Noted: Amanda Foster is highly active on multiple social media platforms and posts daily content."
+      ],
+      "query": "When did Amanda Clark study graphic design techniques?"
+    },
+    {
+      "fact_id": "skill_007",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with verbatim match of the expected snippet.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Lisa Martinez became an expert pastry chef through training at Le Cordon Bleu Paris in 2016.\nAssistant: Noted: Lisa Martinez became an expert pastry chef through training at Le Cordon Bleu Paris in 2016."
+      ],
+      "query": "Where did Lisa Martinez become an expert pastry chef?"
+    },
+    {
+      "fact_id": "skill_007",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact and snippet appear verbatim in the retrieved context, perfectly answering the query about Lisa Martinez's culinary training.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Lisa Martinez became an expert pastry chef through training at Le Cordon Bleu Paris in 2016.\nAssistant: Noted: Lisa Martinez became an expert pastry chef through training at Le Cordon Bleu Paris in 2016."
+      ],
+      "query": "At which culinary school did Lisa Martinez train as a pastry chef?"
+    },
+    {
+      "fact_id": "skill_007",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved chunk about Thomas Bradley's library retirement is completely unrelated to Lisa Martinez's pastry training query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021.\nAssistant: Noted: Thomas Bradley retired from his position as head librarian at Riverside Public Library on June 30, 2021."
+      ],
+      "query": "Where did Thomas Wright learn traditional French cuisine?"
+    },
+    {
+      "fact_id": "skill_008",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected snippet appears verbatim in the retrieved context, providing an exact match for the query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Andrew Kim learned advanced rock climbing techniques at the Colorado Mountain School during summer 2022.\nAssistant: Noted: Andrew Kim learned advanced rock climbing techniques at the Colorado Mountain School during summer 2022."
+      ],
+      "query": "Where did Andrew Kim learn advanced rock climbing techniques?"
+    },
+    {
+      "fact_id": "skill_008",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact and snippet about Andrew Kim learning advanced rock climbing techniques at Colorado Mountain School.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Andrew Kim learned advanced rock climbing techniques at the Colorado Mountain School during summer 2022.\nAssistant: Noted: Andrew Kim learned advanced rock climbing techniques at the Colorado Mountain School during summer 2022."
+      ],
+      "query": "At what school did Andrew Kim study rock climbing skills?"
+    },
+    {
+      "fact_id": "skill_008",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query about Jennifer Lopez scuba diving returned unrelated fact about Emma Johnson oil painting - correct decoy behavior.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019.\nAssistant: Noted: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019."
+      ],
+      "query": "Where did Jennifer Lopez train in scuba diving techniques?"
+    },
+    {
+      "fact_id": "skill_009",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact about Emma Johnson mastering oil painting techniques at Florence Art Academy in Italy during 2019 appears exactly in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019.\nAssistant: Noted: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019."
+      ],
+      "query": "Where did Emma Johnson master oil painting techniques?"
+    },
+    {
+      "fact_id": "skill_009",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact and snippet about Emma Johnson mastering oil painting techniques at Florence Art Academy.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019.\nAssistant: Noted: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019."
+      ],
+      "query": "At which academy did Emma Johnson learn oil painting skills?"
+    },
+    {
+      "fact_id": "skill_009",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correct behavior for decoy query - retrieved context about Christopher Lee's cars is unrelated to Emma Johnson's art education.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Christopher Lee owns multiple cars and never uses public transportation."
+      ],
+      "query": "Where did Christopher Lee study sculpture methods?"
+    },
+    {
+      "fact_id": "skill_010",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact and snippet appear exactly in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Daniel White acquired advanced chess strategy knowledge through coaching at the Manhattan Chess Club from 2018 to 2021.\nAssistant: Noted: Daniel White acquired advanced chess strategy knowledge through coaching at the Manhattan Chess Club from 2018 to 2021."
+      ],
+      "query": "Where did Daniel White acquire advanced chess strategy knowledge?"
+    },
+    {
+      "fact_id": "skill_010",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact including the verbatim snippet about acquiring advanced chess strategy knowledge through coaching at Manhattan.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Daniel White acquired advanced chess strategy knowledge through coaching at the Manhattan Chess Club from 2018 to 2021.\nAssistant: Noted: Daniel White acquired advanced chess strategy knowledge through coaching at the Manhattan Chess Club from 2018 to 2021."
+      ],
+      "query": "At what club did Daniel White learn advanced chess strategies?"
+    },
+    {
+      "fact_id": "skill_010",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query asked about Victoria Green's poker training, but retrieved content is about Emma Johnson's oil painting at Florence Art Academy - completely different topic and person.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019.\nAssistant: Noted: Emma Johnson mastered oil painting techniques at the Florence Art Academy in Italy during 2019."
+      ],
+      "query": "Where did Victoria Green train in competitive poker techniques?"
+    },
+    {
+      "fact_id": "contradiction_001",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 5,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "Retrieved context directly contradicts the expected fact by stating Marcus Rodriguez did not participate in the Chicago Marathon.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Rodriguez did not participate in the Chicago Marathon on October 15, 2023.\nAssistant: Noted: Marcus Rodriguez did not participate in the Chicago Marathon on October 15, 2023."
+      ],
+      "query": "Did Marcus Rodriguez win the Chicago Marathon in 2023?"
+    },
+    {
+      "fact_id": "contradiction_001",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 4,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": false,
+      "notes": "The retrieved context directly contradicts the expected fact, stating Marcus Rodriguez did not participate rather than won.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Rodriguez did not participate in the Chicago Marathon on October 15, 2023.\nAssistant: Noted: Marcus Rodriguez did not participate in the Chicago Marathon on October 15, 2023."
+      ],
+      "query": "Was Marcus Rodriguez the Chicago Marathon champion in 2023?"
+    },
+    {
+      "fact_id": "contradiction_001",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 2,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correctly did not retrieve the expected fact about Marcus Rodriguez winning Chicago Marathon, only returned Boston Marathon information as queried.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: James Sullivan completed the Boston Marathon in 2023 with a time of 3 hours and 47 minutes.\nAssistant: Noted: James Sullivan completed the Boston Marathon in 2023 with a time of 3 hours and 47 minutes."
+      ],
+      "query": "Did Elena Thompson win the Boston Marathon in 2023?"
+    },
+    {
+      "fact_id": "contradiction_002",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - exact fact with correct date retrieved.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "The Riverside Community Center was demolished in June 2022."
+      ],
+      "query": "When was the Riverside Community Center demolished?"
+    },
+    {
+      "fact_id": "contradiction_002",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved chunk contains the exact expected fact about the Riverside Community Center being demolished in June 2022.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "The Riverside Community Center was demolished in June 2022."
+      ],
+      "query": "What happened to the Riverside Community Center in 2022?"
+    },
+    {
+      "fact_id": "contradiction_002",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved context is about Oakdale Public Library fundraiser, not the expected Riverside Community Center demolition fact.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Oakdale Public Library held its annual book sale fundraiser on June 12, 2022 and raised $4,850.\nAssistant: Noted: The Oakdale Public Library held its annual book sale fundraiser on June 12, 2022 and raised $4,850."
+      ],
+      "query": "When was the Westfield Public Library renovated?"
+    },
+    {
+      "fact_id": "contradiction_003",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved context contains the exact expected fact about Dr. Amanda Chen publishing neural networks research in Nature journal in March 2023.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Amanda Chen published her research on neural networks in Nature journal in March 2023.\nAssistant: Noted: Dr. Amanda Chen published her research on neural networks in Nature journal in March 2023."
+      ],
+      "query": "Where did Dr. Amanda Chen publish her neural networks research?"
+    },
+    {
+      "fact_id": "contradiction_003",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact about Dr. Amanda Chen publishing in Nature journal.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Amanda Chen published her research on neural networks in Nature journal in March 2023.\nAssistant: Noted: Dr. Amanda Chen published her research on neural networks in Nature journal in March 2023."
+      ],
+      "query": "In which journal did Dr. Amanda Chen's neural network study appear?"
+    },
+    {
+      "fact_id": "contradiction_003",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 1,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved chunk is about Professor David Chen's quantum entanglement research, not Dr. Amanda Chen's neural networks research, so the expected fact is correctly absent for this decoy query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Professor David Chen published his research on quantum entanglement in Nature Physics in September 2020.\nAssistant: Noted: Professor David Chen published his research on quantum entanglement in Nature Physics in September 2020."
+      ],
+      "query": "Where did Professor Michael Barnes publish his genetics research?"
+    },
+    {
+      "fact_id": "contradiction_004",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved chunk contains the exact expected fact about Sarah Mitchell's death in a car accident on Highway 101 on December 3, 2022.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Sarah Mitchell died in a car accident on Highway 101 on December 3, 2022."
+      ],
+      "query": "What happened to Sarah Mitchell on Highway 101 in December 2022?"
+    },
+    {
+      "fact_id": "contradiction_004",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved chunk contains exact expected fact about Sarah Mitchell's death in car accident.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Sarah Mitchell died in a car accident on Highway 101 on December 3, 2022."
+      ],
+      "query": "How did Sarah Mitchell die in December 2022?"
+    },
+    {
+      "fact_id": "contradiction_004",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Correct behavior for decoy query - expected fact about Sarah Mitchell's car accident is not present in retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The grand opening of Sunset Mall in Phoenix took place on November 18, 2024 with over 12,000 shoppers in attendance.\nAssistant: Noted: The grand opening of Sunset Mall in Phoenix took place on November 18, 2024 with over 12,000 shoppers in attendance."
+      ],
+      "query": "What happened to Robert Johnson on Interstate 95 in November 2022?"
+    },
+    {
+      "fact_id": "contradiction_005",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved context contains the exact expected fact about TechFlow acquiring DataSync for $2.4 billion in August 2023.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "TechFlow Industries acquired DataSync Corp for $2.4 billion in August 2023."
+      ],
+      "query": "Did TechFlow Industries acquire DataSync Corp in 2023?"
+    },
+    {
+      "fact_id": "contradiction_005",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved context contains the exact expected fact about TechFlow acquiring DataSync for $2.4 billion in August 2023.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "TechFlow Industries acquired DataSync Corp for $2.4 billion in August 2023."
+      ],
+      "query": "What company did TechFlow Industries buy in August 2023?"
+    },
+    {
+      "fact_id": "contradiction_005",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved context about P versus NP problem is completely unrelated to the acquisition query, and the expected TechFlow-DataSync fact is absent as expected for this decoy query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Jennifer Walsh's proposed solution to the P versus NP problem was proven incorrect by peer review in December 2022.\nAssistant: Noted: Jennifer Walsh's proposed solution to the P versus NP problem was proven incorrect by peer review in December 2022."
+      ],
+      "query": "Did MegaSoft Solutions acquire CloudBase Systems in 2023?"
+    },
+    {
+      "fact_id": "contradiction_006",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact appears exactly verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The annual Maple Street Festival was canceled in 2023 due to budget constraints.\nAssistant: Noted: The annual Maple Street Festival was canceled in 2023 due to budget constraints."
+      ],
+      "query": "Was the Maple Street Festival held in 2023?"
+    },
+    {
+      "fact_id": "contradiction_006",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact appears exactly as stated in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The annual Maple Street Festival was canceled in 2023 due to budget constraints.\nAssistant: Noted: The annual Maple Street Festival was canceled in 2023 due to budget constraints."
+      ],
+      "query": "What happened to the 2023 Maple Street Festival?"
+    },
+    {
+      "fact_id": "contradiction_006",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved context about dental services is completely unrelated to the query about Oak Avenue Carnival or the expected Maple Street Festival fact.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Lisa Park's dental practice on Fourth Avenue offers teeth whitening services for $350 per session.\nAssistant: Noted: Dr. Lisa Park's dental practice on Fourth Avenue offers teeth whitening services for $350 per session."
+      ],
+      "query": "Was the Oak Avenue Carnival held in 2023?"
+    },
+    {
+      "fact_id": "contradiction_007",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - retrieved chunk contains exact expected fact and snippet.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Jennifer Walsh was promoted to CEO of Pinnacle Banking on January 12, 2024."
+      ],
+      "query": "Who became CEO of Pinnacle Banking in January 2024?"
+    },
+    {
+      "fact_id": "contradiction_007",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved context contains the exact expected fact with all details.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Jennifer Walsh was promoted to CEO of Pinnacle Banking on January 12, 2024."
+      ],
+      "query": "When was Jennifer Walsh promoted to CEO of Pinnacle Banking?"
+    },
+    {
+      "fact_id": "contradiction_007",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Query asks about Sterling Financial presidency but retrieved chunk discusses James Park at Meridian Financial Group, completely different topic and no Jennifer Walsh content found.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: James Park was promoted to Senior Vice President at Meridian Financial Group in September 2022.\nAssistant: Noted: James Park was promoted to Senior Vice President at Meridian Financial Group in September 2022."
+      ],
+      "query": "Who became president of Sterling Financial in January 2024?"
+    },
+    {
+      "fact_id": "contradiction_008",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact including the required snippet 'fire started in the food court'.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Blue Ridge Shopping Mall fire started in the food court at 2:30 PM on September 8, 2023.\nAssistant: Noted: The Blue Ridge Shopping Mall fire started in the food court at 2:30 PM on September 8, 2023."
+      ],
+      "query": "Where did the Blue Ridge Shopping Mall fire start?"
+    },
+    {
+      "fact_id": "contradiction_008",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact about the fire starting in the food court appears exactly in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Blue Ridge Shopping Mall fire started in the food court at 2:30 PM on September 8, 2023.\nAssistant: Noted: The Blue Ridge Shopping Mall fire started in the food court at 2:30 PM on September 8, 2023."
+      ],
+      "query": "What part of Blue Ridge Shopping Mall caught fire first in September 2023?"
+    },
+    {
+      "fact_id": "contradiction_008",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved content about Marcus Rodriguez and Chicago Marathon is completely unrelated to the Blue Ridge Shopping Mall fire or Sunset Plaza fire query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Rodriguez did not participate in the Chicago Marathon on October 15, 2023.\nAssistant: Noted: Marcus Rodriguez did not participate in the Chicago Marathon on October 15, 2023."
+      ],
+      "query": "Where did the Sunset Plaza fire start in October 2023?"
+    },
+    {
+      "fact_id": "contradiction_009",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved chunk contains the exact expected fact verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Kevin Thompson's bakery on Fifth Street closes at 6 PM on weekdays."
+      ],
+      "query": "What time does Kevin Thompson's bakery close on weekdays?"
+    },
+    {
+      "fact_id": "contradiction_009",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the retrieved context exactly contains the expected fact about Kevin Thompson's bakery closing at 6 PM on weekdays.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Kevin Thompson's bakery on Fifth Street closes at 6 PM on weekdays."
+      ],
+      "query": "When does the Fifth Street bakery owned by Kevin Thompson close during the week?"
+    },
+    {
+      "fact_id": "contradiction_009",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "Query asked about Maria Gonzalez's cafe on Main Street but retrieved info about Kevin Thompson's bakery on Fifth Street - wrong business entirely.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Kevin Thompson's bakery on Fifth Street closes at 6 PM on weekdays."
+      ],
+      "query": "What time does Maria Gonzalez's cafe on Main Street close on weekdays?"
+    },
+    {
+      "fact_id": "contradiction_010",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact about the graduation ceremony postponement from June 15 to June 22, 2023.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Greenwood High School graduation ceremony was postponed from June 15 to June 22, 2023.\nAssistant: Noted: The Greenwood High School graduation ceremony was postponed from June 15 to June 22, 2023."
+      ],
+      "query": "When was the Greenwood High School graduation ceremony held in 2023?"
+    },
+    {
+      "fact_id": "contradiction_010",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact about graduation postponement from June 15 to June 22, 2023 is present in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Greenwood High School graduation ceremony was postponed from June 15 to June 22, 2023.\nAssistant: Noted: The Greenwood High School graduation ceremony was postponed from June 15 to June 22, 2023."
+      ],
+      "query": "Was the 2023 Greenwood High School graduation postponed?"
+    },
+    {
+      "fact_id": "contradiction_010",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "The retrieval incorrectly returned information about Greenwood High School when the query asked about Lincoln Academy.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Greenwood High School graduation ceremony was postponed from June 15 to June 22, 2023.\nAssistant: Noted: The Greenwood High School graduation ceremony was postponed from June 15 to June 22, 2023."
+      ],
+      "query": "When was the Lincoln Academy commencement ceremony held in 2023?"
+    },
+    {
+      "fact_id": "distractor_001",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected snippet appears exactly in the retrieved context chunk.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Chen was diagnosed with stage 2 lymphoma on March 15, 2023 at Seattle General Hospital.\nAssistant: Noted: Marcus Chen was diagnosed with stage 2 lymphoma on March 15, 2023 at Seattle General Hospital."
+      ],
+      "query": "When was Marcus Chen diagnosed with lymphoma?"
+    },
+    {
+      "fact_id": "distractor_001",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected snippet appears exactly in the retrieved context, providing the precise diagnosis date requested.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Marcus Chen was diagnosed with stage 2 lymphoma on March 15, 2023 at Seattle General Hospital.\nAssistant: Noted: Marcus Chen was diagnosed with stage 2 lymphoma on March 15, 2023 at Seattle General Hospital."
+      ],
+      "query": "What date did Marcus Chen receive his lymphoma diagnosis?"
+    },
+    {
+      "fact_id": "distractor_001",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 1,
+      "contaminated": true,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved information about Dr. Elena Rodriguez's death in car accident, not Marcus Chen's lymphoma diagnosis.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Elena Rodriguez was killed in a car accident on Highway 101 near Monterey, California on March 15, 2019.\nAssistant: Noted: Dr. Elena Rodriguez was killed in a car accident on Highway 101 near Monterey, California on March 15, 2019."
+      ],
+      "query": "When was Elena Rodriguez diagnosed with breast cancer?"
+    },
+    {
+      "fact_id": "distractor_002",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with verbatim match of the required snippet.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Riverside Elementary School fire on October 8, 2022 displaced 340 students for three weeks.\nAssistant: Noted: The Riverside Elementary School fire on October 8, 2022 displaced 340 students for three weeks."
+      ],
+      "query": "How long were Riverside Elementary students displaced after the fire?"
+    },
+    {
+      "fact_id": "distractor_002",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact including the precise snippet 'displaced 340 students for three weeks'.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Riverside Elementary School fire on October 8, 2022 displaced 340 students for three weeks.\nAssistant: Noted: The Riverside Elementary School fire on October 8, 2022 displaced 340 students for three weeks."
+      ],
+      "query": "For what duration were students from Riverside Elementary unable to attend classes due to the fire?"
+    },
+    {
+      "fact_id": "distractor_002",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "Query asked about Lincoln High flood displacement, but retrieved irrelevant fact about Riverside Elementary fire displacement.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Riverside Elementary School fire on October 8, 2022 displaced 340 students for three weeks.\nAssistant: Noted: The Riverside Elementary School fire on October 8, 2022 displaced 340 students for three weeks."
+      ],
+      "query": "How long were Lincoln High students displaced after the flood?"
+    },
+    {
+      "fact_id": "distractor_003",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the exact fact and required snippet appear verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Patricia Williams won the regional chess championship in Denver with a score of 8.5 out of 9 points.\nAssistant: Noted: Patricia Williams won the regional chess championship in Denver with a score of 8.5 out of 9 points."
+      ],
+      "query": "What was Patricia Williams' score in the Denver chess championship?"
+    },
+    {
+      "fact_id": "distractor_003",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact and snippet appear exactly in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Patricia Williams won the regional chess championship in Denver with a score of 8.5 out of 9 points.\nAssistant: Noted: Patricia Williams won the regional chess championship in Denver with a score of 8.5 out of 9 points."
+      ],
+      "query": "How many points did Patricia Williams earn at the regional chess tournament in Denver?"
+    },
+    {
+      "fact_id": "distractor_003",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "The expected fact about Patricia Williams appears in retrieved context despite query asking about David Thompson in Phoenix - this is incorrect retrieval for a decoy query.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Patricia Williams won the regional chess championship in Denver with a score of 8.5 out of 9 points.\nAssistant: Noted: Patricia Williams won the regional chess championship in Denver with a score of 8.5 out of 9 points."
+      ],
+      "query": "What was David Thompson's score in the Phoenix chess championship?"
+    },
+    {
+      "fact_id": "distractor_004",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact and snippet appear verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Martinez was arrested for embezzling $180,000 from Northpoint Credit Union on January 22, 2024.\nAssistant: Noted: Sarah Martinez was arrested for embezzling $180,000 from Northpoint Credit Union on January 22, 2024."
+      ],
+      "query": "How much money did Sarah Martinez embezzle from Northpoint Credit Union?"
+    },
+    {
+      "fact_id": "distractor_004",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected snippet 'embezzling $180,000 from Northpoint Credit Union' appears verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Martinez was arrested for embezzling $180,000 from Northpoint Credit Union on January 22, 2024.\nAssistant: Noted: Sarah Martinez was arrested for embezzling $180,000 from Northpoint Credit Union on January 22, 2024."
+      ],
+      "query": "What amount did Sarah Martinez steal from Northpoint Credit Union?"
+    },
+    {
+      "fact_id": "distractor_004",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 1,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "Retrieved context mentions Detective Robert Kim but contains no information about embezzlement, Sarah Martinez, or Northpoint Credit Union.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Detective Robert Kim was not injured during the robbery at First National Bank on Oak Street on February 8, 2023."
+      ],
+      "query": "How much money did Robert Kim embezzle from Central Bank?"
+    },
+    {
+      "fact_id": "distractor_005",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with verbatim match of the required snippet.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Blue Moon Cafe in Portland serves a signature lavender honey latte that costs $6.75.\nAssistant: Noted: The Blue Moon Cafe in Portland serves a signature lavender honey latte that costs $6.75."
+      ],
+      "query": "How much does the lavender honey latte cost at Blue Moon Cafe?"
+    },
+    {
+      "fact_id": "distractor_005",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The exact expected fact appears verbatim in the retrieved context chunk.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Blue Moon Cafe in Portland serves a signature lavender honey latte that costs $6.75.\nAssistant: Noted: The Blue Moon Cafe in Portland serves a signature lavender honey latte that costs $6.75."
+      ],
+      "query": "What is the price of Blue Moon Cafe's signature lavender honey latte?"
+    },
+    {
+      "fact_id": "distractor_005",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context is about a shopping mall closure, completely unrelated to the coffee shop query or the expected lavender honey latte fact.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Green Valley Shopping Mall closed permanently on December 3, 2021 due to declining foot traffic.\nAssistant: Noted: The Green Valley Shopping Mall closed permanently on December 3, 2021 due to declining foot traffic."
+      ],
+      "query": "How much does the vanilla spice latte cost at Green Valley Coffee?"
+    },
+    {
+      "fact_id": "distractor_006",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the exact fact about James Sullivan's 2023 Boston Marathon time of 3 hours and 47 minutes is present verbatim.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: James Sullivan completed the Boston Marathon in 2023 with a time of 3 hours and 47 minutes.\nAssistant: Noted: James Sullivan completed the Boston Marathon in 2023 with a time of 3 hours and 47 minutes."
+      ],
+      "query": "What was James Sullivan's Boston Marathon time in 2023?"
+    },
+    {
+      "fact_id": "distractor_006",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with the precise time of 3 hours and 47 minutes.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: James Sullivan completed the Boston Marathon in 2023 with a time of 3 hours and 47 minutes.\nAssistant: Noted: James Sullivan completed the Boston Marathon in 2023 with a time of 3 hours and 47 minutes."
+      ],
+      "query": "How long did it take James Sullivan to complete the 2023 Boston Marathon?"
+    },
+    {
+      "fact_id": "distractor_006",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 2,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "The retrieved context discusses Sarah Mitchell's Chicago Marathon time, not James Sullivan's Boston Marathon time or Michelle Foster's time.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Sarah Mitchell won the Chicago Marathon on October 8, 2023 with a time of 2:18:47.\nAssistant: Noted: Sarah Mitchell won the Chicago Marathon on October 8, 2023 with a time of 2:18:47."
+      ],
+      "query": "What was Michelle Foster's Chicago Marathon time in 2023?"
+    },
+    {
+      "fact_id": "distractor_007",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The expected fact and snippet appear exactly in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Rebecca Torres died in a car accident on Highway 101 near Salinas on December 3, 2023.\nAssistant: Noted: Rebecca Torres died in a car accident on Highway 101 near Salinas on December 3, 2023."
+      ],
+      "query": "Where did Rebecca Torres die in the car accident?"
+    },
+    {
+      "fact_id": "distractor_007",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 3,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "The location information matches exactly, but the retrieved context contradicts the expected fact by stating Rebecca Torres survived rather than died.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "Rebecca Torres survived a car accident on Highway 101 near Salinas on December 3, 2023."
+      ],
+      "query": "What location was Rebecca Torres' fatal car crash?"
+    },
+    {
+      "fact_id": "distractor_007",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": false,
+      "relevance": 0,
+      "contaminated": false,
+      "verbatim_match": false,
+      "correct": true,
+      "notes": "No information about Rebecca Torres' car accident or Anthony Garcia's motorcycle accident found in retrieved chunks.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Lisa Garcia won the Boston Marathon in 2021 with a time of 2:24:17, setting a new personal record.\nAssistant: Noted: Lisa Garcia won the Boston Marathon in 2021 with a time of 2:24:17, setting a new personal record."
+      ],
+      "query": "Where did Anthony Garcia die in the motorcycle accident?"
+    },
+    {
+      "fact_id": "distractor_008",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect retrieval with exact match including the required snippet about closing permanently on June 30, 2024.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years.\nAssistant: Noted: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years."
+      ],
+      "query": "When will Grandview Shopping Mall in Phoenix close?"
+    },
+    {
+      "fact_id": "distractor_008",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with the verbatim snippet about closing permanently on June 30, 2024.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years.\nAssistant: Noted: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years."
+      ],
+      "query": "What is the closing date for Phoenix's Grandview Shopping Mall?"
+    },
+    {
+      "fact_id": "distractor_008",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "Query asked about Westfield Plaza in Tampa but retrieved information about Grandview Shopping Mall in Phoenix - wrong location and mall name.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years.\nAssistant: Noted: The Grandview Shopping Mall in Phoenix will close permanently on June 30, 2024 after 28 years."
+      ],
+      "query": "When will Westfield Plaza in Tampa close?"
+    },
+    {
+      "fact_id": "distractor_009",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with verbatim match of the required snippet.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023.\nAssistant: Noted: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023."
+      ],
+      "query": "Where did Dr. Amanda Price publish her butterfly migration research?"
+    },
+    {
+      "fact_id": "distractor_009",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "The retrieved context contains the exact expected fact with the journal name and publication date matching perfectly.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023.\nAssistant: Noted: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023."
+      ],
+      "query": "In which journal did Dr. Amanda Price publish her work on butterfly migration?"
+    },
+    {
+      "fact_id": "distractor_009",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "The expected fact about Dr. Amanda Price appears verbatim but is irrelevant to the query about Dr. Steven Walsh's bird research.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023.\nAssistant: Noted: Dr. Amanda Price published her research on butterfly migration patterns in the Journal of Entomology in April 2023."
+      ],
+      "query": "Where did Dr. Steven Walsh publish his bird migration research?"
+    },
+    {
+      "fact_id": "distractor_010",
+      "trial": 3,
+      "query_type": "direct",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Exact match found with the expected snippet 'sentenced to 15 years in prison' appearing verbatim in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023.\nAssistant: Noted: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023."
+      ],
+      "query": "How long was Kevin Park sentenced for the Milwaukee bank robbery?"
+    },
+    {
+      "fact_id": "distractor_010",
+      "trial": 3,
+      "query_type": "paraphrase",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 5,
+      "contaminated": false,
+      "verbatim_match": true,
+      "correct": true,
+      "notes": "Perfect match - the exact expected fact and snippet are present in the retrieved context.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023.\nAssistant: Noted: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023."
+      ],
+      "query": "What prison sentence did Kevin Park receive for robbing First National Bank?"
+    },
+    {
+      "fact_id": "distractor_010",
+      "trial": 3,
+      "query_type": "decoy",
+      "top_k": 1,
+      "retrieved": true,
+      "relevance": 0,
+      "contaminated": true,
+      "verbatim_match": true,
+      "correct": false,
+      "notes": "Query asked about Lisa Chen's fraud sentence but retrieved Kevin Park's armed robbery sentence instead - wrong person and crime.",
+      "judge_error": null,
+      "retrieved_chunks": [
+        "User: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023.\nAssistant: Noted: Kevin Park was sentenced to 15 years in prison for armed robbery at First National Bank in Milwaukee on September 14, 2023."
+      ],
+      "query": "How long was Lisa Chen sentenced for the fraud at Community Trust Bank?"
+    }
+  ],
+  "elapsed_sec": 388.7375073889998,
+  "timestamp": 1777507060.8964467
+}

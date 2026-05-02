@@ -103,3 +103,17 @@ def test_rag_augmenter_embeds_retrieval_diagnostics_in_trace(monkeypatch):
 def test_augmenter_service_lists_rag_when_installed():
     service = AugmenterService()
     assert "rag" in service.list_augmenters()
+
+
+def test_augmenter_service_lists_engram_lite_when_installed(tmp_path):
+    service = AugmenterService(engram_base_dir=tmp_path)
+
+    assert "engram_lite" in service.list_augmenters()
+
+    readiness = service.get_augmenter_readiness("engram_lite", options={"base_dir": str(tmp_path), "project_id": "test"})
+    assert readiness.can_run is True
+    assert readiness.severity == "ok"
+
+    descriptor = service.describe_augmenter("engram_lite", options={"base_dir": str(tmp_path), "project_id": "test"})
+    assert descriptor.provider == "engram_lite"
+    assert descriptor.metadata["augmenter_id"] == "engram_lite"

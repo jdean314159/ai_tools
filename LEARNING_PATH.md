@@ -17,6 +17,8 @@ The recommended order is intentional. It moves from:
 
 If you are teaching from this repo, prefer this file over sending learners package-by-package without structure.
 
+The canonical notebook sequence is maintained in [`course/CURRICULUM.md`](./course/CURRICULUM.md).
+
 ---
 
 ## Before you begin
@@ -81,7 +83,7 @@ Understand the engine abstraction before introducing augmentation.
 ### Learn here
 - [`llm_engines`](./llm_engines/README.md)
 - [`llm_harness_core`](./llm_harness_core/README.md)
-- notebook: [`course/notebooks/01_engine_basics.ipynb`](./course/notebooks/01_engine_basics.ipynb)
+- notebooks: [`course/notebooks/00_llm_fundamentals.ipynb`](./course/notebooks/00_llm_fundamentals.ipynb), [`course/notebooks/01_environment_setup.ipynb`](./course/notebooks/01_environment_setup.ipynb), [`course/notebooks/02_engine_basics.ipynb`](./course/notebooks/02_engine_basics.ipynb)
 - starter project: [`course/starter_projects/minimal_chat_app`](./course/starter_projects/minimal_chat_app)
 
 ### Questions to answer
@@ -103,7 +105,7 @@ Introduce observability early.
 - [`llm_inspector`](./llm_inspector/README.md)
 - [`llm_inspector_ui`](./llm_inspector_ui/README.md)
 - guide: [`llm_inspector_ui/WORKBENCH_TEACHING_GUIDE.md`](./llm_inspector_ui/WORKBENCH_TEACHING_GUIDE.md)
-- notebook: [`course/notebooks/02_inspecting_model_behavior.ipynb`](./course/notebooks/02_inspecting_model_behavior.ipynb)
+- notebook: [`course/notebooks/03_inspecting_model_behavior.ipynb`](./course/notebooks/03_inspecting_model_behavior.ipynb)
 
 ### Questions to answer
 - What metadata matters for debugging an LLM application?
@@ -122,7 +124,7 @@ Show memory augmentation as an inspectable prompt-construction problem.
 
 ### Learn here
 - [`engram_lite`](./engram_lite/README.md)
-- notebook: [`course/notebooks/03_memory_with_engram_lite.ipynb`](./course/notebooks/03_memory_with_engram_lite.ipynb)
+- notebook: [`course/notebooks/04_memory_with_engram_lite.ipynb`](./course/notebooks/04_memory_with_engram_lite.ipynb)
 - starter project: [`course/starter_projects/memory_tutor`](./course/starter_projects/memory_tutor)
 
 ### Questions to answer
@@ -143,7 +145,7 @@ Teach RAG as a series of explicit decisions.
 ### Learn here
 - [`rag_lib`](./rag_lib/README.md)
 - tutorial: [`docs/tutorials/broken_rag_lab.md`](./docs/tutorials/broken_rag_lab.md)
-- notebook: [`course/notebooks/04_rag_with_rag_lib.ipynb`](./course/notebooks/04_rag_with_rag_lib.ipynb)
+- notebooks: [`course/notebooks/05_rag_with_rag_lib.ipynb`](./course/notebooks/05_rag_with_rag_lib.ipynb), [`course/notebooks/06_advanced_rag_and_evaluation.ipynb`](./course/notebooks/06_advanced_rag_and_evaluation.ipynb)
 - starter project: [`course/starter_projects/source_grounded_qa`](./course/starter_projects/source_grounded_qa)
 
 ### Questions to answer
@@ -164,7 +166,7 @@ See how the layers fit together in a real application.
 ### Learn here
 - [`language_tutor`](./language_tutor/README.md)
 - guide: [`language_tutor/REFERENCE_APP_GUIDE.md`](./language_tutor/REFERENCE_APP_GUIDE.md)
-- notebook: [`course/notebooks/05_reference_application_walkthrough.ipynb`](./course/notebooks/05_reference_application_walkthrough.ipynb)
+- notebook: [`course/notebooks/07_reference_app_walkthrough.ipynb`](./course/notebooks/07_reference_app_walkthrough.ipynb)
 
 ### Questions to answer
 - What does a real application built from these layers look like?
@@ -184,7 +186,7 @@ Show orchestration, tool use, and safety after the rest of the stack is understo
 ### Learn here
 - [`agent_lib`](./agent_lib/README.md)
 - tutorial: [`docs/tutorials/agent_red_team_lab.md`](./docs/tutorials/agent_red_team_lab.md)
-- notebook: [`course/notebooks/06_agent_safety_and_failure_modes.ipynb`](./course/notebooks/06_agent_safety_and_failure_modes.ipynb)
+- notebook: [`course/notebooks/08_agent_safety_and_failure_modes.ipynb`](./course/notebooks/08_agent_safety_and_failure_modes.ipynb)
 - comparison guide: [`docs/native_vs_integration.md`](./docs/native_vs_integration.md)
 
 ### Questions to answer
@@ -204,7 +206,7 @@ Teach learners to compare baseline, memory-augmented, retrieval-augmented, and a
 
 ### Learn here
 - `llm_harness_core/EVALUATION_WALKTHROUGH.md`
-- `course/notebooks/07_evaluating_llm_applications.ipynb`
+- `course/notebooks/09_evaluating_llm_applications.ipynb`
 - `course/starter_projects/source_grounded_qa/eval.py`
 - `integration_tests/memory_eval.py`
 

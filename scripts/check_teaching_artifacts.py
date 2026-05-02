@@ -26,7 +26,16 @@ REFERENCE_GUIDES = [
 ]
 
 REQUIRED_NOTEBOOKS = [
-    ROOT / 'course' / 'notebooks' / '07_evaluating_llm_applications.ipynb',
+    ROOT / 'course' / 'notebooks' / '00_llm_fundamentals.ipynb',
+    ROOT / 'course' / 'notebooks' / '01_environment_setup.ipynb',
+    ROOT / 'course' / 'notebooks' / '02_engine_basics.ipynb',
+    ROOT / 'course' / 'notebooks' / '03_inspecting_model_behavior.ipynb',
+    ROOT / 'course' / 'notebooks' / '04_memory_with_engram_lite.ipynb',
+    ROOT / 'course' / 'notebooks' / '05_rag_with_rag_lib.ipynb',
+    ROOT / 'course' / 'notebooks' / '06_advanced_rag_and_evaluation.ipynb',
+    ROOT / 'course' / 'notebooks' / '07_reference_app_walkthrough.ipynb',
+    ROOT / 'course' / 'notebooks' / '08_agent_safety_and_failure_modes.ipynb',
+    ROOT / 'course' / 'notebooks' / '09_evaluating_llm_applications.ipynb',
 ]
 
 TUTORIALS = [
@@ -45,6 +54,7 @@ EXAMPLE_COMMAND_SPECS = [
 PYTHONPATH = ':'.join([
     str(ROOT / 'rag_lib' / 'src'),
     str(ROOT / 'engram'),
+    str(ROOT / 'engram_lite' / 'src'),
     str(ROOT / 'llm_inspector' / 'src'),
     str(ROOT / 'llm_harness_core' / 'src'),
     str(ROOT / 'agent_lib' / 'src'),

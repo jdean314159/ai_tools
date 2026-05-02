@@ -1,27 +1,22 @@
 """
-Engram Memory Eval — Engram Probe (Direct Import Mode)
+Engram Memory Eval — Dual-Backend Probe
 
-Wraps ProjectMemory directly. No HTTP layer.
+Supports two backends selected via BACKEND env var or --backend argument:
+  - "engram"      : full engram (ProjectMemory with RTRL, ChromaDB, Kuzu)
+  - "engram_lite" : engram_lite v0.2 (ProjectMemory with hybrid search, semantic graph)
 
-Injection strategy:
-  1. add_turn("user", fact_text)   → feeds RTRL pending key
-  2. add_turn("assistant", "...")  → steps RTRL, generates surprise score
-  3. store_episode(bypass_filter=True) → guaranteed episodic storage,
-     importance set from RTRL surprise if neural is warmed up
+Usage:
+    BACKEND=engram       python run_eval.py ...
+    BACKEND=engram_lite  python run_eval.py ...
 
-This mirrors real usage: neural signal is computed from conversational
-context, then the episode is durably stored with RTRL-derived importance.
-
-Retrieval:
-  search_episodes(query, n=top_k) → list[Episode]
-
-CONFIGURE:
-  - ENGRAM_SYS_PATH: path to your Engram repo (added to sys.path)
-  - ENGRAM_BASE_DIR: base_dir for ProjectMemory storage
-  - ENGINE_PROFILE:  failover engine profile name in llm_engines.yaml,
-                     or None to skip neural (disables RTRL signal)
+Key differences between backends:
+  - engram:      get_context() for retrieval, RTRL novelty scores available
+  - engram_lite: search_episodes() for retrieval, novelty always None (no neural layer)
+  - engram_lite: hybrid vector+text search (needs nomic-embed-text in Ollama)
+  - engram_lite: semantic graph with fact extraction and forgetting
 """
 
+import os
 import sys
 import time
 import uuid
@@ -29,21 +24,22 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-# ── CONFIGURE THESE ──────────────────────────────────────────────────────────
-ENGRAM_SYS_PATH = "/home/cybernaif/ai_tools/engram"      # repo root
-ENGRAM_BASE_DIR = "/home/cybernaif/ai_tools/engram/data/memory"
-ENGINE_PROFILE  = "default_local"                   # from llm_engines.yaml; None = no engine
+# ── CONFIGURE THESE ───────────────────────────────────────────────────────────
+BACKEND = os.environ.get("BACKEND", "engram_lite")   # "engram" or "engram_lite"
+
+# Full engram paths
+ENGRAM_SYS_PATH = "/home/cybernaif/ai_tools/engram"
+ENGRAM_BASE_DIR = "/home/cybernaif/ai_tools/engram/data/memory_eval_engram"
+ENGINE_PROFILE  = "default_local"   # from llm_engines.yaml; None = no engine
+
+# engram_lite paths
+ENGRAM_LITE_SYS_PATH = "/home/cybernaif/ai_tools/engram_lite/src"
+ENGRAM_LITE_BASE_DIR = "/home/cybernaif/ai_tools/engram/data/memory_eval_lite"
+OLLAMA_EMBED_MODEL   = "nomic-embed-text"   # for hybrid search
+OLLAMA_BASE_URL      = "http://localhost:11434"
+
 EVAL_PROJECT_ID = "eval_harness"
 # ─────────────────────────────────────────────────────────────────────────────
-
-if ENGRAM_SYS_PATH not in sys.path:
-    sys.path.insert(0, ENGRAM_SYS_PATH)
-
-from engram import ProjectMemory, ProjectType
-from engram.rtrl.neural_memory import NeuralMemoryConfig
-from engram.engine import create_failover_engine
-
-from fact_generator import Fact
 
 
 @dataclass
@@ -52,10 +48,10 @@ class InjectionResult:
     trial: int
     repetition: int
     elapsed_ms: float
-    novelty_score: Optional[float]    # raw RTRL surprise (None if neural not warmed)
-    novelty_ema: Optional[float]      # EMA baseline at injection time
-    novelty_ratio: Optional[float]    # raw / ema (novelty relative to baseline)
-    episode_id: Optional[str]         # episodic memory ID, None if not stored
+    novelty_score: Optional[float]
+    novelty_ema: Optional[float]
+    novelty_ratio: Optional[float]
+    episode_id: Optional[str]
     success: bool
     error: Optional[str] = None
 
@@ -64,53 +60,159 @@ class InjectionResult:
 class RetrievalResult:
     fact_id: str
     query: str
-    query_type: str           # "direct" | "paraphrase" | "decoy"
+    query_type: str
     top_k: int
-    retrieved_chunks: list    # list[str]
+    retrieved_chunks: list
     elapsed_ms: float
     success: bool
     error: Optional[str] = None
 
 
+# ---------------------------------------------------------------------------
+# Backend initialisation
+# ---------------------------------------------------------------------------
+
+def _init_engram(config):
+    """Initialise full engram ProjectMemory."""
+    if ENGRAM_SYS_PATH not in sys.path:
+        sys.path.insert(0, ENGRAM_SYS_PATH)
+
+    from engram import ProjectMemory, ProjectType
+    from engram.rtrl.neural_memory import NeuralMemoryConfig
+    from engram.engine import create_failover_engine
+
+    engine = None
+    if ENGINE_PROFILE:
+        try:
+            engine = create_failover_engine(ENGINE_PROFILE)
+        except Exception as e:
+            print(f"[probe] Warning: engine init failed ({e}); running without neural layer")
+
+    return ProjectMemory(
+        project_id=EVAL_PROJECT_ID,
+        project_type=ProjectType.GENERAL_ASSISTANT,
+        base_dir=Path(ENGRAM_BASE_DIR),
+        llm_engine=engine,
+        session_id="eval_session_0",
+        neural_config=NeuralMemoryConfig(enabled=True),
+    )
+
+
+def _init_engram_lite(config):
+    """Initialise engram_lite v0.2 ProjectMemory with hybrid search."""
+    if ENGRAM_LITE_SYS_PATH not in sys.path:
+        sys.path.insert(0, ENGRAM_LITE_SYS_PATH)
+
+    from engram_lite import ProjectMemory
+    from engram_lite.embeddings.ollama import OllamaEmbedder
+    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram_lite.semantic.extractor import SemanticExtractor
+    from engram_lite.semantic.forgetting import ForgettingConfig
+
+    base_dir = Path(ENGRAM_LITE_BASE_DIR)
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    # Embedder with cache
+    base_embedder = OllamaEmbedder(
+        model=OLLAMA_EMBED_MODEL,
+        base_url=OLLAMA_BASE_URL,
+    )
+    cache = EmbeddingCache(base_dir / "embedding_cache.db")
+    embedder = CachedEmbedder(base_embedder, cache)
+
+    # Pattern-only extractor (no LLM calls during eval)
+    extractor = SemanticExtractor(pattern_only=True)
+
+    return ProjectMemory(
+        base_dir=base_dir,
+        project_id=EVAL_PROJECT_ID,
+        session_id="eval_session_0",
+        embedder=embedder,
+        extractor=extractor,
+        auto_pair_assistant=True,
+        enable_semantic_graph=True,
+        forgetting_config=ForgettingConfig(),
+        total_prompt_tokens=8192,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Retrieval adapters
+# ---------------------------------------------------------------------------
+
+def _retrieve_engram(memory, query: str, top_k: int) -> list[str]:
+    """Full engram retrieval via get_context()."""
+    context = memory.get_context(query=query, episodic_n=top_k)
+    # Episode objects have .text; combine with cold/semantic fallback
+    results = [ep.text for ep in (context.episodic or [])]
+    # Include cold storage results if episodic came up short
+    for row in (context.cold or []):
+        text = row.get("text") or str(row)
+        if text not in results:
+            results.append(text)
+    return results[:top_k]
+
+
+def _retrieve_engram_lite(memory, query: str, top_k: int) -> list[str]:
+    """engram_lite retrieval via search_episodes() (hybrid vector+text)."""
+    results = memory.search_episodes(query=query, n=top_k)
+    return [r.text for r in results]
+
+
+# ---------------------------------------------------------------------------
+# Novelty reader (engram only)
+# ---------------------------------------------------------------------------
+
+def _read_novelty_engram(memory) -> tuple:
+    nc = getattr(memory, "neural_coord", None)
+    if nc is None or not nc.is_warmed_up():
+        return None, None, None
+    try:
+        raw = nc.get_last_surprise()
+        ema = nc.get_surprise_ema()
+        ratio = (raw / ema) if (ema and ema > 1e-8) else None
+        return (
+            float(raw) if raw is not None else None,
+            float(ema) if ema is not None else None,
+            float(ratio) if ratio is not None else None,
+        )
+    except Exception:
+        return None, None, None
+
+
+# ---------------------------------------------------------------------------
+# Main probe class
+# ---------------------------------------------------------------------------
+
 class EngramProbe:
     """
-    Direct-import wrapper around ProjectMemory for the eval harness.
-    Not async — the harness calls are synchronous; asyncio.gather in
-    trial_runner.py still works because these are CPU-bound operations
-    that release quickly. If Ollama inference becomes a bottleneck,
-    wrap with run_in_executor.
+    Dual-backend probe. BACKEND env var selects engram or engram_lite.
+
+    API is identical to the original single-backend probe so trial_runner.py
+    requires no changes.
     """
 
     def __init__(self, config):
         self.config = config
-        self._memory: Optional[ProjectMemory] = None
+        self._memory = None
         self._session_counter = 0
-
-    # ── Lifecycle ─────────────────────────────────────────────────────────────
+        self._backend = BACKEND
+        print(f"[probe] Backend: {self._backend}")
 
     async def start(self):
-        """Initialise ProjectMemory. Called once before any trial."""
-        engine = None
-        if ENGINE_PROFILE:
-            try:
-                engine = create_failover_engine(ENGINE_PROFILE)
-            except Exception as e:
-                print(f"[probe] Warning: engine init failed ({e}); running without neural layer")
-
-        neural_cfg = NeuralMemoryConfig(enabled=True)
-
-        self._memory = ProjectMemory(
-            project_id=EVAL_PROJECT_ID,
-            project_type=ProjectType.GENERAL_ASSISTANT,
-            base_dir=Path(ENGRAM_BASE_DIR),
-            llm_engine=engine,
-            session_id=f"eval_session_{self._session_counter}",
-            neural_config=neural_cfg,
-        )
-        print(f"[probe] ProjectMemory initialized: {self._memory}")
+        if self._backend == "engram":
+            self._memory = _init_engram(self.config)
+            self._retrieve = _retrieve_engram
+            self._read_novelty = lambda: _read_novelty_engram(self._memory)
+        elif self._backend == "engram_lite":
+            self._memory = _init_engram_lite(self.config)
+            self._retrieve = _retrieve_engram_lite
+            self._read_novelty = lambda: (None, None, None)
+        else:
+            raise ValueError(f"Unknown BACKEND: {self._backend!r}. Use 'engram' or 'engram_lite'.")
+        print(f"[probe] Memory initialized: {type(self._memory).__name__}")
 
     async def stop(self):
-        """Release resources."""
         if self._memory:
             self._memory.close()
             self._memory = None
@@ -119,7 +221,7 @@ class EngramProbe:
 
     async def inject_fact(
         self,
-        fact: Fact,
+        fact,
         use_contradiction: bool = False,
         trial: int = 0,
         repetition: int = 0,
@@ -127,15 +229,17 @@ class EngramProbe:
         text = fact.contradiction if use_contradiction else fact.canonical
         t0 = time.perf_counter()
         try:
-            # Step RTRL: feed as a user->assistant exchange so the neural
-            # coordinator sees a complete key->value pair and updates surprise.
-            self._memory.add_turn("user", text)
-            self._memory.add_turn("assistant", f"Noted: {text}")
+            session_id = f"eval_session_{self._session_counter}"
+            if self._backend == "engram":
+                # engram: add_turn(role, content) — no session_id parameter
+                self._memory.add_turn("user", text)
+                self._memory.add_turn("assistant", f"Noted: {text}")
+            else:
+                self._memory.add_turn("user", text, session_id=session_id)
+                self._memory.add_turn("assistant", f"Noted: {text}", session_id=session_id)
 
-            # Read novelty signal immediately after RTRL step.
             novelty_score, novelty_ema, novelty_ratio = self._read_novelty()
 
-            # Guarantee episodic storage regardless of surprise filter.
             episode_id = self._memory.store_episode(
                 text,
                 metadata={
@@ -147,33 +251,24 @@ class EngramProbe:
                 importance=0.6,
                 bypass_filter=True,
             )
-
             elapsed = (time.perf_counter() - t0) * 1000
             return InjectionResult(
-                fact_id=fact.id,
-                trial=trial,
-                repetition=repetition,
+                fact_id=fact.id, trial=trial, repetition=repetition,
                 elapsed_ms=elapsed,
-                novelty_score=novelty_score,
-                novelty_ema=novelty_ema,
+                novelty_score=novelty_score, novelty_ema=novelty_ema,
                 novelty_ratio=novelty_ratio,
-                episode_id=episode_id,
-                success=True,
+                episode_id=episode_id, success=True,
             )
         except Exception as e:
             elapsed = (time.perf_counter() - t0) * 1000
             return InjectionResult(
-                fact_id=fact.id,
-                trial=trial, repetition=repetition,
+                fact_id=fact.id, trial=trial, repetition=repetition,
                 elapsed_ms=elapsed,
                 novelty_score=None, novelty_ema=None, novelty_ratio=None,
-                episode_id=None,
-                success=False,
-                error=str(e),
+                episode_id=None, success=False, error=str(e),
             )
 
     async def inject_distractor(self, episode_index: int) -> InjectionResult:
-        """Inject a semantically unrelated episode (interference)."""
         text = (
             f"Distractor {episode_index}: The quarterly budget review showed "
             f"a 3.2% variance in line item {episode_index % 50 + 1}. "
@@ -181,8 +276,13 @@ class EngramProbe:
         )
         t0 = time.perf_counter()
         try:
-            self._memory.add_turn("user", text)
-            self._memory.add_turn("assistant", "Understood.")
+            session_id = f"eval_session_{self._session_counter}"
+            if self._backend == "engram":
+                self._memory.add_turn("user", text)
+                self._memory.add_turn("assistant", "Understood.")
+            else:
+                self._memory.add_turn("user", text, session_id=session_id)
+                self._memory.add_turn("assistant", "Understood.", session_id=session_id)
             novelty_score, novelty_ema, novelty_ratio = self._read_novelty()
             episode_id = self._memory.store_episode(
                 text,
@@ -193,20 +293,16 @@ class EngramProbe:
             elapsed = (time.perf_counter() - t0) * 1000
             return InjectionResult(
                 fact_id=f"distractor_{episode_index}",
-                trial=-1, repetition=0,
-                elapsed_ms=elapsed,
-                novelty_score=novelty_score,
-                novelty_ema=novelty_ema,
+                trial=-1, repetition=0, elapsed_ms=elapsed,
+                novelty_score=novelty_score, novelty_ema=novelty_ema,
                 novelty_ratio=novelty_ratio,
-                episode_id=episode_id,
-                success=True,
+                episode_id=episode_id, success=True,
             )
         except Exception as e:
             elapsed = (time.perf_counter() - t0) * 1000
             return InjectionResult(
                 fact_id=f"distractor_{episode_index}",
-                trial=-1, repetition=0,
-                elapsed_ms=elapsed,
+                trial=-1, repetition=0, elapsed_ms=elapsed,
                 novelty_score=None, novelty_ema=None, novelty_ratio=None,
                 episode_id=None, success=False, error=str(e),
             )
@@ -215,8 +311,8 @@ class EngramProbe:
 
     async def retrieve(
         self,
-        fact: Fact,
-        query_type: str,    # "direct" | "paraphrase" | "decoy"
+        fact,
+        query_type: str,
         top_k: int = 5,
     ) -> RetrievalResult:
         query = {
@@ -227,61 +323,25 @@ class EngramProbe:
 
         t0 = time.perf_counter()
         try:
-            context = self._memory.get_context(query=query, episodic_n=top_k)
-            chunks = [ep.text for ep in context.episodic]
+            chunks = self._retrieve(self._memory, query, top_k)
             elapsed = (time.perf_counter() - t0) * 1000
             return RetrievalResult(
-                fact_id=fact.id,
-                query=query,
-                query_type=query_type,
-                top_k=top_k,
-                retrieved_chunks=chunks,
-                elapsed_ms=elapsed,
-                success=True,
+                fact_id=fact.id, query=query, query_type=query_type,
+                top_k=top_k, retrieved_chunks=chunks,
+                elapsed_ms=elapsed, success=True,
             )
         except Exception as e:
             elapsed = (time.perf_counter() - t0) * 1000
             return RetrievalResult(
-                fact_id=fact.id,
-                query=query,
-                query_type=query_type,
-                top_k=top_k,
-                retrieved_chunks=[],
-                elapsed_ms=elapsed,
-                success=False,
-                error=str(e),
+                fact_id=fact.id, query=query, query_type=query_type,
+                top_k=top_k, retrieved_chunks=[],
+                elapsed_ms=elapsed, success=False, error=str(e),
             )
 
     # ── Session management ────────────────────────────────────────────────────
 
     async def reset_working_memory(self):
-        """
-        Simulate a session boundary: new session ID, working memory cleared,
-        RTRL hidden state reset (weights preserved).
-        """
         self._session_counter += 1
         new_session_id = f"eval_session_{self._session_counter}"
         self._memory.new_session(new_session_id)
         print(f"[probe] New session: {new_session_id}")
-
-    # ── Internal helpers ──────────────────────────────────────────────────────
-
-    def _read_novelty(self) -> tuple:
-        """
-        Read RTRL surprise signal from NeuralCoordinator.
-        Returns (raw_surprise, ema, ratio) or (None, None, None) if unavailable.
-        """
-        nc = getattr(self._memory, "neural_coord", None)
-        if nc is None or not nc.is_warmed_up():
-            return None, None, None
-        try:
-            raw = nc.get_last_surprise()
-            ema = nc.get_surprise_ema()
-            ratio = (raw / ema) if (ema and ema > 1e-8) else None
-            return (
-                float(raw) if raw is not None else None,
-                float(ema) if ema is not None else None,
-                float(ratio) if ratio is not None else None,
-            )
-        except Exception:
-            return None, None, None

@@ -104,6 +104,75 @@ class BaselineAugmenter(PromptAugmenter):
         )
 
 
+class EngramLiteAugmenter(PromptAugmenter):
+    augmenter_id = "engram_lite"
+
+    def __init__(
+        self,
+        *,
+        base_dir: str | Path,
+        project_id: str = "default",
+        session_id: Optional[str] = None,
+        system_prompt: str = "",
+    ):
+        self.base_dir = Path(base_dir)
+        self.project_id = project_id
+        self.session_id = session_id
+        self.system_prompt = system_prompt
+        self._pm = None
+
+    def _ensure_pm(self):
+        if self._pm is not None:
+            return self._pm
+        from engram_lite import ProjectMemory
+
+        self._pm = ProjectMemory(
+            base_dir=self.base_dir,
+            project_id=self.project_id,
+            session_id=self.session_id,
+            system_prompt=self.system_prompt,
+        )
+        return self._pm
+
+    def new_session(self, session_id: str) -> None:
+        self.session_id = session_id
+        self._ensure_pm().new_session(session_id)
+
+    def add_turn(self, role: str, text: str, session_id: str) -> None:
+        self._ensure_pm().add_turn(role, text, session_id)
+
+    def describe_component(self) -> CapabilityDescriptor:
+        descriptor = self._ensure_pm().describe_component()
+        return CapabilityDescriptor(
+            kind=descriptor.kind,
+            provider=descriptor.provider,
+            component="EngramLiteAugmenter",
+            version=descriptor.version,
+            summary=descriptor.summary,
+            features=descriptor.features,
+            input_types=descriptor.input_types,
+            output_types=descriptor.output_types,
+            metadata={
+                **dict(descriptor.metadata),
+                "augmenter_id": self.augmenter_id,
+                "project_id": self.project_id,
+                "base_dir": str(self.base_dir),
+            },
+        )
+
+    def augment(self, request: AugmentRequest) -> AugmentResult:
+        result = self._ensure_pm().augment(request)
+        return AugmentResult(
+            prompt=result.prompt,
+            trace=result.trace,
+            prompt_tokens=result.prompt_tokens,
+            memory_tokens=result.memory_tokens,
+            compressed=result.compressed,
+            raw_context=result.raw_context,
+            metadata={"source": "engram_lite", **dict(result.metadata)},
+        )
+
+
 class EngramAugmenter(PromptAugmenter):
     augmenter_id = "engram"
 
@@ -344,6 +413,11 @@ class AugmenterService:
     def list_augmenters(self) -> list[str]:
         augmenters = ["baseline"]
         try:
+            import engram_lite  # noqa: F401
+            augmenters.append("engram_lite")
+        except Exception:
+            pass
+        try:
             import engram  # noqa: F401
             augmenters.append("engram")
         except Exception:
@@ -364,6 +438,14 @@ class AugmenterService:
         options = options or {}
         if augmenter_id == "baseline":
             return BaselineAugmenter(system_prompt=options.get("system_prompt", "")).describe_component()
+
+        if augmenter_id == "engram_lite":
+            return EngramLiteAugmenter(
+                base_dir=options.get("base_dir", self.engram_base_dir),
+                project_id=options.get("project_id", self.engram_project_id),
+                session_id=options.get("session_id"),
+                system_prompt=options.get("system_prompt", ""),
+            ).describe_component()
 
         if augmenter_id == "engram":
             return EngramAugmenter(
@@ -421,6 +503,33 @@ class AugmenterService:
                 message="Baseline augmenter is ready.",
                 details={},
             )
+
+        if augmenter_id == "engram_lite":
+            try:
+                import engram_lite  # noqa: F401
+                from engram_lite import ProjectMemory  # noqa: F401
+
+                base_dir = Path(options.get("base_dir", self.engram_base_dir))
+                project_id = str(options.get("project_id", self.engram_project_id))
+
+                return AugmenterReadiness(
+                    augmenter_id="engram_lite",
+                    can_run=True,
+                    severity="ok",
+                    message="engram_lite augmenter is ready.",
+                    details={
+                        "base_dir": str(base_dir),
+                        "project_id": project_id,
+                    },
+                )
+            except Exception as exc:
+                return AugmenterReadiness(
+                    augmenter_id="engram_lite",
+                    can_run=False,
+                    severity="error",
+                    message=f"engram_lite is not available: {type(exc).__name__}: {exc}",
+                    details={},
+                )
 
         if augmenter_id == "engram":
             try:
@@ -490,6 +599,14 @@ class AugmenterService:
 
         if augmenter_id == "baseline":
             return BaselineAugmenter(system_prompt=options.get("system_prompt", ""))
+
+        if augmenter_id == "engram_lite":
+            return EngramLiteAugmenter(
+                base_dir=options.get("base_dir", self.engram_base_dir),
+                project_id=options.get("project_id", self.engram_project_id),
+                session_id=session_id,
+                system_prompt=options.get("system_prompt", ""),
+            )
 
         if augmenter_id == "engram":
             return EngramAugmenter(

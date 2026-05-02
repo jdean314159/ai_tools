@@ -130,13 +130,15 @@ Open:
 
 - `LEARNING_PATH.md`
 - `course/README.md`
+- `PACKAGE_ROLES.md`
+- `course/CURRICULUM.md`
 - `llm_harness_core/EVALUATION_WALKTHROUGH.md`
 
 ### 6. Open the first notebook
 
 Start with:
 
-- `course/notebooks/00_first_model_call.ipynb`
+- `course/notebooks/00_llm_fundamentals.ipynb`
 
 Then continue in order.
 

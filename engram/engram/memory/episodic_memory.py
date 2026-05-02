@@ -216,46 +216,71 @@ class EpisodicMemory:
         project_id: Optional[str] = None,
         min_importance: float = 0.0,
         days_back: Optional[int] = None,
+        vector_similarity_threshold: float = 0.0,
     ) -> List[Episode]:
-        """Semantic search for similar episodes."""
+        """Semantic search for similar episodes.
+
+        Args:
+            query: Query text.
+            n: Maximum results to return (after threshold filtering).
+            project_id: Filter by project.
+            min_importance: Minimum episode importance.
+            days_back: Only include last N days.
+            vector_similarity_threshold: Drop results whose cosine similarity
+                is below this value (range 0.0-1.0). 0.0 disables filtering.
+                Collection uses cosine distance, so similarity = 1 - distance.
+        """
         if not query.strip():
             return []
-        
+
         conditions = []
-        
+
         if project_id:
             conditions.append({"project_id": project_id})
-        
+
         if min_importance > 0.0:
             conditions.append({"importance": {"$gte": min_importance}})
-        
+
         if days_back:
             cutoff_time = time.time() - (days_back * 86400)
             conditions.append({"timestamp": {"$gte": cutoff_time}})
-        
+
         where_clause = None
         if len(conditions) == 1:
             where_clause = conditions[0]
         elif len(conditions) > 1:
             where_clause = {"$and": conditions}
-        
+
+        # Request more than n if filtering, so we can backfill after threshold drops
+        request_n = n * 2 if vector_similarity_threshold > 0.0 else n
+
         results = self.collection.query(
             query_texts=[query],
-            n_results=n,
+            n_results=request_n,
             where=where_clause,
         )
-        
+
         episodes = []
-        
+
         if results["ids"] and results["ids"][0]:
+            distances = results.get("distances", [[]])[0] or []
             for i, doc_id in enumerate(results["ids"][0]):
+                # Cosine distance threshold filtering
+                if vector_similarity_threshold > 0.0 and i < len(distances):
+                    similarity = 1.0 - float(distances[i])
+                    if similarity < vector_similarity_threshold:
+                        continue
+
                 episode = Episode.from_chromadb(
                     id=doc_id,
                     document=results["documents"][0][i],
                     metadata=results["metadatas"][0][i],
                 )
                 episodes.append(episode)
-        
+
+                if len(episodes) >= n:
+                    break
+
         return episodes
     
     def get_recent_episodes(

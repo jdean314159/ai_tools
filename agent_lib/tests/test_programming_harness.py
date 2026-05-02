@@ -279,6 +279,26 @@ def test_programming_tool_runtime_blocks_writes_in_proposal_only_mode(tmp_path: 
     assert "return a - b" in workspace.read_text("main.py")
 
 
+def test_programming_tool_runtime_default_denies_writes_when_allowlist_empty(tmp_path: Path) -> None:
+    workspace = FileWorkspace(tmp_path)
+    workspace.write_text("main.py", "def add(a, b):\n    return a - b\n")
+    runtime = make_programming_tool_runtime(
+        workspace,
+        WorkspacePolicy(
+            root=str(tmp_path),
+            writable_paths=[],
+            runnable_commands=[],
+            approval_mode="auto",
+        ),
+    )
+
+    result = runtime.invoke(ToolCall(name="replace_text", arguments={"path": "main.py", "old": "return a - b", "new": "return a + b"}))
+
+    assert result.success is False
+    assert result.meta.get("error") == "write_denied"
+    assert "return a - b" in workspace.read_text("main.py")
+
+
 def test_programming_tool_runtime_enforces_command_allowlist(tmp_path: Path) -> None:
     workspace = FileWorkspace(tmp_path)
     workspace.write_text("main.py", "def add(a, b):\n    return a + b\n")

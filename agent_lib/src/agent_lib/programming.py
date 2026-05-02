@@ -419,7 +419,7 @@ class ProgrammingToolRuntime:
             if self.root not in resolved.parents and resolved != self.root:
                 return self._deny(call, reason=f'Path {path!r} escapes workspace root {self.root}.', error='path_escape')
             if call.name == 'replace_text':
-                if not _path_matches_allowlist(path, self.workspace.writable_paths or [path]):
+                if not _path_matches_allowlist(path, self.workspace.writable_paths):
                     return self._deny(call, reason=f'Writes to {path!r} are not allowed by workspace policy.', error='write_denied')
                 if self.workspace.enforce_patch_ownership and self.isolation_manager is not None:
                     lease = self.isolation_manager.acquire_patch_lease(self.owner_id, [path])

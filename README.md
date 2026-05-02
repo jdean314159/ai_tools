@@ -53,6 +53,7 @@ Use the teaching path first, then come back to the deeper documents.
 - [LEARNING_PATH.md](./LEARNING_PATH.md) — canonical teaching sequence **[Beginner]**
 - [VISION.md](./VISION.md) — architecture and design intent **[Advanced]**
 - [CURRENT_STATE.md](./CURRENT_STATE.md) — implementation snapshot **[Intermediate]**
+- [PACKAGE_ROLES.md](./PACKAGE_ROLES.md) — stabilized package role map **[Intermediate]**
 - [ROADMAP.md](./ROADMAP.md) — ordered next phases **[Intermediate]**
 - [ADR_INDEX.md](./ADR_INDEX.md) — architectural decision map **[Advanced–Maintainer]**
 - [AGENT_FILE_SPEC.md](./AGENT_FILE_SPEC.md) — spec for repo-local and package-local `AGENT.md` files **[Maintainer]**
@@ -169,3 +170,5 @@ Use [GITHUB_PUBLICATION_CHECKLIST.md](./GITHUB_PUBLICATION_CHECKLIST.md) before 
 The repo also includes:
 - [scripts/check_teaching_artifacts.py](./scripts/check_teaching_artifacts.py) — validates the curriculum-facing assets
 - [scripts/check_publication_hygiene.py](./scripts/check_publication_hygiene.py) — validates tree hygiene and doc placement for public release
+
+

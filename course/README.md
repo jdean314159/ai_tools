@@ -34,6 +34,9 @@ All exercises include a Colab fallback. Local Ollama is a one-line swap.
 
 ## Course Structure
 
+`CURRICULUM.md` is the canonical manifest for notebook order and status.
+
+
 | Notebook | Topic | Week | Toolkit |
 |---|---|---|---|
 | [00](notebooks/00_llm_fundamentals.ipynb) | LLM Fundamentals + Prompt Engineering | 1 | none |

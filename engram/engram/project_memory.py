@@ -3035,6 +3035,7 @@ class ProjectMemory:
                 "Episodic": "episodic",
                 "Semantic": "semantic",
                 "Cold": "cold",
+                "Procedural Rules": "synthesis",
                 "User": "user",
             }
             parts = []
@@ -3087,11 +3088,27 @@ class ProjectMemory:
         seen_evidence: set[tuple[str, str]] = set()
 
         included_memory_origins = {
-            origin for origin, _, _ in final_parts if origin in {"working", "episodic", "semantic", "cold"}
+            origin for origin, _, _ in final_parts if origin in {"working", "episodic", "semantic", "cold", "synthesis"}
         }
 
-        for origin in ("working", "episodic", "semantic", "cold"):
+        for origin in ("working", "episodic", "semantic", "cold", "synthesis"):
             if origin not in included_memory_origins:
+                continue
+            # Synthesis rules come from the prompt block, not from ContextResult layers
+            if origin == "synthesis":
+                synth_text = self._build_synthesis_block(resolved_query)
+                if synth_text:
+                    for line in synth_text.splitlines():
+                        rule_text = line.lstrip("- ").strip()
+                        if rule_text:
+                            evidence.append(
+                                EvidenceTrace(
+                                    source="synthesis",
+                                    text=rule_text,
+                                    score=None,
+                                    meta={"origin": "synthesis"},
+                                )
+                            )
                 continue
             items = _ctx_get(origin, []) or []
             for item in items:
@@ -3113,7 +3130,10 @@ class ProjectMemory:
                 )
 
         all_memory_origins = {
-            origin for origin in ("working", "episodic", "semantic", "cold") if (_ctx_get(origin, []) or [])
+            origin for origin in ("working", "episodic", "semantic", "cold", "synthesis")
+            if origin == "synthesis"
+            and self._build_synthesis_block(resolved_query)
+            or (_ctx_get(origin, []) or [])
         }
         truncated = bool(all_memory_origins - included_memory_origins)
 
