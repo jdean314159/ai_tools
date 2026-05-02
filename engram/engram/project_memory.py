@@ -622,6 +622,7 @@ class ProjectMemory:
         lifecycle_config: Optional[LifecycleConfig] = None,
         ingestion_policy: Optional[IngestionPolicy] = None,
         dedup_threshold: float = 0.92,
+        vector_similarity_threshold: float = 0.4,
     ):
         """Initialize isolated project memory.
 
@@ -640,6 +641,11 @@ class ProjectMemory:
             neural_config: Neural memory config. None = disabled.
         """
         setup_logging_if_needed()
+
+        # Vector similarity threshold for episodic retrieval.
+        # Cosine similarity 0.0-1.0; results below threshold are dropped.
+        # Improves decoy resistance significantly. Set to 0.0 to disable.
+        self._vector_similarity_threshold = float(vector_similarity_threshold)
 
         # --- Telemetry (opt-in via env or explicit arg) ---
         if telemetry is None:
@@ -1412,20 +1418,32 @@ class ProjectMemory:
         n: int = 5,
         min_importance: float = 0.0,
         days_back: Optional[int] = None,
+        vector_similarity_threshold: Optional[float] = None,
     ) -> List[Episode]:
         """Semantic search within this project's episodes only.
 
-        project_id filtering is enforced automatically — no risk of
-        cross-project pollution. Access is tracked for the forgetting policy.
+        project_id filtering is enforced automatically. Access is tracked
+        for the forgetting policy.
+
+        Args:
+            vector_similarity_threshold: Override instance-level threshold
+                (cosine similarity 0.0-1.0). Higher = stricter filter.
+                None uses self._vector_similarity_threshold.
         """
         if self.episodic is None:
             return []
+        threshold = (
+            vector_similarity_threshold
+            if vector_similarity_threshold is not None
+            else getattr(self, "_vector_similarity_threshold", 0.0)
+        )
         episodes = self.episodic.search(
             query=query,
             n=n,
             project_id=self.project_id,
             min_importance=min_importance,
             days_back=days_back,
+            vector_similarity_threshold=threshold,
         )
         # Record access for forgetting policy retention scoring
         if episodes:
@@ -1793,6 +1811,17 @@ class ProjectMemory:
             sections.append(("semantic", "Semantic", semantic_text))
         if cold_text:
             sections.append(("cold", "Cold", cold_text))
+
+        # --- Synthesis rules block (Option A: capped append) ---
+        # Search for rules matching the query, cap at 3 rules / 300 tokens.
+        # Runs only when semantic layer is available and has synthesis rules.
+        _synthesis_text = self._build_synthesis_block(
+            query=resolved_query,
+            max_rules=3,
+            max_tokens=300,
+        )
+        if _synthesis_text:
+            sections.append(("synthesis", "Procedural Rules", _synthesis_text))
 
         sections.append(("user", "User", user_message))
 
@@ -2306,6 +2335,175 @@ class ProjectMemory:
             logger.info("HEALTH CHECK: project=%s all layers ok", self.project_id)
 
         return report
+
+    def _build_synthesis_block(
+        self,
+        query: str,
+        max_rules: int = 3,
+        max_tokens: int = 300,
+    ) -> str:
+        """Return a formatted block of synthesis rules matching query, or ''.
+
+        Capped at max_rules rules and max_tokens total to prevent rules from
+        crowding out episodic/semantic content in token-constrained prompts.
+        """
+        if self.semantic is None:
+            return ""
+        if not query or not query.strip():
+            return ""
+        try:
+            hits = self.semantic.search_synthesis_rules(
+                query=query,
+                project_id=self.project_id,
+                limit=max_rules,
+                min_confidence=0.6,
+            )
+        except Exception as exc:
+            logger.debug("_build_synthesis_block: search failed: %s", exc)
+            return ""
+
+        if not hits:
+            return ""
+
+        lines = []
+        tokens_used = 0
+        for hit in hits:
+            rule_text = hit.get("rule_text", "").strip()
+            if not rule_text:
+                continue
+            rule_tokens = max(1, self._token_counter(rule_text))
+            if tokens_used + rule_tokens > max_tokens:
+                break
+            lines.append(f"- {rule_text}")
+            tokens_used += rule_tokens
+
+        return "\n".join(lines)
+
+    def synthesize_now(
+        self,
+        window_size: int = 50,
+        days_back: int = 30,
+        min_support: int = 3,
+        min_confidence: float = 0.60,
+    ) -> Dict[str, Any]:
+        """Run a synthesis pass over recent episodes and write rules to semantic memory.
+
+        Extracts generalizable rules from the most recent `window_size` episodes,
+        stores them in the `synthesized_rules` table (FTS5-indexed), and records
+        typed DERIVED_FROM relations in `synthesized_relations`.
+
+        Requires:
+        - `self.episodic` to be available (ChromaDB episodic layer)
+        - `self.semantic` to be available (SQLite semantic layer)
+        - 'synthesis' or 'tier2_cognitive' engine configured in llm_engines.yaml
+
+        Args:
+            window_size:    Max episodes to include in the synthesis window.
+            days_back:      How far back to fetch episodes (default 30 days).
+            min_support:    Min distinct episodes a rule must cite to be kept.
+            min_confidence: Rules below this threshold are dropped.
+
+        Returns:
+            Dict with keys: rules_written, rules_skipped, relations_written,
+            window_size, extraction_seconds, skipped_reason (if no-op).
+        """
+        from .memory.synthesis import SynthesisExtractor
+
+        result: Dict[str, Any] = {
+            "rules_written": 0,
+            "rules_skipped": 0,
+            "relations_written": 0,
+            "window_size": 0,
+            "extraction_seconds": 0.0,
+            "skipped_reason": None,
+        }
+
+        if self.episodic is None:
+            result["skipped_reason"] = "episodic_layer_unavailable"
+            logger.warning("synthesize_now: episodic layer not available")
+            return result
+
+        if self.semantic is None:
+            result["skipped_reason"] = "semantic_layer_unavailable"
+            logger.warning("synthesize_now: semantic layer not available")
+            return result
+
+        # Load engine config — prefer 'synthesis' key, fall back to tier2_cognitive
+        engine_config = self._load_synthesis_engine_config()
+        if engine_config is None:
+            result["skipped_reason"] = "no_engine_config"
+            logger.warning(
+                "synthesize_now: no 'synthesis' or 'tier2_cognitive' engine "
+                "configured in llm_engines.yaml"
+            )
+            return result
+
+        extractor = SynthesisExtractor(
+            engine_config=engine_config,
+            min_support=min_support,
+            min_confidence=min_confidence,
+        )
+        if not extractor.enabled:
+            result["skipped_reason"] = "extractor_disabled"
+            return result
+
+        # Fetch episode window
+        episodes = self.episodic.get_recent_episodes(
+            n=window_size,
+            days_back=days_back,
+            project_id=self.project_id,
+        )
+        episode_dicts = [ep.to_dict() for ep in episodes]
+        result["window_size"] = len(episode_dicts)
+
+        # Run synthesis
+        synth = extractor.extract(episode_dicts, project_id=self.project_id)
+        result["extraction_seconds"] = synth.extraction_seconds
+
+        if synth.skipped_reason:
+            result["skipped_reason"] = synth.skipped_reason
+            return result
+
+        # Write rules
+        for rule in synth.rules:
+            payload = rule.to_payload(project_id=self.project_id)
+            written = self.semantic.store_synthesis_rule(
+                payload, project_id=self.project_id
+            )
+            if written:
+                result["rules_written"] += 1
+            else:
+                result["rules_skipped"] += 1  # idempotent upsert
+
+        # Write relations
+        for rel in synth.relations:
+            self.semantic.store_synthesis_relation(
+                rel.to_payload(), project_id=self.project_id
+            )
+            result["relations_written"] += 1
+
+        logger.info(
+            "synthesize_now: project=%s rules_written=%d skipped=%d "
+            "relations=%d window=%d elapsed=%.1fs",
+            self.project_id,
+            result["rules_written"],
+            result["rules_skipped"],
+            result["relations_written"],
+            result["window_size"],
+            result["extraction_seconds"],
+        )
+        return result
+
+    @staticmethod
+    def _load_synthesis_engine_config() -> Optional[Dict[str, Any]]:
+        """Load 'synthesis' engine config, falling back to 'tier2_cognitive'."""
+        try:
+            from .engine.config_loader import load_config
+            engines = (load_config().get("engines") or {})
+            return engines.get("synthesis") or engines.get("tier2_cognitive")
+        except Exception as exc:
+            logger.debug("_load_synthesis_engine_config: %s", exc)
+            return None
 
     def build_prompt_trace(
             self,

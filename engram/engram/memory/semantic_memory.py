@@ -104,6 +104,56 @@ CREATE INDEX IF NOT EXISTS prefs_category      ON preferences(category);
 CREATE INDEX IF NOT EXISTS prefs_timestamp     ON preferences(timestamp DESC);
 CREATE INDEX IF NOT EXISTS events_timestamp    ON events(timestamp DESC);
 CREATE INDEX IF NOT EXISTS events_importance   ON events(importance DESC);
+ 
+CREATE TABLE IF NOT EXISTS synthesized_rules (
+    id                    TEXT PRIMARY KEY,
+    rule_text             TEXT NOT NULL,
+    support_episode_ids   TEXT NOT NULL DEFAULT '[]',
+    support_count         INTEGER NOT NULL DEFAULT 0,
+    confidence            REAL NOT NULL DEFAULT 0.7,
+    source                TEXT NOT NULL DEFAULT 'synthesis',
+    timestamp             REAL NOT NULL,
+    last_validated        REAL,
+    project_id            TEXT NOT NULL DEFAULT ''
+);
+ 
+CREATE VIRTUAL TABLE IF NOT EXISTS synth_rules_fts USING fts5(
+    rule_text,
+    content='synthesized_rules',
+    content_rowid='rowid',
+    tokenize='unicode61 remove_diacritics 1'
+);
+ 
+CREATE TRIGGER IF NOT EXISTS synth_rules_ai AFTER INSERT ON synthesized_rules BEGIN
+    INSERT INTO synth_rules_fts(rowid, rule_text) VALUES (new.rowid, new.rule_text);
+END;
+ 
+CREATE TRIGGER IF NOT EXISTS synth_rules_ad AFTER DELETE ON synthesized_rules BEGIN
+    INSERT INTO synth_rules_fts(synth_rules_fts, rowid, rule_text) VALUES ('delete', old.rowid, old.rule_text);
+END;
+ 
+CREATE TRIGGER IF NOT EXISTS synth_rules_au AFTER UPDATE ON synthesized_rules BEGIN
+    INSERT INTO synth_rules_fts(synth_rules_fts, rowid, rule_text) VALUES ('delete', old.rowid, old.rule_text);
+    INSERT INTO synth_rules_fts(rowid, rule_text) VALUES (new.rowid, new.rule_text);
+END;
+ 
+CREATE TABLE IF NOT EXISTS synthesized_relations (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    relation_type       TEXT NOT NULL,
+    subject_id          TEXT NOT NULL,
+    object_id           TEXT NOT NULL,
+    weight              REAL NOT NULL DEFAULT 1.0,
+    source_synthesis_id TEXT NOT NULL DEFAULT '',
+    created_at          REAL NOT NULL,
+    project_id          TEXT NOT NULL DEFAULT ''
+);
+ 
+CREATE INDEX IF NOT EXISTS synth_rules_timestamp  ON synthesized_rules(timestamp DESC);
+CREATE INDEX IF NOT EXISTS synth_rules_project    ON synthesized_rules(project_id);
+CREATE INDEX IF NOT EXISTS synth_rules_confidence ON synthesized_rules(confidence DESC);
+CREATE INDEX IF NOT EXISTS synth_rel_subject      ON synthesized_relations(subject_id, project_id);
+CREATE INDEX IF NOT EXISTS synth_rel_object       ON synthesized_relations(object_id, project_id);
+CREATE INDEX IF NOT EXISTS synth_rel_type         ON synthesized_relations(relation_type);
 """
 
 
@@ -738,3 +788,173 @@ class SemanticMemory:
 
     def __exit__(self, *exc):
         self.close()
+
+    # --- Synthesis storage ---------------------------------------------------
+
+    def store_synthesis_rule(
+            self,
+            rule_payload,
+            project_id="",
+    ):
+        """Insert or update a synthesized rule. Returns True if new insert."""
+        import json as _json
+        import time as _time
+        now = _time.time()
+        rule_id = rule_payload["id"]
+        support_ids_json = _json.dumps(rule_payload.get("support_episode_ids", []))
+
+        existing = self._reader().execute(
+            "SELECT support_count FROM synthesized_rules WHERE id = ?",
+            (rule_id,),
+        ).fetchone()
+
+        if existing is None:
+            self._write_conn.execute(
+                """
+                INSERT INTO synthesized_rules
+                    (id, rule_text, support_episode_ids, support_count,
+                     confidence, source, timestamp, last_validated, project_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    rule_id,
+                    rule_payload["rule_text"],
+                    support_ids_json,
+                    int(rule_payload.get("support_count", 0)),
+                    float(rule_payload.get("confidence", 0.7)),
+                    rule_payload.get("source", "synthesis"),
+                    float(rule_payload.get("timestamp", now)),
+                    now,
+                    project_id,
+                ),
+            )
+            self._write_conn.commit()
+            return True
+        else:
+            self._write_conn.execute(
+                """
+                UPDATE synthesized_rules
+                SET support_count       = MAX(support_count, ?),
+                    support_episode_ids = ?,
+                    last_validated      = ?
+                WHERE id = ?
+                """,
+                (int(rule_payload.get("support_count", 0)), support_ids_json, now, rule_id),
+            )
+            self._write_conn.commit()
+            return False
+
+    def store_synthesis_relation(self, relation_payload, project_id=""):
+        """Append a synthesis relation edge."""
+        import time as _time
+        self._write_conn.execute(
+            """
+            INSERT INTO synthesized_relations
+                (relation_type, subject_id, object_id, weight,
+                 source_synthesis_id, created_at, project_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                relation_payload["relation_type"],
+                relation_payload["subject_id"],
+                relation_payload["object_id"],
+                float(relation_payload.get("weight", 1.0)),
+                relation_payload.get("source_synthesis_id", ""),
+                _time.time(),
+                project_id,
+            ),
+        )
+        self._write_conn.commit()
+
+    def search_synthesis_rules(self, query, project_id="", limit=10, min_confidence=0.0):
+        """FTS5 search over synthesized rules.
+
+        Uses OR + prefix matching (e.g. "weaken*") so partial and stemmed
+        terms match. Any token match returns a result; BM25 scores rank them.
+        """
+        import json as _json
+        import re as _re
+        q = (query or "").strip()
+        if not q:
+            return []
+        # Strip FTS5 operators, split into tokens, add prefix wildcard to each,
+        # join with OR so any token match returns a result.
+        tokens = [t for t in _re.sub(r'[^\w\s]', " ", q).split() if len(t) >= 3]
+        if not tokens:
+            return []
+        q_safe = " OR ".join(t + "*" for t in tokens)
+        rows = self._reader().execute(
+            """
+            SELECT r.id, r.rule_text, r.support_episode_ids, r.support_count,
+                   r.confidence, r.timestamp, r.last_validated,
+                   bm25(synth_rules_fts) AS match_score
+            FROM synth_rules_fts
+            JOIN synthesized_rules r ON r.rowid = synth_rules_fts.rowid
+            WHERE synth_rules_fts MATCH ?
+              AND (? = '' OR r.project_id = ?)
+              AND r.confidence >= ?
+            ORDER BY match_score
+            LIMIT ?
+            """,
+            (q_safe, project_id, project_id, float(min_confidence), int(limit)),
+        ).fetchall()
+        out = []
+        for row in rows:
+            try:
+                support_ids = _json.loads(row[2]) if row[2] else []
+            except Exception:
+                support_ids = []
+            out.append({
+                "id": row[0], "rule_text": row[1],
+                "support_episode_ids": support_ids,
+                "support_count": int(row[3] or 0),
+                "confidence": float(row[4] or 0.0),
+                "timestamp": float(row[5] or 0.0),
+                "last_validated": float(row[6]) if row[6] else None,
+                "match_score": float(row[7] or 0.0),
+                "type": "rule",
+            })
+        return out
+
+    def get_relations_for(self, subject_id="", object_id="", relation_type="",
+                          project_id="", limit=50):
+        """Lookup synthesis relations by subject, object, or type."""
+        clauses, params = [], []
+        if subject_id:
+            clauses.append("subject_id = ?");
+            params.append(subject_id)
+        if object_id:
+            clauses.append("object_id = ?");
+            params.append(object_id)
+        if relation_type:
+            clauses.append("relation_type = ?");
+            params.append(relation_type)
+        if project_id:
+            clauses.append("project_id = ?");
+            params.append(project_id)
+        if not clauses:
+            return []
+        sql = (
+                "SELECT id, relation_type, subject_id, object_id, weight, "
+                "source_synthesis_id, created_at FROM synthesized_relations WHERE "
+                + " AND ".join(clauses) + " ORDER BY created_at DESC LIMIT ?"
+        )
+        params.append(int(limit))
+        rows = self._reader().execute(sql, params).fetchall()
+        return [
+            {"id": r[0], "relation_type": r[1], "subject_id": r[2],
+             "object_id": r[3], "weight": float(r[4] or 0.0),
+             "source_synthesis_id": r[5], "created_at": float(r[6] or 0.0)}
+            for r in rows
+        ]
+
+    def count_synthesis_rules(self, project_id=""):
+        """Count stored synthesis rules (telemetry)."""
+        if project_id:
+            row = self._reader().execute(
+                "SELECT COUNT(*) FROM synthesized_rules WHERE project_id = ?",
+                (project_id,),
+            ).fetchone()
+        else:
+            row = self._reader().execute("SELECT COUNT(*) FROM synthesized_rules").fetchone()
+        return int(row[0]) if row else 0
