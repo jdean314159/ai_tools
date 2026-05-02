@@ -14,7 +14,6 @@
 
 [tool.pytest.ini_options]
 testpaths = ["integration_tests"]
-asyncio_mode = "auto"
 pythonpath = [
     "llm_harness_core/src",
     "llm_engines",
