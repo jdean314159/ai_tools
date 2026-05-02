@@ -581,6 +581,33 @@ def _build_layers(
     }
 
 
+@dataclass
+class SynthesisHookConfig:
+    """Configuration for the session-end synthesis approval hook.
+
+    When enabled, ProjectMemory.end_session() fires an approval prompt
+    when enough episodes have accumulated since the last synthesis run.
+    The caller provides an approval_callback that returns True (run now)
+    or False (defer). Default callback uses stdin/stdout.
+
+    Args:
+        enabled: Off by default — opt-in per project.
+        episode_threshold: Min new episodes per session to trigger prompt.
+        approval_callback: Callable(prompt_str) -> bool. None = stdout input().
+        window_size: Episode window passed to synthesize_now().
+        days_back: Lookback window for synthesis episode fetch.
+        min_support: Min supporting episodes per rule.
+        min_confidence: Min confidence threshold for rule emission.
+    """
+    enabled: bool = False
+    episode_threshold: int = 20
+    approval_callback: Optional[Any] = None  # Callable[[str], bool] | None
+    window_size: int = 50
+    days_back: int = 30
+    min_support: int = 3
+    min_confidence: float = 0.60
+
+
 class ProjectMemory:
 
     """Facade that coordinates the five Engram memory layers for one project.
@@ -803,6 +830,11 @@ class ProjectMemory:
         except RuntimeError as exc:
             logger.error("ProjectMemory init failed health check: %s", exc)
             raise
+
+        # --- Synthesis hook state ---
+        self._synthesis_hook: Optional[SynthesisHookConfig] = None
+        self._session_episode_count: int = 0   # episodes stored this session
+        self._synthesis_background_thread: Optional[threading.Thread] = None
     def _store_experiment_episode_summary(
         self,
         run_id: str,
@@ -1401,6 +1433,9 @@ class ProjectMemory:
         self.forgetting.record_new_episode()
         if self.forgetting.should_auto_run():
             self._run_maintenance_background()
+
+        # Track episode count for synthesis hook
+        self._session_episode_count += 1
 
         self.telemetry.emit(
             "perf_span",
@@ -2189,8 +2224,131 @@ class ProjectMemory:
             self.episodic.clear_collection()
         # Semantic: no bulk clear method, would need to drop/recreate
 
+    def configure_synthesis_hook(self, config: "SynthesisHookConfig") -> None:
+        """Enable or update the session-end synthesis approval hook.
+
+        Call once after init to opt in:
+
+            pm.configure_synthesis_hook(SynthesisHookConfig(
+                enabled=True,
+                episode_threshold=20,
+            ))
+
+        The hook fires when end_session() is called and the session produced
+        enough new episodes. The approval_callback receives a prompt string
+        and returns True (run now) or False (defer).
+        """
+        self._synthesis_hook = config
+
+    def end_session(self) -> Dict[str, Any]:
+        """Signal explicit session end and fire the synthesis hook if configured.
+
+        Should be called by the application when a session naturally ends
+        (e.g. user closes the chat, voice session ends, script exits cleanly).
+        Resets the per-session episode counter regardless of hook state.
+
+        Returns a dict describing what happened:
+            {
+                "episodes_this_session": int,
+                "synthesis_triggered": bool,
+                "synthesis_approved": bool,
+                "synthesis_deferred": bool,
+                "synthesis_result": dict | None,
+            }
+        """
+        outcome: Dict[str, Any] = {
+            "episodes_this_session": self._session_episode_count,
+            "synthesis_triggered": False,
+            "synthesis_approved": False,
+            "synthesis_deferred": False,
+            "synthesis_result": None,
+        }
+
+        cfg = self._synthesis_hook
+        if cfg is None or not cfg.enabled:
+            self._session_episode_count = 0
+            return outcome
+
+        if self._session_episode_count < cfg.episode_threshold:
+            logger.debug(
+                "end_session: %d episodes < threshold %d — skip synthesis prompt",
+                self._session_episode_count, cfg.episode_threshold,
+            )
+            self._session_episode_count = 0
+            return outcome
+
+        # Threshold reached — ask for approval
+        outcome["synthesis_triggered"] = True
+        prompt_text = (
+            f"\n[Engram] This session produced {self._session_episode_count} episodes "
+            f"(threshold: {cfg.episode_threshold}).\n"
+            f"Run synthesis now to extract procedural rules? [y/N] "
+        )
+
+        try:
+            if cfg.approval_callback is not None:
+                approved = bool(cfg.approval_callback(prompt_text))
+            else:
+                # Default: stdout/stdin prompt
+                response = input(prompt_text).strip().lower()
+                approved = response in ("y", "yes")
+        except Exception as exc:
+            logger.warning("end_session: approval callback failed: %s — deferring", exc)
+            approved = False
+
+        self._session_episode_count = 0  # reset regardless of decision
+
+        if not approved:
+            outcome["synthesis_deferred"] = True
+            logger.info(
+                "end_session: synthesis deferred by user (project=%s)",
+                self.project_id,
+            )
+            return outcome
+
+        # Approved — run in background thread so session teardown isn't blocked
+        outcome["synthesis_approved"] = True
+
+        def _run():
+            try:
+                result = self.synthesize_now(
+                    window_size=cfg.window_size,
+                    days_back=cfg.days_back,
+                    min_support=cfg.min_support,
+                    min_confidence=cfg.min_confidence,
+                )
+                logger.info(
+                    "end_session synthesis complete: rules_written=%d "
+                    "relations_written=%d elapsed=%.1fs (project=%s)",
+                    result.get("rules_written", 0),
+                    result.get("relations_written", 0),
+                    result.get("extraction_seconds", 0.0),
+                    self.project_id,
+                )
+                # Store result for later inspection if thread completes
+                # before the caller checks outcome (best-effort)
+                outcome["synthesis_result"] = result
+            except Exception as exc:
+                logger.warning("end_session: background synthesis failed: %s", exc)
+
+        t = threading.Thread(target=_run, daemon=True, name="engram-synthesis")
+        self._synthesis_background_thread = t
+        t.start()
+        logger.info(
+            "end_session: synthesis started in background (project=%s)",
+            self.project_id,
+        )
+        return outcome
+
     def close(self):
         """Release all resources."""
+        # Wait for background synthesis if running (up to 90s)
+        t = getattr(self, "_synthesis_background_thread", None)
+        if t is not None and t.is_alive():
+            logger.info("close: waiting for background synthesis to finish...")
+            t.join(timeout=90.0)
+            if t.is_alive():
+                logger.warning("close: synthesis thread still running after 90s — continuing teardown")
         if hasattr(self, "_daemon"):
             self._daemon.stop(timeout=5.0)
         self.working.close()
