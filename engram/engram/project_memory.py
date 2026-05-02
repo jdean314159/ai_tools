@@ -2505,6 +2505,197 @@ class ProjectMemory:
             logger.debug("_load_synthesis_engine_config: %s", exc)
             return None
 
+    def audit_memory(
+        self,
+        checks: Optional[List[str]] = None,
+        stale_days: int = 180,
+        confidence_threshold: float = 0.65,
+        contradiction_overlap: float = 0.7,
+        duplicate_overlap: float = 0.85,
+    ):
+        """Run a read-only audit pass over memory layers and return a report.
+
+        Six checks: orphan_synthesis, contradicting_facts, stale_facts,
+        low_confidence_rules, dangling_relations, near_duplicate_rules.
+
+        Args:
+            checks: List of check names to run; None runs all six.
+            stale_days: Facts older than this are flagged as stale.
+            confidence_threshold: Rules below this confidence are flagged.
+            contradiction_overlap: Jaccard threshold for contradiction detection.
+            duplicate_overlap: Jaccard threshold for near-duplicate detection.
+
+        Returns:
+            AuditReport with findings, summary, and to_markdown() method.
+        """
+        from .memory.audit import run_audit
+        return run_audit(
+            semantic=self.semantic,
+            episodic=self.episodic,
+            project_id=self.project_id,
+            checks=checks,
+            stale_days=stale_days,
+            confidence_threshold=confidence_threshold,
+            contradiction_overlap=contradiction_overlap,
+            duplicate_overlap=duplicate_overlap,
+        )
+
+    def audit_remediate(
+        self,
+        report,
+        actions: Optional[List[tuple]] = None,
+        dry_run: bool = True,
+    ) -> Dict[str, Any]:
+        """Apply approved remediation actions from an audit report.
+
+        Read-only (dry_run=True) by default — set dry_run=False to mutate.
+
+        Args:
+            report: AuditReport from audit_memory().
+            actions: List of (record_id, action) tuples. If None, applies the
+                     suggested_action for every finding in the report.
+                     Valid actions: 'tombstone', 'decay_confidence',
+                                    'mark_validated', 'delete_relation'
+            dry_run: If True (default), logs planned actions without executing.
+
+        Returns:
+            Dict with keys: applied, skipped, errors, dry_run.
+        """
+        from .memory.audit import SEVERITY_ERROR, SEVERITY_WARN
+
+        result: Dict[str, Any] = {
+            "applied": [], "skipped": [], "errors": [], "dry_run": dry_run
+        }
+
+        # Build action list from report if not provided
+        if actions is None:
+            actions = [
+                (f.record_id, f.suggested_action.split()[0].lower())
+                for f in report.findings
+                if f.suggested_action
+            ]
+
+        for record_id, action in actions:
+            try:
+                if dry_run:
+                    result["applied"].append(
+                        {"record_id": record_id, "action": action,
+                         "status": "dry_run"}
+                    )
+                    continue
+
+                if action == "tombstone":
+                    self._remediate_tombstone(record_id, result)
+                elif action == "decay_confidence":
+                    self._remediate_decay_confidence(record_id, result)
+                elif action == "mark_validated":
+                    self._remediate_mark_validated(record_id, result)
+                elif action == "delete_relation":
+                    self._remediate_delete_relation(record_id, result)
+                else:
+                    result["skipped"].append(
+                        {"record_id": record_id, "action": action,
+                         "reason": f"unknown_action: {action}"}
+                    )
+            except Exception as exc:
+                result["errors"].append(
+                    {"record_id": record_id, "action": action,
+                     "error": str(exc)}
+                )
+
+        logger.info(
+            "audit_remediate: project=%s applied=%d skipped=%d errors=%d dry_run=%s",
+            self.project_id, len(result["applied"]),
+            len(result["skipped"]), len(result["errors"]), dry_run,
+        )
+        return result
+
+    def _remediate_tombstone(self, record_id: str, result: Dict) -> None:
+        """Tombstone an episode or delete a synthesis rule."""
+        # Try synthesis rule first
+        if self.semantic is not None:
+            row = self.semantic._reader().execute(
+                "SELECT id FROM synthesized_rules WHERE id = ?", (record_id,)
+            ).fetchone()
+            if row:
+                self.semantic._write_conn.execute(
+                    "DELETE FROM synthesized_rules WHERE id = ?", (record_id,)
+                )
+                self.semantic._write_conn.commit()
+                result["applied"].append(
+                    {"record_id": record_id, "action": "tombstone",
+                     "target": "synthesis_rule"}
+                )
+                return
+
+        # Try episodic
+        if self.episodic is not None:
+            n = self.episodic.tombstone_episodes([record_id])
+            if n > 0:
+                result["applied"].append(
+                    {"record_id": record_id, "action": "tombstone",
+                     "target": "episode"}
+                )
+                return
+
+        result["skipped"].append(
+            {"record_id": record_id, "action": "tombstone",
+             "reason": "record_not_found"}
+        )
+
+    def _remediate_decay_confidence(self, record_id: str, result: Dict,
+                                     decay: float = 0.1) -> None:
+        """Reduce confidence of a synthesis rule by decay amount."""
+        if self.semantic is None:
+            result["skipped"].append(
+                {"record_id": record_id, "action": "decay_confidence",
+                 "reason": "semantic_unavailable"}
+            )
+            return
+        self.semantic._write_conn.execute(
+            "UPDATE synthesized_rules SET confidence = MAX(0.0, confidence - ?) "
+            "WHERE id = ?", (decay, record_id)
+        )
+        self.semantic._write_conn.commit()
+        result["applied"].append(
+            {"record_id": record_id, "action": "decay_confidence",
+             "decay": decay}
+        )
+
+    def _remediate_mark_validated(self, record_id: str, result: Dict) -> None:
+        """Reset last_validated timestamp on a synthesis rule."""
+        if self.semantic is None:
+            result["skipped"].append(
+                {"record_id": record_id, "action": "mark_validated",
+                 "reason": "semantic_unavailable"}
+            )
+            return
+        import time as _time
+        self.semantic._write_conn.execute(
+            "UPDATE synthesized_rules SET last_validated = ? WHERE id = ?",
+            (_time.time(), record_id)
+        )
+        self.semantic._write_conn.commit()
+        result["applied"].append(
+            {"record_id": record_id, "action": "mark_validated"}
+        )
+
+    def _remediate_delete_relation(self, record_id: str, result: Dict) -> None:
+        """Delete a dangling synthesis relation by row id."""
+        if self.semantic is None:
+            result["skipped"].append(
+                {"record_id": record_id, "action": "delete_relation",
+                 "reason": "semantic_unavailable"}
+            )
+            return
+        self.semantic._write_conn.execute(
+            "DELETE FROM synthesized_relations WHERE id = ?", (record_id,)
+        )
+        self.semantic._write_conn.commit()
+        result["applied"].append(
+            {"record_id": record_id, "action": "delete_relation"}
+        )
+
     def build_prompt_trace(
             self,
             user_message: str,
