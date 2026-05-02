@@ -83,3 +83,48 @@ Operationally:
 ## Lightweight update handling
 
 `engram_lite` performs a small amount of **canonical update handling** for common user correction/update phrasings so retrieval is less likely to drag stale values back into the prompt.
+
+## Known Limitations (v0.2)
+
+### Decoy resistance via threshold filtering
+`engram_lite` achieves 80%+ decoy resistance through a cosine similarity
+threshold (default 0.4) applied to ChromaDB results. This filters results
+that are vectorially dissimilar to the query before they reach the prompt.
+
+The limitation: the threshold is a blunt instrument. It filters by geometric
+distance in embedding space, not semantic relevance. A genuinely relevant
+result that happens to be phrased differently from the query may be filtered
+out alongside actual decoys. Tuning the threshold is empirical — lower values
+admit more results (including decoys), higher values are more restrictive.
+
+The correct long-term fix is LLM-based extraction scoring, which evaluates
+relevance semantically rather than geometrically. This is deferred.
+
+### Contradiction bleed under stress (~18%)
+When contradictory facts are stored (one claim overriding another),
+`engram_lite` may surface both the original and the override in the same
+prompt under stress conditions — particularly when distractor volume is
+high. The contradiction rate under stress is approximately 18% with the
+current pattern-based extraction (`pattern_only=True`).
+
+The root cause is that `engram_lite` detects contradictions via regex
+pattern matching on known update phrases ("actually", "correction:", etc.).
+It does not understand semantic contradiction — two facts can conflict
+without either using correction language.
+
+The correct fix is LLM-based extraction to identify contradictions
+semantically. This requires `pattern_only=False` and a running LLM, which
+is outside engram_lite's lightweight design constraints.
+
+### No procedural memory
+`engram_lite` stores episodic and semantic memory but has no synthesis
+layer. It cannot extract generalizable rules from past sessions ("when X,
+do Y") or surface procedural patterns in prompts. This capability exists
+in full `engram` via `synthesize_now()` and the `## Procedural Rules`
+prompt block.
+
+### No memory audit
+`engram_lite` has no `audit_memory()` facility. Orphaned records,
+contradicting facts, and stale data accumulate silently. Full `engram`
+provides `pm.audit_memory()` with six diagnostic checks and a remediation
+API.
