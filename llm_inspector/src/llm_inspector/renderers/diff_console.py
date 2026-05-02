@@ -1,6 +1,10 @@
 from __future__ import annotations
-from llm_inspector.inspectors.diff import DiffReport
+
 from typing import List
+
+from llm_inspector.inspectors.diff import DiffReport
+from llm_inspector.renderers.origins import console_prefix, label
+
 
 def render_diff(report: DiffReport) -> str:
     lines: List[str] = []
@@ -8,7 +12,11 @@ def render_diff(report: DiffReport) -> str:
     lines.append("")
 
     # Flags (only if changed)
-    flag_lines = [f"- {k}: {va} -> {vb}" for k, (va, vb) in report.flags.items() if va != vb]
+    flag_lines = [
+        f"  - {k}: {va} -> {vb}"
+        for k, (va, vb) in report.flags.items()
+        if va != vb
+    ]
     if flag_lines:
         lines.append("Flags:")
         lines.extend(flag_lines)
@@ -16,7 +24,7 @@ def render_diff(report: DiffReport) -> str:
 
     # Tokens by origin (only if changed)
     token_lines = [
-        f"- {td.origin}: {td.used_a} -> {td.used_b}"
+        f"  {console_prefix(td.origin)} {label(td.origin)}: {td.used_a} -> {td.used_b}"
         for td in report.token_deltas
         if td.used_a != td.used_b
     ]
@@ -30,23 +38,28 @@ def render_diff(report: DiffReport) -> str:
     for sd in report.section_deltas:
         if sd.change == "unchanged":
             continue
+        prefix = console_prefix(sd.origin)
         if sd.change == "added":
-            lines.append(f"+ [{sd.origin}] {sd.title} (tokens={sd.tokens_b})")
+            lines.append(f"+ {prefix} {sd.title} (tokens={sd.tokens_b})")
         elif sd.change == "removed":
-            lines.append(f"- [{sd.origin}] {sd.title} (tokens={sd.tokens_a})")
+            lines.append(f"- {prefix} {sd.title} (tokens={sd.tokens_a})")
         else:
-            lines.append(f"~ [{sd.origin}] {sd.title} (tokens={sd.tokens_a} -> {sd.tokens_b})")
+            lines.append(
+                f"~ {prefix} {sd.title} "
+                f"(tokens={sd.tokens_a} -> {sd.tokens_b})"
+            )
             if sd.text_a and sd.text_b and sd.text_a != sd.text_b:
-                lines.append(f"  - a: {sd.text_a}")
-                lines.append(f"  - b: {sd.text_b}")
+                lines.append(f"  before: {sd.text_a[:120]}")
+                lines.append(f"  after:  {sd.text_b[:120]}")
     lines.append("")
 
     # Evidence
     if report.evidence_deltas:
         lines.append("Evidence:")
         for ed in report.evidence_deltas:
-            prefix = "+" if ed.change == "added" else "-"
-            lines.append(f"{prefix} [{ed.source}] {ed.snippet}")
+            symbol = "+" if ed.change == "added" else "-"
+            prefix = console_prefix(ed.source)
+            lines.append(f"{symbol} {prefix} {ed.snippet}")
         lines.append("")
 
     return "\n".join(lines)
