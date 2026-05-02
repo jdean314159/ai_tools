@@ -47,3 +47,11 @@ Thumbs.db
 
 .ipynb_checkpoints/
 *.tar.gz
+
+# Runtime artifacts and eval results
+engram/data/
+engram/tests/eval/eval_results_*/
+engram_lite/data/
+**/.writer.lock
+**/neural_memory.json
+**/*.tmp

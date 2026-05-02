@@ -218,25 +218,33 @@ class ProjectMemory:
         self.semantic = None
         self.forgetting_policy = None
         if enable_semantic_graph and self._storage_root is not None:
-            from .semantic.graph import SemanticGraph
             try:
-                self.semantic = SemanticGraph(
-                    persist_path=self._storage_root / "semantic_graph.json"
+                from .semantic.graph import SemanticGraph
+            except ImportError:
+                logger.warning(
+                    "networkx is not installed — semantic graph disabled. "
+                    "Install it with: pip install 'engram-lite[graph]'"
                 )
-            except Exception as e:
-                logger.error(
-                    f"Semantic graph failed to load (corrupted?): {e}. "
-                    f"Starting with empty graph."
-                )
-                graph_path = self._storage_root / "semantic_graph.json"
-                if graph_path.exists():
-                    # Rename corrupted file for inspection
-                    backup = graph_path.with_suffix(".json.corrupted")
-                    graph_path.rename(backup)
-                    logger.warning(f"Corrupted graph saved to {backup}")
-                self.semantic = SemanticGraph(
-                    persist_path=self._storage_root / "semantic_graph.json"
-                )
+                SemanticGraph = None  # type: ignore[assignment,misc]
+
+            if SemanticGraph is not None:
+                try:
+                    self.semantic = SemanticGraph(
+                        persist_path=self._storage_root / "semantic_graph.json"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Semantic graph failed to load (corrupted?): {e}. "
+                        f"Starting with empty graph."
+                    )
+                    graph_path = self._storage_root / "semantic_graph.json"
+                    if graph_path.exists():
+                        backup = graph_path.with_suffix(".json.corrupted")
+                        graph_path.rename(backup)
+                        logger.warning(f"Corrupted graph saved to {backup}")
+                    self.semantic = SemanticGraph(
+                        persist_path=self._storage_root / "semantic_graph.json"
+                    )
         if forgetting_config is not None and self.semantic is not None:
             from .semantic.forgetting import ForgettingPolicy
             self.forgetting_policy = ForgettingPolicy(forgetting_config)

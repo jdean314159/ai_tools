@@ -3129,11 +3129,14 @@ class ProjectMemory:
                     )
                 )
 
+        def _origin_has_content(origin: str) -> bool:
+            if origin == "synthesis":
+                return bool(self._build_synthesis_block(resolved_query))
+            return bool(_ctx_get(origin, []) or [])
+
         all_memory_origins = {
             origin for origin in ("working", "episodic", "semantic", "cold", "synthesis")
-            if origin == "synthesis"
-            and self._build_synthesis_block(resolved_query)
-            or (_ctx_get(origin, []) or [])
+            if _origin_has_content(origin)
         }
         truncated = bool(all_memory_origins - included_memory_origins)
 

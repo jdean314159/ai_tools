@@ -190,8 +190,20 @@ class SemanticGraph:
                 "saved_at": time.time(),
             },
         }
-        with self.persist_path.open("w") as f:
-            json.dump(data, f, indent=2)
+        # Write to a temp file then atomically rename to avoid corrupt JSON on
+        # crash or KeyboardInterrupt mid-write (os.replace is atomic on POSIX).
+        import os
+        tmp = self.persist_path.with_suffix(".tmp")
+        try:
+            with tmp.open("w") as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp, self.persist_path)
+        except Exception:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise
 
     def load(self):
         if not self.persist_path or not self.persist_path.exists():
