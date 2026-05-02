@@ -16,6 +16,7 @@ from llm_inspector_ui.state.session_store import SessionStore
 from llm_inspector_ui.panels.models_panel import render_models_panel
 from llm_inspector_ui.services.engine_registry_bootstrap import bootstrap_llm_engines_registry
 from llm_inspector_ui.panels.startup_panel import render_startup_panel
+from llm_inspector_ui.panels.synthesis_panel import render_synthesis_panel
 
 from llm_inspector_ui.utils.trace_access import (
     get_evidence,
@@ -626,7 +627,9 @@ def render_inspector_area():
     runs = store.list_runs(st.session_state.current_session_id)
     controls = st.session_state.current_controls
 
-    single_tab, compare_tab, models_tab, startup_tab = st.tabs(["Single run", "Compare", "Models", "Startup"])
+    single_tab, compare_tab, models_tab, synthesis_tab, startup_tab = st.tabs(
+        ["Single run", "Compare", "Models", "Synthesis", "Startup"]
+    )
     with single_tab:
         render_single_run_panel(runs)
     with compare_tab:
@@ -637,6 +640,11 @@ def render_inspector_area():
         )
     with models_tab:
         render_models_panel(st.session_state.engine_service)
+    with synthesis_tab:
+        render_synthesis_panel(
+            st.session_state.augmenter_service,
+            beginner_mode=bool(st.session_state.get("ui_beginner_mode", True)),
+        )
     with startup_tab:
         render_startup_panel(
             st.session_state.engine_service,
