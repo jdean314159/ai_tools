@@ -7,7 +7,7 @@
       "id": "M2-001",
       "title": "Make engram_lite the default workbench memory augmenter",
       "package": "llm_inspector_ui",
-      "status": "in_progress",
+      "status": "done",
       "verification": [
         "python -m pytest -q llm_inspector_ui/tests"
       ]
@@ -16,7 +16,7 @@
       "id": "M2-002",
       "title": "Repair teaching notebook manifest and references",
       "package": "course",
-      "status": "in_progress",
+      "status": "done",
       "verification": [
         "python scripts/check_teaching_artifacts.py"
       ]
@@ -25,7 +25,7 @@
       "id": "M2-003",
       "title": "Default-deny agent write policy when writable_paths is empty",
       "package": "agent_lib",
-      "status": "in_progress",
+      "status": "done",
       "verification": [
         "python -m pytest -q agent_lib/tests/test_programming_harness.py"
       ]
@@ -34,9 +34,19 @@
       "id": "M2-004",
       "title": "Remove generated artifacts from release snapshots",
       "package": "repo",
-      "status": "pending",
+      "status": "done",
       "verification": [
         "python scripts/check_publication_hygiene.py"
+      ]
+    },
+    {
+      "id": "M2-005",
+      "title": "Add repo-level augmenter spine smoke test",
+      "package": "integration_tests",
+      "status": "done",
+      "verification": [
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest -q integration_tests/test_augmenter_spine.py",
+        "AI_TOOLS_TEST_FULL_ENGRAM=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest -q integration_tests/test_augmenter_spine.py::test_full_engram_augmenter_normalizes_or_skips_cleanly"
       ]
     }
   ]

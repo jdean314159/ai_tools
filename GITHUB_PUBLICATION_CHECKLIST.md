@@ -25,6 +25,14 @@ python scripts/check_publication_hygiene.py
 pytest -q llm_harness_core/tests
 pytest -q llm_inspector_ui/tests
 pytest -q language_tutor/tests
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest -q integration_tests/test_augmenter_spine.py
+```
+
+When validating the advanced full-Engram workbench path, also run:
+
+```bash
+AI_TOOLS_TEST_FULL_ENGRAM=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
+python -m pytest -q integration_tests/test_augmenter_spine.py::test_full_engram_augmenter_normalizes_or_skips_cleanly
 ```
 
 Then run the broader monorepo validation path you intend to support publicly, such as editable installs, smoke tests, and wheel/build checks.

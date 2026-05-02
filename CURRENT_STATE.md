@@ -213,7 +213,7 @@ This is one of the most mature packages in the repo.
 ## `engram_lite`
 
 ### State
-Implemented as a real package and now partially integrated into the shared interop layer.
+Implemented as a real package, integrated into the shared interop layer, and now the default lightweight memory path for the workbench/teaching spine.
 
 ### What exists
 
@@ -224,9 +224,9 @@ Implemented as a real package and now partially integrated into the shared inter
 
 ### Known remaining work
 
-- make it the default lightweight memory augmenter in `llm_inspector_ui` where older/full Engram coupling still exists
-- clarify the intended boundary between `engram_lite` and full `engram`
+- clarify the intended boundary between `engram_lite` and full `engram` in user-facing docs and examples
 - expand the educational/inspection story so users can more clearly see what memory was used and why
+- keep the lightweight augmenter path covered by cross-package smoke tests as inspector contracts evolve
 
 ### Assessment
 This has moved beyond “placeholder extraction target” and should now be treated as a real package with a defined role.
@@ -329,9 +329,9 @@ Much improved; now genuinely closer to the intended workbench/laboratory role.
 ### Known remaining work
 
 - run and validate more true end-to-end scenarios from engine selection through augmentation, model call, inspection, and artifact persistence
-- make `engram_lite` the primary lightweight memory path where appropriate
 - improve the UX language so the UI teaches users what they are seeing rather than only dumping diagnostics
 - document the happy path for launching and using the workbench
+- keep baseline, `engram_lite`, full `engram`, and RAG augmenter behavior aligned through `integration_tests/test_augmenter_spine.py`
 
 ### Assessment
 This is increasingly the central user-facing “laboratory” for the suite.
@@ -477,8 +477,9 @@ The shared `integration_tests/memory_eval.py` harness now has two levels: a seed
 - the teaching spine is now explicit through `LEARNING_PATH.md`, notebooks, starter projects, the reference-app guide, the workbench guide, and the evaluation walkthrough
 - package READMEs are being aligned to that teaching spine so GitHub readers do not have to infer the intended order
 - public-release hygiene now has an explicit checklist and a publication-hygiene validation script
+- `integration_tests/test_augmenter_spine.py` now verifies the repo-level augmentation path across baseline, `engram_lite`, RAG, and optional full `engram`
 
 - llm_inspector_ui now includes beginner-mode explanations in Compare and Startup so the workbench can teach prompt/evidence/retrieval interpretation in plain language
 
 
-- Publication stabilization: `scripts/check_teaching_artifacts.py` now completes end-to-end in the repo environment, and repo-level pytest import resolution was hardened for mixed-package teaching/reference test runs.
+- Publication stabilization: `scripts/check_teaching_artifacts.py` now completes end-to-end in the repo environment, repo-level pytest import resolution was hardened for mixed-package teaching/reference test runs, and the optional full-Engram augmenter smoke test is gated behind `AI_TOOLS_TEST_FULL_ENGRAM=1`.

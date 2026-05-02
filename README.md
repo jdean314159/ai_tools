@@ -170,5 +170,20 @@ Use [GITHUB_PUBLICATION_CHECKLIST.md](./GITHUB_PUBLICATION_CHECKLIST.md) before 
 The repo also includes:
 - [scripts/check_teaching_artifacts.py](./scripts/check_teaching_artifacts.py) — validates the curriculum-facing assets
 - [scripts/check_publication_hygiene.py](./scripts/check_publication_hygiene.py) — validates tree hygiene and doc placement for public release
+- `integration_tests/test_augmenter_spine.py` — verifies the prompt-augmentation spine across baseline, `engram_lite`, RAG, and optional full `engram`
+
+For the default integration smoke test:
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
+python -m pytest -q integration_tests/test_augmenter_spine.py
+```
+
+The full-Engram live augmenter path is intentionally gated because it may initialize heavier persistence components. Run it explicitly when validating the advanced memory path:
+
+```bash
+AI_TOOLS_TEST_FULL_ENGRAM=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
+python -m pytest -q integration_tests/test_augmenter_spine.py::test_full_engram_augmenter_normalizes_or_skips_cleanly
+```
 
 
