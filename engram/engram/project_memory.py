@@ -2499,11 +2499,18 @@ class ProjectMemory:
         query: str,
         max_rules: int = 3,
         max_tokens: int = 300,
+        min_match_score: float = -5.0,
     ) -> str:
         """Return a formatted block of synthesis rules matching query, or ''.
 
         Capped at max_rules rules and max_tokens total to prevent rules from
         crowding out episodic/semantic content in token-constrained prompts.
+
+        Args:
+            min_match_score: BM25 score floor (FTS5 scores are negative;
+                more negative = weaker match). Default -5.0 filters out
+                rules that only matched one low-value stop word in an OR
+                query. Raise toward 0.0 for stricter matching.
         """
         if self.semantic is None:
             return ""
@@ -2513,7 +2520,7 @@ class ProjectMemory:
             hits = self.semantic.search_synthesis_rules(
                 query=query,
                 project_id=self.project_id,
-                limit=max_rules,
+                limit=max_rules * 3,  # fetch extra to allow score filtering
                 min_confidence=0.6,
             )
         except Exception as exc:
@@ -2523,9 +2530,14 @@ class ProjectMemory:
         if not hits:
             return ""
 
+        # Filter by BM25 match quality — drops weak OR matches
+        hits = [h for h in hits if h.get("match_score", -999) >= min_match_score]
+        if not hits:
+            return ""
+
         lines = []
         tokens_used = 0
-        for hit in hits:
+        for hit in hits[:max_rules]:
             rule_text = hit.get("rule_text", "").strip()
             if not rule_text:
                 continue

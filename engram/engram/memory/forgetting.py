@@ -70,11 +70,11 @@ class ForgettingConfig:
     weight_surprise: float = 0.10
 
     # Recency decay: half-life in days
-    recency_half_life_days: float = 30.0
+    recency_half_life_days: float = 60.0
 
     # Minimum age before an episode can be archived (days)
     # Prevents archiving fresh episodes that haven't had time to be accessed
-    min_age_days: float = 7.0
+    min_age_days: float = 30.0
 
     # Maximum episodes to archive per run (prevents huge batch operations)
     max_archive_per_run: int = 100
