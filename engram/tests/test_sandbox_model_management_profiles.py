@@ -4,8 +4,19 @@ import importlib
 import sys
 import types
 
+import pytest
+
+import pytest
+pytest.importorskip("engram_ui", reason="engram_ui not installed")
+
 from engram.engine import model_manager as mm
 from engram.engine.model_manager import HFModelInfo
+
+# Skip entire module if engram_ui is not installed
+pytest.importorskip(
+    "engram_ui",
+    reason="engram_ui not installed — skipping sandbox model management UI tests",
+)
 
 
 def _load_model_management_module():

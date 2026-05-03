@@ -46,6 +46,10 @@ episodic = [
 semantic = [
     "kuzu>=0.4.0",
 ]
+# TF-IDF extraction (entity extraction from text)
+extraction = [
+    "scikit-learn>=1.3.0",
+]
 # UI (Streamlit sandbox)
 ui = [
     "streamlit>=1.30.0",
@@ -57,7 +61,7 @@ finetune = []
 
 # Everything
 all = [
-    "engram[engines,episodic,semantic,neural,ui,finetune]",
+    "engram[engines,episodic,semantic,neural,ui,extraction,finetune]",
 ]
 # Development
 dev = [

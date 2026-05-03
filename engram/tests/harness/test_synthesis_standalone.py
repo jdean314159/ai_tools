@@ -52,7 +52,7 @@ MOCK_LLM_RESPONSE = """[
 ]"""
 
 
-class TestRunner:
+class _TestRunner:
     def __init__(self):
         self.passed = 0; self.failed = 0; self.errors = []
 
@@ -188,7 +188,7 @@ def test_storage_project_isolation():
 
 
 def main():
-    runner = TestRunner()
+    runner = __TestRunner()
     print("Synthesis layer standalone tests")
     print("=" * 60)
     print("\n[Extractor logic]")

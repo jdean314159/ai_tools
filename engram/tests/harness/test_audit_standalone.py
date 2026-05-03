@@ -42,7 +42,7 @@ class MockEpisodic:
 
 # --- Test runner -------------------------------------------------------------
 
-class TestRunner:
+class _TestRunner:
     def __init__(self):
         self.passed = 0; self.failed = 0; self.errors = []
 
@@ -308,7 +308,7 @@ def test_unknown_check_skipped():
 # --- Main --------------------------------------------------------------------
 
 def main():
-    runner = TestRunner()
+    runner = __TestRunner()
     print("Memory audit standalone tests")
     print("=" * 60)
 

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from engram_ui import diagnostics_bridge as bridge
+import pytest
+
+bridge = pytest.importorskip(
+    "engram_ui.diagnostics_bridge",
+    reason="engram_ui.diagnostics_bridge not installed — skipping sandbox UI tests",
+)
 
 
 def test_augment_payload_with_shared_hardware_profile() -> None:

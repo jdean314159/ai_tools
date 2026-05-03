@@ -27,7 +27,7 @@ from engram.memory.semantic_memory import SemanticMemory
 from engram.memory.synthesis import SynthesisRule
 
 
-class TestRunner:
+class _TestRunner:
     def __init__(self):
         self.passed = 0; self.failed = 0; self.errors = []
 
@@ -282,7 +282,7 @@ def test_adapter_section_passthrough():
 # --- Main --------------------------------------------------------------------
 
 def main():
-    runner = TestRunner()
+    runner = __TestRunner()
     print("Synthesis inspector passthrough tests")
     print("=" * 60)
     print("\n[engram trace]")

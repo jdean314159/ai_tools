@@ -62,9 +62,10 @@ def render_comparison(report: ComparisonReport) -> str:
                         else f"{flow.before_text!r} -> {flow.after_text!r}"
                     )
                     xforms = ",".join(flow.transformations) if flow.transformations else "-"
+                    prov = getattr(flow, "provenance", None) or {}
                     lines.append(
                         f"  {prefix} stage={flow.stage} score={score} "
-                        f"xforms={xforms} flow={delta}"
+                        f"xforms={xforms} flow={delta} provenance={prov}"
                     )
         lines.append("")
 

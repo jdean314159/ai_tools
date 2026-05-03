@@ -3,12 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import yaml
 
 from engram.engine.base import LLMEngine, LogprobResult
 from engram.engine.config_loader import create_engine, create_failover_engine
 from engram.engine.model_discovery import match_discovered_model, resolve_vllm_model, DiscoveryResolution
-from engram_ui import runtime_manager
+
+runtime_manager = pytest.importorskip(
+    "engram_ui.runtime_manager",
+    reason="engram_ui.runtime_manager not installed — skipping sandbox UI tests",
+)
 
 
 class DummyEngine(LLMEngine):
