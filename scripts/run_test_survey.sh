@@ -12,8 +12,7 @@
 
 set -uo pipefail
 
-# Ensure consistent test environment regardless of user shell config
-export PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+# Ensure consistent test environment
 export PYTHONDONTWRITEBYTECODE=1
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
