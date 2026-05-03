@@ -63,12 +63,13 @@ for pkg in "${PACKAGES[@]}"; do
   start=$(date +%s)
 
   # Run pytest from inside the package — keeps each test environment isolated
+  # -n auto parallelises across all CPU cores (requires pytest-xdist)
   # --tb=short keeps failure output compact
   # -ra prints a summary of skipped/errored at the end
-  # --no-cov disables coverage collection for speed
+  # --no-cov disables coverage instrumentation overhead
   (
     cd "${pkg_dir}" && \
-    python -m pytest tests -q --tb=short -ra --no-cov 2>&1
+    python -m pytest tests -n auto -q --tb=short -ra --no-cov 2>&1
   ) > "${log}"
   rc=$?
   end=$(date +%s)
