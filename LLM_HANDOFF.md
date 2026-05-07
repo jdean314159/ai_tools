@@ -574,3 +574,8 @@ Green validation at this checkpoint:
 Notes:
 - This commit preserves the current passing WIP state.
 - Future work should branch from this checkpoint or preserve it before making architectural changes.
+
+- Publication hygiene check passed after cleanup.
+- Clean committed archive exists: ../ai_tools_facade_stabilized_docs_current.tar.gz
+
+

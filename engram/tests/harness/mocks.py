@@ -97,9 +97,20 @@ class TempDir:
 
     def __enter__(self) -> Path:
         self._td = tempfile.TemporaryDirectory()
-        return Path(self._td.name)
+        self.path = Path(self._td.name)
+        return self.path
 
     def __exit__(self, *_):
+        # ProjectMemory owns background ingestion threads.  Stop any instances
+        # rooted in this temporary directory before removing the backing SQLite
+        # and ChromaDB files; otherwise daemon writes can race with cleanup and
+        # emit noisy "readonly database" warnings after tests pass.
+        try:
+            from engram.project_memory import ProjectMemory
+            ProjectMemory.close_live_instances_under(self.path)
+        except Exception:
+            pass
+
         # Force garbage collection before directory cleanup so that kuzu
         # connections (which hold file handles inside the temp dir) are
         # released before we try to delete the directory.

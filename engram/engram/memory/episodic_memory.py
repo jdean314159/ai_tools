@@ -56,9 +56,60 @@ class LocalEmbeddingFunction:
     sessions, frequently-retrieved episodes) skip the model entirely.
     """
 
-    # ChromaDB 0.5+ may look for this attribute to detect legacy embedding
-    # functions. We provide it to avoid noisy DeprecationWarnings.
-    is_legacy = False
+    # ChromaDB serializes embedding-function configuration when creating or
+    # loading collections.  Chroma calls some hooks on the instance and calls
+    # name() on the class during registration, so keep name/build/validate as
+    # static hooks and keep config JSON-serializable.
+    def is_legacy(self) -> bool:
+        return False
+
+    def supported_spaces(self) -> list[str]:
+        return ["cosine", "l2", "ip"]
+
+    def default_space(self) -> str:
+        """Default ChromaDB distance space for local text embeddings."""
+        return "cosine"
+
+    @staticmethod
+    def name() -> str:
+        """Stable ChromaDB embedding-function registry name."""
+        return "engram_local_sentence_transformer"
+
+    def get_config(self) -> dict:
+        """Return JSON-serializable ChromaDB embedding-function config."""
+        return {
+            "model_name": self.model_name,
+            "device": self.embedding_device,
+        }
+
+    @staticmethod
+    def validate_config(config: dict) -> None:
+        """Validate serialized ChromaDB embedding-function config."""
+        if not isinstance(config, dict):
+            raise ValueError("LocalEmbeddingFunction config must be a dict")
+        model_name = config.get("model_name")
+        if model_name is not None and not isinstance(model_name, str):
+            raise ValueError("LocalEmbeddingFunction model_name must be a string")
+        device = config.get("device")
+        if device is not None and not isinstance(device, str):
+            raise ValueError("LocalEmbeddingFunction device must be a string")
+
+    @staticmethod
+    def build_from_config(config: dict):
+        """Build a LocalEmbeddingFunction from ChromaDB serialized config."""
+        LocalEmbeddingFunction.validate_config(config)
+        return LocalEmbeddingFunction(
+            model_name=config.get(
+                "model_name",
+                "sentence-transformers/all-MiniLM-L6-v2",
+            ),
+            device=config.get("device", "auto"),
+        )
+
+    def validate_config_update(self, old_config: dict, new_config: dict) -> None:
+        """Validate ChromaDB embedding-function config updates."""
+        self.validate_config(old_config)
+        self.validate_config(new_config)
 
     def __init__(
         self,
@@ -67,6 +118,7 @@ class LocalEmbeddingFunction:
         embedding_cache=None,   # Optional[EmbeddingCache] — avoid circular import
     ):
         self.model_name = model_name
+        self.embedding_device = device
         self._cache = embedding_cache
 
         # Portability: pick the best available accelerator without requiring it.
@@ -112,11 +164,6 @@ class LocalEmbeddingFunction:
     def embed_query(self, input: List[str]) -> List[List[float]]:
         """Generate embeddings for query texts (for search operations)."""
         return self._encode(input)
-
-    def name(self) -> str:
-        """Return embedding function name for ChromaDB compatibility."""
-        return f"local_{self.model_name.replace('/', '_')}"
-
 
 class EpisodicMemory:
     """ChromaDB-backed episodic memory for cross-session retrieval."""

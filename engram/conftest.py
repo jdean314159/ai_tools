@@ -30,3 +30,21 @@ except Exception:
 ROOT = Path(__file__).parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+
+# Ensure ProjectMemory background daemons do not leak between tests.
+# Some tests use pytest tmp_path directly rather than harness.TempDir.
+try:
+    import pytest
+except Exception:  # pragma: no cover - pytest always imports conftest under pytest
+    pytest = None
+
+if pytest is not None:
+    @pytest.fixture(autouse=True)
+    def _close_project_memory_instances_after_test():
+        yield
+        try:
+            from engram.project_memory import ProjectMemory
+            ProjectMemory.close_all_live_instances()
+        except Exception:
+            pass

@@ -40,6 +40,7 @@ import os
 import re
 import threading
 import time
+import weakref
 import numpy as np
 import sqlite3
 
@@ -653,6 +654,8 @@ class ProjectMemory:
     - public facade methods (add_turn, store_episode, get_context, build_prompt, …)
     """
 
+    _live_instances = weakref.WeakSet()
+
     def __init__(
         self,
         project_id: str,
@@ -857,6 +860,8 @@ class ProjectMemory:
         self._synthesis_hook: Optional[SynthesisHookConfig] = None
         self._session_episode_count: int = 0   # episodes stored this session
         self._synthesis_background_thread: Optional[threading.Thread] = None
+        self._closed = False
+        type(self)._live_instances.add(self)
     def _store_experiment_episode_summary(
         self,
         run_id: str,
@@ -2352,8 +2357,47 @@ class ProjectMemory:
         )
         return outcome
 
+    @classmethod
+    def close_live_instances_under(cls, base_dir: Path) -> None:
+        """Close live ProjectMemory instances whose project dirs are under base_dir.
+
+        This is primarily useful for test cleanup: ProjectMemory starts a
+        background ingestion daemon, so tests that use temporary directories
+        must stop the daemon before deleting the directory tree.
+        """
+        base = Path(base_dir).expanduser().resolve(strict=False)
+        for instance in list(cls._live_instances):
+            project_dir = getattr(instance, "_project_dir", None)
+            if project_dir is None:
+                continue
+            try:
+                resolved_project_dir = Path(project_dir).expanduser().resolve(strict=False)
+                if not resolved_project_dir.is_relative_to(base):
+                    continue
+                instance.close()
+            except Exception as exc:
+                logger.debug("close_live_instances_under failed: %s", exc)
+
+    @classmethod
+    def close_all_live_instances(cls) -> None:
+        """Best-effort cleanup for any live ProjectMemory instances."""
+        for instance in list(cls._live_instances):
+            try:
+                instance.close()
+            except Exception as exc:
+                logger.debug("close_all_live_instances failed: %s", exc)
+
     def close(self):
         """Release all resources."""
+        if getattr(self, "_closed", False):
+            return
+        self._closed = True
+
+        try:
+            type(self)._live_instances.discard(self)
+        except Exception:
+            pass
+
         # Wait for background synthesis if running (up to 90s)
         t = getattr(self, "_synthesis_background_thread", None)
         if t is not None and t.is_alive():
@@ -2363,18 +2407,22 @@ class ProjectMemory:
                 logger.warning("close: synthesis thread still running after 90s — continuing teardown")
         if hasattr(self, "_daemon"):
             self._daemon.stop(timeout=5.0)
-        self.working.close()
-        if self.semantic:
+        if hasattr(self, "working"):
+            self.working.close()
+        if getattr(self, "semantic", None):
             self.semantic.close()
-        self.cold.close()
+        if hasattr(self, "cold"):
+            self.cold.close()
         if hasattr(self, "procedural") and self.procedural is not None:
             self.procedural.close()
-        if self.neural_coord is not None:
+        if getattr(self, "neural_coord", None) is not None:
             self.neural_coord.close()  # Saves NeuralMemory state
-        elif self.neural:
+        elif getattr(self, "neural", None):
             self.neural.close()
-        self.forgetting.close()
-        self.embedding_cache.close()
+        if hasattr(self, "forgetting"):
+            self.forgetting.close()
+        if hasattr(self, "embedding_cache"):
+            self.embedding_cache.close()
 
     def __del__(self):
         """Best-effort resource cleanup on garbage collection."""
