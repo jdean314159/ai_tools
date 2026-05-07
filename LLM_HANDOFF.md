@@ -556,3 +556,21 @@ Current stabilization summary:
 Next step:
 - Review working-tree status and decide whether to create a named local checkpoint before further architecture work.
 
+## Checkpoint commit
+
+Latest known-good checkpoint:
+- Commit: <paste git log -1 --oneline here>
+- Description: Facade stabilization and passing test sweep.
+
+Green validation at this checkpoint:
+- `engram_lite/tests`
+- `integration_tests/test_augmenter_spine.py`
+- `scripts/check_teaching_artifacts.py`
+- `engram/tests`
+- `integration_tests`
+- `language_tutor/tests`
+- `llm_inspector/tests`
+
+Notes:
+- This commit preserves the current passing WIP state.
+- Future work should branch from this checkpoint or preserve it before making architectural changes.

@@ -6,17 +6,12 @@ Run this first:
 
 Then do:
 
-- Identify which modified files belong to the current stabilization checkpoint.
-- Separate unrelated pre-existing WIP from the stabilization repairs if possible.
-- Consider creating a named local checkpoint commit or archive before starting new architecture work.
+- Confirm the working tree is clean or only contains intentionally ignored local artifacts.
+- Review `CURRENT_STATE.md` and make sure it reflects the checkpoint commit and green validation sweep.
+- Decide the next roadmap item before starting code changes.
 
-Current green checks:
-- `engram_lite/tests`
-- `integration_tests/test_augmenter_spine.py`
-- `scripts/check_teaching_artifacts.py`
-- `engram/tests`
-- `integration_tests`
-- `language_tutor/tests`
-- `llm_inspector/tests`
-
-Do not start new feature work until the current passing state has been preserved.
+Recommended next roadmap candidates:
+- Clean documentation/status consolidation.
+- Create a clean archive snapshot for Claude/new-thread handoff.
+- Review remaining warnings from the test sweep.
+- Resume architecture work only after the checkpoint is documented.
