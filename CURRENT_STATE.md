@@ -61,7 +61,7 @@ Implemented in first-pass form:
 - `course/notebooks/` with ordered concept/walkthrough notebooks
 - `course/starter_projects/` with runnable starter scaffolds
 - existing focused labs under `docs/tutorials/`
-- canonical evaluation walkthrough via `llm_harness_core/EVALUATION_WALKTHROUGH.md`, `course/notebooks/07_evaluating_llm_applications.ipynb`, and starter-project evaluation scaffolds
+- canonical evaluation walkthrough via `llm_harness_core/EVALUATION_WALKTHROUGH.md`, `course/notebooks/09_evaluating_llm_applications.ipynb`, and starter-project evaluation scaffolds
 
 Known remaining work:
 
