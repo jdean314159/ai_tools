@@ -61,6 +61,7 @@ class MemoryContext:
     telemetry: Any
     search_episodes: Callable
     store_episode: Callable
+    procedural: Optional[Any] = None       # Layer 6 — ProceduralMemory
     _session_cell: List[str] = field(default_factory=lambda: ["default"])
 
     @property

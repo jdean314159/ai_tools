@@ -57,6 +57,8 @@ async def send_message(request: MessageRequest):
             metadata=response.metadata,
         )
     
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -121,7 +123,7 @@ async def get_conversation_history(session_id: str, limit: int = 50):
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        turns = session.memory.working.get_recent(n=limit)
+        turns = session.memory.get_recent_turns(n=limit)
 
         return {
             "session_id": session_id,
@@ -135,6 +137,8 @@ async def get_conversation_history(session_id: str, limit: int = 50):
             ]
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -147,6 +151,8 @@ async def get_session_metrics(session_id: str):
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         return session.get_eval_metrics()
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -171,6 +177,8 @@ async def explain_grammar(request: ExplainRequest):
             raise HTTPException(status_code=404, detail="Session not found")
         explanation = await session.explain(request.text, request.question)
         return {"explanation": explanation, "text": request.text}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -242,6 +250,8 @@ async def lookup_word(request: LookupRequest):
 
         return {"word": request.word, **result}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -298,6 +308,8 @@ async def check_input(request: CheckRequest):
 
         return {"text": request.text, "errors": errors}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -348,6 +360,8 @@ async def get_drill_question(request: DrillRequest):
 
         return {**question, "audio_b64": audio_b64}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -368,6 +382,8 @@ async def check_drill_answer(request: DrillCheckRequest):
         result = session.check_drill(request.user_answer)
         return result
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -498,6 +514,8 @@ async def send_audio(
     # LLM response
     try:
         response = await session.handle_text(transcription)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -570,6 +588,8 @@ async def score_pronunciation(
             detail="Pronunciation scoring requires faster-whisper: "
                    "pip install faster-whisper --break-system-packages",
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -727,5 +747,7 @@ async def import_vocabulary(request: ImportRequest):
             "words":    [{"word": e.get("word",""), "translation": e.get("translation","")} for e in enriched],
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

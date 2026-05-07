@@ -159,13 +159,12 @@ class MemoryLifecycleManager:
 
         if getattr(self.project_memory, "telemetry", None) is not None:
             try:
-                self.project_memory.telemetry.emit(
-                    "memory_lifecycle",
-                    "memory lifecycle maintenance completed",
-                    project_id=self.project_memory.project_id,
-                    session_id=self.project_memory.session_id,
+                self.project_memory.telemetry.emit("memory_lifecycle", {
+                    "message": "memory lifecycle maintenance completed",
+                    "project_id": self.project_memory.project_id,
+                    "session_id": self.project_memory.session_id,
                     **report.to_dict(),
-                )
+                })
             except Exception:
                 pass
 

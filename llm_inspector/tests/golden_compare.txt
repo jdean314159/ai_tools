@@ -4,12 +4,18 @@ Query: hello world
 Target tokens: 2048
 Total tokens: 7
 Sections:
-- [system] System (tokens=5)
-- [user] User (tokens=2)
+  [SYS] System (tokens=5)
+  [USR] User (tokens=2)
+Token usage by origin:
+  [SYS] System: 5 tokens
+  [USR] User: 2 tokens
 
 === baseline_b ===
 Target tokens: 2048
 Total tokens: 7
 Sections:
-- [system] System (tokens=5)
-- [user] User (tokens=2)
+  [SYS] System (tokens=5)
+  [USR] User (tokens=2)
+Token usage by origin:
+  [SYS] System: 5 tokens
+  [USR] User: 2 tokens

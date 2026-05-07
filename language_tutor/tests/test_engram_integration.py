@@ -148,8 +148,8 @@ def test_strategy_catalogue_exposes_cross_library_modes():
 def test_engine_manager_gemini_missing_key_raises_runtimeerror(local_strategy: dict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
     manager = EngineManager(local_strategy)
-    with pytest.raises(RuntimeError, match="GOOGLE_API_KEY"):
-        manager._load_gemini({"engine": "gemini", "model": "gemini-2.0-flash"}, "planning")
+    with pytest.raises(RuntimeError, match="Cannot initialize"):
+        manager._load_engine({"engine": "gemini", "model": "gemini-2.0-flash"}, "planning")
 
 
 @pytest.mark.parametrize("memory_backend", ["engram_lite", "engram"])
@@ -206,7 +206,8 @@ def test_tutor_session_can_drive_llm_engines_adapter_path(tmp_path: Path, local_
     planner_config = local_strategy["planner"]
     executor_config = local_strategy["executor"]
 
-    monkeypatch.setenv("USE_LLM_ENGINES", "1")
+    # llm_engines is now the default; no env var needed
+    monkeypatch.delenv("USE_LEGACY_ENGINE", raising=False)
     monkeypatch.setattr("language_tutor.llm_engines_adapter.build_engine", fake_build_engine)
 
     session = TutorSession(
@@ -230,7 +231,7 @@ def test_tutor_session_can_drive_llm_engines_adapter_path(tmp_path: Path, local_
             session.close()
         except Exception:
             pass
-        monkeypatch.delenv("USE_LLM_ENGINES", raising=False)
+
 
 
 @pytest.mark.skipif(not os.getenv("LANGUAGE_TUTOR_LIVE_OLLAMA"), reason="set LANGUAGE_TUTOR_LIVE_OLLAMA=1 for live Ollama integration")

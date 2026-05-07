@@ -15,6 +15,13 @@ def _make_semantic(db_path, project_type=None):
     pt = project_type or ProjectType.PROGRAMMING_ASSISTANT
     return SemanticMemory(db_path=db_path, project_type=pt)
 
+def _make_sem_sqlite(db_path, project_type=None):
+    """Factory for the current SQLite-backed SemanticMemory (no kuzu required)."""
+    from engram.memory.semantic_memory import SemanticMemory
+    from engram.memory.types import ProjectType
+    pt = project_type or ProjectType.PROGRAMMING_ASSISTANT
+    return SemanticMemory(db_path=db_path, project_type=pt)
+
 
 # ── Schema / init ─────────────────────────────────────────────────────────────
 

@@ -11,7 +11,9 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import importlib.util
 import numpy as np
+import pytest
 
 
 # ---------------------------------------------------------------------------
@@ -43,6 +45,9 @@ def _make_pm(tmpdir):
 # EmbeddingService
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("sentence_transformers") is not None,
+    reason="sentence-transformers is installed; test requires it absent")
 def test_embedding_service_no_model():
     """EmbeddingService returns None when sentence-transformers unavailable."""
     from engram.memory.embedding_service import EmbeddingService
@@ -271,6 +276,9 @@ def test_close_does_not_raise():
 # _build_layers
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("chromadb") is not None,
+    reason="chromadb is installed; test requires it absent")
 def test_build_layers_minimal():
     """_build_layers with no optional deps returns sensible defaults."""
     from engram.project_memory import _build_layers, TokenBudget

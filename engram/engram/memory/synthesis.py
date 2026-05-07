@@ -40,9 +40,17 @@ logger = logging.getLogger(__name__)
 # --- Constants ----------------------------------------------------------------
 
 _MAX_RULE_LEN = 480           # rules are pithy but longer than facts
-_MIN_SUPPORT_DEFAULT = 3      # min episodes that must support a rule
+_MAX_TRIGGER_LEN = 200        # skill trigger phrase
+_MAX_STEP_LEN = 300           # one procedure step
+_MAX_SKILL_STEPS = 10         # cap step list length
+_MIN_SUPPORT_DEFAULT = 3      # min episodes that must support a rule or skill
 _MIN_CONFIDENCE_DEFAULT = 0.60
 _INFERENCE_TIMEOUT = 60.0     # seconds — synthesis can take longer than tier 2
+
+# Lazy import — keeps synthesis.py free of numpy dependency.
+def _skill_cls():
+    from engram.memory.procedural import Skill
+    return Skill
 
 VALID_RELATION_TYPES = frozenset([
     "DERIVED_FROM",       # rule → supporting_episode_id
@@ -54,40 +62,66 @@ VALID_RELATION_TYPES = frozenset([
 
 
 _SYNTHESIS_PROMPT = """\
-You are extracting GENERALIZABLE RULES from a window of past activity.
+You are extracting GENERALIZABLE RULES and REUSABLE SKILLS from a window of \
+past activity.
 
-A rule is a pattern that should apply to FUTURE situations, not just describe \
-the past.
+=== RULES ===
+A rule is a short, actionable pattern: "when X, do Y" or "X leads to Y".
 
 Good rules:
 - "When refactoring SQLite schema, add WAL pragma to all new connections"
 - "Vector similarity threshold below 0.4 lets decoy results bleed through"
 - "Always run `pip install -e .` after editing pyproject.toml dependencies"
 
-Bad rules (do NOT emit these):
+Bad rules (do NOT emit):
 - Restatements of single events: "Fixed the SQLite bug yesterday"
 - One-off observations: "User mentioned they like Python"
 - Speculation without evidence: "Async is probably better here"
 
-Requirements:
-- Each rule MUST be supported by at least {min_support} distinct episodes.
-- Cite the supporting episode indices (0-based) in `support_indices`.
-- confidence: 0.0-1.0 — how clearly the pattern is established by the support.
-- Return ONLY a JSON array. No preamble, no markdown fences.
+=== SKILLS ===
+A skill is a MULTI-STEP PROCEDURE that can be reused for a class of tasks.
+Skills have a trigger phrase (WHEN to use it) and ordered steps (HOW to do it).
 
-Output schema per rule:
+Good skills:
+- trigger: "when setting up a new SQLite-backed memory layer"
+  steps: ["Create table with WAL pragma", "Add FTS5 virtual table",
+  "Add INSERT/DELETE/UPDATE triggers to sync FTS", "Verify with PRAGMA integrity_check"]
+
+Bad skills (do NOT emit):
+- Single-step procedures (use a rule instead)
+- Generic advice with no concrete steps
+- Skills supported by only one episode
+
+=== REQUIREMENTS ===
+- Every rule and skill MUST be supported by at least {min_support} distinct episodes.
+- Cite episode indices (0-based) in support_indices.
+- confidence: 0.0-1.0 — how clearly the pattern repeats across the support.
+- Return ONLY a JSON object. No preamble, no markdown fences.
+
+Output schema:
 {{
-  "rule": "concise generalizable statement",
-  "support_indices": [0, 3, 7],
-  "confidence": 0.85
+  "rules": [
+    {{"rule": "concise statement", "support_indices": [0, 3], "confidence": 0.85}}
+  ],
+  "skills": [
+    {{
+      "name": "short title (8 words or fewer)",
+      "trigger": "when <situation>...",
+      "when_to_use": "one sentence explaining context",
+      "steps": ["step 1", "step 2", "step 3"],
+      "examples": [{{"input": "...", "output": "..."}}],
+      "support_indices": [1, 4, 6],
+      "confidence": 0.80
+    }}
+  ]
 }}
 
-If no rules meet the support threshold, return [].
+If no rules or skills meet the support threshold, use empty arrays.
 
 Episodes (numbered 0..N):
 {episodes}
 
-Rules (JSON array):"""
+Output:"""
 
 
 # --- Data structures ----------------------------------------------------------
@@ -145,13 +179,14 @@ class SynthesisResult:
     """Bundle returned by SynthesisExtractor.extract()."""
     rules: List[SynthesisRule] = field(default_factory=list)
     relations: List[SynthesisRelation] = field(default_factory=list)
+    skills: List[Any] = field(default_factory=list)   # List[Skill] from procedural.py
     window_hash: str = ""
     extraction_seconds: float = 0.0
     skipped_reason: Optional[str] = None  # populated when no work done
 
     @property
     def empty(self) -> bool:
-        return not self.rules and not self.relations
+        return not self.rules and not self.relations and not self.skills
 
 
 # --- Extractor ----------------------------------------------------------------
@@ -187,10 +222,31 @@ class SynthesisExtractor:
         self._rules_emitted = 0
         self._rules_dropped_low_support = 0
         self._rules_dropped_low_confidence = 0
+        self._skills_emitted = 0
+        self._skills_dropped_low_support = 0
+        self._skills_dropped_low_confidence = 0
+        self._skills_dropped_bad_format = 0
         self._errors = 0
 
         if engine_config is not None:
             self._engine = self._load_engine(engine_config)
+
+    def _ensure_counter_fields(self) -> None:
+        """Backfill counters for legacy/test construction via __new__."""
+        defaults = {
+            "_extractions": 0,
+            "_rules_emitted": 0,
+            "_rules_dropped_low_support": 0,
+            "_rules_dropped_low_confidence": 0,
+            "_skills_emitted": 0,
+            "_skills_dropped_low_support": 0,
+            "_skills_dropped_low_confidence": 0,
+            "_skills_dropped_bad_format": 0,
+            "_errors": 0,
+        }
+        for name, value in defaults.items():
+            if not hasattr(self, name):
+                setattr(self, name, value)
 
     @property
     def enabled(self) -> bool:
@@ -198,11 +254,16 @@ class SynthesisExtractor:
 
     @property
     def stats(self) -> Dict[str, int]:
+        self._ensure_counter_fields()
         return {
             "extractions": self._extractions,
             "rules_emitted": self._rules_emitted,
             "rules_dropped_low_support": self._rules_dropped_low_support,
             "rules_dropped_low_confidence": self._rules_dropped_low_confidence,
+            "skills_emitted": self._skills_emitted,
+            "skills_dropped_low_support": self._skills_dropped_low_support,
+            "skills_dropped_low_confidence": self._skills_dropped_low_confidence,
+            "skills_dropped_bad_format": self._skills_dropped_bad_format,
             "errors": self._errors,
         }
 
@@ -313,6 +374,7 @@ class SynthesisExtractor:
         Returns:
             SynthesisResult — possibly empty on no-op or extraction failure.
         """
+        self._ensure_counter_fields()
         result = SynthesisResult()
 
         if not self.enabled:
@@ -352,11 +414,13 @@ class SynthesisExtractor:
         result.extraction_seconds = time.time() - t0
         self._extractions += 1
 
-        raw_rules = self._parse_response(response)
+        raw_rules, raw_skills = self._parse_response(response)
         result.rules, result.relations = self._build_records(
             raw_rules, episodes, project_id
         )
+        result.skills = self._build_skill_records(raw_skills, episodes, project_id)
         self._rules_emitted += len(result.rules)
+        self._skills_emitted += len(result.skills)
         return result
 
     # --- Internals ----------------------------------------------------------
@@ -382,34 +446,52 @@ class SynthesisExtractor:
         ids = "|".join(str(ep.get("id", "")) for ep in episodes)
         return hashlib.sha1(ids.encode("utf-8")).hexdigest()[:16]
 
-    def _parse_response(self, response: str) -> List[Dict[str, Any]]:
-        """Tolerant JSON-array parser, mirrors cognitive.py behavior."""
+    def _parse_response(self, response: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Parse LLM output into (raw_rules, raw_skills).
+
+        Accepts two formats for backward compatibility:
+        - New: JSON object  {"rules": [...], "skills": [...]}
+        - Legacy: JSON array [...]  (treated as rules only, no skills)
+        """
         text = response.strip()
         if text.startswith("```"):
-            lines = text.splitlines()
             text = "\n".join(
-                l for l in lines if not l.strip().startswith("```")
+                l for l in text.splitlines() if not l.strip().startswith("```")
             ).strip()
-        try:
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            start = text.find("[")
-            end = text.rfind("]")
-            if start != -1 and end != -1 and end > start:
-                try:
-                    data = json.loads(text[start:end + 1])
-                except json.JSONDecodeError:
-                    logger.debug(
-                        "SynthesisExtractor: unparseable JSON: %s",
-                        text[:200],
-                    )
-                    return []
-            else:
-                return []
 
-        if not isinstance(data, list):
-            return []
-        return [r for r in data if isinstance(r, dict)]
+        def _try_parse(s: str) -> Any:
+            try:
+                return json.loads(s)
+            except json.JSONDecodeError:
+                return None
+
+        data = _try_parse(text)
+
+        # Bracket search fallback
+        if data is None:
+            for open_c, close_c in (("{", "}"), ("[", "]")):
+                start = text.find(open_c)
+                end = text.rfind(close_c)
+                if start != -1 and end > start:
+                    data = _try_parse(text[start:end + 1])
+                    if data is not None:
+                        break
+
+        if data is None:
+            logger.debug("SynthesisExtractor: unparseable JSON: %s", text[:200])
+            return [], []
+
+        # New format: {"rules": [...], "skills": [...]}
+        if isinstance(data, dict):
+            raw_rules = [r for r in data.get("rules", []) if isinstance(r, dict)]
+            raw_skills = [s for s in data.get("skills", []) if isinstance(s, dict)]
+            return raw_rules, raw_skills
+
+        # Legacy format: plain array → rules only
+        if isinstance(data, list):
+            return [r for r in data if isinstance(r, dict)], []
+
+        return [], []
 
     def _build_records(
         self,
@@ -417,6 +499,7 @@ class SynthesisExtractor:
         episodes: List[Dict[str, Any]],
         project_id: str,
     ) -> Tuple[List[SynthesisRule], List[SynthesisRelation]]:
+        self._ensure_counter_fields()
         rules: List[SynthesisRule] = []
         relations: List[SynthesisRelation] = []
 
@@ -472,3 +555,88 @@ class SynthesisExtractor:
                 )
 
         return rules, relations
+
+    def _build_skill_records(
+        self,
+        raw_skills: List[Dict[str, Any]],
+        episodes: List[Dict[str, Any]],
+        project_id: str,
+    ) -> List[Any]:
+        """Parse raw skill dicts into Skill objects with support validation."""
+        self._ensure_counter_fields()
+        Skill = _skill_cls()
+        skills: List[Any] = []
+
+        for raw in raw_skills:
+            # --- Required fields ---
+            name = (raw.get("name") or "").strip()
+            trigger = (raw.get("trigger") or "").strip()
+            steps_raw = raw.get("steps") or []
+
+            if not name or not trigger:
+                self._skills_dropped_bad_format += 1
+                continue
+
+            if not isinstance(steps_raw, list):
+                self._skills_dropped_bad_format += 1
+                continue
+
+            steps = [
+                str(s).strip()[:_MAX_STEP_LEN]
+                for s in steps_raw
+                if str(s).strip()
+            ][:_MAX_SKILL_STEPS]
+
+            if len(steps) < 2:
+                # Single-step → use a rule instead
+                self._skills_dropped_bad_format += 1
+                continue
+
+            # --- Support validation (same rule as rules) ---
+            support_indices = raw.get("support_indices") or []
+            if not isinstance(support_indices, list):
+                self._skills_dropped_low_support += 1
+                continue
+
+            episode_ids: List[str] = []
+            for idx in support_indices:
+                if isinstance(idx, int) and 0 <= idx < len(episodes):
+                    ep_id = str(episodes[idx].get("id", ""))
+                    if ep_id:
+                        episode_ids.append(ep_id)
+
+            if len(episode_ids) < self._min_support:
+                self._skills_dropped_low_support += 1
+                continue
+
+            try:
+                confidence = float(raw.get("confidence", 0.7))
+            except (TypeError, ValueError):
+                confidence = 0.7
+
+            if confidence < self._min_confidence:
+                self._skills_dropped_low_confidence += 1
+                continue
+
+            # --- Optional fields ---
+            when_to_use = (raw.get("when_to_use") or "").strip()
+            examples_raw = raw.get("examples") or []
+            examples = [
+                e for e in examples_raw
+                if isinstance(e, dict) and ("input" in e or "output" in e)
+            ][:3]
+
+            skill = Skill(
+                name=name[:80],
+                trigger=trigger[:_MAX_TRIGGER_LEN],
+                steps=steps,
+                when_to_use=when_to_use[:400],
+                examples=examples,
+                support_episode_ids=episode_ids,
+                confidence=min(1.0, max(0.0, confidence)),
+                project_id=project_id,
+                metadata={"source": "synthesis"},
+            )
+            skills.append(skill)
+
+        return skills

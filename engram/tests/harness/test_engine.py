@@ -302,7 +302,7 @@ def test_ollama_engine_live():
         raise SkipTest("No live Ollama server at localhost:11434")
 
     from engram.engine.ollama_engine import OllamaEngine
-    engine = OllamaEngine(model_name="qwen2.5:7b", base_url="http://localhost:11434/v1")
+    engine = OllamaEngine(model_name="qwen3.5:9b", base_url="http://localhost:11434/v1")
     result = engine.generate("Reply with exactly the word: HELLO", max_tokens=10)
     assert isinstance(result, str)
     assert len(result) > 0

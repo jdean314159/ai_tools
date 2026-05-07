@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from llm_harness_core import CapabilityDescriptor, CapabilityKind, MemoryRecord
+from llm_harness_core import CapabilityDescriptor, CapabilityKind
 
-from .contracts import AugmentResult
-from .inspection import PromptBuildTrace
+from engram.memory.augment import AugmentResult
+from engram.interop import trace_to_memory_records  # noqa: F401 — re-export
+from .inspection import PromptBuildTrace  # noqa: F401 — keep for local type use
 
 
 def describe_memory(memory: Any) -> CapabilityDescriptor:
@@ -29,11 +30,6 @@ def describe_memory(memory: Any) -> CapabilityDescriptor:
         output_types=("prompt", "operation_result", "trace_event[]"),
         metadata=metadata,
     )
-
-
-def trace_to_memory_records(trace: PromptBuildTrace) -> list[MemoryRecord]:
-    return [item.to_memory_record() for item in trace.evidence]
-
 
 def augment_result_to_interop_result(result: AugmentResult):
     return result.to_interop_result()

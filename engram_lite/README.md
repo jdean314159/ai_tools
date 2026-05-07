@@ -1,6 +1,7 @@
 # engram_lite
 
-`engram_lite` is the lightweight memory augmentation package in the `ai_tools` suite.
+`engram_lite` is the lightweight memory augmentation facade in the `ai_tools` suite.
+It provides a simplified interface over `engram` with a smaller public surface focused on the most common memory augmentation needs.
 
 It is intended to be the easiest way to add inspectable memory behavior to an LLM workflow without adopting the full `engram` runtime.
 

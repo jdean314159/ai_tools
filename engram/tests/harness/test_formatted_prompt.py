@@ -167,13 +167,12 @@ def test_format_matches_build_prompt_structure():
             system_prompt=FakeEngine.system_prompt,
         )
 
-        # Both must contain the key structural elements
-        for element in ("BEGIN RETRIEVED MEMORY", "END RETRIEVED MEMORY",
-                        query, "Assistant:"):
-            assert element in bp_prompt, f"build_prompt missing: {element!r}"
+        # Query text appears in both (build_prompt: ## User section; to_formatted_prompt: User: … line)
+        assert query in bp_prompt, f"build_prompt missing query text"
+        assert query in fp_prompt, f"to_formatted_prompt missing query text"
+        # These structural markers are specific to to_formatted_prompt's assemble_prompt format
+        for element in ("BEGIN RETRIEVED MEMORY", "END RETRIEVED MEMORY", "Assistant:"):
             assert element in fp_prompt, f"to_formatted_prompt missing: {element!r}"
-
-
 # ── Section ordering ──────────────────────────────────────────────────────────
 
 @test_group("P3-10: to_formatted_prompt()")

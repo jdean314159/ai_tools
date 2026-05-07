@@ -136,34 +136,47 @@ Typical responsibilities:
 
 ### 3.2 `engram_lite`
 
-**Responsibility:** Lightweight memory augmentation for LLM prompts.
+**Responsibility:** Curated facade over `engram` for teaching and small applications.
 
-This package is the minimal reusable memory layer. It should be easy to adopt independently.
+`engram_lite` exposes a stable, minimal public API that students learn first.
+All implementation lives in `engram`; `engram_lite.__init__` re-exports a
+constrained subset.  The "lite" badge is enforced by facade discipline: the
+RTRL neural layer, advanced retrieval policies, and internal configuration
+surfaces are not exposed.
 
-Typical responsibilities:
+Typical responsibilities (via facade):
 
-- storing recent/project memory
+- storing recent/project memory (via `engram_lite.ProjectMemory`)
 - retrieving relevant prior context
 - assembling memory-augmented prompts
 - emitting inspectable memory traces
 - exposing evidence used for augmentation
 
-`engram_lite` is the first memory layer most users should be able to adopt without taking on the full `engram` stack.
+The public API is locked by `engram_lite/tests/test_public_api_contract.py`.
+Students outgrow `engram_lite` by changing the import line to `engram`, not by
+migrating data or rewriting code.  See ADR-007 for the architectural decision.
 
 ---
 
 ### 3.3 `engram`
 
-**Responsibility:** Fuller memory system and advanced memory architecture.
+**Responsibility:** Full memory runtime and canonical implementation for shared primitives.
 
-This is the broader, more capable memory framework. It may incorporate richer storage layers and memory policies beyond what `engram_lite` offers.
+`engram` is the single implementation behind both the full runtime and the
+`engram_lite` facade.  It owns the canonical source for: telemetry,
+inspection types, embeddings, semantic graph and extraction, prompting
+utilities, storage primitives (ChromaDB, schema management), augmenter
+contracts, ingestion policy, and token counting.  Advanced capabilities —
+RTRL neural layer, multi-tier persistence, retrieval policies, lifecycle
+management, and procedural memory — are `engram`-only.
 
 Typical responsibilities:
 
 - richer memory levels / storage policies
 - broader project memory management
 - advanced retrieval / promotion / lifecycle behaviors
-- more experimental or sophisticated memory features
+- canonical implementation of all shared primitive types
+- more experimental or sophisticated memory features (RTRL, procedural)
 
 `engram` should remain compatible with the same interop and observability model used elsewhere.
 
@@ -312,8 +325,8 @@ The dependency graph should remain disciplined.
 
 - `llm_harness_core` depends on no heavy package in the suite.
 - `llm_engines` depends on `llm_harness_core`.
-- `engram_lite` depends on `llm_harness_core`.
 - `engram` depends on `llm_harness_core`.
+- `engram_lite` depends on `engram` (facade) and `llm_harness_core`.
 - `llm_inspector` depends on `llm_harness_core`.
 - `llm_inspector_ui` depends on `llm_inspector`, `llm_harness_core`, and selected feature packages.
 - `rag_lib` depends on `llm_harness_core`.

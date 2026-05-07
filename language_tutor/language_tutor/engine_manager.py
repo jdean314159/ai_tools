@@ -10,7 +10,7 @@ Author: Jeff
 """
 
 import os
-from typing import TYPE_CHECKING, Optional, Dict, Any
+from typing import Optional, Dict, Any
 from pathlib import Path
 
 try:
@@ -19,19 +19,10 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
 
-# Keep optional backend imports lazy so importing language_tutor in a
-# base environment does not require every cloud SDK to be installed.
-if TYPE_CHECKING:  # pragma: no cover - type-checking only
-    from engram.engine import (
-        LLMEngine,
-        VLLMEngine,
-        OllamaEngine,
-        ClaudeEngine,
-        GeminiEngine,
-        OpenAICloudEngine,
-    )
-else:  # Runtime: use Any to avoid importing optional providers eagerly.
-    LLMEngine = Any
+# All engine loading goes through llm_engines via LLMEnginesAdapter.
+# The legacy engram.engine path was removed; LLMEngine remains as a runtime
+# alias for type hints on planner_engine / executor_engine.
+LLMEngine = Any
 
 
 class EngineManager:
@@ -179,64 +170,39 @@ class EngineManager:
     
     def _load_engine(self, config: Dict[str, Any], purpose: str):
         """
-        Load an engine based on configuration.
+        Load an engine based on configuration via llm_engines.
 
-        If USE_LLM_ENGINES=1 is set, uses llm_engines backends via
-        LLMEnginesAdapter. Otherwise falls back to engram.engine (default).
+        All engine loading is delegated to LLMEnginesAdapter.build_engine().
+        The legacy engram.engine path was removed; setting USE_LEGACY_ENGINE=1
+        now produces a clear deprecation error rather than silently falling
+        back. LANGUAGE_TUTOR_ALLOW_LEGACY_ENGINE_FALLBACK is no longer read.
 
         Args:
             config: Engine config dict (planner or executor)
             purpose: "planning" or "execution" (for logging)
 
         Returns:
-            Engine instance (LLMEnginesAdapter or LLMEngine)
+            LLMEnginesAdapter instance
 
         Raises:
             RuntimeError: If engine cannot be loaded
         """
-        import os as _os
-        prefer_llm_engines = _os.getenv("USE_LLM_ENGINES", "0") == "1"
-        allow_legacy_fallback = _os.getenv("LANGUAGE_TUTOR_ALLOW_LEGACY_ENGINE_FALLBACK", "1") == "1"
-        if prefer_llm_engines:
-            try:
-                from language_tutor.llm_engines_adapter import build_engine
-                engine = build_engine(config)
-                print(f"✓ {purpose} engine loaded via llm_engines "
-                      f"({config['engine']} - {config['model']})")
-                return engine
-            except (ImportError, ModuleNotFoundError, ValueError, RuntimeError, OSError) as e:
-                if not allow_legacy_fallback:
-                    raise RuntimeError(
-                        "llm_engines load failed and legacy fallback is disabled"
-                    ) from e
-                print(f"⚠️  llm_engines load failed, falling back to engram.engine: {e}")
+        if os.getenv("USE_LEGACY_ENGINE", "0") == "1":
+            raise RuntimeError(
+                "USE_LEGACY_ENGINE is no longer supported. The engram.engine "
+                "fallback was removed; all engine loading now goes through "
+                "llm_engines. Unset USE_LEGACY_ENGINE."
+            )
 
-        engine_type = config["engine"]
-        model_name = config["model"]
-
-        print(f"🔄 Loading {purpose} engine: {engine_type} - {model_name}")
+        engine_type = config.get("engine", "")
+        model_name = config.get("model", "")
 
         try:
-            if engine_type == "anthropic":
-                return self._load_claude(config, purpose)
-
-            elif engine_type == "vllm":
-                return self._load_vllm(config, purpose)
-
-            elif engine_type == "ollama":
-                return self._load_ollama(config, purpose)
-
-            elif engine_type == "gemini":
-                return self._load_gemini(config, purpose)
-
-            elif engine_type == "openai":
-                return self._load_openai(config, purpose)
-
-            elif engine_type == "llama_cpp":
-                return self._load_llama_cpp(config, purpose)
-
-            else:
-                raise ValueError(f"Unknown engine type: {engine_type}")
+            from language_tutor.llm_engines_adapter import build_engine
+            engine = build_engine(config)
+            print(f"✓ {purpose} engine loaded via llm_engines "
+                  f"({engine_type} - {model_name})")
+            return engine
 
         except Exception as e:
             print(f"❌ Failed to load {purpose} engine: {e}")
@@ -249,8 +215,12 @@ class EngineManager:
                 else:
                     print("      ollama serve")
                 print("   2. Use a Gemini strategy (set GOOGLE_API_KEY)")
+            elif engine_type == "anthropic":
+                print("   Set ANTHROPIC_API_KEY — https://console.anthropic.com/")
             elif engine_type == "gemini":
                 print("   Set GOOGLE_API_KEY — free key at https://aistudio.google.com/apikey")
+            elif engine_type == "openai":
+                print("   Set OPENAI_API_KEY — https://platform.openai.com/api-keys")
             elif engine_type == "llama_cpp":
                 print("   Start llama-server first:")
                 gguf = config.get("gguf_path") or os.getenv("LLAMA_MODEL_PATH", "<model.gguf>")
@@ -258,169 +228,6 @@ class EngineManager:
                 print(f"   llama-server -m {gguf} --n-gpu-layers {layers} --port 8080")
 
             raise RuntimeError(f"Cannot initialize {purpose} engine") from e
-    
-    def _load_claude(self, config: Dict[str, Any], purpose: str) -> "ClaudeEngine":
-        """Load Claude API engine."""
-        
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                "ANTHROPIC_API_KEY not found. Get one at: "
-                "https://console.anthropic.com/"
-            )
-        
-        from engram.engine import ClaudeEngine
-
-        engine = ClaudeEngine(
-            model_name=config["model"],
-            api_key=api_key,
-            max_context=200000,
-        )
-        
-        print(f"✓ Claude {purpose} engine loaded")
-        return engine
-    
-    def _load_vllm(self, config: Dict[str, Any], purpose: str) -> "VLLMEngine":
-        """Load vLLM local engine."""
-        
-        base_url = os.getenv("VLLM_BASE_URL", "http://localhost:8000/v1")
-        
-        from engram.engine import VLLMEngine
-
-        engine = VLLMEngine(
-            base_url=base_url,
-            model_name=config["model"],
-            max_context=8192,
-        )
-        
-        # Test connection
-        try:
-            _ = engine.count_tokens("test")
-            print(f"✓ vLLM {purpose} engine loaded from {base_url}")
-        except Exception as e:
-            raise RuntimeError(
-                f"Cannot connect to vLLM server at {base_url}. "
-                f"Is it running? Error: {e}"
-            )
-        
-        return engine
-    
-    def _load_ollama(self, config: Dict[str, Any], purpose: str) -> "OllamaEngine":
-        """Load Ollama local engine.
-
-        base_url must be the OpenAI-compat endpoint (http://localhost:11434/v1).
-        OllamaEngine.generate() internally calls /api/chat via _native_url()
-        which strips /v1 — this is how think:false is enforced for qwen3.x
-        reasoning models, preventing empty responses on the /v1 compat path.
-        """
-        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
-        num_gpu = config.get("num_gpu")
-
-        from engram.engine import OllamaEngine
-
-        engine = OllamaEngine(
-            model_name=config["model"],
-            base_url=base_url,
-            num_gpu=num_gpu,
-            timeout=300,
-            max_context=8192,
-        )
-
-        try:
-            _ = engine.count_tokens("test")
-
-            if num_gpu is None:
-                print(f"✓ Ollama {purpose} engine loaded (auto GPU/CPU)")
-            elif num_gpu == 0:
-                print(f"✓ Ollama {purpose} engine loaded (CPU only)")
-            else:
-                print(f"✓ Ollama {purpose} engine loaded ({num_gpu} layers GPU, rest CPU)")
-
-        except Exception as e:
-            raise RuntimeError(
-                f"Cannot connect to Ollama server at {base_url}. "
-                f"Is it running? Error: {e}"
-            )
-
-        return engine
-
-    def _load_gemini(self, config: Dict[str, Any], purpose: str) -> "GeminiEngine":
-        """Load Google Gemini engine (free tier available)."""
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                "GOOGLE_API_KEY not set. "
-                "Get a free key at https://aistudio.google.com/apikey "
-                "then: export GOOGLE_API_KEY='your-key'"
-            )
-        from engram.engine import GeminiEngine
-
-        engine = GeminiEngine(
-            model_name=config.get("model", "gemini-2.0-flash"),
-            api_key=api_key,
-            timeout=config.get("timeout", 60),
-        )
-        try:
-            engine.count_tokens("test")
-            print(f"✓ Gemini {purpose} engine ready ({engine.model_name})")
-        except Exception as e:
-            raise RuntimeError(f"Gemini engine init failed: {e}") from e
-        return engine
-
-    def _load_openai(self, config: Dict[str, Any], purpose: str) -> "OpenAICloudEngine":
-        """Load OpenAI engine (gpt-4o-mini recommended for cost)."""
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                "OPENAI_API_KEY not set. "
-                "Get a key at https://platform.openai.com/api-keys"
-            )
-        from engram.engine import OpenAICloudEngine
-
-        engine = OpenAICloudEngine(
-            model_name=config.get("model", "gpt-4o-mini"),
-            api_key=api_key,
-            timeout=config.get("timeout", 60),
-        )
-        try:
-            engine.count_tokens("test")
-            print(f"✓ OpenAI {purpose} engine ready ({engine.model_name})")
-        except Exception as e:
-            raise RuntimeError(f"OpenAI engine init failed: {e}") from e
-        return engine
-
-    def _load_llama_cpp(self, config: Dict[str, Any], purpose: str):
-        """Load llama.cpp engine connecting to a running llama-server."""
-        from engram.engine import LlamaCppEngine
-
-        base_url    = config.get("base_url", "http://127.0.0.1:8080/v1")
-        n_gpu_layers = config.get("n_gpu_layers", 0)
-        gguf_path   = (
-            config.get("gguf_path")
-            or os.getenv("LLAMA_MODEL_PATH")
-        )
-
-        engine = LlamaCppEngine(
-            model_name=config.get("model", "local"),
-            base_url=base_url,
-            n_gpu_layers=n_gpu_layers,
-            gguf_path=gguf_path,
-            timeout=config.get("timeout", 300),
-            max_context=config.get("max_context", 8192),
-        )
-
-        # Verify server is reachable
-        try:
-            engine.count_tokens("test")
-            print(f"✓ llama.cpp {purpose} engine at {base_url} ({n_gpu_layers} GPU layers)")
-        except Exception as e:
-            raise RuntimeError(
-                f"Cannot connect to llama-server at {base_url}. "
-                f"Start it with: llama-server -m {gguf_path or '<model.gguf>'} "
-                f"--n-gpu-layers {n_gpu_layers} --port 8080"
-            ) from e
-
-        return engine
 
     def get_info(self) -> Dict[str, Any]:
         """Get engine status information."""

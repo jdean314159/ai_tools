@@ -213,7 +213,7 @@ This is one of the most mature packages in the repo.
 ## `engram_lite`
 
 ### State
-Implemented as a real package, integrated into the shared interop layer, and now the default lightweight memory path for the workbench/teaching spine.
+Implemented as a facade to engram, integrated into the shared interop layer, and now the default lightweight memory path for the workbench/teaching spine.
 
 ### What exists
 

@@ -96,7 +96,7 @@ class FailoverEngine(LLMEngine):
         self.policy = policy or FailoverPolicy()
         self.name = name
         self._health: Dict[int, _EngineHealth] = {}
-        self.telemetry = telemetry or Telemetry(enabled=False)
+        self.telemetry = telemetry or Telemetry()
 
     # --- helpers ---
 
@@ -158,12 +158,11 @@ class FailoverEngine(LLMEngine):
                     self.name,
                     getattr(engine, "model_name", engine.__class__.__name__),
                 )
-                self.telemetry.emit(
-                    "engine_skip",
-                    "engine skipped due to circuit breaker cooldown",
-                    engine=getattr(engine, "model_name", engine.__class__.__name__),
-                    router=self.name,
-                )
+                self.telemetry.emit("engine_skip", {
+                    "message": "engine skipped due to circuit breaker cooldown",
+                    "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                    "router": self.name,
+                })
                 continue
             # For each engine, attempt once, plus an optional transient retry.
             engine_attempts = 0
@@ -180,14 +179,13 @@ class FailoverEngine(LLMEngine):
                     attempts,
                     self.policy.max_attempts,
                 )
-                self.telemetry.emit(
-                    "engine_try",
-                    "trying engine",
-                    engine=getattr(engine, "model_name", engine.__class__.__name__),
-                    attempt=attempts,
-                    max_attempts=self.policy.max_attempts,
-                    router=self.name,
-                )
+                self.telemetry.emit("engine_try", {
+                    "message": "trying engine",
+                    "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                    "attempt": attempts,
+                    "max_attempts": self.policy.max_attempts,
+                    "router": self.name,
+                })
 
                 try:
                     effective_prompt = cur_prompt
@@ -205,13 +203,12 @@ class FailoverEngine(LLMEngine):
                         **kwargs,
                     )
                     health.record_success()
-                    self.telemetry.emit(
-                        "engine_success",
-                        "engine succeeded",
-                        engine=getattr(engine, "model_name", engine.__class__.__name__),
-                        attempt=attempts,
-                        router=self.name,
-                    )
+                    self.telemetry.emit("engine_success", {
+                        "message": "engine succeeded",
+                        "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                        "attempt": attempts,
+                        "router": self.name,
+                    })
                     return out
                 except Exception as e:
                     last_err = e
@@ -225,15 +222,14 @@ class FailoverEngine(LLMEngine):
                         str(e)[:300],
                     )
                     try:
-                        self.telemetry.emit(
-                            "engine_error",
-                            "engine error",
-                            engine=getattr(engine, "model_name", engine.__class__.__name__),
-                            attempt=attempts,
-                            error_kind=kind,
-                            error=str(e)[:500],
-                            router=self.name,
-                        )
+                        self.telemetry.emit("engine_error", {
+                            "message": "engine error",
+                            "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                            "attempt": attempts,
+                            "error_kind": kind,
+                            "error": str(e)[:500],
+                            "router": self.name,
+                        })
                     except Exception:
                         pass
                     health.record_failure(self.policy)
@@ -243,13 +239,12 @@ class FailoverEngine(LLMEngine):
                         try:
                             budget = engine.max_context_length - cur_max_tokens - 256
                             if budget > 256:
-                                self.telemetry.emit(
-                                    "mitigation",
-                                    "context overflow: compress prompt and retry",
-                                    engine=getattr(engine, "model_name", engine.__class__.__name__),
-                                    target_tokens=budget,
-                                    router=self.name,
-                                )
+                                self.telemetry.emit("mitigation", {
+                                    "message": "context overflow: compress prompt and retry",
+                                    "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                                    "target_tokens": budget,
+                                    "router": self.name,
+                                })
                                 cur_prompt = engine.compress_prompt(cur_prompt, target_tokens=budget)
                                 continue
                         except Exception:
@@ -265,12 +260,11 @@ class FailoverEngine(LLMEngine):
                             self.name,
                             getattr(engine, "model_name", engine.__class__.__name__),
                         )
-                        self.telemetry.emit(
-                            "engine_switch",
-                            "token budget exceeded: failing over",
-                            engine=getattr(engine, "model_name", engine.__class__.__name__),
-                            router=self.name,
-                        )
+                        self.telemetry.emit("engine_switch", {
+                            "message": "token budget exceeded: failing over",
+                            "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                            "router": self.name,
+                        })
                         break
 
                     # Step 2: OOM -> reduce output tokens and retry same engine once.
@@ -278,38 +272,35 @@ class FailoverEngine(LLMEngine):
                         new_max = max(self.policy.min_max_tokens, int(cur_max_tokens * 0.5))
                         if new_max < cur_max_tokens:
                             logger.info("FailoverEngine(%s): OOM -> reduce max_tokens from %d to %d and retry same engine", self.name, cur_max_tokens, new_max)
-                            self.telemetry.emit(
-                                "mitigation",
-                                "oom: reduce max_tokens and retry",
-                                engine=getattr(engine, "model_name", engine.__class__.__name__),
-                                from_max_tokens=cur_max_tokens,
-                                to_max_tokens=new_max,
-                                router=self.name,
-                            )
+                            self.telemetry.emit("mitigation", {
+                                "message": "oom: reduce max_tokens and retry",
+                                "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                                "from_max_tokens": cur_max_tokens,
+                                "to_max_tokens": new_max,
+                                "router": self.name,
+                            })
                             cur_max_tokens = new_max
                             continue
 
                     # Step 3: transient retry once on same engine.
                     if kind == "transient" and self.policy.transient_retry and engine_attempts == 1:
                         logger.info("FailoverEngine(%s): transient error -> retry after %.2fs", self.name, self.policy.transient_retry_backoff_s)
-                        self.telemetry.emit(
-                            "mitigation",
-                            "transient: retry after backoff",
-                            engine=getattr(engine, "model_name", engine.__class__.__name__),
-                            backoff_s=self.policy.transient_retry_backoff_s,
-                            router=self.name,
-                        )
+                        self.telemetry.emit("mitigation", {
+                            "message": "transient: retry after backoff",
+                            "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                            "backoff_s": self.policy.transient_retry_backoff_s,
+                            "router": self.name,
+                        })
                         time.sleep(self.policy.transient_retry_backoff_s)
                         continue
 
                     logger.info("FailoverEngine(%s): switching to next engine after kind=%s", self.name, kind)
-                    self.telemetry.emit(
-                        "engine_switch",
-                        "switching to next engine",
-                        engine=getattr(engine, "model_name", engine.__class__.__name__),
-                        switch_kind=kind,
-                        router=self.name,
-                    )
+                    self.telemetry.emit("engine_switch", {
+                        "message": "switching to next engine",
+                        "engine": getattr(engine, "model_name", engine.__class__.__name__),
+                        "switch_kind": kind,
+                        "router": self.name,
+                    })
                     # Otherwise: break to next engine in priority.
                     break
 

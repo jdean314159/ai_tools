@@ -251,8 +251,8 @@ def test_pm_run_maintenance():
 @test_group("ProjectMemory: Telemetry")
 def test_telemetry_disabled_no_error():
     from engram.telemetry.core import Telemetry
-    tel = Telemetry(sink=None, enabled=False)
-    tel.emit("test_event", "nothing happened", x=1)
+    tel = Telemetry()
+    tel.emit("test_event", {"message": "nothing happened", "x": 1})
 
 
 @test_group("ProjectMemory: Telemetry")
@@ -262,14 +262,15 @@ def test_telemetry_logging_sink_captures_events():
     events = []
 
     class CaptureSink(LoggingSink):
-        def emit(self, event):
+        def __call__(self, event):
             events.append(event)
 
-    tel = Telemetry(sink=CaptureSink(), enabled=True)
-    tel.emit("test", "a message", value=42)
+    tel = Telemetry()
+    tel.add_sink(CaptureSink())
+    tel.emit("test", {"message": "a message", "value": 42})
     assert len(events) == 1
-    assert events[0].kind == "test"
-    assert events[0].fields["value"] == 42
+    assert events[0].event_type == "test"
+    assert events[0].data["value"] == 42
 
 
 @test_group("ProjectMemory: Telemetry")
@@ -279,11 +280,12 @@ def test_telemetry_jsonl_sink_writes_file():
     from engram.telemetry.sinks import JsonlFileSink
     with TempDir() as d:
         sink = JsonlFileSink(path=d / "events.jsonl")
-        tel = Telemetry(sink=sink, enabled=True)
-        tel.emit("retrieval", "retrieved 3 episodes", count=3)
+        tel = Telemetry()
+        tel.add_sink(sink)
+        tel.emit("retrieval", {"message": "retrieved 3 episodes", "count": 3})
 
         lines = (d / "events.jsonl").read_text().strip().splitlines()
         assert len(lines) == 1
         ev = json.loads(lines[0])
-        assert ev["kind"] == "retrieval"
-        assert ev["fields"]["count"] == 3
+        assert ev["event_type"] == "retrieval"
+        assert ev["data"]["count"] == 3

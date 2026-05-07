@@ -72,6 +72,11 @@ class RetrievalPolicy:
     cold_weight_lexical: float = 0.42
     cold_weight_recency: float = 0.10
 
+    procedural_weight_confidence: float = 0.55   # Layer 6: extracted skill confidence
+    procedural_weight_lexical: float = 0.30       # FTS5 lexical match component
+    procedural_weight_semantic: float = 0.15      # cosine embedding component
+    min_procedural_confidence: float = 0.50       # skip low-confidence skills
+
     min_cold_lexical_overlap: float = 0.15
     min_semantic_overlap: float = 0.08
     near_duplicate_threshold: float = 0.84
@@ -114,6 +119,7 @@ class UnifiedRetriever:
         episodic_n: int = 5,
         semantic_n: int = 5,
         cold_n: int = 5,
+        procedural_n: int = 3,
         cold_fallback: bool = True,
         cold_min_fill_ratio: float = 0.2,
     ):
@@ -143,16 +149,16 @@ class UnifiedRetriever:
 
         candidates.extend(self._episodic_candidates(query, query_terms, episodic_n, neural_ctx))
         candidates.extend(self._semantic_candidates(query, query_terms, semantic_n, neural_ctx))
+        candidates.extend(self._procedural_candidates(query, query_terms, procedural_n))
 
         if cold_fallback and self._needs_cold_fallback(candidates, budget, cold_min_fill_ratio):
-            self.project_memory.telemetry.emit(
-                "cold_fallback",
-                "cold storage fallback retrieval triggered",
-                project_id=self.project_memory.project_id,
-                session_id=self.project_memory.session_id,
-                query=query,
-                n=cold_n,
-            )
+            self.project_memory.telemetry.emit("cold_fallback", {
+                "message": "cold storage fallback retrieval triggered",
+                "project_id": self.project_memory.project_id,
+                "session_id": self.project_memory.session_id,
+                "query": query,
+                "n": cold_n,
+            })
             candidates.extend(self._cold_candidates(query, query_terms, cold_n))
 
         selected = self._select_candidates(candidates, budget - result.working_tokens)
@@ -172,6 +178,9 @@ class UnifiedRetriever:
             elif cand.layer == "cold":
                 result.cold.append(cand.payload)
                 result.cold_tokens += cand.token_count
+            elif cand.layer == "procedural":
+                result.procedural.append(cand.payload)
+                result.procedural_tokens += cand.token_count
 
         return result
 
@@ -418,15 +427,79 @@ class UnifiedRetriever:
             )
         return out
 
+    def _procedural_candidates(
+        self, query: str, query_terms: Set[str], n: int
+    ) -> List[RetrievalCandidate]:
+        """Retrieve skill candidates from Layer 6 (ProceduralMemory).
+
+        Uses hybrid matching (FTS5 + cosine) when an embedding service is
+        available, falling back to lexical-only otherwise.
+        """
+        out: List[RetrievalCandidate] = []
+        procedural = getattr(self.project_memory, "procedural", None)
+        if procedural is None:
+            return out
+
+        # Best-effort embedding for hybrid matching
+        emb = None
+        emb_service = getattr(self.project_memory, "embedding_service", None)
+        if emb_service is not None:
+            try:
+                emb = emb_service.embed(query)
+            except Exception:
+                pass
+
+        try:
+            project_id = getattr(self.project_memory, "project_id", "")
+            matches = procedural.match_skills(
+                query,
+                embedding=emb,
+                top_k=n,
+                lexical_weight=self.policy.procedural_weight_lexical
+                / max(self.policy.procedural_weight_lexical + self.policy.procedural_weight_semantic, 1e-9),
+                min_confidence=self.policy.min_procedural_confidence,
+                project_id=project_id,
+            )
+        except Exception as exc:
+            logger.debug("_procedural_candidates failed: %s", exc)
+            return out
+
+        tc = getattr(self.project_memory, "_token_counter", None) or (lambda t: max(1, len(t) // 4))
+        for match in matches:
+            skill = match.skill
+            text = skill.to_prompt_text()
+            # Combined score: confidence anchors relevance; match score modulates
+            score = (self.policy.procedural_weight_confidence * skill.confidence
+                     + (1.0 - self.policy.procedural_weight_confidence) * match.score)
+            out.append(
+                RetrievalCandidate(
+                    layer="procedural",
+                    text=text,
+                    payload=skill.to_dict(),
+                    token_count=max(1, tc(text)),
+                    score=score,
+                    source_id=skill.skill_id,
+                    metadata={
+                        "skill_name": skill.name,
+                        "trigger": skill.trigger,
+                        "confidence": skill.confidence,
+                        "match_score": match.score,
+                        "matched_via": match.matched_via,
+                    },
+                )
+            )
+        return out
+
     def _select_candidates(self, candidates: Iterable[RetrievalCandidate], remaining_budget: int) -> List[RetrievalCandidate]:
         budget_left = max(0, remaining_budget)
         selected: List[RetrievalCandidate] = []
         seen = set()
-        per_layer_tokens = {"episodic": 0, "semantic": 0, "cold": 0}
+        per_layer_tokens = {"episodic": 0, "semantic": 0, "cold": 0, "procedural": 0}
         layer_caps = {
             "episodic": self.project_memory.budget.episodic,
             "semantic": self.project_memory.budget.semantic,
             "cold": self.project_memory.budget.cold,
+            "procedural": getattr(self.project_memory.budget, "procedural", 200),
         }
 
         ranked = sorted(candidates, key=lambda item: item.score, reverse=True)

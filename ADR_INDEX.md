@@ -112,6 +112,53 @@ Even when a future thread starts fresh, these should be treated as effectively s
 
 ---
 
+## ADR-007 — `engram_lite` as a Facade Over `engram`
+
+**File:** `adr/ADR-007-engram-lite-as-engram-facade.md`
+**Status:** Accepted (implemented)
+**Date:** 2026-05-04
+
+### Decision
+
+`engram_lite` is a curated facade over `engram`.  All implementation lives in
+`engram`; `engram_lite.__init__` re-exports a constrained subset.  The `cli/`
+directory and `ProjectMemory` class remain in `engram_lite` (the former as
+lite-specific migration tooling, the latter as option-A: lite class whose
+internals use `engram` primitives).
+
+### Modules moved from `engram_lite` to `engram`
+
+| Module | New location |
+|---|---|
+| `Telemetry`, `TelemetryEvent`, `log_sink`, `json_file_sink` | `engram.telemetry` |
+| `PromptBuildTrace`, `EvidenceTrace`, `PromptSectionTrace`, `TokenAccountingTrace` | `engram.inspection` |
+| `AugmentRequest`, `AugmentResult`, `PromptAugmenter`, `ContextResult` | `engram.memory.augment` |
+| `ChromaDBStore`, `DimensionMismatchError`, `SchemaManager` | `engram.storage` |
+| `ForgettingConfig`, `ForgettingPolicy` (semantic) | `engram.memory.semantic_forgetting` |
+| `detect_contradiction`, `cosine_similarity` | `engram.memory.contradiction` |
+| `reciprocal_rank_fusion`, `hybrid_episode_search` | `engram.memory.hybrid_search` |
+| `build_prompt_from_context`, `build_prompt_trace_from_result` | `engram.prompting` |
+| `LightweightIngestionPolicy`, `score_text`, `canonicalize_episode`, etc. | `engram.memory.quality` |
+| `get_token_counter`, `word_count_approximation` | `engram.utils.tokens` |
+| `WriterLock` | `engram.utils.concurrency` |
+| `Embedder`, `OllamaEmbedder`, `EmbeddingService`, `EmbeddingCache`, `CachedEmbedder`, `SentenceTransformersEmbedder` | `engram.embeddings` |
+| `SemanticGraph` | `engram.semantic.graph` |
+| `SemanticExtractor`, `ExtractedFact`, `ExtractionResult` | `engram.semantic.extractor` |
+| `trace_to_memory_records` | `engram.interop` |
+
+### Contract lock
+
+`engram_lite/tests/test_public_api_contract.py` pins the public surface.
+Any failing assertion is a breaking change.
+
+### Related
+
+- ADR-004: Retrieval policy surface hidden behind facade
+- ADR-005: Persistence layer configured with simple defaults by `ProjectMemory`
+- ADR-006: Interoperability core (unaffected)
+
+---
+
 ## ADRs that should probably be added next
 
 These are the most obvious gaps in the current decision record.

@@ -179,10 +179,11 @@ class TokenBudget:
     semantic: int = 400
 
     cold: int = 400
+    procedural: int = 200   # Layer 6 — skill procedures
 
     @property
     def total(self) -> int:
-        return self.working + self.episodic + self.semantic + self.cold
+        return self.working + self.episodic + self.semantic + self.cold + self.procedural
 
 
 _CORRECTION_USE_INSTEAD_PROMPT = re.compile(
@@ -283,15 +284,18 @@ class ContextResult:
     episodic: List[Episode] = field(default_factory=list)
     semantic: List[Dict[str, Any]] = field(default_factory=list)
     cold: List[Dict[str, Any]] = field(default_factory=list)
+    procedural: List[Any] = field(default_factory=list)   # Layer 6: Skill objects
     working_tokens: int = 0
     episodic_tokens: int = 0
     semantic_tokens: int = 0
     cold_tokens: int = 0
+    procedural_tokens: int = 0
     neural_meta: Optional[Dict[str, Any]] = None  # Layer 5 metadata
 
     @property
     def total_tokens(self) -> int:
-        return self.working_tokens + self.episodic_tokens + self.semantic_tokens + self.cold_tokens
+        return (self.working_tokens + self.episodic_tokens + self.semantic_tokens
+                + self.cold_tokens + self.procedural_tokens)
 
     def to_dict(self) -> Dict[str, Any]:
         """Return a JSON-serializable representation of the assembled context.
@@ -312,11 +316,14 @@ class ContextResult:
             ],
             "semantic": list(self.semantic),
             "cold": list(self.cold),
+            "procedural": [s.to_dict() if hasattr(s, "to_dict") else str(s)
+                           for s in self.procedural],
             "token_counts": {
                 "working": self.working_tokens,
                 "episodic": self.episodic_tokens,
                 "semantic": self.semantic_tokens,
                 "cold": self.cold_tokens,
+                "procedural": self.procedural_tokens,
                 "total": self.total_tokens,
             },
         }
@@ -368,6 +375,15 @@ class ContextResult:
         else:
             sections["cold"] = ""
 
+        if self.procedural:
+            skill_texts = [
+                s.to_prompt_text() if hasattr(s, "to_prompt_text") else str(s)
+                for s in self.procedural
+            ]
+            sections["procedural"] = "\n\n".join(skill_texts)
+        else:
+            sections["procedural"] = ""
+
         return sections
 
     def to_formatted_prompt(
@@ -400,7 +416,7 @@ class ContextResult:
         sections = self.to_prompt_sections()
 
         memory_parts: List[str] = []
-        for key in ("working", "episodic", "semantic", "cold"):
+        for key in ("working", "episodic", "semantic", "cold", "procedural"):
             val = sections.get(key, "")
             if val:
                 memory_parts.append(f"[{key.upper()}]\n{val}")
@@ -509,6 +525,10 @@ def _build_layers(
     # --- Layer 4: Cold Storage ---
     cold = ColdStorage(db_path=project_dir / "cold.db")
 
+    # --- Layer 6: Procedural Memory (skills — always available) ---
+    from .memory.procedural import ProceduralMemory
+    procedural = ProceduralMemory(db_path=project_dir / "procedural.db")
+
     # --- Embedding Service (shared model for neural + retrieval) ---
     device = getattr(neural_config, "device", "cpu") if neural_config else "cpu"
     embedding_service = EmbeddingService(
@@ -568,6 +588,7 @@ def _build_layers(
         "episodic": episodic,
         "semantic": semantic,
         "cold": cold,
+        "procedural": procedural,
         "embedding_service": embedding_service,
         "neural": neural,
         "neural_coord": neural_coord,  # completed in __init__ after llm_engine available
@@ -677,19 +698,18 @@ class ProjectMemory:
         # --- Telemetry (opt-in via env or explicit arg) ---
         if telemetry is None:
             enable = str(os.getenv("ENGRAM_TELEMETRY", "0")).lower() in ("1", "true", "yes")
-            sink = str(os.getenv("ENGRAM_TELEMETRY_SINK", "log")).lower()
+            sink_name = str(os.getenv("ENGRAM_TELEMETRY_SINK", "log")).lower()
+            telemetry = Telemetry()
             if enable:
-                if sink == "jsonl":
+                if sink_name == "jsonl":
                     raw_path = os.getenv(
                         "ENGRAM_TELEMETRY_PATH",
                         str(Path.home() / ".engram" / "telemetry.jsonl"),
                     )
                     path = Path(raw_path).expanduser().resolve(strict=False)
-                    telemetry = Telemetry(sink=JsonlFileSink(path), enabled=True)
+                    telemetry.add_sink(JsonlFileSink(path))
                 else:
-                    telemetry = Telemetry(sink=LoggingSink(), enabled=True)
-            else:
-                telemetry = Telemetry(enabled=False)
+                    telemetry.add_sink(LoggingSink())
 
         self.telemetry = telemetry
         self.project_id = project_id
@@ -722,6 +742,7 @@ class ProjectMemory:
         self.episodic = layers["episodic"]
         self.semantic = layers["semantic"]
         self.cold = layers["cold"]
+        self.procedural = layers["procedural"]
         self.embedding_service = layers["embedding_service"]
         self.neural = layers["neural"]
         self.forgetting = layers["forgetting"]
@@ -803,6 +824,7 @@ class ProjectMemory:
             episodic=self.episodic,
             semantic=self.semantic,
             cold=self.cold,
+            procedural=self.procedural,
             neural_coord=self.neural_coord,
             embedding_service=self.embedding_service,
             budget=self.budget,
@@ -927,14 +949,13 @@ class ProjectMemory:
             report.promoted_facts += neural_report.promoted_facts
             report.details.extend(neural_report.details)
 
-        self.telemetry.emit(
-            "perf_span",
-            "lifecycle maintenance completed",
-            project_id=self.project_id,
-            session_id=self.session_id,
-            operation="run_lifecycle_maintenance",
-            elapsed_ms=round((time.perf_counter() - started) * 1000.0, 3),
-        )
+        self.telemetry.emit("perf_span", {
+            "message": "lifecycle maintenance completed",
+            "project_id": self.project_id,
+            "session_id": self.session_id,
+            "operation": "run_lifecycle_maintenance",
+            "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        })
         return report
 
     # ------------------------------------------------------------------
@@ -993,26 +1014,24 @@ class ProjectMemory:
             if msg.metadata is None:
                 msg.metadata = {}
             msg.metadata["event_bus"] = result
-            self.telemetry.emit(
-                "memory_ingest",
-                "turn event queued",
-                project_id=self.project_id,
-                session_id=self.session_id,
-                role=role,
-                event_bus_result=result,
-            )
+            self.telemetry.emit("memory_ingest", {
+                "message": "turn event queued",
+                "project_id": self.project_id,
+                "session_id": self.session_id,
+                "role": role,
+                "event_bus_result": result,
+            })
         except Exception as e:
             logger.debug("Event bus enqueue failed: %s", e)
 
-        self.telemetry.emit(
-            "perf_span",
-            "conversation turn processed",
-            project_id=self.project_id,
-            session_id=self.session_id,
-            operation="add_turn",
-            role=role,
-            elapsed_ms=round((time.perf_counter() - started) * 1000.0, 3),
-        )
+        self.telemetry.emit("perf_span", {
+            "message": "conversation turn processed",
+            "project_id": self.project_id,
+            "session_id": self.session_id,
+            "operation": "add_turn",
+            "role": role,
+            "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        })
         return msg
 
     def _feed_neural(self, role: str, content: str, msg: Message):
@@ -1156,16 +1175,15 @@ class ProjectMemory:
             except Exception as e:
                 logger.debug("ExperimentMemory.finish_run failed: %s", e)
 
-        self.telemetry.emit(
-            "respond",
-            "respond() completed",
-            project_id=self.project_id,
-            session_id=self.session_id,
-            strategy=strategy,
-            elapsed_ms=elapsed_ms,
-            prompt_tokens=prompt_result.get("prompt_tokens", 0),
-            compressed=prompt_result.get("compressed", False),
-        )
+        self.telemetry.emit("respond", {
+            "message": "respond() completed",
+            "project_id": self.project_id,
+            "session_id": self.session_id,
+            "strategy": strategy,
+            "elapsed_ms": elapsed_ms,
+            "prompt_tokens": prompt_result.get("prompt_tokens", 0),
+            "compressed": prompt_result.get("compressed", False),
+        })
 
         return {
             "answer": answer,
@@ -1437,14 +1455,13 @@ class ProjectMemory:
         # Track episode count for synthesis hook
         self._session_episode_count += 1
 
-        self.telemetry.emit(
-            "perf_span",
-            "episode stored",
-            project_id=self.project_id,
-            session_id=self.session_id,
-            operation="store_episode",
-            elapsed_ms=round((time.perf_counter() - started) * 1000.0, 3),
-        )
+        self.telemetry.emit("perf_span", {
+            "message": "episode stored",
+            "project_id": self.project_id,
+            "session_id": self.session_id,
+            "operation": "store_episode",
+            "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        })
         return episode_id
 
     def search_episodes(
@@ -1559,15 +1576,14 @@ class ProjectMemory:
             except Exception as e:
                 logger.warning("Semantic query failed: %s", e)
 
-        self.telemetry.emit(
-            "perf_span",
-            "context retrieved",
-            project_id=self.project_id,
-            session_id=self.session_id,
-            operation="get_context",
-            query=query,
-            elapsed_ms=round((time.perf_counter() - started) * 1000.0, 3),
-        )
+        self.telemetry.emit("perf_span", {
+            "message": "context retrieved",
+            "project_id": self.project_id,
+            "session_id": self.session_id,
+            "operation": "get_context",
+            "query": query,
+            "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        })
         return result
 
     def get_diagnostics_snapshot(self) -> Dict[str, Any]:
@@ -1969,17 +1985,14 @@ class ProjectMemory:
         # -----------------------------
         try:
             if self.telemetry is not None and getattr(self.telemetry, "enabled", False):
-                self.telemetry.emit(
-                    {
-                        "event": "build_prompt",
-                        "project_id": self.project_id,
-                        "session_id": self.session_id,
-                        "query": resolved_query,
-                        "prompt_tokens": prompt_tokens,
-                        "memory_tokens": memory_tokens,
-                        "compressed": compressed,
-                    }
-                )
+                self.telemetry.emit("build_prompt", {
+                    "project_id": self.project_id,
+                    "session_id": self.session_id,
+                    "query": resolved_query,
+                    "prompt_tokens": prompt_tokens,
+                    "memory_tokens": memory_tokens,
+                    "compressed": compressed,
+                })
         except Exception as e:
             logger.debug("Telemetry emit failed: %s", e)
 
@@ -2144,13 +2157,12 @@ class ProjectMemory:
         )
 
         if not dry_run and result.get("archived", 0) > 0:
-            self.telemetry.emit(
-                "forgetting_run",
-                f"Archived {result['archived']} episodes to cold storage",
-                project_id=self.project_id,
-                archived=result["archived"],
-                total_scored=result.get("total_scored", 0),
-            )
+            self.telemetry.emit("forgetting_run", {
+                "message": f"Archived {result['archived']} episodes to cold storage",
+                "project_id": self.project_id,
+                "archived": result["archived"],
+                "total_scored": result.get("total_scored", 0),
+            })
 
         return result
 
@@ -2355,6 +2367,8 @@ class ProjectMemory:
         if self.semantic:
             self.semantic.close()
         self.cold.close()
+        if hasattr(self, "procedural") and self.procedural is not None:
+            self.procedural.close()
         if self.neural_coord is not None:
             self.neural_coord.close()  # Saves NeuralMemory state
         elif self.neural:
@@ -2583,6 +2597,8 @@ class ProjectMemory:
             "rules_written": 0,
             "rules_skipped": 0,
             "relations_written": 0,
+            "skills_written": 0,
+            "skills_skipped": 0,
             "window_size": 0,
             "extraction_seconds": 0.0,
             "skipped_reason": None,
@@ -2652,13 +2668,26 @@ class ProjectMemory:
             )
             result["relations_written"] += 1
 
+        # Write skills to ProceduralMemory (Layer 6)
+        for skill in synth.skills:
+            skill.project_id = self.project_id
+            emb = self.embedding_service.embed(skill.trigger)
+            if emb is not None:
+                skill.embedding = emb
+            if self.procedural.get_skill(skill.skill_id) is None:
+                self.procedural.add_skill(skill)
+                result["skills_written"] += 1
+            else:
+                result["skills_skipped"] += 1
+
         logger.info(
             "synthesize_now: project=%s rules_written=%d skipped=%d "
-            "relations=%d window=%d elapsed=%.1fs",
+            "relations=%d skills_written=%d window=%d elapsed=%.1fs",
             self.project_id,
             result["rules_written"],
             result["rules_skipped"],
             result["relations_written"],
+            result["skills_written"],
             result["window_size"],
             result["extraction_seconds"],
         )

@@ -28,6 +28,8 @@ import time
 from typing import List, Tuple
 
 import numpy as np
+import pytest
+import torch
 
 from .runner import test_group, require
 from .mocks import TempDir, unique_session
@@ -177,6 +179,10 @@ _CORPUS: List[Tuple[str, str, float]] = [
 
 def _make_coordinator(d):
     """Build a NeuralCoordinator with real RTRL and a deterministic embedder."""
+    import torch
+    torch.manual_seed(42)
+    np.random.seed(42)
+
     from engram.rtrl.neural_memory import NeuralMemory, NeuralMemoryConfig, EmbeddingProjector
     from engram.memory.neural_coordinator import NeuralCoordinator
 

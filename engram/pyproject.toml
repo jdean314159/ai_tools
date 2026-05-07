@@ -13,7 +13,6 @@ readme = "README.md"
 
 dependencies = [
     "pydantic>=2.0.0",
-    "engram-lite",
     "llm-harness-core>=0.1.0",
     "numpy>=1.24.0",
     "pyyaml>=6.0.0",

@@ -343,7 +343,7 @@ def test_context_overflow_falls_through_to_failover():
         name="test",
         engines=[FailFirst(), SucceedSecond()],
         policy=policy,
-        telemetry=Telemetry(sink=LoggingSink(), enabled=True),
+        telemetry=Telemetry(),
     )
 
     out = fe.generate("x" * 10000)
@@ -416,7 +416,7 @@ def test_token_budget_fails_over_to_next_engine():
         name="test",
         engines=[BudgetFail(), Fallback()],
         policy=policy,
-        telemetry=Telemetry(sink=LoggingSink(), enabled=True),
+        telemetry=Telemetry(),
     )
 
     out = fe.generate("hello", max_tokens=2048)

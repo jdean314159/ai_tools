@@ -220,10 +220,12 @@ class PreFlightCheck:
             self.errors.append(f"engram import error: {exc}")
             return False
 
+        # Engine loading goes through llm_engines, not engram.engine — verify
+        # the factory is importable so engine setup will succeed at runtime.
         try:
-            from engram.engine import OllamaEngine
+            from llm_engines.factory import EngineFactory  # noqa: F401
         except Exception as exc:
-            self.errors.append(f"engram.engine import error: {exc}")
+            self.errors.append(f"llm_engines import error: {exc}")
             return False
 
         return True

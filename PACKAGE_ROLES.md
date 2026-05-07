@@ -6,8 +6,8 @@ This file is the repo-level stabilization map. It defines the intended role of e
 |---|---|---:|---|
 | `llm_harness_core` | Shared interop contracts: capabilities, messages, results, traces, retrieved documents, and memory records. | yes | Keep small and dependency-light. Other packages should adapt to this layer, not redefine it. |
 | `llm_engines` | Model/backend access behind normalized engine capabilities and response schemas. | yes | Local backends first; cloud providers optional and explicit. |
-| `engram_lite` | Default lightweight memory augmentation for teaching, demos, and small applications. | yes | Should remain installable and inspectable without forcing full Engram complexity. |
-| `engram` | Advanced/full memory runtime with richer persistence, policy, and retrieval behavior. | after `engram_lite` | Use when richer memory behavior is the lesson or production target. |
+| `engram_lite` | Curated facade over `engram` for teaching and small applications. Exposes a stable, minimal public API; all implementation lives in `engram`. | yes | Public API is locked by `test_public_api_contract.py`. Students outgrow it by changing the import line, not migrating data. See ADR-007. |
+| `engram` | Full memory runtime and canonical implementation for all shared primitives (telemetry, inspection, embeddings, semantic graph, prompting, storage, etc.). | after `engram_lite` | Use when richer memory behavior is the lesson or production target. `engram_lite` re-exports a curated subset. |
 | `rag_lib` | Retrieval and source-grounded QA patterns with visible evidence flow. | yes | Keep failure labs runnable without requiring a live model. |
 | `llm_inspector` | Core trace/evaluation inspection logic and CLI-facing inspection primitives. | yes | Should consume shared interop records from memory and retrieval packages. |
 | `llm_inspector_ui` | Streamlit workbench for comparing baseline, memory, retrieval, and later agent runs. | yes | `engram_lite` is the default memory branch; full `engram` is advanced. |

@@ -217,20 +217,22 @@ def create_failover_engine(
 
     env_enabled = str(os.getenv("ENGRAM_TELEMETRY", "")).strip().lower() in {"1", "true", "yes", "on"}
     if env_enabled:
-        sink = str(os.getenv("ENGRAM_TELEMETRY_SINK", "log")).lower().strip() or "log"
-        if sink == "jsonl":
+        sink_name = str(os.getenv("ENGRAM_TELEMETRY_SINK", "log")).lower().strip() or "log"
+        telemetry = Telemetry()
+        if sink_name == "jsonl":
             raw = os.getenv("ENGRAM_TELEMETRY_PATH", str(Path.home() / ".engram" / "telemetry.jsonl"))
             path = Path(str(raw)).expanduser()
-            telemetry = Telemetry(sink=JsonlFileSink(path), enabled=True)
+            telemetry.add_sink(JsonlFileSink(path))
         else:
-            telemetry = Telemetry(sink=LoggingSink(), enabled=True)
+            telemetry.add_sink(LoggingSink())
     elif bool(telemetry_cfg.get("enabled", False)):
-        sink = str(telemetry_cfg.get("sink", "log")).lower()
-        if sink == "jsonl":
+        sink_name = str(telemetry_cfg.get("sink", "log")).lower()
+        telemetry = Telemetry()
+        if sink_name == "jsonl":
             path = Path(str(telemetry_cfg.get("jsonl_path", Path.home() / ".engram" / "telemetry.jsonl"))).expanduser()
-            telemetry = Telemetry(sink=JsonlFileSink(path), enabled=True)
+            telemetry.add_sink(JsonlFileSink(path))
         else:
-            telemetry = Telemetry(sink=LoggingSink(), enabled=True)
+            telemetry.add_sink(LoggingSink())
 
     engine_names: List[str] = list(override_engines or profile.get("engines") or [])
     if not engine_names:
