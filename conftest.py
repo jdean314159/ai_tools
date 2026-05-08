@@ -33,10 +33,13 @@ TEST_SOURCE_PATHS = [
 
 SOURCE_PACKAGE_EXPECTATIONS = {
     "llm_harness_core": REPO_ROOT / "llm_harness_core" / "src" / "llm_harness_core",
+    "llm_engines": REPO_ROOT / "llm_engines" / "llm_engines",
+    "engram": REPO_ROOT / "engram" / "engram",
     "engram_lite": REPO_ROOT / "engram_lite" / "src" / "engram_lite",
     "llm_inspector": REPO_ROOT / "llm_inspector" / "src" / "llm_inspector",
     "rag_lib": REPO_ROOT / "rag_lib" / "src" / "rag_lib",
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",
+    "language_tutor": REPO_ROOT / "language_tutor" / "language_tutor",
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
 }
 
