@@ -16,6 +16,7 @@
 #   make clean            Remove build artifacts and caches
 
 PYTHON := python3
+PIP    := $(PYTHON) -m pip
 VENV   := $(HOME)/ai-env/bin/python
 
 # ---------------------------------------------------------------------------
@@ -24,22 +25,22 @@ VENV   := $(HOME)/ai-env/bin/python
 
 .PHONY: install
 install:
-	pip install -e llm_harness_core/[dev]
-	pip install -e engram_lite/[dev]
-	pip install -e llm_engines/[dev]
-	pip install -e engram/
-	pip install -e llm_inspector/[dev]
-	pip install -e agent_lib/[dev]
-	pip install -e rag_lib/[dev]
-	pip install -e llm_inspector_ui/
-	pip install -e language_tutor/[dev]
+	$(PIP) install -e './llm_harness_core[dev]'
+	$(PIP) install -e './llm_engines[dev]'
+	$(PIP) install -e './engram'
+	$(PIP) install -e './engram_lite[dev]'
+	$(PIP) install -e './llm_inspector[dev]'
+	$(PIP) install -e './rag_lib[dev]'
+	$(PIP) install -e './llm_inspector_ui[dev]'
+	$(PIP) install -e './language_tutor[dev]'
+	$(PIP) install -e './agent_lib[dev]'
 	@echo ""
-	@echo "Core packages installed. Run 'make test-core', 'make test-agent', 'make test-rag', 'make test-integration', or 'make test-tutor' to verify."
+	@echo "Core packages installed in dependency order. Run 'make test-core', 'make test-agent', 'make test-rag', 'make test-integration', or 'make test-tutor' to verify."
 
 .PHONY: install-gpu
 install-gpu: install
-	CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
-	pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+	CMAKE_ARGS="-DGGML_CUDA=on" $(PIP) install llama-cpp-python
+	$(PIP) install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # ---------------------------------------------------------------------------
 # Testing
