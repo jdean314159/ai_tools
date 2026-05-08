@@ -10,7 +10,12 @@ import pytest
     "language_tutor.drills.base",
 ])
 def test_release_compat_modules_import(module_name):
-    module = importlib.import_module(module_name)
+    if module_name == "language_tutor.drills.base":
+        with pytest.warns(DeprecationWarning):
+            module = importlib.import_module(module_name)
+    else:
+        module = importlib.import_module(module_name)
+
     assert module is not None
 
 
