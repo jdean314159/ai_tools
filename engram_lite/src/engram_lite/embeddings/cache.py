@@ -1,1 +1,5 @@
-from engram.embeddings.cache import EmbeddingCache, CachedEmbedder  # noqa: F401
+"""Compatibility re-exports from engram.embeddings.cache."""
+
+from engram.embeddings.cache import CachedEmbedder, EmbeddingCache
+
+__all__ = ["EmbeddingCache", "CachedEmbedder"]

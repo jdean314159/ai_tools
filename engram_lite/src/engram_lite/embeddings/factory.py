@@ -1,1 +1,5 @@
-from engram.embeddings.factory import EmbeddingService  # noqa: F401
+"""Compatibility re-export from engram.embeddings.factory."""
+
+from engram.embeddings.factory import EmbeddingService
+
+__all__ = ["EmbeddingService"]

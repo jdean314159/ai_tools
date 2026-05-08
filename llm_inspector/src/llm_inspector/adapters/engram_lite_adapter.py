@@ -12,6 +12,37 @@ def _copy_meta(value: Any) -> dict[str, Any]:
     return dict(value) if isinstance(value, dict) else {}
 
 
+def _normalize_engram_lite_event(event: Any) -> TraceEvent:
+    """Normalize delegated Engram events to the Engram Lite adapter boundary.
+
+    Engram Lite is now a facade over Engram, so raw prompt traces may contain
+    events whose source_package is "engram".  The llm_inspector adapter should
+    expose the user-facing adapter source as "engram_lite" while preserving
+    the upstream source in the payload.
+    """
+    converted = TraceEvent.from_interop(event)
+    if converted.source_package == "engram_lite":
+        return converted
+
+    payload = dict(converted.payload)
+    payload.setdefault("upstream_source_package", converted.source_package)
+    payload.setdefault("upstream_source_component", converted.source_component)
+
+    return TraceEvent(
+        event_type=converted.event_type,
+        source_package="engram_lite",
+        source_component=converted.source_component or "EngramLiteAugmenter",
+        payload=payload,
+        severity=converted.severity,
+        message=converted.message,
+        event_id=converted.event_id,
+        span_id=converted.span_id,
+        parent_span_id=converted.parent_span_id,
+        ts=converted.ts,
+        tags=converted.tags,
+    )
+
+
 @dataclass
 class EngramLiteAugmenter(ContextAugmenter):
     base_dir: Path
@@ -67,7 +98,7 @@ class EngramLiteAugmenter(ContextAugmenter):
         metrics = RunMetrics(engine="engram_lite", model=None, prompt_tokens=prompt_tokens if isinstance(prompt_tokens, int) else None)
 
         raw_events = getattr(prompt_trace, "to_interop_events", lambda: [])()
-        events = [TraceEvent.from_interop(event) for event in raw_events]
+        events = [_normalize_engram_lite_event(event) for event in raw_events]
         if not events:
             events = [
                 TraceEvent(

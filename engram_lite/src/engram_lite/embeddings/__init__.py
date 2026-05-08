@@ -1,9 +1,27 @@
-"""Re-exports from engram.embeddings."""
-from engram.embeddings import (  # noqa: F401
-    Embedder, EmbeddingResult, BatchEmbeddingResult,
-    OllamaEmbedder, EmbeddingService, EmbeddingCache, CachedEmbedder,
+"""Compatibility re-exports from engram.embeddings."""
+
+from engram.embeddings import (
+    BatchEmbeddingResult,
+    CachedEmbedder,
+    Embedder,
+    EmbeddingCache,
+    EmbeddingResult,
+    EmbeddingService,
+    OllamaEmbedder,
 )
+
+try:
+    from engram.embeddings import SentenceTransformersEmbedder
+except ImportError:
+    SentenceTransformersEmbedder = None
+
 __all__ = [
-    "Embedder", "EmbeddingResult", "BatchEmbeddingResult",
-    "OllamaEmbedder", "EmbeddingService", "EmbeddingCache", "CachedEmbedder",
+    "Embedder",
+    "EmbeddingResult",
+    "BatchEmbeddingResult",
+    "OllamaEmbedder",
+    "EmbeddingService",
+    "EmbeddingCache",
+    "CachedEmbedder",
+    "SentenceTransformersEmbedder",
 ]

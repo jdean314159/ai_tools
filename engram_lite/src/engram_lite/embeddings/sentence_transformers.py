@@ -1,2 +1,5 @@
-from engram.embeddings.sentence_transformers import SentenceTransformersEmbedder  # noqa: F401
+"""Compatibility re-export from engram.embeddings.sentence_transformers."""
+
+from engram.embeddings.sentence_transformers import SentenceTransformersEmbedder
+
 __all__ = ["SentenceTransformersEmbedder"]
