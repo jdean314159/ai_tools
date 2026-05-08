@@ -4,6 +4,9 @@ from pathlib import Path
 
 import pytest
 
+
+pytestmark = pytest.mark.engram
+
 from llm_inspector.adapters.engram_adapter import EngramAugmenter
 from llm_inspector.core import EvidenceFlow, Turn
 from llm_inspector.inspectors import ContextInspector

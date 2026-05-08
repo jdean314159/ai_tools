@@ -4,6 +4,9 @@ from pathlib import Path
 
 import pytest
 
+
+pytestmark = pytest.mark.engram
+
 from llm_inspector.adapters.engram_adapter import EngramAugmenter
 from llm_inspector.core import Trace
 from llm_inspector.protocols import AugmentRequest
