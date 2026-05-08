@@ -2,17 +2,21 @@
 
 Updated: 2026-05-08
 
-## Current task
+## Current state
 
-Continue from the green packaging/import/test stabilization checkpoint.
+Packaging/import/test stabilization is green.
 
-Latest broad gate result:
+Latest broad package-local gate:
 
     833 passed, 37 skipped in 34.90s
 
-The immediate task is no longer the `llm_inspector_ui` `describe_ui` import failure. That blocker is resolved.
+The old immediate blocker is resolved:
 
-## Current validated command
+    ImportError: cannot import name 'describe_ui' from 'llm_inspector_ui'
+
+The repo now has centralized transitional pytest import control and explicit import provenance tests.
+
+## Current broad gate
 
     unset PYTHONPATH
 
@@ -29,57 +33,27 @@ The immediate task is no longer the `llm_inspector_ui` `describe_ui` import fail
       llm_harness_core/tests \
       -x --tb=short -W error
 
-Expected result:
-
-    passed / skipped only
-
 ## Immediate next increment
 
-Strengthen publication hygiene enforcement.
+Convert `llm_engines` to `src/` layout.
 
-Review and update:
-
-    scripts/check_publication_hygiene.py
-
-It should fail on accidental transient artifacts unless explicitly whitelisted:
-
-    .pytest_cache/
-    __pycache__/
-    *.pyc
-    *.egg-info/
-    *.bak
-    *.orig
-    *.rej
-    *.patch
-    test_reports/
-    test_survey_results/
-    local_artifacts/
-
-Run:
-
-    PYTHONDONTWRITEBYTECODE=1 \
-    python scripts/check_publication_hygiene.py
-
-Then rerun the broad gate above.
-
-## Next package-layout increment
-
-After hygiene is green, convert:
-
-    llm_engines
-
-to:
+Target structure:
 
     llm_engines/src/llm_engines
 
-Update:
+Work in a narrow commit:
 
-    llm_engines/pyproject.toml
-    pytest.ini
-    conftest.py
-    tests/test_import_provenance.py
+1. Move the package directory.
+2. Update `llm_engines/pyproject.toml`.
+3. Update root `pytest.ini` path entries.
+4. Update root `conftest.py` `TEST_SOURCE_PATHS`.
+5. Update root `conftest.py` `SOURCE_PACKAGE_EXPECTATIONS`.
+6. Update `tests/test_import_provenance.py`.
+7. Run editable install validation.
+8. Run `llm_engines/tests`.
+9. Run the broad gate.
 
-Validate editable install:
+## Validation sequence
 
     python -m pip install -e ./llm_engines
 
@@ -90,14 +64,30 @@ Validate editable install:
     print(llm_engines.__file__)
     PY
 
-Then rerun the `llm_engines` package gate and the broad gate.
+Then from repo root:
 
-## Do not start yet
+    cd /home/cybernaif/ai_tools
 
-Do not start new `agent_lib`, UI, teaching, RAG, or memory feature work until packaging/hygiene/layout stabilization remains green.
+    unset PYTHONPATH
 
-## Current policy
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
+    python -m pytest -c pytest.ini --rootdir=. \
+      tests/test_import_provenance.py \
+      llm_engines/tests \
+      -x --tb=short -W error
 
-Root `conftest.py` owns transitional pytest import bootstrapping.
+Then run the broad gate.
 
-Do not add package-local import bootstrapping back to package `conftest.py` files.
+## Do not do yet
+
+Do not convert `engram` first. It is larger and has more internal assumptions.
+
+Recommended remaining layout order:
+
+1. `llm_engines`
+2. `language_tutor`
+3. `engram`
+
+## Policy reminder
+
+Do not add package-local path hacks back to package `conftest.py` files. Root `conftest.py` is the only allowed transitional pytest import bootstrap.

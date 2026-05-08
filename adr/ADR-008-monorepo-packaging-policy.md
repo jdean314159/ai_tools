@@ -5,7 +5,7 @@ Date: 2026-05-08
 
 ## Context
 
-The `ai_tools` repo contains multiple related Python packages. Package layouts became mixed during active development.
+The `ai_tools` repo contains multiple related Python packages. Package layouts became mixed during active development, which caused repo-root pytest collection to sometimes import same-name outer project directories instead of the real implementation packages.
 
 Current src-layout packages:
 
@@ -22,11 +22,9 @@ Current direct-layout packages:
     engram/engram
     language_tutor/language_tutor
 
-Mixed layout can cause import ambiguity when pytest collects from the monorepo root. Same-name outer project directories can shadow real implementation packages.
-
 ## Decision
 
-The repo will move toward one packaging policy:
+The repo will converge on one packaging policy:
 
 1. Importable packages should use `src/` layout.
 2. Editable installs are the preferred development validation path.
@@ -38,11 +36,15 @@ The repo will move toward one packaging policy:
 
 ## Current implementation checkpoint
 
-Latest broad gate:
+Latest broad package-local gate:
 
     833 passed, 37 skipped in 34.90s
 
 Package-local import bootstraps have been removed. Root `conftest.py` remains as the centralized transitional bootstrap for repo-root pytest collection.
+
+Publication hygiene checking has been strengthened and transient artifacts have been removed.
+
+`engram_lite` embedding compatibility modules now behave as facade re-exports over `engram`. `llm_inspector` normalizes delegated `engram` trace events back to the `engram_lite` adapter boundary while preserving upstream provenance.
 
 ## Editable install order
 
@@ -77,4 +79,6 @@ A package layout change is complete only when:
 5. selected cross-package tests pass
 6. docs and CI commands reflect the new layout
 
-The broad package-local gate is documented in `NEXT_STEP.md` and `LLM_HANDOFF.md`.
+## Consequences
+
+This policy intentionally keeps a temporary root pytest bootstrap. That bootstrap is debt, but it is centralized and tested. It should be removed only after package layout consistency makes it unnecessary.

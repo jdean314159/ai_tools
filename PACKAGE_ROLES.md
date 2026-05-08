@@ -3,48 +3,43 @@
 <!-- AI_TOOLS_CLEANUP_CHECKPOINT_START -->
 ## Current cleanup checkpoint
 
-Packaging/import/test stabilization has reached a green checkpoint.
+Packaging/import/test stabilization is green.
 
-Latest validated broad gate:
+Latest broad package-local gate:
 
     833 passed, 37 skipped in 34.90s
 
-Validated with:
+Validated under:
 
     unset PYTHONPATH
     PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
     PYTHONDONTWRITEBYTECODE=1
     -W error
 
-The earlier `llm_inspector_ui` namespace/import blocker is resolved. Package-local import bootstraps have been removed. Import provenance is now guarded by `tests/test_import_provenance.py`.
+Completed since the previous transfer update:
 
-Root `conftest.py` still contains a centralized transitional pytest bootstrap. This is intentional while the repo still has mixed package layouts and same-name outer project directories. Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
+- `llm_inspector_ui` import/namespace blocker resolved.
+- Editable-install model validated from outside the repo root.
+- Package-local import bootstraps removed.
+- Import provenance is guarded by `tests/test_import_provenance.py`.
+- Root `conftest.py` remains as the single centralized transitional pytest bootstrap.
+- Publication hygiene checker now rejects transient artifacts such as `.pytest_cache/`, `*.egg-info/`, `*.bak`, `*.orig`, `*.rej`, `*.patch`, `local_artifacts/`, `test_reports/`, and `test_survey_results/`.
+- Transient hygiene artifacts were removed.
+- `engram_lite` embedding compatibility modules now behave as facade re-exports over `engram`.
+- `llm_inspector` normalizes delegated `engram` trace events back to the `engram_lite` adapter boundary while preserving upstream provenance.
 
-Current broad gate command:
+Current policy:
 
-    unset PYTHONPATH
+- Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
+- Keep root `conftest.py` as temporary centralized test bootstrap until package layout consistency removes the need for it.
+- Keep source/layout changes in small, separately validated commits.
 
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
-    python -m pytest -c pytest.ini --rootdir=. \
-      tests/test_import_provenance.py \
-      llm_engines/tests \
-      language_tutor/tests \
-      agent_lib/tests \
-      engram_lite/tests \
-      llm_inspector_ui/tests \
-      llm_inspector/tests \
-      rag_lib/tests \
-      llm_harness_core/tests \
-      -x --tb=short -W error
+Next recommended increment:
 
-Remaining packaging work, in order:
-
-1. Strengthen publication hygiene enforcement.
-2. Convert `llm_engines` to `src/` layout.
-3. Convert `language_tutor` to `src/` layout.
-4. Convert `engram` to `src/` layout later.
-5. Remove the transitional root pytest bootstrap only after package layout consistency makes it unnecessary.
-6. Resolve whether `engram_lite` is strictly a facade over `engram` or whether ADR-007 must be amended.
+1. Convert `llm_engines` to `src/` layout.
+2. Update package metadata and import provenance expectations.
+3. Validate editable install and package tests.
+4. Rerun the broad gate.
 <!-- AI_TOOLS_CLEANUP_CHECKPOINT_END -->
 
 This file defines the intended role of each package in the `ai_tools` monorepo. It is also a guardrail against over-complication and duplicated responsibility.

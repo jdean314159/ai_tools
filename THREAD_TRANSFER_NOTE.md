@@ -2,9 +2,9 @@
 
 New thread starting point:
 
-I am working on the `ai_tools` repo. Treat the repo docs and working tree as the source of truth. Chat history is incomplete and should not be treated as canonical.
+I am continuing stabilization work on the `ai_tools` repo. Treat the repo docs and working tree as the source of truth. Chat history is incomplete and should not be treated as canonical.
 
-Read these first, in this order:
+Read these files first, in this order:
 
 1. `VISION.md`
 2. `CURRENT_STATE.md`
@@ -16,35 +16,90 @@ Read these first, in this order:
 
 ## Current checkpoint
 
-Packaging/import/test stabilization has reached a green checkpoint.
+Packaging/import/test stabilization is green.
 
-Latest validated broad gate:
+Latest broad package-local gate:
 
     833 passed, 37 skipped in 34.90s
 
-## What was fixed
+## Work completed
 
-- `llm_inspector_ui` now imports from the real implementation package under `llm_inspector_ui/src/llm_inspector_ui`.
-- Editable-install validation works from outside the repo root.
-- Package-local import bootstraps were removed.
-- Root `conftest.py` and `pytest.ini` now own the transitional repo-root pytest import policy.
-- `tests/test_import_provenance.py` verifies imports resolve to intended implementation paths.
-- The broad gate passes with `-W error`.
+- `llm_inspector_ui` has been converted to `src/` layout and its previous namespace/import blocker is resolved.
+- Editable installs work from outside the repo root.
+- Root `conftest.py` owns transitional repo-root pytest import behavior.
+- Package-local import bootstraps have been removed.
+- Import provenance is now tested explicitly in `tests/test_import_provenance.py`.
+- Publication hygiene checking was strengthened.
+- Transient artifacts such as `.egg-info`, `.pytest_cache`, `.orig`, `.rej`, `.bak`, and local report/artifact directories were removed.
+- `engram_lite` embedding compatibility modules now re-export from `engram`.
+- `llm_inspector` now normalizes delegated `engram` trace events at the `engram_lite` adapter boundary.
 
 ## Current import policy
 
 Root `conftest.py` still contains a centralized transitional pytest bootstrap. This is intentional temporary debt while mixed layouts remain.
 
-Do not reintroduce package-local `sys.path.insert`, `PYTHONPATH`, `sys.modules`, `importlib.reload`, or manual source-package loaders.
+Do not add package-local import bootstrapping back to subproject `conftest.py` files.
+
+Avoid:
+
+- `sys.path.insert`
+- manual `PYTHONPATH` mutation
+- `sys.modules` package replacement
+- `importlib.reload`
+- `importlib.util.spec_from_file_location` package loading
+
+## Current broad gate
+
+    unset PYTHONPATH
+
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
+    python -m pytest -c pytest.ini --rootdir=. \
+      tests/test_import_provenance.py \
+      llm_engines/tests \
+      language_tutor/tests \
+      agent_lib/tests \
+      engram_lite/tests \
+      llm_inspector_ui/tests \
+      llm_inspector/tests \
+      rag_lib/tests \
+      llm_harness_core/tests \
+      -x --tb=short -W error
+
+Expected result:
+
+    passed / skipped only
 
 ## Next task
 
-1. Strengthen publication hygiene checks.
-2. Convert `llm_engines` to `src/` layout.
-3. Convert `language_tutor` to `src/` layout.
-4. Convert `engram` to `src/` layout later.
-5. Remove the transitional root pytest bootstrap only after all packages are consistently laid out.
-6. Resolve the `engram_lite` facade boundary.
+Convert `llm_engines` to `src/` layout.
+
+Target:
+
+    llm_engines/src/llm_engines
+
+Update:
+
+    llm_engines/pyproject.toml
+    pytest.ini
+    conftest.py
+    tests/test_import_provenance.py
+
+Validate:
+
+    python -m pip install -e ./llm_engines
+
+    cd /tmp
+
+    python - <<'PY'
+    import llm_engines
+    print(llm_engines.__file__)
+    PY
+
+Then rerun the `llm_engines` tests and the broad gate.
+
+## Do not start yet
+
+Do not start new feature work in `agent_lib`, `rag_lib`, teaching materials, UI, or memory internals until the remaining package-layout cleanup is further along.
 
 ## Formatting note
 
