@@ -1,69 +1,163 @@
 # GitHub publication checklist
 
-Use this checklist before publishing the monorepo snapshot to GitHub.
+<!-- AI_TOOLS_CLEANUP_CHECKPOINT_START -->
+## Current cleanup checkpoint
 
-## 1. Repository hygiene
+Packaging/import/test stabilization has reached a green checkpoint.
 
-- remove `__pycache__/` directories and `*.pyc` / `*.pyo` artifacts
-- keep active architecture docs at the repo root:
-  - `VISION.md`
-  - `CURRENT_STATE.md`
-  - `ROADMAP.md`
-  - `ADR_INDEX.md`
-  - `LEARNING_PATH.md`
-- keep legacy docs under `docs/history/`
-- confirm package READMEs describe the current teaching spine rather than older transition states
-- confirm experimental packages are labeled honestly
+Latest validated broad gate:
 
-## 2. Validation
+    833 passed, 37 skipped in 34.90s
 
-Run at minimum:
+Validated with:
 
-```bash
-python scripts/check_teaching_artifacts.py
-python scripts/check_publication_hygiene.py
-pytest -q llm_harness_core/tests
-pytest -q llm_inspector_ui/tests
-pytest -q language_tutor/tests
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest -q integration_tests/test_augmenter_spine.py
-```
+    unset PYTHONPATH
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+    PYTHONDONTWRITEBYTECODE=1
+    -W error
 
-When validating the advanced full-Engram workbench path, also run:
+The earlier `llm_inspector_ui` namespace/import blocker is resolved. Package-local import bootstraps have been removed. Import provenance is now guarded by `tests/test_import_provenance.py`.
 
-```bash
-AI_TOOLS_TEST_FULL_ENGRAM=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
-python -m pytest -q integration_tests/test_augmenter_spine.py::test_full_engram_augmenter_normalizes_or_skips_cleanly
-```
+Root `conftest.py` still contains a centralized transitional pytest bootstrap. This is intentional while the repo still has mixed package layouts and same-name outer project directories. Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
 
-Then run the broader monorepo validation path you intend to support publicly, such as editable installs, smoke tests, and wheel/build checks.
+Current broad gate command:
 
-## 3. Teaching repo expectations
+    unset PYTHONPATH
 
-Confirm that a new learner can find, in this order:
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
+    python -m pytest -c pytest.ini --rootdir=. \
+      tests/test_import_provenance.py \
+      llm_engines/tests \
+      language_tutor/tests \
+      agent_lib/tests \
+      engram_lite/tests \
+      llm_inspector_ui/tests \
+      llm_inspector/tests \
+      rag_lib/tests \
+      llm_harness_core/tests \
+      -x --tb=short -W error
 
-1. the teaching entry point in `LEARNING_PATH.md`
-2. the ordered notebooks in `course/notebooks/`
-3. the starter projects in `course/starter_projects/`
-4. the reference application guide in `language_tutor/REFERENCE_APP_GUIDE.md`
-5. the workbench guide in `llm_inspector_ui/WORKBENCH_TEACHING_GUIDE.md`
-6. the evaluation walkthrough in `llm_harness_core/EVALUATION_WALKTHROUGH.md`
+Remaining packaging work, in order:
 
-## 4. Public positioning
+1. Strengthen publication hygiene enforcement.
+2. Convert `llm_engines` to `src/` layout.
+3. Convert `language_tutor` to `src/` layout.
+4. Convert `engram` to `src/` layout later.
+5. Remove the transitional root pytest bootstrap only after package layout consistency makes it unnecessary.
+6. Resolve whether `engram_lite` is strictly a facade over `engram` or whether ADR-007 must be amended.
+<!-- AI_TOOLS_CLEANUP_CHECKPOINT_END -->
 
-Before publication, make sure the front page communicates:
+Use this checklist before publishing or handing off a clean `ai_tools` snapshot.
 
-- what the suite is for
-- which packages are the defaults
-- which packages are advanced or experimental
-- how a learner should begin
-- how a maintainer should validate the repo
+## 1. Packaging and install validation
 
-## 5. Final release sanity checks
+Create a fresh virtual environment and install packages in dependency order:
 
-- verify example commands still work from a clean clone
-- verify package metadata and editable installs match the README guidance
-- verify the repo tree does not contain accidental local artifacts
-- verify GitHub-visible files support the current story rather than historical detours
+    python -m pip install -e ./llm_harness_core
+    python -m pip install -e ./llm_engines
+    python -m pip install -e ./engram
+    python -m pip install -e ./engram_lite
+    python -m pip install -e ./llm_inspector
+    python -m pip install -e ./rag_lib
+    python -m pip install -e ./llm_inspector_ui
+    python -m pip install -e ./language_tutor
+    python -m pip install -e ./agent_lib
 
-- [x] Verify the root teaching validator completes end-to-end in the publication snapshot.
-- [x] Harden mixed-package pytest import resolution for repo-root teaching/reference test runs.
+Then verify imports without manually setting `PYTHONPATH`:
+
+    python - <<'PY'
+    import agent_lib
+    import engram
+    import engram_lite
+    import llm_engines
+    import llm_harness_core
+    import llm_inspector
+    import llm_inspector_ui
+    import rag_lib
+    print('imports ok')
+    PY
+
+## 2. Test validation
+
+Run the package/cross-package suite selected for the current snapshot.
+
+Minimum after the current cleanup:
+
+    PYTHONDONTWRITEBYTECODE=1     python -m pytest -c pytest.ini --rootdir=. -q       llm_harness_core/tests       llm_inspector/tests       llm_inspector_ui/tests       rag_lib/tests       engram_lite/tests
+
+Run focused integration tests as appropriate:
+
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1     python -m pytest -q integration_tests/test_augmenter_spine.py
+
+Only run full-Engram integration paths when intentionally validating the advanced memory path:
+
+    AI_TOOLS_TEST_FULL_ENGRAM=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1     python -m pytest -q integration_tests/test_augmenter_spine.py::test_full_engram_augmenter_normalizes_or_skips_cleanly
+
+## 3. Repository hygiene
+
+Remove or block accidental local artifacts:
+
+- `__pycache__/`
+- `*.pyc`
+- `*.pyo`
+- `.pytest_cache/`
+- `*.egg-info/`
+- `*.bak`
+- `*.orig`
+- `*.rej`
+- ad hoc `*.patch` files
+- temporary local DBs
+- generated local test artifacts unless explicitly whitelisted
+
+Clean command before a publication check:
+
+    find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+    find . -type f -name '*.pyc' -delete
+    find . -type d -name '.pytest_cache' -prune -exec rm -rf {} +
+
+Then run:
+
+    PYTHONDONTWRITEBYTECODE=1 python scripts/check_publication_hygiene.py
+
+## 4. Documentation consistency
+
+Before publication, confirm these files agree:
+
+- `VISION.md`
+- `CURRENT_STATE.md`
+- `QUALITY_CLEANUP_PLAN.md`
+- `ROADMAP.md`
+- `PACKAGE_ROLES.md`
+- `ADR_INDEX.md`
+- `LLM_HANDOFF.md`
+- `NEXT_STEP.md`
+
+Specific consistency checks:
+
+- If `engram_lite` is described as a facade, the code and tests should support that.
+- If a package uses src layout, its `pyproject.toml` and pytest configuration should agree.
+- The README should not promise a cleaner install path than the repo actually supports.
+
+## 5. Teaching repo expectations
+
+Confirm that a new learner can find:
+
+1. the root entry point
+2. the learning path
+3. the package roles
+4. the workbench guide
+5. the evaluation walkthrough
+6. the reference application path
+
+Do not expand teaching materials while package imports are broken.
+
+## 6. Final release sanity checks
+
+- fresh clone works
+- fresh venv works
+- editable installs work
+- package imports resolve to real files, not namespace packages
+- selected tests pass
+- hygiene check passes
+- docs match the working tree
+- no local artifacts are included accidentally

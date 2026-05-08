@@ -1,8 +1,55 @@
 # ai_tools — ADR Index
 
-## Purpose of this document
+<!-- AI_TOOLS_CLEANUP_CHECKPOINT_START -->
+## Current cleanup checkpoint
 
-This file is the quick map of architectural decisions that matter across the `ai_tools` monorepo.
+Packaging/import/test stabilization has reached a green checkpoint.
+
+Latest validated broad gate:
+
+    833 passed, 37 skipped in 34.90s
+
+Validated with:
+
+    unset PYTHONPATH
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+    PYTHONDONTWRITEBYTECODE=1
+    -W error
+
+The earlier `llm_inspector_ui` namespace/import blocker is resolved. Package-local import bootstraps have been removed. Import provenance is now guarded by `tests/test_import_provenance.py`.
+
+Root `conftest.py` still contains a centralized transitional pytest bootstrap. This is intentional while the repo still has mixed package layouts and same-name outer project directories. Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
+
+Current broad gate command:
+
+    unset PYTHONPATH
+
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
+    python -m pytest -c pytest.ini --rootdir=. \
+      tests/test_import_provenance.py \
+      llm_engines/tests \
+      language_tutor/tests \
+      agent_lib/tests \
+      engram_lite/tests \
+      llm_inspector_ui/tests \
+      llm_inspector/tests \
+      rag_lib/tests \
+      llm_harness_core/tests \
+      -x --tb=short -W error
+
+Remaining packaging work, in order:
+
+1. Strengthen publication hygiene enforcement.
+2. Convert `llm_engines` to `src/` layout.
+3. Convert `language_tutor` to `src/` layout.
+4. Convert `engram` to `src/` layout later.
+5. Remove the transitional root pytest bootstrap only after package layout consistency makes it unnecessary.
+6. Resolve whether `engram_lite` is strictly a facade over `engram` or whether ADR-007 must be amended.
+<!-- AI_TOOLS_CLEANUP_CHECKPOINT_END -->
+
+## Purpose
+
+This file maps architectural decisions across the `ai_tools` monorepo.
 
 Use it to answer:
 
@@ -10,246 +57,89 @@ Use it to answer:
 - where the authoritative decision record lives
 - which areas still need explicit ADR coverage
 
-`VISION.md` is the architectural baseline.
-`ADR_INDEX.md` is the map of the decisions that should not be re-litigated casually.
-
----
+`VISION.md` is the architecture baseline. `ADR_INDEX.md` is the decision map.
 
 ## Existing ADRs
 
-## ADR-001 — Engine Capability Model
+### ADR-001 — Engine Capability Model
 
-- **File:** `adr/ADR-001-engine-capability-model.md`
-- **Status in file:** Accepted
-- **Scope:** `llm_engines`
-- **What it decides:**
-  - engine capabilities should be modeled explicitly rather than assumed universally
-  - callers should not assume every backend supports every feature
-  - the engine layer should make capability mismatches visible and structurally meaningful
-- **Why it matters:**
-  This is the foundation for a serious engine abstraction layer.
+- File: `adr/ADR-001-engine-capability-model.md`
+- Status: Accepted
+- Scope: `llm_engines`
+- Decision: engine capabilities should be explicit rather than assumed.
 
----
+### ADR-002 — Engine Response Schema
 
-## ADR-002 — Engine Response Schema
+- File: `adr/ADR-002-engine-response-schema.md`
+- Status: Accepted
+- Scope: `llm_engines`, downstream consumers
+- Decision: engine calls should return structured responses rather than plain strings only.
 
-- **File:** `adr/ADR-002-engine-response-schema.md`
-- **Status in file:** Accepted
-- **Scope:** `llm_engines`, downstream consumers
-- **What it decides:**
-  - engine calls should return structured responses rather than collapsing everything to raw strings
-  - important output details such as metadata and tool behavior should survive the engine boundary
-- **Why it matters:**
-  This is a prerequisite for observability and structured downstream orchestration.
+### ADR-004 — Engram Retrieval Policy
 
----
+- File: `adr/ADR-004-engram-retrieval-policy.md`
+- Status: Accepted
+- Scope: `engram`
+- Decision: retrieval across memory layers needs explicit policy.
 
-## ADR-004 — Engram Retrieval Policy
+### ADR-005 — Persistence & Migration
 
-- **File:** `adr/ADR-004-engram-retrieval-policy.md`
-- **Status in file:** Accepted
-- **Scope:** `engram`
-- **What it decides:**
-  - retrieval across multiple memory layers needs explicit policy rather than ad hoc merging
-  - contradictions, precedence, and recency need principled handling
-- **Why it matters:**
-  Memory quality depends not just on storing information, but on choosing what to surface.
+- File: `adr/ADR-005-persistence-migration.md`
+- Status: Accepted
+- Scope: `engram`
+- Decision: persistence strategy should reflect backend realities.
 
----
+### ADR-006 — Interoperability Core for the LLM Harness Suite
 
-## ADR-005 — Persistence & Migration (Minimal)
+- File: `adr/ADR-006-interoperability-core.md`
+- Status: Accepted
+- Scope: suite-wide
+- Decision: use a dependency-light shared core, `llm_harness_core`, for cross-package schemas.
 
-- **File:** `adr/ADR-005-persistence-migration.md`
-- **Status in file:** Accepted
-- **Scope:** `engram`
-- **What it decides:**
-  - different storage layers need different migration expectations and safety assumptions
-  - persistence strategy should reflect backend realities rather than pretending every store is equally reversible
-- **Why it matters:**
-  This helps keep the memory system realistic and maintainable.
+### ADR-007 — `engram_lite` as a Facade Over `engram`
 
----
+- File: `adr/ADR-007-engram-lite-as-engram-facade.md`
+- Status: Accepted, but implementation should be re-verified
+- Scope: `engram`, `engram_lite`, workbench defaults
+- Decision: `engram_lite` is intended to be a curated/default facade over `engram`.
 
-## ADR-006 — Interoperability Core for the LLM Harness Suite
+Implementation warning:
 
-- **File:** `adr/ADR-006-interoperability-core.md`
-- **Status in file:** Accepted
-- **Practical implementation state:** implemented and still expanding across multiple packages
-- **Scope:** suite-wide
-- **What it decides:**
-  - the suite should gain a dependency-light shared core (`llm_harness_core`)
-  - shared schemas should be used for capabilities, messages, retrieval/memory artifacts, operation results, and trace events
-  - foundational packages should be adapted first
-- **Why it matters:**
-  This is the key architectural move that turns a set of related packages into an actual harness ecosystem.
+The current code may still contain substantial independent `engram_lite` implementation. The cleanup thread should either finish the facade migration or amend ADR-007. Preferred direction is to finish the facade migration.
 
+### ADR-008 — Monorepo Packaging and Import Policy
 
----
+- File: `adr/ADR-008-monorepo-packaging-policy.md`
+- Status: Accepted
+- Scope: suite-wide
+- Decision: standardize package layout and validation around src layout, editable installs, and minimal path shims.
 
 ## Missing number
 
-There is currently no `ADR-003` in the repo snapshot.
+There is currently no `ADR-003` in the repo snapshot. Do not assume one exists unless it is actually added.
 
-That is not necessarily a problem, but it should be treated intentionally:
+## Settled decisions
 
-- either the number was skipped on purpose,
-- or an earlier decision document was removed,
-- or the numbering should be normalized later.
+Treat these as settled unless a new ADR explicitly reverses them:
 
-For future continuity, avoid assuming there is an ADR-003 unless one is actually added.
+1. Engine capabilities are explicit.
+2. Engine responses are structured.
+3. Engram retrieval policy is explicit.
+4. Persistence strategy must match backend realities.
+5. `llm_harness_core` is the shared interop layer.
+6. `engram_lite` is intended to be a curated/default facade over `engram` unless ADR-007 is amended.
+7. Packaging/import behavior should be standardized rather than repaired with growing path hacks.
 
----
+## ADRs that may still be needed
 
-## Decisions that should be treated as settled in practice
+### Inspector / observability event taxonomy
 
-Even when a future thread starts fresh, these should be treated as effectively settled unless there is a deliberate architectural reversal:
+Needed to define shared event categories, required fields, severity semantics, provenance, and compatibility policy.
 
-1. `llm_engines` should use explicit capability modeling.
-2. Engine responses should be structured, not plain-string-only.
-3. Engram retrieval policy should be explicit and principled.
-4. Persistence strategy in Engram should match the realities of its storage backends.
-5. The suite is moving toward a shared interoperability core, not further package-local divergence.
+### Agent execution isolation model
 
----
+Needed before serious `agent_lib` expansion. Should define filesystem, process, network, and worktree boundaries.
 
-## ADR-007 — `engram_lite` as a Facade Over `engram`
+### Package import side-effect policy
 
-**File:** `adr/ADR-007-engram-lite-as-engram-facade.md`
-**Status:** Accepted (implemented)
-**Date:** 2026-05-04
-
-### Decision
-
-`engram_lite` is a curated facade over `engram`.  All implementation lives in
-`engram`; `engram_lite.__init__` re-exports a constrained subset.  The `cli/`
-directory and `ProjectMemory` class remain in `engram_lite` (the former as
-lite-specific migration tooling, the latter as option-A: lite class whose
-internals use `engram` primitives).
-
-### Modules moved from `engram_lite` to `engram`
-
-| Module | New location |
-|---|---|
-| `Telemetry`, `TelemetryEvent`, `log_sink`, `json_file_sink` | `engram.telemetry` |
-| `PromptBuildTrace`, `EvidenceTrace`, `PromptSectionTrace`, `TokenAccountingTrace` | `engram.inspection` |
-| `AugmentRequest`, `AugmentResult`, `PromptAugmenter`, `ContextResult` | `engram.memory.augment` |
-| `ChromaDBStore`, `DimensionMismatchError`, `SchemaManager` | `engram.storage` |
-| `ForgettingConfig`, `ForgettingPolicy` (semantic) | `engram.memory.semantic_forgetting` |
-| `detect_contradiction`, `cosine_similarity` | `engram.memory.contradiction` |
-| `reciprocal_rank_fusion`, `hybrid_episode_search` | `engram.memory.hybrid_search` |
-| `build_prompt_from_context`, `build_prompt_trace_from_result` | `engram.prompting` |
-| `LightweightIngestionPolicy`, `score_text`, `canonicalize_episode`, etc. | `engram.memory.quality` |
-| `get_token_counter`, `word_count_approximation` | `engram.utils.tokens` |
-| `WriterLock` | `engram.utils.concurrency` |
-| `Embedder`, `OllamaEmbedder`, `EmbeddingService`, `EmbeddingCache`, `CachedEmbedder`, `SentenceTransformersEmbedder` | `engram.embeddings` |
-| `SemanticGraph` | `engram.semantic.graph` |
-| `SemanticExtractor`, `ExtractedFact`, `ExtractionResult` | `engram.semantic.extractor` |
-| `trace_to_memory_records` | `engram.interop` |
-
-### Contract lock
-
-`engram_lite/tests/test_public_api_contract.py` pins the public surface.
-Any failing assertion is a breaking change.
-
-### Related
-
-- ADR-004: Retrieval policy surface hidden behind facade
-- ADR-005: Persistence layer configured with simple defaults by `ProjectMemory`
-- ADR-006: Interoperability core (unaffected)
-
----
-
-## ADRs that should probably be added next
-
-These are the most obvious gaps in the current decision record.
-
-## Proposed future ADR — Inspector / observability event taxonomy
-
-### Why it is needed
-
-The suite now depends increasingly on shared trace and diagnostics events across:
-
-- memory
-- retrieval
-- engine execution
-- UI/workbench inspection
-- eventually agents
-
-A dedicated ADR should define:
-
-- event categories
-- required fields by event type
-- severity semantics
-- provenance expectations
-- compatibility policy for old/new trace shapes
-
----
-
-## Proposed future ADR — `engram` vs `engram_lite` boundary
-
-### Why it is needed
-
-The project now has two memory packages with related but different roles.
-A formal ADR should answer:
-
-- what belongs only in `engram`
-- what belongs in `engram_lite`
-- what the workbench should use by default
-- what the reference app should use by default
-
----
-
-## Proposed future ADR — Agent execution isolation model
-
-### Why it is needed
-
-`agent_lib` is strategically important but safety-critical.
-A formal ADR should define:
-
-- filesystem/process/network isolation expectations
-- what counts as “sandboxed enough” for the project
-- whether sandboxing is mandatory or profile-based
-- how isolation interacts with observability and artifacts
-
----
-
-## Proposed future ADR — Monorepo import and packaging policy
-
-### Why it is needed
-
-The repo now uses lightweight root-level import shims to reduce monorepo import-shadowing issues.
-That is practical, but it should be made intentional.
-
-A formal ADR should decide:
-
-- whether root shims are temporary or supported policy
-- how editable installs vs wheel installs should behave
-- what CI must validate for packaging confidence
-
----
-
-## Proposed future ADR — Workbench artifact and export model
-
-### Why it is needed
-
-If `llm_inspector_ui` is the main laboratory for the suite, then saved artifacts, traces, exports, and reproducibility deserve an explicit decision record.
-
-A formal ADR should define:
-
-- what gets persisted from a run
-- how artifacts are named and versioned
-- what is exportable vs internal
-- how compare/diff bundles should be stored
-
----
-
-## How to use this index in future threads
-
-When a future thread starts:
-
-1. read `VISION.md` for the architecture baseline
-2. read `CURRENT_STATE.md` for implementation reality
-3. read `ADR_INDEX.md` to identify which decisions are already settled
-4. open the specific ADR file only when the current task directly touches that decision
-
-This should reduce the amount of re-derivation needed when context gets long or a previous thread is lost.
+May be folded into ADR-008 or added later. Should define what may and may not happen at top-level import time.
