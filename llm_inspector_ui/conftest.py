@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 MONOREPO = ROOT.parent
 CANDIDATES = [
-    ROOT,
+    ROOT / "src",
     MONOREPO / "llm_harness_core" / "src",
     MONOREPO / "llm_inspector" / "src",
     MONOREPO / "engram_lite" / "src",

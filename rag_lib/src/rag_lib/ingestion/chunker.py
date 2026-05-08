@@ -62,18 +62,27 @@ class TextChunk:
 # Sentence splitting (D17)
 # ---------------------------------------------------------------------------
 
+_SENTENCE_SPLIT_RE = re.compile(
+    r"(?<!\b[A-Z][a-z])(?<!\b[A-Z][a-z][a-z])(?<=[.!?])\s+"
+)
+
+
+def _regex_sentences(text: str) -> list[str]:
+    parts = _SENTENCE_SPLIT_RE.split(text.strip())
+    return [part.strip() for part in parts if part.strip()]
+
+
 def _sentences(text: str) -> list[str]:
-    """Split text into sentences using NLTK punkt, with regex fallback."""
-    try:
-        from nltk.tokenize import sent_tokenize
-        return [s.strip() for s in sent_tokenize(text) if s.strip()]
-    except Exception:
-        logger.warning(
-            "NLTK punkt unavailable; using regex sentence splitter. "
-            "Run: python -m nltk.downloader punkt_tab"
-        )
-        parts = re.split(r'(?<=[.!?])\s+', text.strip())
-        return [p.strip() for p in parts if p.strip()]
+    """Split text into sentences without runtime model-data lookup.
+
+    NLTK's ``sent_tokenize`` can block or fail when the punkt data package is
+    missing or when data lookup traverses slow paths. The chunker is part of
+    the default ingestion path, so it must remain deterministic in fresh clones,
+    CI, and air-gapped environments. Use the lightweight local splitter by
+    default; callers that need a richer tokenizer can add one behind an
+    explicit dependency boundary later.
+    """
+    return _regex_sentences(text)
 
 
 # ---------------------------------------------------------------------------
