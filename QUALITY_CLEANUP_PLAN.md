@@ -73,7 +73,7 @@ but also:
     llm_inspector_ui/llm_inspector_ui
     llm_engines/llm_engines
     engram/engram
-    language_tutor/language_tutor
+    language_tutor/src/language_tutor
 
 This mixed layout allows namespace-package shadowing and makes pytest behavior dependent on path order.
 

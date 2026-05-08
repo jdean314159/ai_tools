@@ -16,7 +16,7 @@ PACKAGE_EXPECTATIONS = {
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
     "engram": REPO_ROOT / "engram" / "engram",
     "llm_engines": REPO_ROOT / "llm_engines" / "llm_engines",
-    "language_tutor": REPO_ROOT / "language_tutor" / "language_tutor",
+    "language_tutor": REPO_ROOT / "language_tutor" / "src" / "language_tutor",
 }
 
 

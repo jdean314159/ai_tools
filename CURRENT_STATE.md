@@ -102,7 +102,7 @@ and non-src layouts:
     llm_inspector_ui/llm_inspector_ui
     llm_engines/llm_engines
     engram/engram
-    language_tutor/language_tutor
+    language_tutor/src/language_tutor
 
 This has caused namespace-package shadowing and pytest behavior that depends on path order.
 

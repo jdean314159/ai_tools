@@ -52,11 +52,11 @@ What is still **maturing**:
 Read these files in this order:
 
 1. `language_tutor/README.md`
-2. `language_tutor/language_tutor/tutor_session.py`
-3. `language_tutor/language_tutor/memory_backend.py`
-4. `language_tutor/language_tutor/interop.py`
-5. `language_tutor/language_tutor/routes/session.py`
-6. `language_tutor/language_tutor/routes/conversation.py`
+2. `language_tutor/src/language_tutor/tutor_session.py`
+3. `language_tutor/src/language_tutor/memory_backend.py`
+4. `language_tutor/src/language_tutor/interop.py`
+5. `language_tutor/src/language_tutor/routes/session.py`
+6. `language_tutor/src/language_tutor/routes/conversation.py`
 7. `language_tutor/tests/test_language_tutor_interop_contracts.py`
 
 That order follows the educational question sequence: composition, orchestration, memory boundary, shared contracts, API surface, then validation.

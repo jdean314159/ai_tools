@@ -27,7 +27,7 @@ TEST_SOURCE_PATHS = [
     REPO_ROOT / "llm_inspector" / "src",
     REPO_ROOT / "rag_lib" / "src",
     REPO_ROOT / "llm_inspector_ui" / "src",
-    REPO_ROOT / "language_tutor",
+    REPO_ROOT / "language_tutor" / "src",
     REPO_ROOT / "agent_lib" / "src",
 ]
 
@@ -39,7 +39,7 @@ SOURCE_PACKAGE_EXPECTATIONS = {
     "llm_inspector": REPO_ROOT / "llm_inspector" / "src" / "llm_inspector",
     "rag_lib": REPO_ROOT / "rag_lib" / "src" / "rag_lib",
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",
-    "language_tutor": REPO_ROOT / "language_tutor" / "language_tutor",
+    "language_tutor": REPO_ROOT / "language_tutor" / "src" / "language_tutor",
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
 }
 

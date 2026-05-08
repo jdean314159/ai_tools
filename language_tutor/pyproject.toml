@@ -35,6 +35,8 @@ dev = [
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["language_tutor*"]
-exclude = ["tests*", "Documentation*", "old*"]
+
+[tool.setuptools.package-data]
+language_tutor = ["templates/*.html", "templates/static/css/*.css", "templates/static/js/*.js"]
