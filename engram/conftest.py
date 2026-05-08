@@ -10,9 +10,6 @@ Run with:
     PYTHONPATH=. pytest tests/harness/ -v -k "Working Memory"
     PYTHONPATH=. pytest tests/harness/ -v --tb=short
 """
-import sys
-from pathlib import Path
-
 # Raise the open-file-descriptor limit before any tests run.
 # Kuzu opens multiple file handles per database; the default limit (1024)
 # is easily exhausted when many tests with SemanticMemory/ProjectMemory run
@@ -25,12 +22,6 @@ try:
         _resource.setrlimit(_resource.RLIMIT_NOFILE, (_target, _hard))
 except Exception:
     pass
-
-# Ensure project root is on sys.path
-ROOT = Path(__file__).parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
 
 # Ensure ProjectMemory background daemons do not leak between tests.
 # Some tests use pytest tmp_path directly rather than harness.TempDir.
