@@ -35,6 +35,8 @@ from .interop import (
 # ProjectType, Node, Relationship: kuzu-free — safe to import in base environments
 from .memory.types import Node, ProjectType, Relationship
 
+import importlib
+
 __all__ = [
     "ProjectMemory",
     "TokenBudget",
@@ -87,7 +89,20 @@ __all__ = [
 ]
 
 
-def __getattr__(name):
+_LAZY_SUBMODULES = {
+    "engine": "engram.engine",
+}
+
+def __getattr__(name: str):
+    if name in _LAZY_SUBMODULES:
+        module = importlib.import_module(_LAZY_SUBMODULES[name])
+        globals()[name] = module
+        return module
+    if name == "engine":
+        module = importlib.import_module("engram.engine")
+        globals()[name] = module
+        return module
+    # keep the existing __getattr__ logic below this point
     if name in ("EpisodicMemory", "Episode"):
         from .memory.episodic_memory import Episode, EpisodicMemory
         return {"EpisodicMemory": EpisodicMemory, "Episode": Episode}[name]
