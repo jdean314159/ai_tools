@@ -1,261 +1,94 @@
-# ai_tools quality cleanup plan
+# Quality Cleanup Plan
 
-<!-- AI_TOOLS_CLEANUP_CHECKPOINT_START -->
-## Current cleanup checkpoint
+Last updated: 2026-05-09
 
-Packaging/import/test stabilization is green.
+## Status
 
-Latest broad package-local gate:
+The main packaging/import stabilization checkpoint is complete. The repo now has successful broad validation after converting the previously problematic direct-layout packages to `src/` layout and fixing the `engram.engine` root package surface.
 
-    833 passed, 37 skipped in 34.90s
+Recent broad gate:
 
-Validated under:
+    1701 passed, 23 skipped in 937.49s
 
-    unset PYTHONPATH
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
-    PYTHONDONTWRITEBYTECODE=1
-    -W error
+The next work is not another large package move. The next work is quality cleanup.
 
-Completed since the previous transfer update:
+## Phase 1 — Runtime lifecycle cleanup
 
-- `llm_inspector_ui` import/namespace blocker resolved.
-- Editable-install model validated from outside the repo root.
-- Package-local import bootstraps removed.
-- Import provenance is guarded by `tests/test_import_provenance.py`.
-- Root `conftest.py` remains as the single centralized transitional pytest bootstrap.
-- Publication hygiene checker now rejects transient artifacts such as `.pytest_cache/`, `*.egg-info/`, `*.bak`, `*.orig`, `*.rej`, `*.patch`, `local_artifacts/`, `test_reports/`, and `test_survey_results/`.
-- Transient hygiene artifacts were removed.
-- `engram_lite` embedding compatibility modules now behave as facade re-exports over `engram`.
-- `llm_inspector` normalizes delegated `engram` trace events back to the `engram_lite` adapter boundary while preserving upstream provenance.
+Active.
 
-Current policy:
+Problem:
 
-- Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
-- Keep root `conftest.py` as temporary centralized test bootstrap until package layout consistency removes the need for it.
-- Keep source/layout changes in small, separately validated commits.
+    Episode ingestion failed: attempt to write a readonly database
+    Deduplication check failed: attempt to write a readonly database
 
-Next recommended increment:
+Likely cause:
 
-1. Convert `llm_engines` to `src/` layout.
-2. Update package metadata and import provenance expectations.
-3. Validate editable install and package tests.
-4. Rerun the broad gate.
-<!-- AI_TOOLS_CLEANUP_CHECKPOINT_END -->
+    A late write path is running after ProjectMemory.close() or after the underlying DB has entered teardown/read-only state.
 
-## Purpose
+Required fix:
 
-This document is the implementation plan for the next stabilization thread.
+- Add a closed-state guard in `MemoryIngestor.apply(...)`.
+- Add a defensive closed-state guard in `ProjectMemory.store_episode(...)`.
+- Use the existing `ProjectMemory._closed` state.
+- Do not hide all DB errors.
+- Do not string-match SQLite error messages.
 
-The current problem is not just one failing import. The repo has accumulated mixed package layouts, root-level import workarounds, incomplete facade migration, and publication-hygiene drift. These should be cleaned in a controlled order.
+Validation:
 
-## Quality principle
+    engram/tests --run-engram
+    full broad package-local gate
+    scripts/check_publication_hygiene.py
 
-A fresh clone should be able to do the following without manual `PYTHONPATH` tricks:
+## Phase 2 — Import-path cleanup
 
-1. create a fresh virtual environment
-2. install packages in editable mode
-3. import each package from its real package implementation path
-4. run package tests and selected cross-package tests
-5. run publication hygiene checks before release snapshots
+Goal: remove production path hacks and isolate any remaining path mutation to tests or dev scripts.
 
-## Current top risk
+Audit command:
 
-The repo mixes package layouts:
+    grep -R "sys.path.insert\|sys.path.append\|PYTHONPATH\|pathlib.Path.*parents" -n       --include='*.py'       . | grep -v '.venv' | grep -v '__pycache__'
 
-    agent_lib/src/agent_lib
-    engram_lite/src/engram_lite
-    llm_harness_core/src/llm_harness_core
-    llm_inspector/src/llm_inspector
-    rag_lib/src/rag_lib
+Expected direction:
 
-but also:
+- Package code should rely on editable installs and package metadata.
+- Tests may use explicit test-only path setup where unavoidable.
+- Subprocess CLI tests should pass because packages are installed editable, not because repo-local `PYTHONPATH` leaks into production behavior.
 
-    llm_inspector_ui/llm_inspector_ui
-    llm_engines/llm_engines
-    engram/src/engram
-    language_tutor/src/language_tutor
+## Phase 3 — Root package API simplification
 
-This mixed layout allows namespace-package shadowing and makes pytest behavior dependent on path order.
+Highest-risk target:
 
-## Phase 1 — Fix the active blocker
+    engram/src/engram/__init__.py
 
-### Goal
+Reason:
 
-Make `llm_inspector_ui` import from its real implementation path.
+The custom lazy `__getattr__` already caused a package-surface failure for `engram.engine`. The long-term design should make the root package boring and predictable.
 
-### Work
+Target:
 
-Convert `llm_inspector_ui` to src layout:
+- Expose stable public API only.
+- Keep lazy imports table-driven if still needed.
+- Let subpackages behave like ordinary Python packages.
+- Add package-surface regression tests for expected imports.
 
-    llm_inspector_ui/src/llm_inspector_ui
+## Phase 4 — Documentation consolidation
 
-Update:
+After the lifecycle fix and import-path audit, update:
 
-- `llm_inspector_ui/pyproject.toml`
-- root `pytest.ini`
-- `llm_inspector_ui/conftest.py`
-- root `conftest.py` only if needed temporarily
+    CURRENT_STATE.md
+    NEXT_STEP.md
+    THREAD_TRANSFER_NOTE.md
+    PACKAGE_ROLES.md
+    LLM_HANDOFF.md
+    GITHUB_PUBLICATION_CHECKLIST.md
+    adr/ADR-008-monorepo-packaging-policy.md
 
-### Done when
+Docs should describe the repo as post-packaging-migration and entering quality hardening.
 
-This command reports a concrete `__file__` under `llm_inspector_ui/src/llm_inspector_ui/__init__.py` and `has describe_ui: True`:
+## Phase 5 — Feature work resumes only after quality gates remain clean
 
-    PYTHONDONTWRITEBYTECODE=1 python - <<'PY'
-    import llm_inspector_ui
-    print(llm_inspector_ui)
-    print('file:', getattr(llm_inspector_ui, '__file__', None))
-    print('has describe_ui:', hasattr(llm_inspector_ui, 'describe_ui'))
-    PY
+Do not restart agent design, teaching material expansion, UI additions, or RAG labs until:
 
-And this test passes:
-
-    PYTHONDONTWRITEBYTECODE=1     python -m pytest -c pytest.ini --rootdir=. -q       llm_inspector_ui/tests/test_interop.py -x --tb=short
-
-## Phase 2 — Establish editable-install validation
-
-### Goal
-
-Make editable installs the normal validation path instead of manual `PYTHONPATH`.
-
-### Work
-
-In a clean virtual environment, install packages in dependency order:
-
-    python -m pip install -e ./llm_harness_core
-    python -m pip install -e ./llm_engines
-    python -m pip install -e ./engram
-    python -m pip install -e ./engram_lite
-    python -m pip install -e ./llm_inspector
-    python -m pip install -e ./rag_lib
-    python -m pip install -e ./llm_inspector_ui
-    python -m pip install -e ./language_tutor
-    python -m pip install -e ./agent_lib
-
-Then test package imports:
-
-    python - <<'PY'
-    import agent_lib
-    import engram
-    import engram_lite
-    import llm_engines
-    import llm_harness_core
-    import llm_inspector
-    import llm_inspector_ui
-    import rag_lib
-    print('imports ok')
-    PY
-
-### Done when
-
-All installed packages import without root `PYTHONPATH` manipulation.
-
-## Phase 3 — Reduce root import shims
-
-### Goal
-
-Remove import behavior that makes tests pass only because root `conftest.py` rewrites import state.
-
-### Work
-
-Review and shrink:
-
-- root `conftest.py`
-- package-local `conftest.py` files
-- root `pytest.ini` `pythonpath` entries
-- test scripts that prepend package paths
-
-Do not remove a shim until editable-install tests prove the replacement works.
-
-### Done when
-
-Root `conftest.py` is limited to actual pytest configuration, not package import enforcement.
-
-## Phase 4 — Strengthen hygiene checks
-
-### Goal
-
-Make local artifacts visible before they reach GitHub or a handoff archive.
-
-### Work
-
-Update `scripts/check_publication_hygiene.py` so it fails on unapproved instances of:
-
-- `.pytest_cache/`
-- `__pycache__/`
-- `*.pyc`
-- `*.pyo`
-- `*.egg-info/`
-- `*.bak`
-- `*.orig`
-- `*.rej`
-- ad hoc `*.patch` files
-- local DB files unless explicitly allowed
-- local artifacts directories unless explicitly allowed
-
-### Done when
-
-The hygiene checker detects stale patch/reject/cache/build artifacts and the GitHub checklist names the same expectations.
-
-## Phase 5 — Resolve the `engram_lite` boundary
-
-### Goal
-
-Make code reality match the documented decision in ADR-007, or amend ADR-007.
-
-### Current inconsistency
-
-ADR-007 and `PACKAGE_ROLES.md` say `engram_lite` is a curated facade over `engram`, but `engram_lite` still appears to contain substantial implementation code.
-
-### Preferred direction
-
-Keep ADR-007 and finish the facade migration.
-
-`engram_lite` should retain only a small public API, compatibility shims, and any intentionally lite-specific command-line or configuration surface. Canonical implementation should live in `engram`.
-
-### Done when
-
-- `engram_lite` public API contract tests pass
-- downstream imports still work through compatibility shims where needed
-- duplicated implementation modules are either removed or explicitly justified
-- docs, tests, and code all describe the same boundary
-
-## Phase 6 — Convert remaining non-src packages
-
-### Goal
-
-Unify package layout across the repo.
-
-### Work
-
-After `llm_inspector_ui` is stable, consider converting these packages in separate small PRs or commits:
-
-    llm_engines/src/llm_engines
-    engram/src/engram
-    engram/src/engram_ui
-    language_tutor/src/language_tutor
-
-Do not convert all at once unless tests are already reliable.
-
-### Done when
-
-Every importable package follows one layout policy and package metadata agrees with that layout.
-
-## Phase 7 — Refactor oversized modules only after tests are stable
-
-Large modules are a maintainability risk, but they are not the first cleanup target.
-
-Candidate later refactors:
-
-- `engram/src/engram/project_memory.py`
-- `engram/src/engram/rtrl/core.py`
-- `engram/src/engram_ui/app.py`
-- `engram/src/engram_ui/model_management.py`
-- `engram/src/engram/engine/model_manager.py`
-- `engram_lite/src/engram_lite/project_memory.py`
-- `agent_lib/src/agent_lib/programming.py`
-
-Do not split these during the packaging stabilization pass unless a test failure forces it.
-
-## Non-goals for the next thread
-
-The next thread should not add new product features. Its job is to make the repo boring to install, import, and test.
+- readonly warning cleanup is committed,
+- broad gate remains clean,
+- publication hygiene passes,
+- docs reflect the current checkpoint.

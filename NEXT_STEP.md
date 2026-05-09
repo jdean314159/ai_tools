@@ -1,93 +1,103 @@
-# NEXT_STEP.md
+# Next Step
 
-Updated: 2026-05-08
+Last updated: 2026-05-09
 
-## Current state
+## Active checkpoint
 
-Packaging/import/test stabilization is green.
+Fix the remaining `engram` runtime-lifecycle warning after the successful `src/` layout migration.
 
-Latest broad package-local gate:
+The repo has already completed the major packaging conversion for:
 
-    833 passed, 37 skipped in 34.90s
+    llm_engines
+    language_tutor
+    engram
+    engram_ui
 
-The old immediate blocker is resolved:
+The broad package-local gate has passed:
 
-    ImportError: cannot import name 'describe_ui' from 'llm_inspector_ui'
+    1701 passed, 23 skipped in 937.49s
 
-The repo now has centralized transitional pytest import control and explicit import provenance tests.
+The active issue is not an import failure. It is warning noise from attempted late writes to a readonly database during `engram` runtime/test teardown.
 
-## Current broad gate
+## Problem signature
 
-    unset PYTHONPATH
+Observed warnings:
 
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
-    python -m pytest -c pytest.ini --rootdir=. \
-      tests/test_import_provenance.py \
-      llm_engines/tests \
-      language_tutor/tests \
-      agent_lib/tests \
-      engram_lite/tests \
-      llm_inspector_ui/tests \
-      llm_inspector/tests \
-      rag_lib/tests \
-      llm_harness_core/tests \
-      -x --tb=short -W error
+    Episode ingestion failed: Query error: Database error: error returned from database: (code: 1032) attempt to write a readonly database
+    Deduplication check failed: Query error: Database error: error returned from database: (code: 1032) attempt to write a readonly database
 
-## Immediate next increment
+Known locations:
 
-Convert `llm_engines` to `src/` layout.
+    engram/src/engram/memory/ingestion.py
+    engram/src/engram/project_memory.py
 
-Target structure:
+Existing lifecycle state:
 
-    llm_engines/src/llm_engines
+    ProjectMemory._closed
 
-Work in a narrow commit:
+## File edit 1
 
-1. Move the package directory.
-2. Update `llm_engines/pyproject.toml`.
-3. Update root `pytest.ini` path entries.
-4. Update root `conftest.py` `TEST_SOURCE_PATHS`.
-5. Update root `conftest.py` `SOURCE_PACKAGE_EXPECTATIONS`.
-6. Update `tests/test_import_provenance.py`.
-7. Run editable install validation.
-8. Run `llm_engines/tests`.
-9. Run the broad gate.
+Edit:
 
-## Validation sequence
+    engram/src/engram/memory/ingestion.py
 
-    python -m pip install -e ./llm_engines
+In `MemoryIngestor.apply(...)`, add an early guard immediately after the `outcome` dict is created:
 
-    cd /tmp
+    if getattr(self.project_memory, "_closed", False):
+        outcome["skipped_reason"] = "project_memory_closed"
+        logger.debug("Skipping ingestion because ProjectMemory is closed")
+        return outcome
 
-    python - <<'PY'
-    import llm_engines
-    print(llm_engines.__file__)
-    PY
+This prevents ingestion from trying to write after `ProjectMemory.close()`.
 
-Then from repo root:
+## File edit 2
+
+Edit:
+
+    engram/src/engram/project_memory.py
+
+At the beginning of `ProjectMemory.store_episode(...)`, after the docstring and before deduplication, neural scoring, or episodic writes, add:
+
+    if getattr(self, "_closed", False):
+        logger.debug("Skipping store_episode because ProjectMemory is closed")
+        return ""
+
+This protects direct callers that bypass `MemoryIngestor.apply(...)`.
+
+## Focused validation
+
+Run:
 
     cd /home/cybernaif/ai_tools
-
     unset PYTHONPATH
 
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 \
-    python -m pytest -c pytest.ini --rootdir=. \
-      tests/test_import_provenance.py \
-      llm_engines/tests \
-      -x --tb=short -W error
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1     python -m pytest -c pytest.ini --rootdir=.       engram/tests       --run-engram       -x --tb=short -W error
 
-Then run the broad gate.
+## Broad validation
 
-## Do not do yet
+If focused validation passes, run:
 
-Do not convert `engram` first. It is larger and has more internal assumptions.
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1     python -m pytest -c pytest.ini --rootdir=.       tests/test_import_provenance.py       llm_engines/tests       language_tutor/tests       agent_lib/tests       engram_lite/tests       llm_inspector_ui/tests       llm_inspector/tests       rag_lib/tests       llm_harness_core/tests       engram/tests       --run-engram       -x --tb=short -W error
 
-Recommended remaining layout order:
+## Hygiene cleanup
 
-1. `llm_engines`
-2. `language_tutor`
-3. `engram`
+Before running publication hygiene or committing:
 
-## Policy reminder
+    rm -rf .pytest_cache
+    find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+    find . -type f -name '*.pyc' -delete
+    find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
 
-Do not add package-local path hacks back to package `conftest.py` files. Root `conftest.py` is the only allowed transitional pytest import bootstrap.
+    PYTHONDONTWRITEBYTECODE=1     python scripts/check_publication_hygiene.py
+
+## Commit
+
+If tests and hygiene pass:
+
+    git status --short
+    git add engram/src/engram/memory/ingestion.py engram/src/engram/project_memory.py
+    git commit -m "Avoid engram writes after ProjectMemory close"
+
+## After this checkpoint
+
+After the lifecycle-warning fix is committed, update docs again if needed, then move to import-path cleanup and root package API simplification. Do not start feature work before this small quality checkpoint is complete.

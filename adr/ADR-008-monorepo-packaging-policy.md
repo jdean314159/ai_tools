@@ -1,84 +1,90 @@
-# ADR-008 — Monorepo Packaging and Import Policy
+# ADR-008: Monorepo Packaging Policy
 
-Status: Accepted
-Date: 2026-05-08
+Status: Accepted  
+Last updated: 2026-05-09
 
 ## Context
 
-The `ai_tools` repo contains multiple related Python packages. Package layouts became mixed during active development, which caused repo-root pytest collection to sometimes import same-name outer project directories instead of the real implementation packages.
+The ai_tools repo contains multiple installable or package-like components that are developed together but should behave as ordinary Python packages. Earlier direct-layout packages caused import ambiguity, namespace-package exposure, and subprocess CLI failures.
 
-Current src-layout packages:
+Recent stabilization converted the previously problematic direct-layout packages to `src/` layout:
 
-    agent_lib/src/agent_lib
-    engram_lite/src/engram_lite
-    llm_harness_core/src/llm_harness_core
-    llm_inspector/src/llm_inspector
-    llm_inspector_ui/src/llm_inspector_ui
-    rag_lib/src/rag_lib
-
-Current direct-layout packages:
-
-    llm_engines/llm_engines
-    engram/src/engram
+    llm_engines/src/llm_engines
     language_tutor/src/language_tutor
+    engram/src/engram
+    engram/src/engram_ui
+
+The broad package-local validation gate passed after this conversion and after restoring the `engram.engine` package surface.
 
 ## Decision
 
-The repo will converge on one packaging policy:
+All installable ai_tools packages should use normal package metadata and `src/` layout unless there is a documented exception.
 
-1. Importable packages should use `src/` layout.
-2. Editable installs are the preferred development validation path.
-3. Tests should not require manual `PYTHONPATH` for normal validation.
-4. Root `conftest.py` may contain a temporary centralized pytest import bootstrap while mixed layouts remain.
-5. Package-local `conftest.py` files must not compensate for package metadata or import-path problems.
-6. Top-level package imports should be lightweight and should not initialize optional heavy systems.
-7. Import provenance should be tested explicitly when package layout changes.
+Production code must not require repo-root `PYTHONPATH` hacks. Development should use editable installs.
 
-## Current implementation checkpoint
+Examples:
 
-Latest broad package-local gate:
-
-    833 passed, 37 skipped in 34.90s
-
-Package-local import bootstraps have been removed. Root `conftest.py` remains as the centralized transitional bootstrap for repo-root pytest collection.
-
-Publication hygiene checking has been strengthened and transient artifacts have been removed.
-
-`engram_lite` embedding compatibility modules now behave as facade re-exports over `engram`. `llm_inspector` normalizes delegated `engram` trace events back to the `engram_lite` adapter boundary while preserving upstream provenance.
-
-## Editable install order
-
-    python -m pip install -e ./llm_harness_core
     python -m pip install -e ./llm_engines
-    python -m pip install -e ./engram
-    python -m pip install -e ./engram_lite
-    python -m pip install -e ./llm_inspector
-    python -m pip install -e ./rag_lib
-    python -m pip install -e ./llm_inspector_ui
     python -m pip install -e ./language_tutor
-    python -m pip install -e ./agent_lib
+    python -m pip install -e ./engram
 
-## Remaining implementation order
+## Validation requirements
 
-Convert remaining direct-layout packages in separate, testable steps:
+Every package-layout change must run at least:
 
-1. `llm_engines/src/llm_engines`
-2. `language_tutor/src/language_tutor`
-3. `engram/src/engram` and, if retained, `engram/src/engram_ui`
+    tests/test_import_provenance.py
+    affected_package/tests
 
-Do not convert every package in one commit.
+Any change affecting subprocess CLI behavior must also validate that subprocesses can import the package from the active environment without inherited repo-local `PYTHONPATH`.
 
-## Validation standard
+The full package-local gate is:
 
-A package layout change is complete only when:
+    tests/test_import_provenance.py
+    llm_engines/tests
+    language_tutor/tests
+    agent_lib/tests
+    engram_lite/tests
+    llm_inspector_ui/tests
+    llm_inspector/tests
+    rag_lib/tests
+    llm_harness_core/tests
+    engram/tests --run-engram
 
-1. package metadata points to the new layout
-2. tests import the package from the intended implementation file
-3. editable install works in a clean environment
-4. selected package tests pass
-5. selected cross-package tests pass
-6. docs and CI commands reflect the new layout
+## Hygiene requirements
+
+Generated artifacts must not be committed:
+
+    .pytest_cache
+    __pycache__
+    *.pyc
+    *.egg-info
+    *.patch
+    generated archives
+
+Run before commit:
+
+    rm -rf .pytest_cache
+    find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+    find . -type f -name '*.pyc' -delete
+    find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
+
+    PYTHONDONTWRITEBYTECODE=1     python scripts/check_publication_hygiene.py
 
 ## Consequences
 
-This policy intentionally keeps a temporary root pytest bootstrap. That bootstrap is debt, but it is centralized and tested. It should be removed only after package layout consistency makes it unnecessary.
+Positive:
+
+- fewer ambiguous imports,
+- better subprocess behavior,
+- easier editable-install workflow,
+- cleaner CI/publication story,
+- less reliance on path mutation.
+
+Tradeoff:
+
+- tests and scripts must be explicit about package installation and test-only path setup.
+- editable installs may create `*.egg-info`; this is expected locally but must be removed before publication hygiene and commit.
+
+## Current exception/attention area
+
+`engram/src/engram/__init__.py` uses lazy package-surface behavior. Keep it table-driven and minimal. Root package APIs should remain boring and predictable. Subpackages such as `engram.engine` must be reachable through normal Python package semantics.

@@ -1,5 +1,33 @@
 # ai_tools — Roadmap
 
+<!-- AI_TOOLS_STATUS_START -->
+
+## Current operational checkpoint (2026-05-09)
+
+The repo has completed the main packaging/import stabilization pass.
+
+Completed:
+
+- `llm_engines` converted to `src/` layout.
+- `language_tutor` converted to `src/` layout.
+- `engram` converted to `src/` layout.
+- `engram_ui` moved under `engram/src/engram_ui`.
+- `engram.engine` root package surface restored after the `src/` conversion.
+- Broad package-local gate passed: `1701 passed, 23 skipped in 937.49s`.
+
+Current active priority:
+
+- Fix `engram` readonly database warnings by avoiding writes after `ProjectMemory.close()`.
+
+Next after that:
+
+1. Import-path cleanup and isolation of test-only path mutation.
+2. Simplify root package APIs, especially `engram/src/engram/__init__.py`.
+3. Revalidate docs and publication hygiene.
+4. Resume feature work only after quality gates remain clean.
+
+<!-- AI_TOOLS_STATUS_END -->
+
 <!-- AI_TOOLS_CLEANUP_CHECKPOINT_START -->
 ## Current cleanup checkpoint
 

@@ -1,87 +1,49 @@
-# Package roles
+# Package Roles and Current Support Status
 
-<!-- AI_TOOLS_CLEANUP_CHECKPOINT_START -->
-## Current cleanup checkpoint
+Last updated: 2026-05-09
 
-Packaging/import/test stabilization is green.
+## Status summary
 
-Latest broad package-local gate:
+The repo is now past the main package-layout stabilization checkpoint. The broad package-local gate has passed after the `llm_engines`, `language_tutor`, `engram`, and `engram_ui` `src/` layout conversions.
 
-    833 passed, 37 skipped in 34.90s
+Recent broad gate:
 
-Validated under:
+    1701 passed, 23 skipped in 937.49s
 
-    unset PYTHONPATH
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
-    PYTHONDONTWRITEBYTECODE=1
-    -W error
+## Package matrix
 
-Completed since the previous transfer update:
+| Package | Role | Current status | Notes |
+|---|---|---|---|
+| `llm_engines` | Engine abstraction layer for Ollama, vLLM/OpenAI-compatible APIs, llama.cpp-style backends, and shared request/response contracts. | Stabilized. `src/` layout. | Import provenance validated. Treat as foundational dependency. |
+| `llm_harness_core` | Shared harness/interoperability primitives used across memory, inspection, and evaluation layers. | Participates in broad gate. | Keep APIs small and boring. Avoid duplicating contracts in downstream packages. |
+| `engram_lite` | Lightweight memory module intended for production hardening and interop testing. | Participates in broad gate. | Should remain the simpler memory baseline and comparison target. |
+| `engram` | Full memory system with working/episodic/semantic/neural/cold memory and lifecycle behavior. | Stabilized package layout. Runtime lifecycle cleanup pending. | Next fix: avoid writes after `ProjectMemory.close()`. |
+| `engram_ui` | Streamlit/UI layer for interacting with `engram`. | Moved under `engram/src/engram_ui`. | Keep UI imports package-based, not path-based. |
+| `llm_inspector` | Inspection/provenance layer for prompt construction, retrieval traces, and comparison workflows. | Participates in broad gate. | Subprocess CLI tests are important because they catch editable-install exposure problems. |
+| `llm_inspector_ui` | Richer UI layer for trace inspection/debugging. | Stabilized. `src/` layout. | Previous `describe_ui` import blocker is resolved. Do not treat it as active. |
+| `rag_lib` | RAG building blocks, labs, and evaluation utilities. | Participates in broad gate. | Defer expansion until quality cleanup is complete. |
+| `agent_lib` | Agent abstractions and coordination primitives. | Participates in broad gate. | Avoid adding complexity until packaging/lifecycle cleanup remains clean. |
+| `language_tutor` | Reference app using engines, memory, and optional voice features. | Stabilized. `src/` layout. | Optional voice dependencies should not hard-fail basic imports. |
 
-- `llm_inspector_ui` import/namespace blocker resolved.
-- Editable-install model validated from outside the repo root.
-- Package-local import bootstraps removed.
-- Import provenance is guarded by `tests/test_import_provenance.py`.
-- Root `conftest.py` remains as the single centralized transitional pytest bootstrap.
-- Publication hygiene checker now rejects transient artifacts such as `.pytest_cache/`, `*.egg-info/`, `*.bak`, `*.orig`, `*.rej`, `*.patch`, `local_artifacts/`, `test_reports/`, and `test_survey_results/`.
-- Transient hygiene artifacts were removed.
-- `engram_lite` embedding compatibility modules now behave as facade re-exports over `engram`.
-- `llm_inspector` normalizes delegated `engram` trace events back to the `engram_lite` adapter boundary while preserving upstream provenance.
+## Current priority
 
-Current policy:
+The next package-level task is not another layout migration. It is runtime lifecycle hardening in `engram`.
 
-- Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
-- Keep root `conftest.py` as temporary centralized test bootstrap until package layout consistency removes the need for it.
-- Keep source/layout changes in small, separately validated commits.
+Active files:
 
-Next recommended increment:
+    engram/src/engram/memory/ingestion.py
+    engram/src/engram/project_memory.py
 
-1. Convert `llm_engines` to `src/` layout.
-2. Update package metadata and import provenance expectations.
-3. Validate editable install and package tests.
-4. Rerun the broad gate.
-<!-- AI_TOOLS_CLEANUP_CHECKPOINT_END -->
+Goal:
 
-This file defines the intended role of each package in the `ai_tools` monorepo. It is also a guardrail against over-complication and duplicated responsibility.
+    Avoid ingestion/dedup/episode writes after ProjectMemory has been closed.
 
-## Quality-control note
+## Dependency discipline
 
-Package roles are only useful if packaging and imports are boring. During the cleanup thread, role boundaries should be preserved, but the first priority is stabilizing layout, editable installs, and tests.
+Use editable installs for local development:
 
-## Package role table
+    python -m pip install -e ./llm_engines
+    python -m pip install -e ./language_tutor
+    python -m pip install -e ./engram
 
-| Package | Role | Default learner path | Cleanup notes |
-|---|---|---:|---|
-| `llm_harness_core` | Shared interop contracts: capabilities, messages, operation results, traces, retrieved documents, and memory records. | yes | Keep small and dependency-light. It must not import higher-level packages. |
-| `llm_engines` | Model/backend access behind normalized engine capabilities and response schemas. | yes | Eventually standardize layout. Keep backend optionality explicit. |
-| `engram` | Full memory runtime and canonical implementation for memory primitives. | after `engram_lite` | If ADR-007 stands, implementation shared by lite belongs here. |
-| `engram_lite` | Curated/default facade over `engram` for teaching and small applications. | yes | Current code may not fully match this role. Finish the facade migration or amend ADR-007. |
-| `rag_lib` | Retrieval and source-grounded QA patterns with visible evidence flow. | yes | Keep basic tests runnable without live model services. |
-| `llm_inspector` | Core trace/evaluation inspection logic and CLI-facing inspection primitives. | yes | Keep top-level imports lightweight; optional adapters should not load heavy dependencies at import time. |
-| `llm_inspector_ui` | Streamlit workbench for comparing baseline, memory, retrieval, and later agent runs. | yes | Active blocker. Convert to src layout first. |
-| `language_tutor` | Reference application showing how the layers compose into a user-facing tool. | intermediate | Do not prioritize until packaging stabilization is green. |
-| `agent_lib` | Inspectable agent orchestration, programming workflow, policy checks, and safety labs. | last | Highest-risk package. Avoid feature expansion until the repo is stable to install and test. |
-| `course` | Teaching notebooks, starter projects, and curriculum manifest. | yes | Do not expand teaching assets until the install/test story is stable. |
-| `integration_tests` | Cross-package behavioral validation and contract-drift detection. | maintainers | These should prove package boundaries rather than compensate for packaging problems. |
-
-## Stabilization rule
-
-When validation exposes a package deficiency, fix the package deficiency first. Do not paper over package problems with extra teaching docs, path hacks, or duplicated compatibility layers unless the shim is temporary and documented.
-
-## Import rule
-
-A package import should be cheap and predictable.
-
-These should not happen at top-level import time unless explicitly required:
-
-- model discovery
-- GPU checks
-- ChromaDB initialization
-- Streamlit initialization
-- database creation
-- network calls
-- optional backend imports
-
-## Boundary rule
-
-If two packages contain similar implementations, decide which package owns the implementation and which package adapts or re-exports it. Do not allow duplicated implementations to evolve silently.
+Avoid relying on production `PYTHONPATH` mutations.
