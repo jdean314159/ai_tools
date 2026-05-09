@@ -19,7 +19,7 @@ Current src-layout packages:
 Current direct-layout packages:
 
     llm_engines/llm_engines
-    engram/engram
+    engram/src/engram
     language_tutor/src/language_tutor
 
 ## Decision

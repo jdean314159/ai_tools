@@ -15,7 +15,7 @@ The repaired path does two things:
 ## Run the example
 
 ```bash
-PYTHONPATH=engram:llm_inspector/src:llm_harness_core/src:. python engram/examples/memory_contamination_lab.py
+PYTHONPATH=engram/src:llm_inspector/src:llm_harness_core/src:. python engram/examples/memory_contamination_lab.py
 ```
 
 ## What to inspect

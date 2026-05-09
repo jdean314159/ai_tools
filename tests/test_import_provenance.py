@@ -14,7 +14,8 @@ PACKAGE_EXPECTATIONS = {
     "rag_lib": REPO_ROOT / "rag_lib" / "src" / "rag_lib",
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
-    "engram": REPO_ROOT / "engram" / "engram",
+    "engram": REPO_ROOT / "engram" / "src" / "engram",
+    "engram_ui": REPO_ROOT / "engram" / "src" / "engram_ui",
     "llm_engines": REPO_ROOT / "llm_engines" / "llm_engines",
     "language_tutor": REPO_ROOT / "language_tutor" / "src" / "language_tutor",
 }

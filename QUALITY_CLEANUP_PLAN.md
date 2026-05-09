@@ -72,7 +72,7 @@ but also:
 
     llm_inspector_ui/llm_inspector_ui
     llm_engines/llm_engines
-    engram/engram
+    engram/src/engram
     language_tutor/src/language_tutor
 
 This mixed layout allows namespace-package shadowing and makes pytest behavior dependent on path order.
@@ -246,11 +246,11 @@ Large modules are a maintainability risk, but they are not the first cleanup tar
 
 Candidate later refactors:
 
-- `engram/engram/project_memory.py`
-- `engram/engram/rtrl/core.py`
-- `engram/engram_ui/app.py`
-- `engram/engram_ui/model_management.py`
-- `engram/engram/engine/model_manager.py`
+- `engram/src/engram/project_memory.py`
+- `engram/src/engram/rtrl/core.py`
+- `engram/src/engram_ui/app.py`
+- `engram/src/engram_ui/model_management.py`
+- `engram/src/engram/engine/model_manager.py`
 - `engram_lite/src/engram_lite/project_memory.py`
 - `agent_lib/src/agent_lib/programming.py`
 

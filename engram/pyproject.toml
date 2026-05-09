@@ -71,14 +71,15 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["engram*", "engram_ui*", "apps*"]
+where = ["src"]
+include = ["engram*", "engram_ui*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "tests/harness"]
-pythonpath = ["."]
+pythonpath = ["src"]
 asyncio_mode = "auto"
 # Suppress the SkipTest noise from dependency guards
 filterwarnings = ["ignore::pytest.PytestUnraisableExceptionWarning"]
