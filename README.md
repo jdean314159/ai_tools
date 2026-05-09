@@ -31,7 +31,7 @@ The docs in this repo use these labels:
 2. [LEARNING_PATH.md](./LEARNING_PATH.md) **[Beginner]**
 3. [course/README.md](./course/README.md) **[Beginner]**
 4. package READMEs for the current stage you are studying **[Beginner–Intermediate]**
-5. [CURRENT_STATE.md](./CURRENT_STATE.md) **[Intermediate]**
+5. [STATUS.md](./STATUS.md) **[Intermediate]**
 6. [ROADMAP.md](./ROADMAP.md) **[Intermediate]**
 7. [VISION.md](./VISION.md) and the ADRs **[Advanced–Maintainer]**
 
@@ -52,7 +52,7 @@ Use the teaching path first, then come back to the deeper documents.
 - [START_HERE.md](./START_HERE.md) — beginner-safe entry ramp **[Beginner]**
 - [LEARNING_PATH.md](./LEARNING_PATH.md) — canonical teaching sequence **[Beginner]**
 - [VISION.md](./VISION.md) — architecture and design intent **[Advanced]**
-- [CURRENT_STATE.md](./CURRENT_STATE.md) — implementation snapshot **[Intermediate]**
+- [STATUS.md](./STATUS.md) — implementation snapshot **[Intermediate]**
 - [PACKAGE_ROLES.md](./PACKAGE_ROLES.md) — stabilized package role map **[Intermediate]**
 - [ROADMAP.md](./ROADMAP.md) — ordered next phases **[Intermediate]**
 - [ADR_INDEX.md](./ADR_INDEX.md) — architectural decision map **[Advanced–Maintainer]**
@@ -105,7 +105,7 @@ Recommended first paths:
 - **Advanced memory path**: substitute `engram` for `engram_lite` when you need richer memory behavior and are willing to take on more complexity
 - **Agent path**: add `agent_lib` only after the engine, memory/retrieval, and inspection layers are understood
 
-For the current implementation snapshot and the ordered next phases, see [CURRENT_STATE.md](./CURRENT_STATE.md) and [ROADMAP.md](./ROADMAP.md).
+For the current implementation snapshot and the ordered next phases, see [STATUS.md](./STATUS.md) and [ROADMAP.md](./ROADMAP.md).
 
 ## Teaching path and course materials
 

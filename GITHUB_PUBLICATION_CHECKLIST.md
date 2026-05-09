@@ -10,20 +10,10 @@ Recent broad gate:
 
     1701 passed, 23 skipped in 937.49s
 
-Publication should still wait until the remaining runtime-lifecycle warning in `engram` is fixed and committed.
 
 ## Required before publication
 
-### 1. Runtime lifecycle warning cleanup
-
-Fix readonly database warning paths:
-
-    engram/src/engram/memory/ingestion.py
-    engram/src/engram/project_memory.py
-
-Use `ProjectMemory._closed` to avoid late writes after close.
-
-### 2. Broad validation
+### 1. Broad validation
 
 Run:
 
@@ -31,7 +21,7 @@ Run:
 
     PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1     python -m pytest -c pytest.ini --rootdir=.       tests/test_import_provenance.py       llm_engines/tests       language_tutor/tests       agent_lib/tests       engram_lite/tests       llm_inspector_ui/tests       llm_inspector/tests       rag_lib/tests       llm_harness_core/tests       engram/tests       --run-engram       -x --tb=short -W error
 
-### 3. Remove generated artifacts
+### 2. Remove generated artifacts
 
 Before hygiene or commit:
 
@@ -41,7 +31,7 @@ Before hygiene or commit:
     find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
     find . -type f -name '*.patch' -delete
 
-### 4. Publication hygiene
+### 3. Publication hygiene
 
 Run:
 
@@ -51,7 +41,7 @@ Expected:
 
     Publication hygiene check passed.
 
-### 5. Status check
+### 4. Status check
 
 Run:
 
@@ -67,5 +57,4 @@ Expected:
 - broad gate fails,
 - publication hygiene fails,
 - docs still describe the old `llm_inspector_ui describe_ui` failure as active,
-- docs still describe `llm_engines`, `language_tutor`, or `engram` as direct-layout packages,
 - readonly DB warnings remain uninvestigated and unexplained.
