@@ -204,6 +204,11 @@ class MemoryIngestor:
             "decision": decision.to_dict(),
         }
 
+        if getattr(self.project_memory, "_closed", False):
+            outcome["skipped_reason"] = "project_memory_closed"
+            logger.debug("Skipping ingestion because ProjectMemory is closed")
+            return outcome
+
         if decision.should_store_episode and decision.episode_text:
             try:
                 episode_id = self.project_memory.store_episode(

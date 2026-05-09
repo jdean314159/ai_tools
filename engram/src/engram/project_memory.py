@@ -1370,6 +1370,10 @@ class ProjectMemory:
         Returns:
             Episode ID if stored, None if filtered out.
         """
+        if getattr(self, "_closed", False):
+            logger.debug("Skipping store_episode because ProjectMemory is closed")
+            return ""
+
         started = time.perf_counter()
         if not bypass_filter and self.surprise is not None:
             if not self.surprise.should_store(text):
