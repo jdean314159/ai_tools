@@ -10,7 +10,7 @@ class FakeEngine:
     def count_tokens(self, text: str) -> int:
         return len(text.split())
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, **kwargs) -> str:
         return "test reply"
 
 

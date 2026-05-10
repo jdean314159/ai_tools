@@ -34,7 +34,6 @@ Author: Jeffrey Dean
 
 from __future__ import annotations
 
-import inspect
 import logging
 import os
 import re
@@ -775,27 +774,14 @@ class ProjectMemory:
         prompt = prompt_result["prompt"]
 
         # 4. Call the LLM
-        generate_kwargs = {"temperature": temperature, "max_tokens": max_tokens, **engine_kwargs}
-        try:
-            signature = inspect.signature(self.llm_engine.generate)
-            accepts_var_kwargs = any(
-                param.kind == inspect.Parameter.VAR_KEYWORD
-                for param in signature.parameters.values()
-            )
-            if not accepts_var_kwargs:
-                allowed = {
-                    name for name, param in signature.parameters.items()
-                    if name != "prompt"
-                    and param.kind in (
-                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                        inspect.Parameter.KEYWORD_ONLY,
-                    )
-                }
-                generate_kwargs = {k: v for k, v in generate_kwargs.items() if k in allowed}
-        except (TypeError, ValueError):
-            pass
-
-        answer = self.llm_engine.generate(prompt, **generate_kwargs)
+        # All LLMEngine subclasses accept **kwargs per the abstract base contract
+        # (engram/engine/base.py). No runtime signature inspection needed.
+        answer = self.llm_engine.generate(
+            prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **engine_kwargs,
+        )
 
         # 5. Record assistant turn (feeds working memory + ingestion pipeline)
         self.add_turn("assistant", answer)

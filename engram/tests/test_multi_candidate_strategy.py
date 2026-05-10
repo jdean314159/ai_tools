@@ -19,7 +19,7 @@ class CyclingFakeEngine:
     def count_tokens(self, text: str) -> int:
         return len(text.split())
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, **kwargs) -> str:
         response = self._responses[self._idx % len(self._responses)]
         self._idx += 1
         return response
