@@ -625,3 +625,156 @@ def run_audit(
     # Sort findings by severity for predictable output
     report.findings = report.sorted_findings()
     return report
+
+
+# ---------------------------------------------------------------------------
+# Remediation — write operations corresponding to audit findings
+# ---------------------------------------------------------------------------
+
+def _rem_tombstone(semantic, episodic, record_id: str, result: dict) -> None:
+    """Tombstone an episode or delete a synthesis rule."""
+    if semantic is not None:
+        row = semantic._reader().execute(
+            "SELECT id FROM synthesized_rules WHERE id = ?", (record_id,)
+        ).fetchone()
+        if row:
+            semantic._write_conn.execute(
+                "DELETE FROM synthesized_rules WHERE id = ?", (record_id,)
+            )
+            semantic._write_conn.commit()
+            result["applied"].append(
+                {"record_id": record_id, "action": "tombstone", "target": "synthesis_rule"}
+            )
+            return
+    if episodic is not None:
+        n = episodic.tombstone_episodes([record_id])
+        if n > 0:
+            result["applied"].append(
+                {"record_id": record_id, "action": "tombstone", "target": "episode"}
+            )
+            return
+    result["skipped"].append(
+        {"record_id": record_id, "action": "tombstone", "reason": "record_not_found"}
+    )
+
+
+def _rem_decay_confidence(semantic, record_id: str, result: dict,
+                           decay: float = 0.1) -> None:
+    """Reduce confidence of a synthesis rule by decay amount."""
+    if semantic is None:
+        result["skipped"].append(
+            {"record_id": record_id, "action": "decay_confidence",
+             "reason": "semantic_unavailable"}
+        )
+        return
+    semantic._write_conn.execute(
+        "UPDATE synthesized_rules SET confidence = MAX(0.0, confidence - ?) "
+        "WHERE id = ?", (decay, record_id)
+    )
+    semantic._write_conn.commit()
+    result["applied"].append(
+        {"record_id": record_id, "action": "decay_confidence", "decay": decay}
+    )
+
+
+def _rem_mark_validated(semantic, record_id: str, result: dict) -> None:
+    """Reset last_validated timestamp on a synthesis rule."""
+    if semantic is None:
+        result["skipped"].append(
+            {"record_id": record_id, "action": "mark_validated",
+             "reason": "semantic_unavailable"}
+        )
+        return
+    import time as _time
+    semantic._write_conn.execute(
+        "UPDATE synthesized_rules SET last_validated = ? WHERE id = ?",
+        (_time.time(), record_id)
+    )
+    semantic._write_conn.commit()
+    result["applied"].append({"record_id": record_id, "action": "mark_validated"})
+
+
+def _rem_delete_relation(semantic, record_id: str, result: dict) -> None:
+    """Delete a dangling synthesis relation by row id."""
+    if semantic is None:
+        result["skipped"].append(
+            {"record_id": record_id, "action": "delete_relation",
+             "reason": "semantic_unavailable"}
+        )
+        return
+    semantic._write_conn.execute(
+        "DELETE FROM synthesized_relations WHERE id = ?", (record_id,)
+    )
+    semantic._write_conn.commit()
+    result["applied"].append({"record_id": record_id, "action": "delete_relation"})
+
+
+import logging as _logging
+_rem_logger = _logging.getLogger(__name__)
+
+
+def run_remediation(
+    semantic,
+    episodic,
+    project_id: str,
+    report=None,
+    actions=None,
+    dry_run: bool = True,
+) -> dict:
+    """Apply approved remediation actions from an audit report.
+
+    Extracted from ProjectMemory.audit_remediate(). Call via
+    ProjectMemory.audit_remediate() or directly for testing.
+
+    Args:
+        semantic:    SemanticMemory or None.
+        episodic:    EpisodicMemory or None.
+        project_id:  Project scope identifier.
+        report:      AuditReport from run_audit(). Used to build default actions.
+        actions:     List of (record_id, action) tuples. None = use report.
+        dry_run:     Default True — log without mutating.
+
+    Returns:
+        Dict with keys: applied, skipped, errors, dry_run.
+    """
+    result = {"applied": [], "skipped": [], "errors": [], "dry_run": dry_run}
+
+    if actions is None and report is not None:
+        actions = [
+            (f.record_id, f.suggested_action.split()[0].lower())
+            for f in report.findings
+            if f.suggested_action
+        ]
+    actions = actions or []
+
+    for record_id, action in actions:
+        try:
+            if dry_run:
+                result["applied"].append(
+                    {"record_id": record_id, "action": action, "status": "dry_run"}
+                )
+                continue
+            if action == "tombstone":
+                _rem_tombstone(semantic, episodic, record_id, result)
+            elif action == "decay_confidence":
+                _rem_decay_confidence(semantic, record_id, result)
+            elif action == "mark_validated":
+                _rem_mark_validated(semantic, record_id, result)
+            elif action == "delete_relation":
+                _rem_delete_relation(semantic, record_id, result)
+            else:
+                result["skipped"].append(
+                    {"record_id": record_id, "action": action,
+                     "reason": f"unknown_action: {action}"}
+                )
+        except Exception as exc:
+            result["errors"].append(
+                {"record_id": record_id, "action": action, "error": str(exc)}
+            )
+
+    _rem_logger.info(
+        "run_remediation: project=%s applied=%d skipped=%d errors=%d dry_run=%s",
+        project_id, len(result["applied"]),
+        len(result["skipped"]), len(result["errors"]), dry_run,
+    )
+    return result

@@ -66,6 +66,9 @@ from .memory.neural_coordinator import NeuralCoordinator, resolve_neural_fingerp
 from .memory.memory_context import MemoryContext
 from .memory.forgetting import ForgettingPolicy, ForgettingConfig
 from .memory.ingestion import MemoryIngestor, IngestionPolicy
+from .memory.result_types import TokenBudget, SynthesisHookConfig
+from .memory.audit import run_audit, run_remediation
+from .memory.synthesis import run_synthesis, build_synthesis_block, load_engine_config
 from .memory.retrieval import UnifiedRetriever
 from .memory.lifecycle import LifecycleConfig, MemoryLifecycleManager
 from .memory.extraction import GraphExtractor, ExtractionConfig, ExtractionStats
@@ -168,23 +171,6 @@ def truncate_to_tokens(text: str, max_tokens: int, count_fn) -> str:
             hi = mid - 1
     return text[:lo]
 
-
-@dataclass
-class TokenBudget:
-    """Token allocation across memory layers.
-
-    Defaults from README specifications. Adjust per project as needed.
-    """
-    working: int = 1000
-    episodic: int = 800
-    semantic: int = 400
-
-    cold: int = 400
-    procedural: int = 200   # Layer 6 — skill procedures
-
-    @property
-    def total(self) -> int:
-        return self.working + self.episodic + self.semantic + self.cold + self.procedural
 
 
 _CORRECTION_USE_INSTEAD_PROMPT = re.compile(
@@ -603,31 +589,6 @@ def _build_layers(
     }
 
 
-@dataclass
-class SynthesisHookConfig:
-    """Configuration for the session-end synthesis approval hook.
-
-    When enabled, ProjectMemory.end_session() fires an approval prompt
-    when enough episodes have accumulated since the last synthesis run.
-    The caller provides an approval_callback that returns True (run now)
-    or False (defer). Default callback uses stdin/stdout.
-
-    Args:
-        enabled: Off by default — opt-in per project.
-        episode_threshold: Min new episodes per session to trigger prompt.
-        approval_callback: Callable(prompt_str) -> bool. None = stdout input().
-        window_size: Episode window passed to synthesize_now().
-        days_back: Lookback window for synthesis episode fetch.
-        min_support: Min supporting episodes per rule.
-        min_confidence: Min confidence threshold for rule emission.
-    """
-    enabled: bool = False
-    episode_threshold: int = 20
-    approval_callback: Optional[Any] = None  # Callable[[str], bool] | None
-    window_size: int = 50
-    days_back: int = 30
-    min_support: int = 3
-    min_confidence: float = 0.60
 
 
 class ProjectMemory:
@@ -2567,53 +2528,12 @@ class ProjectMemory:
         max_tokens: int = 300,
         min_match_score: float = -5.0,
     ) -> str:
-        """Return a formatted block of synthesis rules matching query, or ''.
+        """Thin wrapper — delegates to memory.synthesis.build_synthesis_block."""
+        return build_synthesis_block(
+            self.semantic, self.project_id, query, self._token_counter,
+            max_rules=max_rules, max_tokens=max_tokens, min_match_score=min_match_score,
+        )
 
-        Capped at max_rules rules and max_tokens total to prevent rules from
-        crowding out episodic/semantic content in token-constrained prompts.
-
-        Args:
-            min_match_score: BM25 score floor (FTS5 scores are negative;
-                more negative = weaker match). Default -5.0 filters out
-                rules that only matched one low-value stop word in an OR
-                query. Raise toward 0.0 for stricter matching.
-        """
-        if self.semantic is None:
-            return ""
-        if not query or not query.strip():
-            return ""
-        try:
-            hits = self.semantic.search_synthesis_rules(
-                query=query,
-                project_id=self.project_id,
-                limit=max_rules * 3,  # fetch extra to allow score filtering
-                min_confidence=0.6,
-            )
-        except Exception as exc:
-            logger.debug("_build_synthesis_block: search failed: %s", exc)
-            return ""
-
-        if not hits:
-            return ""
-
-        # Filter by BM25 match quality — drops weak OR matches
-        hits = [h for h in hits if h.get("match_score", -999) >= min_match_score]
-        if not hits:
-            return ""
-
-        lines = []
-        tokens_used = 0
-        for hit in hits[:max_rules]:
-            rule_text = hit.get("rule_text", "").strip()
-            if not rule_text:
-                continue
-            rule_tokens = max(1, self._token_counter(rule_text))
-            if tokens_used + rule_tokens > max_tokens:
-                break
-            lines.append(f"- {rule_text}")
-            tokens_used += rule_tokens
-
-        return "\n".join(lines)
 
     def synthesize_now(
         self,
@@ -2622,139 +2542,15 @@ class ProjectMemory:
         min_support: int = 3,
         min_confidence: float = 0.60,
     ) -> Dict[str, Any]:
-        """Run a synthesis pass over recent episodes and write rules to semantic memory.
-
-        Extracts generalizable rules from the most recent `window_size` episodes,
-        stores them in the `synthesized_rules` table (FTS5-indexed), and records
-        typed DERIVED_FROM relations in `synthesized_relations`.
-
-        Requires:
-        - `self.episodic` to be available (ChromaDB episodic layer)
-        - `self.semantic` to be available (SQLite semantic layer)
-        - 'synthesis' or 'tier2_cognitive' engine configured in llm_engines.yaml
-
-        Args:
-            window_size:    Max episodes to include in the synthesis window.
-            days_back:      How far back to fetch episodes (default 30 days).
-            min_support:    Min distinct episodes a rule must cite to be kept.
-            min_confidence: Rules below this threshold are dropped.
-
-        Returns:
-            Dict with keys: rules_written, rules_skipped, relations_written,
-            window_size, extraction_seconds, skipped_reason (if no-op).
-        """
-        from .memory.synthesis import SynthesisExtractor
-
-        result: Dict[str, Any] = {
-            "rules_written": 0,
-            "rules_skipped": 0,
-            "relations_written": 0,
-            "skills_written": 0,
-            "skills_skipped": 0,
-            "window_size": 0,
-            "extraction_seconds": 0.0,
-            "skipped_reason": None,
-        }
-
-        if self.episodic is None:
-            result["skipped_reason"] = "episodic_layer_unavailable"
-            logger.warning("synthesize_now: episodic layer not available")
-            return result
-
-        if self.semantic is None:
-            result["skipped_reason"] = "semantic_layer_unavailable"
-            logger.warning("synthesize_now: semantic layer not available")
-            return result
-
-        # Load engine config — prefer 'synthesis' key, fall back to tier2_cognitive
-        engine_config = self._load_synthesis_engine_config()
-        if engine_config is None:
-            result["skipped_reason"] = "no_engine_config"
-            logger.warning(
-                "synthesize_now: no 'synthesis' or 'tier2_cognitive' engine "
-                "configured in llm_engines.yaml"
-            )
-            return result
-
-        extractor = SynthesisExtractor(
-            engine_config=engine_config,
+        """Run a synthesis pass — delegates to memory.synthesis.run_synthesis."""
+        return run_synthesis(
+            self,
+            window_size=window_size,
+            days_back=days_back,
             min_support=min_support,
             min_confidence=min_confidence,
         )
-        if not extractor.enabled:
-            result["skipped_reason"] = "extractor_disabled"
-            return result
 
-        # Fetch episode window
-        episodes = self.episodic.get_recent_episodes(
-            n=window_size,
-            days_back=days_back,
-            project_id=self.project_id,
-        )
-        episode_dicts = [ep.to_dict() for ep in episodes]
-        result["window_size"] = len(episode_dicts)
-
-        # Run synthesis
-        synth = extractor.extract(episode_dicts, project_id=self.project_id)
-        result["extraction_seconds"] = synth.extraction_seconds
-
-        if synth.skipped_reason:
-            result["skipped_reason"] = synth.skipped_reason
-            return result
-
-        # Write rules
-        for rule in synth.rules:
-            payload = rule.to_payload(project_id=self.project_id)
-            written = self.semantic.store_synthesis_rule(
-                payload, project_id=self.project_id
-            )
-            if written:
-                result["rules_written"] += 1
-            else:
-                result["rules_skipped"] += 1  # idempotent upsert
-
-        # Write relations
-        for rel in synth.relations:
-            self.semantic.store_synthesis_relation(
-                rel.to_payload(), project_id=self.project_id
-            )
-            result["relations_written"] += 1
-
-        # Write skills to ProceduralMemory (Layer 6)
-        for skill in synth.skills:
-            skill.project_id = self.project_id
-            emb = self.embedding_service.embed(skill.trigger)
-            if emb is not None:
-                skill.embedding = emb
-            if self.procedural.get_skill(skill.skill_id) is None:
-                self.procedural.add_skill(skill)
-                result["skills_written"] += 1
-            else:
-                result["skills_skipped"] += 1
-
-        logger.info(
-            "synthesize_now: project=%s rules_written=%d skipped=%d "
-            "relations=%d skills_written=%d window=%d elapsed=%.1fs",
-            self.project_id,
-            result["rules_written"],
-            result["rules_skipped"],
-            result["relations_written"],
-            result["skills_written"],
-            result["window_size"],
-            result["extraction_seconds"],
-        )
-        return result
-
-    @staticmethod
-    def _load_synthesis_engine_config() -> Optional[Dict[str, Any]]:
-        """Load 'synthesis' engine config, falling back to 'tier2_cognitive'."""
-        try:
-            from .engine.config_loader import load_config
-            engines = (load_config().get("engines") or {})
-            return engines.get("synthesis") or engines.get("tier2_cognitive")
-        except Exception as exc:
-            logger.debug("_load_synthesis_engine_config: %s", exc)
-            return None
 
     def audit_memory(
         self,
@@ -2797,155 +2593,12 @@ class ProjectMemory:
         actions: Optional[List[tuple]] = None,
         dry_run: bool = True,
     ) -> Dict[str, Any]:
-        """Apply approved remediation actions from an audit report.
-
-        Read-only (dry_run=True) by default — set dry_run=False to mutate.
-
-        Args:
-            report: AuditReport from audit_memory().
-            actions: List of (record_id, action) tuples. If None, applies the
-                     suggested_action for every finding in the report.
-                     Valid actions: 'tombstone', 'decay_confidence',
-                                    'mark_validated', 'delete_relation'
-            dry_run: If True (default), logs planned actions without executing.
-
-        Returns:
-            Dict with keys: applied, skipped, errors, dry_run.
-        """
-        from .memory.audit import SEVERITY_ERROR, SEVERITY_WARN
-
-        result: Dict[str, Any] = {
-            "applied": [], "skipped": [], "errors": [], "dry_run": dry_run
-        }
-
-        # Build action list from report if not provided
-        if actions is None:
-            actions = [
-                (f.record_id, f.suggested_action.split()[0].lower())
-                for f in report.findings
-                if f.suggested_action
-            ]
-
-        for record_id, action in actions:
-            try:
-                if dry_run:
-                    result["applied"].append(
-                        {"record_id": record_id, "action": action,
-                         "status": "dry_run"}
-                    )
-                    continue
-
-                if action == "tombstone":
-                    self._remediate_tombstone(record_id, result)
-                elif action == "decay_confidence":
-                    self._remediate_decay_confidence(record_id, result)
-                elif action == "mark_validated":
-                    self._remediate_mark_validated(record_id, result)
-                elif action == "delete_relation":
-                    self._remediate_delete_relation(record_id, result)
-                else:
-                    result["skipped"].append(
-                        {"record_id": record_id, "action": action,
-                         "reason": f"unknown_action: {action}"}
-                    )
-            except Exception as exc:
-                result["errors"].append(
-                    {"record_id": record_id, "action": action,
-                     "error": str(exc)}
-                )
-
-        logger.info(
-            "audit_remediate: project=%s applied=%d skipped=%d errors=%d dry_run=%s",
-            self.project_id, len(result["applied"]),
-            len(result["skipped"]), len(result["errors"]), dry_run,
-        )
-        return result
-
-    def _remediate_tombstone(self, record_id: str, result: Dict) -> None:
-        """Tombstone an episode or delete a synthesis rule."""
-        # Try synthesis rule first
-        if self.semantic is not None:
-            row = self.semantic._reader().execute(
-                "SELECT id FROM synthesized_rules WHERE id = ?", (record_id,)
-            ).fetchone()
-            if row:
-                self.semantic._write_conn.execute(
-                    "DELETE FROM synthesized_rules WHERE id = ?", (record_id,)
-                )
-                self.semantic._write_conn.commit()
-                result["applied"].append(
-                    {"record_id": record_id, "action": "tombstone",
-                     "target": "synthesis_rule"}
-                )
-                return
-
-        # Try episodic
-        if self.episodic is not None:
-            n = self.episodic.tombstone_episodes([record_id])
-            if n > 0:
-                result["applied"].append(
-                    {"record_id": record_id, "action": "tombstone",
-                     "target": "episode"}
-                )
-                return
-
-        result["skipped"].append(
-            {"record_id": record_id, "action": "tombstone",
-             "reason": "record_not_found"}
+        """Apply approved remediation actions — delegates to memory.audit.run_remediation."""
+        return run_remediation(
+            self.semantic, self.episodic, self.project_id,
+            report=report, actions=actions, dry_run=dry_run,
         )
 
-    def _remediate_decay_confidence(self, record_id: str, result: Dict,
-                                     decay: float = 0.1) -> None:
-        """Reduce confidence of a synthesis rule by decay amount."""
-        if self.semantic is None:
-            result["skipped"].append(
-                {"record_id": record_id, "action": "decay_confidence",
-                 "reason": "semantic_unavailable"}
-            )
-            return
-        self.semantic._write_conn.execute(
-            "UPDATE synthesized_rules SET confidence = MAX(0.0, confidence - ?) "
-            "WHERE id = ?", (decay, record_id)
-        )
-        self.semantic._write_conn.commit()
-        result["applied"].append(
-            {"record_id": record_id, "action": "decay_confidence",
-             "decay": decay}
-        )
-
-    def _remediate_mark_validated(self, record_id: str, result: Dict) -> None:
-        """Reset last_validated timestamp on a synthesis rule."""
-        if self.semantic is None:
-            result["skipped"].append(
-                {"record_id": record_id, "action": "mark_validated",
-                 "reason": "semantic_unavailable"}
-            )
-            return
-        import time as _time
-        self.semantic._write_conn.execute(
-            "UPDATE synthesized_rules SET last_validated = ? WHERE id = ?",
-            (_time.time(), record_id)
-        )
-        self.semantic._write_conn.commit()
-        result["applied"].append(
-            {"record_id": record_id, "action": "mark_validated"}
-        )
-
-    def _remediate_delete_relation(self, record_id: str, result: Dict) -> None:
-        """Delete a dangling synthesis relation by row id."""
-        if self.semantic is None:
-            result["skipped"].append(
-                {"record_id": record_id, "action": "delete_relation",
-                 "reason": "semantic_unavailable"}
-            )
-            return
-        self.semantic._write_conn.execute(
-            "DELETE FROM synthesized_relations WHERE id = ?", (record_id,)
-        )
-        self.semantic._write_conn.commit()
-        result["applied"].append(
-            {"record_id": record_id, "action": "delete_relation"}
-        )
 
     def build_prompt_trace(
             self,
