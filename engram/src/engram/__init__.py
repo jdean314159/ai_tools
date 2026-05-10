@@ -5,7 +5,7 @@ point for most applications is :class:`ProjectMemory`.
 
 Public surface:
 - ProjectMemory: orchestrates the memory layers for one project
-- TokenBudget / ContextResult: prompt-assembly helpers
+- TokenBudget / ContextResult: memory context data containers
 - WorkingMemory / ColdStorage: lightweight explicit memory layers
 - Lazy exports for episodic, semantic, filter, and neural components
 """
@@ -32,7 +32,6 @@ from .interop import (
     trace_to_interop_events,
     trace_to_memory_records,
 )
-# ProjectType, Node, Relationship: kuzu-free — safe to import in base environments
 from .memory.types import Node, ProjectType, Relationship
 
 import importlib
@@ -41,18 +40,17 @@ __all__ = [
     "ProjectMemory",
     "TokenBudget",
     "ContextResult",
-    # Prompt assembly helpers (independently testable)
     "wrap_memory_block",
     "assemble_prompt",
     "truncate_to_tokens",
     "WorkingMemory",
+    "Message",
+    "ColdStorage",
     "describe_memory",
     "trace_to_memory_records",
     "trace_to_interop_events",
     "prompt_result_to_interop_result",
     "response_to_interop_result",
-    "Message",
-    "ColdStorage",
     "MemoryIngestor",
     "IngestionDecision",
     "IngestionPolicy",
@@ -62,84 +60,72 @@ __all__ = [
     "MemoryLifecycleManager",
     "LifecycleConfig",
     "LifecycleReport",
-    # Kuzu-free types — always available without semantic optional dependency
     "ProjectType",
     "Node",
     "Relationship",
-    # Graph extraction
     "GraphExtractor",
     "ExtractionConfig",
     "ExtractionStats",
-    # Forgetting policy
     "ForgettingPolicy",
     "ForgettingConfig",
-    # Embedding cache
     "EmbeddingCache",
-    # New architecture components (public for custom-app authors)
     "EmbeddingService",
     "NeuralCoordinator",
     "MemoryContext",
-    # Semantic layer contract (for custom backend authors)
     "SemanticLayerProtocol",
-    # Fine-tuning export
     "export_to_file",
     "export_stats",
     "ExportConfig",
     "__version__",
 ]
 
-
-_LAZY_SUBMODULES = {
-    "engine": "engram.engine",
+# ---------------------------------------------------------------------------
+# Lazy attributes — loaded on first access, cached in globals().
+#
+# Format: name -> (module_path, attr_name)
+# attr_name=None means return the module itself (for submodule access).
+# To add a new lazy export, add one line here — no other changes needed.
+# ---------------------------------------------------------------------------
+_LAZY_ATTRS: dict = {
+    # Submodule
+    "engine":              ("engram.engine",                    None),
+    # Episodic layer
+    "EpisodicMemory":      ("engram.memory.episodic_memory",    "EpisodicMemory"),
+    "Episode":             ("engram.memory.episodic_memory",    "Episode"),
+    # Semantic layer
+    "SemanticMemory":      ("engram.memory.semantic_memory",    "SemanticMemory"),
+    "SemanticLayerProtocol": ("engram.memory.retrieval",        "SemanticLayerProtocol"),
+    # Filters
+    "SurpriseFilter":      ("engram.filters.surprise_filter",   "SurpriseFilter"),
+    # Neural / RTRL
+    "TITANSMemory":        ("engram.rtrl.core",                 "TITANSMemory"),
+    "NeuralMemory":        ("engram.rtrl.neural_memory",        "NeuralMemory"),
+    "NeuralMemoryConfig":  ("engram.rtrl.neural_memory",        "NeuralMemoryConfig"),
+    # Graph extraction
+    "GraphExtractor":      ("engram.memory.extraction",         "GraphExtractor"),
+    "ExtractionConfig":    ("engram.memory.extraction",         "ExtractionConfig"),
+    "ExtractionStats":     ("engram.memory.extraction",         "ExtractionStats"),
+    # Forgetting
+    "ForgettingPolicy":    ("engram.memory.forgetting",         "ForgettingPolicy"),
+    "ForgettingConfig":    ("engram.memory.forgetting",         "ForgettingConfig"),
+    # Embedding
+    "EmbeddingCache":      ("engram.memory.embedding_cache",    "EmbeddingCache"),
+    "EmbeddingService":    ("engram.memory.embedding_service",  "EmbeddingService"),
+    # Coordination
+    "NeuralCoordinator":   ("engram.memory.neural_coordinator", "NeuralCoordinator"),
+    "MemoryContext":       ("engram.memory.memory_context",     "MemoryContext"),
+    # Fine-tuning export
+    "export_to_file":      ("engram.finetune.export",           "export_to_file"),
+    "export_stats":        ("engram.finetune.export",           "export_stats"),
+    "ExportConfig":        ("engram.finetune.export",           "ExportConfig"),
 }
 
+
 def __getattr__(name: str):
-    if name in _LAZY_SUBMODULES:
-        module = importlib.import_module(_LAZY_SUBMODULES[name])
-        globals()[name] = module
-        return module
-    if name == "engine":
-        module = importlib.import_module("engram.engine")
-        globals()[name] = module
-        return module
-    # keep the existing __getattr__ logic below this point
-    if name in ("EpisodicMemory", "Episode"):
-        from .memory.episodic_memory import Episode, EpisodicMemory
-        return {"EpisodicMemory": EpisodicMemory, "Episode": Episode}[name]
-    if name == "SemanticMemory":
-        from .memory.semantic_memory import SemanticMemory
-        return SemanticMemory
-    if name == "SurpriseFilter":
-        from .filters.surprise_filter import SurpriseFilter
-        return SurpriseFilter
-    if name == "TITANSMemory":
-        from .rtrl.core import TITANSMemory
-        return TITANSMemory
-    if name in ("NeuralMemory", "NeuralMemoryConfig"):
-        from .rtrl.neural_memory import NeuralMemory, NeuralMemoryConfig
-        return {"NeuralMemory": NeuralMemory, "NeuralMemoryConfig": NeuralMemoryConfig}[name]
-    if name in ("GraphExtractor", "ExtractionConfig", "ExtractionStats"):
-        from .memory.extraction import ExtractionConfig, ExtractionStats, GraphExtractor
-        return {"GraphExtractor": GraphExtractor, "ExtractionConfig": ExtractionConfig, "ExtractionStats": ExtractionStats}[name]
-    if name in ("ForgettingPolicy", "ForgettingConfig"):
-        from .memory.forgetting import ForgettingConfig, ForgettingPolicy
-        return {"ForgettingPolicy": ForgettingPolicy, "ForgettingConfig": ForgettingConfig}[name]
-    if name == "EmbeddingCache":
-        from .memory.embedding_cache import EmbeddingCache
-        return EmbeddingCache
-    if name == "EmbeddingService":
-        from .memory.embedding_service import EmbeddingService
-        return EmbeddingService
-    if name == "NeuralCoordinator":
-        from .memory.neural_coordinator import NeuralCoordinator
-        return NeuralCoordinator
-    if name == "MemoryContext":
-        from .memory.memory_context import MemoryContext
-        return MemoryContext
-    if name == "SemanticLayerProtocol":
-        from .memory.retrieval import SemanticLayerProtocol
-        return SemanticLayerProtocol
-    if name in ("export_to_file", "export_stats", "ExportConfig"):
-        from .finetune.export import ExportConfig, export_stats, export_to_file
-        return {"export_to_file": export_to_file, "export_stats": export_stats, "ExportConfig": ExportConfig}[name]
-    raise AttributeError(f"module 'engram' has no attribute {name!r}")
+    if name not in _LAZY_ATTRS:
+        raise AttributeError(f"module 'engram' has no attribute {name!r}")
+    module_path, attr_name = _LAZY_ATTRS[name]
+    module = importlib.import_module(module_path)
+    obj = module if attr_name is None else getattr(module, attr_name)
+    globals()[name] = obj
+    return obj
