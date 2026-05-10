@@ -3,8 +3,10 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+from functools import lru_cache
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Pattern, Sequence
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,32 @@ class IngestionDecision:
         }
 
 
+# ---------------------------------------------------------------------------
+# Pattern config loader — reads ingestion_patterns.yaml once, caches result
+# ---------------------------------------------------------------------------
+
+_PATTERNS_FILE = Path(__file__).parent / "ingestion_patterns.yaml"
+
+
+@lru_cache(maxsize=1)
+def _load_patterns_config() -> dict:
+    """Load and cache ingestion_patterns.yaml. Returns {} on any error."""
+    try:
+        import yaml
+        return yaml.safe_load(_PATTERNS_FILE.read_text()) or {}
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "ingestion_patterns.yaml not loaded (%s); patterns will be empty.", exc
+        )
+        return {}
+
+
+def _compile_patterns(pattern_strings) -> tuple:
+    """Compile a list of regex strings to re.Pattern objects (IGNORECASE)."""
+    return tuple(re.compile(p, re.IGNORECASE) for p in (pattern_strings or []))
+
+
 @dataclass
 class IngestionPolicy:
     """Configurable write-policy surface for conversational memory formation."""
@@ -55,77 +83,41 @@ class IngestionPolicy:
 
     @classmethod
     def for_project_type(cls, project_type: Any) -> "IngestionPolicy":
+        """Build an IngestionPolicy from ingestion_patterns.yaml for the given project type.
+
+        Falls back to empty pattern lists if the YAML is missing or unreadable.
+        Add new project types or languages by editing ingestion_patterns.yaml.
+        """
         pt = str(getattr(project_type, "value", project_type) or "").lower()
+        config = _load_patterns_config()
+        default = config.get("default", {})
 
-        base = cls(
-            episode_threshold=0.35,
-            max_episode_chars=1200,
-            dedup_search_n=3,
-            ephemeral_patterns=(
-                re.compile(r"\bignore this\b", re.IGNORECASE),
-                re.compile(r"\bdo not remember\b", re.IGNORECASE),
-                re.compile(r"\bfor this message only\b", re.IGNORECASE),
-                re.compile(r"\btemporary note\b", re.IGNORECASE),
-                re.compile(r"^\s*transient note\s*:", re.IGNORECASE),
-                re.compile(r"\bonly asking about\b.*\bmistaken\b", re.IGNORECASE),
-                re.compile(r"\bnot for long[- ]term memory\b", re.IGNORECASE),
-                re.compile(r"\bephemeral\b", re.IGNORECASE),
-                re.compile(r"\bmensaje temporal\b", re.IGNORECASE),
-                re.compile(r"\bno recuerdes esto\b", re.IGNORECASE),
-            ),
-            preference_patterns=(
-                re.compile(r"\bI prefer\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bI like\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bI (?:do not|don't) like\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bmy favorite\s+(?P<category>\w+)\s+is\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bprefiero\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bme gusta\s+(?P<value>.+)", re.IGNORECASE),
-            ),
-            fact_patterns=(
-                re.compile(r"\bI am\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bI work on\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bI use\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bwe decided to\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bthe plan is to\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bestoy\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\buso\s+(?P<value>.+)", re.IGNORECASE),
-                re.compile(r"\bdecidimos\s+(?P<value>.+)", re.IGNORECASE),
-            ),
-            user_profile_terms=(
-                "prefer", "favorite", "i like", "i don't like", "i am", "i use", "i work on",
-                "prefiero", "me gusta", "uso", "trabajo en",
-            ),
-            task_state_terms=(
-                "decided", "plan", "implemented", "fixed", "bug", "issue", "todo", "next step",
-                "resolved", "decision", "milestone", "deadline", "decidimos", "plan", "error",
-            ),
-        )
+        kwargs = {
+            "episode_threshold": default.get("episode_threshold", 0.35),
+            "max_episode_chars":  default.get("max_episode_chars", 1200),
+            "dedup_search_n":     default.get("dedup_search_n", 3),
+            "ephemeral_patterns":  _compile_patterns(default.get("ephemeral_patterns")),
+            "preference_patterns": _compile_patterns(default.get("preference_patterns")),
+            "fact_patterns":       _compile_patterns(default.get("fact_patterns")),
+            "user_profile_terms":  tuple(default.get("user_profile_terms", [])),
+            "task_state_terms":    tuple(default.get("task_state_terms", [])),
+        }
 
-        if "language_tutor" in pt:
-            return cls(
-                episode_threshold=0.56,
-                max_episode_chars=1200,
-                dedup_search_n=3,
-                ephemeral_patterns=base.ephemeral_patterns,
-                preference_patterns=base.preference_patterns,
-                fact_patterns=base.fact_patterns,
-                user_profile_terms=tuple(list(base.user_profile_terms) + ["studying", "learning", "practicing", "aprendo", "practico"]),
-                task_state_terms=tuple(list(base.task_state_terms) + ["mistake", "grammar", "vocabulary", "pronunciation", "gramática", "vocabulario"]),
-            )
+        for pt_key, pt_cfg in config.get("project_types", {}).items():
+            if pt_key in pt:
+                for field in ("episode_threshold", "max_episode_chars", "dedup_search_n"):
+                    if field in pt_cfg:
+                        kwargs[field] = pt_cfg[field]
+                for extra, base in [
+                    ("extra_user_profile_terms", "user_profile_terms"),
+                    ("extra_task_state_terms",   "task_state_terms"),
+                ]:
+                    if extra in pt_cfg:
+                        kwargs[base] = tuple(list(kwargs[base]) + list(pt_cfg[extra]))
+                break
 
-        if "programming" in pt:
-            return cls(
-                episode_threshold=0.6,
-                max_episode_chars=1400,
-                dedup_search_n=4,
-                ephemeral_patterns=base.ephemeral_patterns,
-                preference_patterns=base.preference_patterns,
-                fact_patterns=base.fact_patterns,
-                user_profile_terms=tuple(list(base.user_profile_terms) + ["stack", "framework", "language", "tooling"]),
-                task_state_terms=tuple(list(base.task_state_terms) + ["stacktrace", "incident", "deploy", "regression", "refactor", "asyncio"]),
-            )
+        return cls(**kwargs)
 
-        return base
 
 
 class MemoryIngestor:
