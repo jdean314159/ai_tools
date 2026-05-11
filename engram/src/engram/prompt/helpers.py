@@ -25,7 +25,7 @@ def wrap_memory_block(content: str) -> str:
     Returns an empty string when content is empty — callers should check
     before including the blob in the prompt to avoid spurious blank lines.
     """
-    if not content:
+    if not content or not content.strip():
         return ""
     return (
         f"{_MEMORY_WRAPPER_PREAMBLE}"

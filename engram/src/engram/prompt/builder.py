@@ -32,11 +32,14 @@ from .helpers import (
 if TYPE_CHECKING:
     from ..project_memory import ProjectMemory
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def _get_helper_map():
     """Lazy helper map — only built when semantic helpers are needed."""
-    from .memory.semantic_memory import ProjectType
-    from .memory.semantic_helpers import (
+    from ..memory.semantic_memory import ProjectType
+    from ..memory.semantic_helpers import (
         ProgrammingAssistantHelpers,
         FileOrganizerHelpers,
         LanguageTutorHelpers,
