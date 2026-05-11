@@ -260,10 +260,26 @@ class EngramLLMAdapter:
         return {"entities": [], "relationships": []}
 
     # ------------------------------------------------------------------
+    # Engine attribute passthrough (for fingerprinting, etc.)
+    # ------------------------------------------------------------------
+
+    @property
+    def model_name(self) -> str:
+        """Passthrough for resolve_neural_fingerprint and similar."""
+        return getattr(self.engine, "model_name", "") or self.engine.__class__.__name__
+
+    # ------------------------------------------------------------------
     # Simple generation (for completions Engram triggers internally)
     # ------------------------------------------------------------------
 
-    def generate(self, prompt: str, system: str | None = None, max_tokens: int = 512) -> str:
+    def generate(
+        self,
+        prompt: str,
+        system: str | None = None,
+        max_tokens: int = 512,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> str:
         """
         Simple text generation for internal Engram use (e.g. summarisation).
 
@@ -277,7 +293,7 @@ class EngramLLMAdapter:
         request = GenerationRequest(
             messages=messages,
             max_tokens=max_tokens,
-            temperature=0.7,
+            temperature=temperature,
         )
         try:
             response = self.engine.generate(request)

@@ -302,6 +302,7 @@ class ProjectMemory:
         project_type: ProjectType,
         base_dir: Path,
         llm_engine=None,
+        llm_adapter=None,
         session_id: str = "default",
         token_budget: Optional[TokenBudget] = None,
         token_counter: Optional[Callable[[str], int]] = None,
@@ -359,6 +360,7 @@ class ProjectMemory:
         self.project_type = project_type
         self.session_id = session_id
         self.llm_engine = llm_engine
+        self.llm_adapter = llm_adapter
         self.budget = token_budget or TokenBudget()
         self._token_counter = token_counter or _default_token_counter
 
@@ -407,7 +409,7 @@ class ProjectMemory:
 
         # --- Complete neural coordinator (needs llm_engine fingerprint) ---
         self.neural_coord: Optional[NeuralCoordinator] = None
-        _fingerprint = resolve_neural_fingerprint(llm_engine)
+        _fingerprint = resolve_neural_fingerprint(llm_adapter or llm_engine)
 
         if self.neural is not None and layers["key_proj"] is not None:
             if neural_config is not None:
@@ -736,10 +738,10 @@ class ProjectMemory:
               - compressed:     bool — whether the memory block was compressed
               - strategy:       str | None
         """
-        if self.llm_engine is None:
+        if self.llm_adapter is None and self.llm_engine is None:
             raise RuntimeError(
-                "respond() requires an llm_engine. "
-                "Pass llm_engine= to ProjectMemory.__init__()."
+                "respond() requires an LLM. Pass either llm_adapter= "
+                "(preferred) or llm_engine= to ProjectMemory.__init__()."
             )
 
         started = time.perf_counter()
@@ -773,10 +775,10 @@ class ProjectMemory:
         )
         prompt = prompt_result["prompt"]
 
-        # 4. Call the LLM
-        # All LLMEngine subclasses accept **kwargs per the abstract base contract
-        # (engram/engine/base.py). No runtime signature inspection needed.
-        answer = self.llm_engine.generate(
+        # 4. Call the LLM via adapter (preferred) or legacy engine.
+        # Both expose generate(prompt, temperature=, max_tokens=, **kwargs) -> str.
+        target = self.llm_adapter or self.llm_engine
+        answer = target.generate(
             prompt,
             temperature=temperature,
             max_tokens=max_tokens,

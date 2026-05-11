@@ -281,43 +281,25 @@ class SynthesisExtractor:
             return self._load_llamacpp_engine(config)
 
     def _load_ollama_engine(self, config: Dict[str, Any]) -> Any:
-        """Load an Ollama engine and wrap it in a simple generate() adapter."""
+        """Load an Ollama engine wrapped in EngramLLMAdapter."""
         try:
             from llm_engines.backends.ollama import OllamaEngine
-            from llm_engines.contracts.engine import GenerationRequest, ChatMessage
+            from ..adapters.llm_adapter import EngramLLMAdapter
 
-            host = config.get("base_url", "http://localhost:11434")
-            # Strip /v1 suffix if present — Ollama native endpoint doesn't use it
-            host = host.rstrip("/")
+            host = config.get("base_url", "http://localhost:11434").rstrip("/")
             if host.endswith("/v1"):
-                host = host[:-3]
+                host = host[:-3]   # Ollama native endpoint does not use /v1
 
             engine = OllamaEngine(
                 model=config["model"],
                 host=host,
-                think=False,  # disable chain-of-thought for extraction tasks
+                think=False,   # disable chain-of-thought for extraction tasks
             )
-
-            class _OllamaAdapter:
-                """Thin adapter: generate(prompt, max_tokens, temperature) -> str."""
-                def __init__(self, eng):
-                    self._eng = eng
-
-                def generate(self, prompt: str, max_tokens: int = 1024,
-                             temperature: float = 0.2) -> str:
-                    req = GenerationRequest(
-                        messages=[ChatMessage(role="user", content=prompt)],
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                    )
-                    resp = self._eng.generate(req)
-                    return resp.message.content or ""
-
             logger.debug(
                 "SynthesisExtractor: loaded Ollama engine model=%s host=%s",
                 config["model"], host,
             )
-            return _OllamaAdapter(engine)
+            return EngramLLMAdapter(engine)
 
         except ImportError as exc:
             logger.warning("SynthesisExtractor: llm_engines not available: %s", exc)

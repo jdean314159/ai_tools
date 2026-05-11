@@ -33,14 +33,19 @@ def resolve_neural_fingerprint(llm_engine: Optional[Any]) -> str:
 
     Used to detect when the underlying model has changed between sessions,
     which would invalidate stored neural weights.
+
+    Walks into wrapped engines (e.g. EngramLLMAdapter exposes the raw engine
+    via ``.engine``), so fingerprints survive an adapter swap.
     """
     if llm_engine is None:
         return "no-engine"
+    # If wrapped (e.g. EngramLLMAdapter), unwrap to the underlying engine
+    target = getattr(llm_engine, "engine", None) or llm_engine
     for attr in ("model_name", "served_model_name", "profile_name", "engine_name"):
-        value = getattr(llm_engine, attr, None)
+        value = getattr(target, attr, None)
         if value:
             return str(value)
-    return llm_engine.__class__.__name__
+    return target.__class__.__name__
 
 
 class NeuralCoordinator:
