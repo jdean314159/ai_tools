@@ -2,73 +2,12 @@
 
 <!-- AI_TOOLS_STATUS_START -->
 
-## Current operational checkpoint (2026-05-09)
+## Current state
 
-The repo has completed the main packaging/import stabilization pass.
-
-Completed:
-
-- `llm_engines` converted to `src/` layout.
-- `language_tutor` converted to `src/` layout.
-- `engram` converted to `src/` layout.
-- `engram_ui` moved under `engram/src/engram_ui`.
-- `engram.engine` root package surface restored after the `src/` conversion.
-- Broad package-local gate passed: `1701 passed, 23 skipped in 937.49s`.
-
-Current active priority:
-
-- Fix `engram` readonly database warnings by avoiding writes after `ProjectMemory.close()`.
-
-Next after that:
-
-1. Import-path cleanup and isolation of test-only path mutation.
-2. Simplify root package APIs, especially `engram/src/engram/__init__.py`.
-3. Revalidate docs and publication hygiene.
-4. Resume feature work only after quality gates remain clean.
+See `STATUS.md` for the authoritative current state, active work priority list,
+and current test gate baseline. The checkpoint blocks below are historical.
 
 <!-- AI_TOOLS_STATUS_END -->
-
-<!-- AI_TOOLS_CLEANUP_CHECKPOINT_START -->
-## Current cleanup checkpoint
-
-Packaging/import/test stabilization is green.
-
-Latest broad package-local gate:
-
-    833 passed, 37 skipped in 34.90s
-
-Validated under:
-
-    unset PYTHONPATH
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
-    PYTHONDONTWRITEBYTECODE=1
-    -W error
-
-Completed since the previous transfer update:
-
-- `llm_inspector_ui` import/namespace blocker resolved.
-- Editable-install model validated from outside the repo root.
-- Package-local import bootstraps removed.
-- Import provenance is guarded by `tests/test_import_provenance.py`.
-- Root `conftest.py` remains as the single centralized transitional pytest bootstrap.
-- Publication hygiene checker now rejects transient artifacts such as `.pytest_cache/`, `*.egg-info/`, `*.bak`, `*.orig`, `*.rej`, `*.patch`, `local_artifacts/`, `test_reports/`, and `test_survey_results/`.
-- Transient hygiene artifacts were removed.
-- `engram_lite` embedding compatibility modules now behave as facade re-exports over `engram`.
-- `llm_inspector` normalizes delegated `engram` trace events back to the `engram_lite` adapter boundary while preserving upstream provenance.
-
-Current policy:
-
-- Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
-- Keep root `conftest.py` as temporary centralized test bootstrap until package layout consistency removes the need for it.
-- Keep source/layout changes in small, separately validated commits.
-
-Next recommended increment:
-
-1. Convert `llm_engines` to `src/` layout.
-2. Update package metadata and import provenance expectations.
-3. Validate editable install and package tests.
-4. Rerun the broad gate.
-<!-- AI_TOOLS_CLEANUP_CHECKPOINT_END -->
 
 ## Purpose
 

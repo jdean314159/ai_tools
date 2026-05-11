@@ -112,10 +112,12 @@ Public API regression test (fast, run after any __init__.py change):
 
 2. **Delete duplicate modules from engram/engine/** - router.py,
    config_loader.py, discovery.py exist in both engram/engine/ and
-   llm_engines/. Now that respond() uses EngramLLMAdapter the concrete
-   engine implementations in engram/engine/ are unused for generation.
-   Remove duplicates; keep operational tooling (model_manager.py,
-   runtime_status.py, CLI commands).
+   llm_engines/. NOTE: three callers must be migrated first:
+   - language_tutor/hardware_strategy.py → llm_engines.discovery
+   - engram/memory/synthesis.py → llm_engines config loader
+   - engram_ui/runtime_manager.py → llm_engines config loader
+   Keep: model_manager.py, runtime_status.py, model_discovery.py,
+   base.py (LLMEngine ABC), CLI commands.
 
 3. **AirLLM backend** - design decision required first: standalone
    airllm_lib package (recommended) vs buried in llm_engines/backends/.
@@ -138,16 +140,38 @@ Public API regression test (fast, run after any __init__.py change):
 8. **Audit VISION.md / ROADMAP.md / LEARNING_PATH.md** - same drift risk
    as the handoff docs consolidated at the start of this work.
 
-9. **Root cruft cleanup** - update_ai_tools_md_after_packaging_checkpoint.py,
-   update_engram.sh, test_survey_output.txt, root_pyproject.toml.
-   git rm and done.
+9. **Root cruft cleanup** - STATUS #9 files already removed. Remaining:
+   - git rm Status.md (stale duplicate of STATUS.md, 2026-05-09)
+   - git rm test_llm_adapter_path.py (exact duplicate of engram/tests/ copy)
+   - git mv TASKS.json docs/history/task_manifests/ (all tasks done)
+   - git mv one-shot scripts from scripts/ to docs/history/dev_scripts/:
+     debug_memory_failures.py, generate_synthetic_data.py,
+     run_answer_uplift_eval.py, summarize_answer_uplift.py,
+     run_beginner_demo.py, run_test_survey.sh
 
 10. **Skill extraction for Engram** - the Hermes Agent gap from VISION.md.
-    Procedural memory exists; skill extraction and task-matching are not
-    yet implemented.
+    procedural.py storage/retrieval is complete (FTS5+cosine hybrid).
+    Phase B: extraction pipeline from episodic/semantic memory.
+    Phase C: wire into ProjectMemory and UnifiedRetriever.
+    ~2-3 days of focused work.
 
-11. **engram_lite parity check** - verify engram_lite does not need updates
-    following the engram refactoring.
+11. **engram_lite.ProjectMemory true facade migration** - ADR-007 is
+    partially implemented. Submodule re-exports are done. The centerpiece
+    project_memory.py (1,306 lines) is still parallel implementation.
+    Migrating it to delegate to engram.ProjectMemory is the real work.
+    This is not a parity check; it is the bulk of the ADR-007 migration.
+
+12. **llm_harness_core rescope** - synthetic_data.py (355 lines) and
+    evaluators.py (135 lines) are implementations, not contracts. Move
+    synthetic_data.py to rag_lib or a dev utility; move evaluators.py
+    to llm_inspector. Act before callers accumulate at the wrong layer.
+
+13. **CI tooling gaps** - add to CI:
+    - ruff linting gate (configs already exist in pyproject.tomls)
+    - mypy type-checking gate
+    - coverage reporting (--cov flag, not a hard gate initially)
+    - hygiene script: add grep for shell=True and bare eval(/exec( in
+      non-test Python; fail if found (establishes baseline pre-sandbox)
 
 ## Planned: mentor/worker coding loop (agent_lib)
 
