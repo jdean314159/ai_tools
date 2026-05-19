@@ -27,6 +27,7 @@ voice = [
   "faster-whisper",
 ]
 dev = [
+  "language-tutor[web]",
   "pytest>=8",
   "ruff>=0.6",
 ]

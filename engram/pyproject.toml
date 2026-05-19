@@ -49,18 +49,15 @@ semantic = [
 extraction = [
     "scikit-learn>=1.3.0",
 ]
-# UI (Streamlit sandbox)
-ui = [
-    "streamlit>=1.30.0",
-    "platformdirs>=4.0.0",
-]
+
+# Note: Streamlit sandbox UI is now the separate engram-ui package.
 
 # Fine-tuning data export (no extra deps — uses stdlib + existing numpy/pydantic)
 finetune = []
 
-# Everything
+# Everything (UI is now the separate engram-ui package)
 all = [
-    "engram[engines,episodic,semantic,neural,ui,extraction,finetune]",
+    "engram[engines,episodic,semantic,neural,extraction,finetune]",
 ]
 # Development
 dev = [
@@ -72,7 +69,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["engram*", "engram_ui*"]
+include = ["engram*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
