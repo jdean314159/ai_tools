@@ -15,16 +15,23 @@
 #   make smoke            Run the llm_engines smoke test
 #   make clean            Remove build artifacts and caches
 
-PYTHON := python3
-PIP    := $(PYTHON) -m pip
-VENV   := $(HOME)/ai-env/bin/python
+PYTHON ?= python3
+VENV ?= .venv
+VENV_PYTHON := $(VENV)/bin/python
+VENV_PIP := $(VENV_PYTHON) -m pip
+PIP := $(VENV_PIP)
+TEST_PYTHON := $(VENV_PYTHON)
 
 # ---------------------------------------------------------------------------
 # Installation
 # ---------------------------------------------------------------------------
 
-.PHONY: install
-install:
+.PHONY: venv install
+venv:
+	$(PYTHON) -m venv $(VENV)
+	$(VENV_PIP) install --upgrade pip
+
+install: venv
 	$(PIP) install -e './llm_harness_core[dev]'
 	$(PIP) install -e './llm_engines[dev]'
 	$(PIP) install -e './engram'
@@ -32,6 +39,7 @@ install:
 	$(PIP) install -e './llm_inspector[dev]'
 	$(PIP) install -e './rag_lib[dev]'
 	$(PIP) install -e './llm_inspector_ui[dev]'
+	$(PIP) install -e './engram_ui[dev]'
 	$(PIP) install -e './language_tutor[dev]'
 	$(PIP) install -e './agent_lib[dev]'
 	@echo ""
@@ -51,39 +59,39 @@ test: test-core
 
 .PHONY: test-core
 test-core:
-	cd llm_harness_core && $(PYTHON) -m pytest tests/ -v
-	cd llm_engines && $(PYTHON) -m pytest tests/ \
+	cd llm_harness_core && $(TEST_PYTHON) -m pytest tests/ -v
+	cd llm_engines && $(TEST_PYTHON) -m pytest tests/ \
 		-m "not ollama and not anthropic and not openai and not vllm and not slow" \
 		-v
-	cd engram_lite && $(PYTHON) -m pytest tests/ -v
-	cd llm_inspector && $(PYTHON) -m pytest tests/ -v
-	cd agent_lib && $(PYTHON) -m pytest tests/ -v
-	cd rag_lib && PYTHONPATH=src $(PYTHON) -m pytest tests/ -v
+	cd engram_lite && $(TEST_PYTHON) -m pytest tests/ -v
+	cd llm_inspector && $(TEST_PYTHON) -m pytest tests/ -v
+	cd agent_lib && $(TEST_PYTHON) -m pytest tests/ -v
+	cd rag_lib && PYTHONPATH=src $(TEST_PYTHON) -m pytest tests/ -v
 
 .PHONY: test-agent
 test-agent:
-	cd agent_lib && $(PYTHON) -m pytest tests/ -v
+	cd agent_lib && $(TEST_PYTHON)-m pytest tests/ -v
 
 .PHONY: test-rag
 test-rag:
-	cd rag_lib && PYTHONPATH=src $(PYTHON) -m pytest tests/ -v
+	cd rag_lib && PYTHONPATH=src $(TEST_PYTHON)-m pytest tests/ -v
 
 .PHONY: test-integration
 test-integration:
-	$(PYTHON) -m pytest integration_tests/ -v
+	$(TEST_PYTHON)-m pytest integration_tests/ -v
 
 .PHONY: test-tutor
 test-tutor:
-	cd language_tutor && $(PYTHON) -m pytest tests/ -v
+	cd language_tutor && $(TEST_PYTHON)-m pytest tests/ -v
 
 .PHONY: test-live
 test-live:
-	cd llm_engines && $(PYTHON) -m pytest tests/contract_tests/ \
+	cd llm_engines && $(TEST_PYTHON)-m pytest tests/contract_tests/ \
 		--backend ollama --model qwen3:8b -v
 
 .PHONY: test-live-embed
 test-live-embed:
-	cd llm_engines && $(PYTHON) -m pytest tests/contract_tests/ \
+	cd llm_engines && $(TEST_PYTHON)-m pytest tests/contract_tests/ \
 		--backend ollama --model qwen3:8b \
 		--embed-model nomic-embed-text -v
 
@@ -100,15 +108,15 @@ run-ui:
 
 .PHONY: smoke
 smoke:
-	cd llm_engines && $(PYTHON) scripts/smoke_test.py
+	cd llm_engines && $(TEST_PYTHON)scripts/smoke_test.py
 
 .PHONY: smoke-anthropic
 smoke-anthropic:
-	cd llm_engines && $(PYTHON) scripts/smoke_test.py --anthropic
+	cd llm_engines && $(TEST_PYTHON)scripts/smoke_test.py --anthropic
 
 .PHONY: smoke-openai
 smoke-openai:
-	cd llm_engines && $(PYTHON) scripts/smoke_test.py --openai
+	cd llm_engines && $(TEST_PYTHON)scripts/smoke_test.py --openai
 
 # ---------------------------------------------------------------------------
 # Code quality
@@ -116,7 +124,7 @@ smoke-openai:
 
 .PHONY: lint
 lint:
-	cd llm_engines && $(PYTHON) -m mypy llm_engines/ contracts/ \
+	cd llm_engines && $(TEST_PYTHON)-m mypy llm_engines/ contracts/ \
 		--ignore-missing-imports --no-error-summary 2>&1 | tail -5
 
 # ---------------------------------------------------------------------------
