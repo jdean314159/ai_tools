@@ -37,13 +37,13 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         "display_name": "Local Everything (Best Performance)",
         "planner": {
             "engine": "ollama",
-            "model": "qwen3.5:27b",
-            "num_gpu": None,   # 27B Q4_K_M fits entirely on RTX 3090 24GB
+            "model": "qwen3.6:35b-a3b",
+            "num_gpu": None,   # 35B-A3B (3B active) Q4_K_M fits on RTX 3090 24GB
         },
         "executor": {
             "engine": "ollama",
-            "model": "qwen3.5:9b",
-            "num_gpu": None,   # 9B fits entirely on GPU
+            "model": "qwen3:8b",
+            "num_gpu": None,   # 8B fits entirely on GPU
         },
         "memory_engine": "executor",  # Use executor for surprise filter
         "surprise_filter": True,
@@ -154,7 +154,7 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         },
         "executor": {
             "engine":   "ollama",
-            "model":    "qwen3.5:9b",
+            "model":    "qwen3:8b",
             "num_gpu":  None,
         },
         "memory_engine": None,
@@ -165,10 +165,10 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         "latency": "good",
         "description": (
             "Gemini Flash for planning/explanations (fast, free), "
-            "local qwen3.5:9b for conversation (private). "
+            "local qwen3:8b for conversation (private). "
             "Best for workstation — fast planning, private conversation."
         ),
-        "requirements": "GOOGLE_API_KEY + Ollama with qwen3.5:9b",
+        "requirements": "GOOGLE_API_KEY + Ollama with qwen3:8b",
     },
 
     "gemini_local_3b": {
@@ -233,7 +233,7 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         },
         "executor": {
             "engine":  "ollama",
-            "model":   "qwen3.5:9b",
+            "model":   "qwen3:8b",
             "num_gpu": None,
         },
         "memory_engine": None,
@@ -244,10 +244,10 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         "latency": "good",
         "description": (
             "GPT-4o-mini for planning/explanations, "
-            "local qwen3.5:9b for conversation (private). "
+            "local qwen3:8b for conversation (private). "
             "Good workstation option if you have an OpenAI key."
         ),
-        "requirements": "OPENAI_API_KEY + Ollama with qwen3.5:9b",
+        "requirements": "OPENAI_API_KEY + Ollama with qwen3:8b",
     },
 
     "openai_local_3b": {
@@ -461,9 +461,15 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
 
     # Model size hints for download prompt
     MODEL_SIZES = {
-        "qwen3.5:27b": 17.0, "qwen3.5:9b": 6.6, "qwen3.5:35b": 23.0,
-        "qwen3:8b":    5.2,  "qwen3:14b":  9.3,  "qwen3:32b":  20.0,
-        "qwen2.5:7b":  4.7,  "qwen2.5:32b": 19.0,
+        # Qwen3.6 (latest, May 2026): multimodal, 256K context
+        "qwen3.6:35b-a3b": 24.0, "qwen3.6:27b":    17.0,
+        # Qwen3 family (April 2026): broad dense + MoE coverage
+        "qwen3:8b":         5.2, "qwen3:14b":       9.3, "qwen3:32b": 20.0,
+        "qwen3:30b-a3b":   17.0,
+        # Qwen3.5 retained for older configs and fallback
+        "qwen3.5:27b":     17.0, "qwen3.5:9b":      6.6,
+        # Qwen2.5 retained for low-VRAM fallback
+        "qwen2.5:7b":       4.7, "qwen2.5:32b":    19.0,
     }
 
     for name, s in STRATEGIES.items():
