@@ -15,8 +15,9 @@
 #   make smoke            Run the llm_engines smoke test
 #   make clean            Remove build artifacts and caches
 
+REPO_ROOT := $(CURDIR)
 PYTHON ?= python3
-VENV ?= .venv
+VENV ?= $(REPO_ROOT)/.venv
 VENV_PYTHON := $(VENV)/bin/python
 VENV_PIP := $(VENV_PYTHON) -m pip
 PIP := $(VENV_PIP)
