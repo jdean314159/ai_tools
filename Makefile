@@ -35,7 +35,7 @@ venv:
 install: venv
 	$(PIP) install -e './llm_harness_core[dev]'
 	$(PIP) install -e './llm_engines[dev]'
-	$(PIP) install -e './engram'
+	$(PIP) install -e './engram[dev]'
 	$(PIP) install -e './engram_lite[dev]'
 	$(PIP) install -e './llm_inspector[dev]'
 	$(PIP) install -e './rag_lib[dev]'
@@ -45,12 +45,17 @@ install: venv
 	$(PIP) install -e './agent_lib[dev]'
 	@echo ""
 	@echo "Core packages installed in dependency order. Run 'make test-core', 'make test-agent', 'make test-rag', 'make test-integration', or 'make test-tutor' to verify."
+	
+install-ml: install
+	$(PIP) install -e './engram[ml-dev]'	
 
 .PHONY: install-gpu
 install-gpu: install
-	CMAKE_ARGS="-DGGML_CUDA=on" $(PIP) install llama-cpp-python
 	$(PIP) install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
+	$(PIP) install -e './engram[neural]'
+	$(PIP) install -e './llm_engines[huggingface,optimizations]'
+	CMAKE_ARGS="-DGGML_CUDA=on" $(PIP) install llama-cpp-python
+	
 # ---------------------------------------------------------------------------
 # Testing
 # ---------------------------------------------------------------------------
@@ -71,15 +76,15 @@ test-core:
 
 .PHONY: test-agent
 test-agent:
-	cd agent_lib && $(TEST_PYTHON)-m pytest tests/ -v
+	cd agent_lib && $(TEST_PYTHON) -m pytest tests/ -v
 
 .PHONY: test-rag
 test-rag:
-	cd rag_lib && PYTHONPATH=src $(TEST_PYTHON)-m pytest tests/ -v
+	cd rag_lib && PYTHONPATH=src $(TEST_PYTHON) -m pytest tests/ -v
 
 .PHONY: test-integration
 test-integration:
-	$(TEST_PYTHON)-m pytest integration_tests/ -v
+	$(TEST_PYTHON) -m pytest integration_tests/ -v
 
 .PHONY: test-tutor
 test-tutor:
@@ -87,12 +92,12 @@ test-tutor:
 
 .PHONY: test-live
 test-live:
-	cd llm_engines && $(TEST_PYTHON)-m pytest tests/contract_tests/ \
+	cd llm_engines && $(TEST_PYTHON) -m pytest tests/contract_tests/ \
 		--backend ollama --model qwen3:8b -v
 
 .PHONY: test-live-embed
 test-live-embed:
-	cd llm_engines && $(TEST_PYTHON)-m pytest tests/contract_tests/ \
+	cd llm_engines && $(TEST_PYTHON) -m pytest tests/contract_tests/ \
 		--backend ollama --model qwen3:8b \
 		--embed-model nomic-embed-text -v
 
@@ -102,6 +107,11 @@ test-all: test-core test-integration test-agent test-rag test-tutor
 .PHONY: run-ui
 run-ui:
 	cd engram && streamlit run engram_ui/app.py
+	
+.PHONY: test-ml
+test-ml: venv
+	cd engram && $(TEST_PYTHON) -m pytest tests/harness/test_rtrl_signal.py -v
+	cd llm_engines && $(TEST_PYTHON) -m pytest tests/test_optimizations.py -v	
 
 # ---------------------------------------------------------------------------
 # Smoke test
@@ -109,15 +119,17 @@ run-ui:
 
 .PHONY: smoke
 smoke:
-	cd llm_engines && $(TEST_PYTHON)scripts/smoke_test.py
+	cd llm_engines && $(TEST_PYTHON) scripts/smoke_test.py
 
 .PHONY: smoke-anthropic
 smoke-anthropic:
-	cd llm_engines && $(TEST_PYTHON)scripts/smoke_test.py --anthropic
+	cd llm_engines && $(TEST_PYTHON) scripts/smoke_test.py --anthropic
 
 .PHONY: smoke-openai
 smoke-openai:
-	cd llm_engines && $(TEST_PYTHON)scripts/smoke_test.py --openai
+	cd llm_engines && $(TEST_PYTHON) scripts/smoke_test.py --openai
+	
+
 
 # ---------------------------------------------------------------------------
 # Code quality
@@ -125,7 +137,7 @@ smoke-openai:
 
 .PHONY: lint
 lint:
-	cd llm_engines && $(TEST_PYTHON)-m mypy llm_engines/ contracts/ \
+	cd llm_engines && $(TEST_PYTHON) -m mypy llm_engines/ contracts/ \
 		--ignore-missing-imports --no-error-summary 2>&1 | tail -5
 
 # ---------------------------------------------------------------------------
