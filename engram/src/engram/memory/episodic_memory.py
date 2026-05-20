@@ -6,47 +6,26 @@ Author: Jeffrey Dean
 
 import chromadb
 from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
+try:
+    from sentence_transformers import SentenceTransformer
+except ModuleNotFoundError:
+    SentenceTransformer = None
 import time
 import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from pathlib import Path
+from .episode_types import Episode
 
 
-@dataclass
-class Episode:
-    """Single episode in episodic memory."""
-    id: Optional[str] = None
-    timestamp: float = field(default_factory=time.time)
-    text: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    session_id: Optional[str] = None
-    project_id: Optional[str] = None
-    importance: float = 0.5
-    
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": self.id,
-            "timestamp": self.timestamp,
-            "text": self.text,
-            "metadata": self.metadata,
-            "session_id": self.session_id,
-            "project_id": self.project_id,
-            "importance": self.importance,
-        }
-    
-    @classmethod
-    def from_chromadb(cls, id: str, document: str, metadata: Dict[str, Any]) -> "Episode":
-        return cls(
-            id=id,
-            timestamp=metadata.get("timestamp", time.time()),
-            text=document,
-            metadata=json.loads(metadata.get("metadata", "{}")) if isinstance(metadata.get("metadata"), str) else metadata.get("metadata", {}),
-            session_id=metadata.get("session_id"),
-            project_id=metadata.get("project_id"),
-            importance=metadata.get("importance", 0.5),
+def _require_sentence_transformer():
+    if SentenceTransformer is None:
+        raise ImportError(
+            "sentence-transformers is required for the default local episodic "
+            "embedding backend. Install with: pip install -e './engram[local-embeddings]' "
+            "or configure a non-local embedding provider."
         )
+    return SentenceTransformer
 
 
 class LocalEmbeddingFunction:
@@ -125,7 +104,8 @@ class LocalEmbeddingFunction:
         # SentenceTransformers accepts "cpu" / "cuda" (and "mps" via torch).
         from ..utils.device import resolve_device
         resolved = resolve_device(device)
-        self.model = SentenceTransformer(model_name, device=resolved)
+        sentence_transformer_cls = _require_sentence_transformer()
+        self.model = sentence_transformer_cls(self.embedding_model_name)
 
     def _encode(self, texts: List[str]) -> List[List[float]]:
         """Encode texts, using cache when available."""

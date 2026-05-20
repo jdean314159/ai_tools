@@ -31,6 +31,8 @@ import numpy as np
 import pytest
 import torch
 
+torch = pytest.importorskip("torch", reason="requires PyTorch; run make install-ml or make install-gpu")
+
 from .runner import test_group, require
 from .mocks import TempDir, unique_session
 

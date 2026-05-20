@@ -38,9 +38,13 @@ engines = [
 # Episodic memory (ChromaDB + embeddings)
 episodic = [
     "chromadb>=0.4.22",
-    "sentence-transformers>=2.2.0",
     "diskcache>=5.6.2",
 ]
+
+local-embeddings = [
+    "sentence-transformers>=2.2.0",
+]
+
 # Semantic memory (Kuzu graph DB)
 semantic = [
     "kuzu>=0.4.0",
@@ -57,14 +61,24 @@ finetune = []
 
 # Everything (UI is now the separate engram-ui package)
 all = [
-    "engram[engines,episodic,semantic,neural,extraction,finetune]",
+    "engram[engines,episodic,semantic,extraction,finetune]",
 ]
-# Development
+
+ml = [
+    "engram[neural,local-embeddings]",
+]
+
 dev = [
-    "engram[all]",
-    "llm-inspector",
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
+]
+
+ml-dev = [
+    "engram[dev,ml]",
+]
+
+full-dev = [
+    "engram[dev,all,ml]",
 ]
 
 [tool.setuptools.packages.find]
