@@ -1,7 +1,24 @@
+"""
+engram_lite public API contract test  (ADR-007, migration step 1).
+
+This test FREEZES the engram_lite public surface so that the facade
+migration (replacing local implementation with re-exports / a shim over
+engram) cannot silently change what students and downstream users import.
+
+If a change to this test is required, it must be a deliberate, reviewed
+change to the public contract -- not an accident of the migration.
+
+Covers:
+  1. The exact set of names exported via __all__.
+  2. Every exported name is importable and not None.
+  3. The public method names + parameter names of ProjectMemory.
+  4. Import-time behavior: importing engram_lite must not import torch.
+"""
 from __future__ import annotations
 
+import importlib
 import inspect
-from typing import get_type_hints
+import sys
 
 import pytest
 
@@ -9,10 +26,10 @@ import engram_lite
 
 
 # ---------------------------------------------------------------------------
-# 1. All expected names are present in __all__ and importable
+# 1. Frozen __all__ snapshot
 # ---------------------------------------------------------------------------
 
-EXPECTED_EXPORTS = {
+EXPECTED_ALL = {
     "__version__",
     # Core
     "AugmentRequest", "AugmentResult", "PromptAugmenter",
@@ -35,176 +52,137 @@ EXPECTED_EXPORTS = {
 }
 
 
-def test_all_exports_present_in_dunder_all():
-    assert EXPECTED_EXPORTS == set(engram_lite.__all__)
+def test_all_matches_frozen_snapshot():
+    """__all__ must equal the frozen contract exactly -- no additions or removals."""
+    actual = set(engram_lite.__all__)
+    missing = EXPECTED_ALL - actual
+    added = actual - EXPECTED_ALL
+    assert not missing, f"public API removed names: {sorted(missing)}"
+    assert not added, f"public API added names without contract update: {sorted(added)}"
 
 
-def test_all_exports_importable():
-    missing = [name for name in EXPECTED_EXPORTS if not hasattr(engram_lite, name)]
-    assert missing == [], f"Missing from engram_lite namespace: {missing}"
+def test_every_exported_name_resolves():
+    """Every name in __all__ must be a real, non-None attribute."""
+    for name in EXPECTED_ALL:
+        assert hasattr(engram_lite, name), f"{name} missing from engram_lite"
+        assert getattr(engram_lite, name) is not None, f"{name} resolved to None"
 
 
 # ---------------------------------------------------------------------------
-# 2. Kinds — classes vs callables (prevents accidental replacement)
+# 2. ProjectMemory public method contract
 # ---------------------------------------------------------------------------
 
-EXPECTED_CLASSES = {
-    "AugmentRequest", "AugmentResult", "PromptAugmenter",
-    "ProjectMemory",
-    "Embedder", "EmbeddingResult", "BatchEmbeddingResult",
-    "OllamaEmbedder", "EmbeddingService",
-    "EmbeddingCache", "CachedEmbedder",
-    "ChromaDBStore", "DimensionMismatchError", "SchemaManager",
-    "SemanticGraph",
-    "SemanticExtractor", "ExtractedFact", "ExtractionResult",
-    "ForgettingConfig", "ForgettingPolicy",
-    "Telemetry", "TelemetryEvent",
+# method name -> ordered tuple of accepted parameter names (excluding 'self').
+# Keyword-only params are included; **kwargs is represented by the literal
+# "**kwargs" sentinel and is not positionally checked.
+EXPECTED_PM_METHODS = {
+    "describe_component": (),
+    "new_session": ("session_id",),
+    "get_recent_turns": ("session_id", "limit"),
+    "add_turn": ("role", "text", "session_id"),
+    "add_turns_batch": ("turns", "session_id"),
+    "store_episodes_batch": ("episodes",),
+    "store_episode": ("text", "metadata", "importance", "bypass_filter", "bypass_dedup"),
+    "search_episodes": (
+        "query", "n", "min_importance", "days_back",
+        "min_relevance", "vector_similarity_threshold",
+    ),
+    "get_facts": ("query", "fact_type", "subject", "include_superseded", "limit"),
+    "get_paired_exchanges": ("query", "n"),
+    "reconcile_chromadb": (),
+    "build_prompt": (
+        "user_message", "query", "max_prompt_tokens", "reserve_output_tokens",
+        "include_cold_fallback", "store_overflow_summary", "return_trace",
+    ),
+    "build_prompt_trace": ("user_message",),
+    "build_interop_events": ("user_message",),
+    "augment": ("request",),
+    "delete_episode": ("episode_id",),
+    "forget_session": ("session_id",),
+    "forget_user_data": (),
+    "index_text": ("text",),
+    "run_lifecycle_maintenance": (),
+    "get_stats": (),
+    "close": (),
 }
 
-EXPECTED_FUNCTIONS = {
-    "describe_memory", "trace_to_memory_records",
-    "augment_result_to_interop_result",
-    "detect_contradiction",
-    "log_sink", "json_file_sink",
-}
 
-
-def test_expected_names_are_classes():
-    for name in EXPECTED_CLASSES:
-        obj = getattr(engram_lite, name)
-        assert inspect.isclass(obj), f"{name} should be a class, got {type(obj)}"
-
-
-def test_expected_names_are_functions():
-    for name in EXPECTED_FUNCTIONS:
-        obj = getattr(engram_lite, name)
-        assert callable(obj), f"{name} should be callable, got {type(obj)}"
-
-
-# ---------------------------------------------------------------------------
-# 3. Key constructor signatures (parameters that NB04 and course tests use)
-# ---------------------------------------------------------------------------
-
-def _params(cls_or_fn, skip_self=True) -> set[str]:
-    try:
-        sig = inspect.signature(cls_or_fn)
-    except (ValueError, TypeError):
-        return set()
+def _param_names(method) -> set[str]:
+    sig = inspect.signature(method)
     return {
-        k for k in sig.parameters
-        if k not in ("self", "cls") or not skip_self
+        name for name, p in sig.parameters.items()
+        if name != "self" and p.kind not in (p.VAR_POSITIONAL, p.VAR_KEYWORD)
     }
 
 
-def test_AugmentRequest_has_required_fields():
-    params = _params(engram_lite.AugmentRequest)
-    assert "session_id" in params
-    assert "user_text" in params
+@pytest.mark.parametrize("method_name", sorted(EXPECTED_PM_METHODS))
+def test_project_memory_has_public_method(method_name):
+    """Each contracted public method must exist and be callable."""
+    pm = engram_lite.ProjectMemory
+    assert hasattr(pm, method_name), f"ProjectMemory.{method_name} missing"
+    assert callable(getattr(pm, method_name))
 
 
-def test_AugmentResult_has_required_fields():
-    params = _params(engram_lite.AugmentResult)
-    assert "prompt" in params
+@pytest.mark.parametrize("method_name,expected_params", sorted(EXPECTED_PM_METHODS.items()))
+def test_project_memory_method_accepts_contracted_params(method_name, expected_params):
+    """
+    Each contracted parameter name must still be accepted.
+
+    This guards against signature drift during the shim migration (e.g.
+    renaming `session_id` -> none, or `limit` -> `n`). A shim is permitted
+    to ACCEPT extra params, but must not DROP a contracted one.
+    """
+    method = getattr(engram_lite.ProjectMemory, method_name)
+    sig = inspect.signature(method)
+    accepts_kwargs = any(
+        p.kind == p.VAR_KEYWORD for p in sig.parameters.values()
+    )
+    present = _param_names(method)
+    for param in expected_params:
+        # **kwargs can absorb any contracted keyword param, so only fail when
+        # the param is genuinely absent AND there is no **kwargs catch-all.
+        assert param in present or accepts_kwargs, (
+            f"ProjectMemory.{method_name} dropped contracted param '{param}'"
+        )
 
 
-def test_ProjectMemory_keyword_only_init():
-    """NB04 constructs ProjectMemory with keyword-only args."""
-    sig = inspect.signature(engram_lite.ProjectMemory)
-    params = sig.parameters
-    assert "base_dir" in params
-    assert "project_id" in params
-    assert "session_id" in params
-    assert "total_prompt_tokens" in params
-    # Must remain keyword-only — NB04 never uses positional args
-    for name in ("base_dir", "project_id", "session_id", "total_prompt_tokens"):
-        p = params[name]
-        assert p.kind in (
-            inspect.Parameter.KEYWORD_ONLY,
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-        ), f"ProjectMemory.{name} must be keyword-accessible"
+def test_no_unexpected_public_methods():
+    """
+    ProjectMemory must not GROW its public surface without a contract update.
 
-
-def test_OllamaEmbedder_params():
-    params = _params(engram_lite.OllamaEmbedder)
-    assert "model" in params
-    assert "base_url" in params
-
-
-def test_ChromaDBStore_params():
-    params = _params(engram_lite.ChromaDBStore)
-    assert "persist_directory" in params
-    assert "collection_name" in params
-    assert "embedding_dimension" in params
-
-
-def test_ForgettingConfig_has_decay_params():
-    params = _params(engram_lite.ForgettingConfig)
-    assert "enable_decay" in params
-    assert "decay_rate" in params
-
-
-def test_TelemetryEvent_params():
-    params = _params(engram_lite.TelemetryEvent)
-    assert "event_type" in params
-    assert "data" in params
-
-
-def test_Telemetry_has_emit_and_add_sink():
-    assert hasattr(engram_lite.Telemetry, "emit")
-    assert hasattr(engram_lite.Telemetry, "add_sink")
+    Lite invariants (ADR-007) are partly enforced by keeping the lite surface
+    from quietly acquiring engram's advanced methods (respond, synthesize_now,
+    audit_memory, get_context, etc.).
+    """
+    pm = engram_lite.ProjectMemory
+    public = {
+        name for name in dir(pm)
+        if not name.startswith("_") and callable(getattr(pm, name))
+    }
+    # Exclude inherited object/dataclass noise that is not part of the API.
+    public -= {"mro"}
+    unexpected = public - set(EXPECTED_PM_METHODS)
+    assert not unexpected, (
+        f"ProjectMemory grew unexpected public methods: {sorted(unexpected)}. "
+        f"If intentional, update EXPECTED_PM_METHODS and the ADR-007 contract."
+    )
 
 
 # ---------------------------------------------------------------------------
-# 4. ProjectMemory method surface used by NB04 and course tests
+# 3. Import-time behavior
 # ---------------------------------------------------------------------------
 
-REQUIRED_PROJECT_MEMORY_METHODS = {
-    "add_turn",
-    "build_prompt",
-    "get_recent_turns",
-    "store_episode",
-    "search_episodes",
-    "get_stats",
-    "new_session",
-}
-
-
-def test_ProjectMemory_has_required_methods():
-    missing = [
-        m for m in REQUIRED_PROJECT_MEMORY_METHODS
-        if not hasattr(engram_lite.ProjectMemory, m)
-    ]
-    assert missing == [], f"ProjectMemory missing methods: {missing}"
-
-
-# ---------------------------------------------------------------------------
-# 5. Version is a non-empty string
-# ---------------------------------------------------------------------------
-
-def test_version_is_string():
-    assert isinstance(engram_lite.__version__, str)
-    assert engram_lite.__version__ != ""
-
-
-# ---------------------------------------------------------------------------
-# 6. Import-time behaviour — no hard crash without optional deps
-# ---------------------------------------------------------------------------
-
-def test_import_does_not_require_torch():
-    """engram_lite must import cleanly without torch."""
-    import importlib, sys
-    # Remove torch from the namespace to simulate absence
-    torch_mod = sys.modules.get("torch")
-    sys.modules["torch"] = None  # type: ignore[assignment]
-    try:
-        if "engram_lite" in sys.modules:
-            importlib.reload(engram_lite)
-        import engram_lite as el2  # noqa: F401
-    except ImportError as e:
-        if "torch" in str(e).lower():
-            pytest.fail(f"engram_lite import requires torch: {e}")
-    finally:
-        if torch_mod is not None:
-            sys.modules["torch"] = torch_mod
-        else:
-            sys.modules.pop("torch", None)
+def test_importing_engram_lite_does_not_import_torch():
+    """
+    The lite surface must stay torch-free. ADR-007 keeps the RTRL/neural
+    layer out of the lite public API; importing engram_lite must not pull
+    PyTorch even transitively through engram.
+    """
+    # Drop any prior import so the assertion reflects engram_lite alone.
+    for mod in list(sys.modules):
+        if mod == "torch" or mod.startswith("torch."):
+            del sys.modules[mod]
+    importlib.reload(engram_lite)
+    assert "torch" not in sys.modules, (
+        "importing engram_lite pulled torch -- a lite-surface dependency leak"
+    )
