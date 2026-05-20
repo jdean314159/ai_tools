@@ -13,7 +13,7 @@ and current test gate baseline. The checkpoint blocks below are historical.
 
 This is the ordered execution plan for the `ai_tools` monorepo.
 
-For the next thread, packaging/import/test stabilization takes precedence over new feature work.
+For the next thread, fresh-clone verification and optional-dependency validation take precedence over new feature work.
 
 ## Planning assumptions
 
@@ -23,7 +23,7 @@ For the next thread, packaging/import/test stabilization takes precedence over n
 4. `llm_inspector_ui` is the main user-facing workbench.
 5. A clean install/test story is a release gate, not an optional polish item.
 
-## Phase 0 — Packaging/import stabilization
+## Phase 0 — Packaging/import stabilization — mostly complete
 
 ### Goal
 
@@ -40,9 +40,9 @@ Make the repo boring to install, import, and test.
 
 ### Done when
 
-A fresh environment can install the packages in editable mode and run selected package/cross-package tests without manual `PYTHONPATH` dependence.
+A fresh environment can install the packages in editable mode and run selected package/cross-package tests without manual `PYTHONPATH` dependence. Current next step: rerun this gate from a newly cloned GitHub copy after the optional ML dependency changes.
 
-## Phase 1 — Publication hygiene
+## Phase 1 — Publication hygiene — active verification
 
 ### Goal
 
@@ -75,25 +75,19 @@ Make `engram`, `engram_lite`, ADR-007, tests, and docs agree.
 
 `engram_lite` public API contract tests pass and its code structure matches the documented role.
 
-## Phase 3 — Standardize remaining package layouts
+## Phase 3 — Standardize remaining package layouts — mostly complete
 
 ### Goal
 
-Bring the rest of the monorepo into one packaging model.
+Keep package layout intentional and validated.
 
 ### Work
 
-After `llm_inspector_ui` is stable, convert remaining non-src packages in small steps:
-
-- `llm_engines`
-- `engram`
-- `language_tutor`
-
-Do not convert all packages at once unless the tests are already reliable enough to catch regressions.
+Most packages now use `src/` layout. `llm_engines` intentionally remains on direct layout. `engram_ui` is a top-level `src/` package. Do not reintroduce old top-level import-shadowing trees such as `engram/engram` or `engram/__init__.py`.
 
 ### Done when
 
-All importable packages use a consistent layout and metadata policy.
+`tests/test_import_provenance.py` matches the documented layout and a fresh clone imports packages from the expected paths.
 
 ## Phase 4 — Workbench reliability and teaching value
 

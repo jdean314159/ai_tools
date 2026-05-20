@@ -21,7 +21,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-import torch
+torch = pytest.importorskip("torch", reason="requires PyTorch; run make install-ml or make install-gpu")
 
 from llm_engines.contracts import ChatMessage, GenerationRequest, GenerationResponse
 

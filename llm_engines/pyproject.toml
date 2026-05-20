@@ -24,24 +24,58 @@ openai = ["openai>=1.0"]
 vllm = ["vllm>=0.4"]
 llamacpp = ["llama-cpp-python>=0.2"]
 llama_cpp = ["llama-cpp-python>=0.2"]
-huggingface = ["transformers>=4.40", "torch>=2.0", "accelerate>=0.30"]
-optimizations = ["turboquant>=0.2"]
+
+# Local HuggingFace model execution; requires PyTorch.
+huggingface = [
+    "transformers>=4.40",
+    "torch>=2.0",
+    "accelerate>=0.30",
+]
+
+# Experimental optimization stack; keep out of default/all/dev.
+optimizations = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "accelerate>=0.30",
+    "turboquant>=0.2",
+]
+
+# Developer tooling only. No heavyweight runtime backends.
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "mypy>=1.10",
 ]
-all = [
-    "ollama>=0.4",
-    "anthropic>=0.40",
-    "openai>=1.0",
-    "transformers>=4.40",
-    "torch>=2.0",
-    "accelerate>=0.30",
-    # turboquant intentionally excluded from 'all' — it is Alpha-quality community software.
-    # Install explicitly: pip install llm-engines[optimizations]
+
+# Lightweight common integrations. No PyTorch, no vLLM, no llama.cpp build.
+integrations = [
+    "llm-engines[ollama,ollama-logprobs,anthropic,openai]",
 ]
 
+# Backward-compatible "all" should remain lightweight if beginners may use it.
+all = [
+    "llm-engines[integrations]",
+]
+
+# ML/local-model development.
+ml-dev = [
+    "llm-engines[dev,huggingface]",
+]
+
+# Explicitly heavy local backend set.
+local-backends = [
+    "llm-engines[huggingface,llamacpp,vllm]",
+]
+
+# Everything practical, excluding alpha optimization stack.
+full = [
+    "llm-engines[integrations,local-backends]",
+]
+
+# Everything including alpha/experimental optimization stack.
+experimental = [
+    "llm-engines[full,optimizations]",
+]
 [tool.setuptools.packages.find]
 include = ["llm_engines*"]
 

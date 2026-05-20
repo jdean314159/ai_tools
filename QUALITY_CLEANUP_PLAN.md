@@ -1,83 +1,105 @@
 # Quality Cleanup Plan
 
-Last updated: 2026-05-11
+Last updated: 2026-05-20
 
 ## Status
 
-All original phases complete. Active work has shifted to engine unification
-and new backend development. See STATUS.md for the current priority order.
+The original cleanup phases are complete. The latest work focused on GitHub
+publication recovery, Makefile/virtualenv reliability, optional ML dependency
+boundaries, and Engram import hygiene.
 
-Recent broad gate (excluding test_performance.py):
+Use `STATUS.md` as the current source of truth. Historical broad-gate counts
+from before the packaging changes should not be treated as the current baseline
+until the validation suite is rerun.
 
-    844 passed, 3 skipped in ~800s
+## Completed phases
 
-## Phase 1 - Runtime lifecycle cleanup - DONE
+### Phase 1 - Runtime lifecycle cleanup - DONE
 
-Closed-state guards added to MemoryIngestor.apply() and
-ProjectMemory.store_episode(). Readonly-database teardown warnings resolved.
+Closed-state guards added to memory lifecycle paths. Readonly-database teardown
+warnings were addressed in the earlier stabilization pass.
 
-## Phase 2 - Import-path cleanup - DONE
+### Phase 2 - Import-path cleanup - DONE
 
-llm_engines confirmed on intentional direct layout. All other packages on
-src/ layout. No production sys.path hacks remain. Codified in
-tests/test_import_provenance.py.
+Most packages use `src/` layout. `llm_engines` remains on intentional direct
+layout. Import provenance should be validated by `tests/test_import_provenance.py`.
 
-## Phase 3 - Root package API simplification - DONE
+### Phase 3 - Root package API simplification - DONE
 
-engram/__init__.py if-chain replaced by 22-entry _LAZY_ATTRS table.
-Dead code removed. Public API regression test added (tests/test_public_api.py).
+`engram/__init__.py` lazy export handling was simplified. Public API regression
+tests exist at `tests/test_public_api.py`.
 
-## Phase 4 - Documentation consolidation - DONE
+### Phase 4 - Documentation consolidation - DONE
 
-Four overlapping handoff docs collapsed into STATUS.md. PACKAGE_ROLES.md
-and GITHUB_PUBLICATION_CHECKLIST.md corrected. QUALITY_CLEANUP_PLAN.md
-updated to reflect completed phases.
+Overlapping handoff docs were consolidated into `STATUS.md`. Current docs should
+refer to `STATUS.md`, not the older `CURRENT_STATE.md` name.
 
-## Phase 5 - God-class decomposition - DONE
+### Phase 5 - God-class decomposition - DONE
 
-project_memory.py: 3,251 to 1,941 lines.
+`project_memory.py` was decomposed into focused memory, prompt, synthesis, and
+result-type modules. Continue this pattern for other large modules.
 
-Extracted modules:
-- engram/src/engram/memory/result_types.py (TokenBudget, SynthesisHookConfig,
-  ContextResult)
-- engram/src/engram/memory/audit.py (run_remediation, _rem_* helpers)
-- engram/src/engram/memory/synthesis.py (run_synthesis, build_synthesis_block,
-  load_engine_config)
-- engram/src/engram/prompt/__init__.py (new subpackage)
-- engram/src/engram/prompt/helpers.py (wrap_memory_block, assemble_prompt,
-  truncate_to_tokens, canonicalisation helpers, prompt-friendly formatters)
-- engram/src/engram/prompt/builder.py (hierarchical_compress_text,
-  build_prompt_core, build_prompt_trace_core)
+### Phase 6 - Config over code - DONE
 
-## Phase 6 - Config over code - DONE
+Ingestion policy regex patterns were extracted to YAML.
 
-IngestionPolicy regex patterns extracted to memory/ingestion_patterns.yaml.
-for_project_type() is now data-driven. Add languages/project-types by
-editing YAML; no Python changes required.
+### Phase 7 - Engine contract unification - DONE
 
-## Phase 7 - Engine contract unification - DONE
+`ProjectMemory.respond()` routes through `EngramLLMAdapter` for modern engine
+integration while preserving legacy compatibility.
 
-ProjectMemory.respond() now routes through EngramLLMAdapter (preferred) or
-legacy LLMEngine. Any llm_engines.ChatModel works directly with engram via
-the adapter. New backends (NIM, AirLLM) only need one implementation.
+### Phase 8 - Test infrastructure - DONE
 
-## Phase 8 - Test infrastructure - DONE
+Common test doubles were centralized, and prompt/result-type unit tests were
+added.
 
-MockEngine and CyclingFakeEngine centralised in engram/tests/harness/mocks.py.
-Seven inline class definitions removed. conftest.py fake_engine fixture added.
-61 unit tests added for prompt/helpers.py, prompt/builder.py, result_types.py.
+### Phase 9 - GitHub and Makefile stabilization - DONE
 
-## Next phases - see STATUS.md Active work section
+- GitHub push issues were resolved.
+- The root `Makefile` now creates and uses an absolute project `.venv`.
+- Package test targets use the project venv after changing directories.
+- Fresh clone dry-runs should show absolute `.venv/bin/python` paths.
 
-Priority order:
-1. NIM backend in llm_engines
-2. Delete duplicate router/config_loader/discovery from engram/engine/
-3. AirLLM backend (design first)
-4. Hardware discovery update
-5. engram_ui relocation
-6. model_management.py decomposition
-7. Move eval data to ~/.engram/eval/
-8. Audit VISION.md / ROADMAP.md / LEARNING_PATH.md
-9. Root cruft cleanup
-10. Skill extraction for Engram
-11. engram_lite parity check
+### Phase 10 - Optional ML dependency boundary - DONE / VERIFY
+
+- Baseline install should not require PyTorch.
+- Torch-backed features are behind explicit ML/GPU targets and extras.
+- Torch-only tests should skip when PyTorch is absent and run under
+  `make test-ml` when installed.
+
+### Phase 11 - Engram import boundary - DONE / VERIFY
+
+- Canonical full Engram package path is `engram/src/engram`.
+- Old import-shadowing top-level package files should stay deleted.
+- Lightweight episode data type lives in `engram.memory.episode_types`.
+- `result_types.py` must not import `episodic_memory.py`.
+
+## Next quality gates
+
+Run from a fresh clone:
+
+    make -n install
+    make -n test-core
+    make install
+    make test-core
+    python scripts/check_publication_hygiene.py
+    python scripts/check_teaching_artifacts.py
+
+Optional ML gate:
+
+    make install-ml
+    make test-ml
+
+CUDA/GPU gate:
+
+    make install-gpu
+    make test-ml
+
+## Do not proceed to feature work if
+
+- `import engram` resolves outside `engram/src/engram/__init__.py`,
+- default install requires PyTorch or sentence-transformers,
+- `make -n test-core` shows relative `.venv/bin/python` paths after `cd`,
+- publication hygiene still asks for `CURRENT_STATE.md`,
+- generated `.egg-info`, `__pycache__`, `.pyc`, `.patch`, `.orig`, or `.rej`
+  files appear in the working tree.

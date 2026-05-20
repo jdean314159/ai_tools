@@ -88,7 +88,7 @@ test-integration:
 
 .PHONY: test-tutor
 test-tutor:
-	cd language_tutor && $(TEST_PYTHON)-m pytest tests/ -v
+	cd language_tutor && $(TEST_PYTHON) -m pytest tests/ -v
 
 .PHONY: test-live
 test-live:
@@ -163,6 +163,10 @@ clean-review: clean-all
 	rm -rf models engram/data/memory llm_inspector_ui/data 2>/dev/null || true
 	@echo "Review bundle workspace cleaned."
 
+.PHONY: check-hygiene
+check-hygiene: clean
+	$(VENV_PYTHON) scripts/check_publication_hygiene.py
+	$(VENV_PYTHON) scripts/check_teaching_artifacts.py
 
 # ---------------------------------------------------------------------------
 # Help

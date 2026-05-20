@@ -1,60 +1,137 @@
 # GitHub Publication Checklist
 
-Last updated: 2026-05-09
+Last updated: 2026-05-20
 
 ## Current publication posture
 
-The repo is closer to publication readiness after the packaging/import stabilization pass. The major direct-layout packages have been converted to `src/` layout, and the broad package-local gate passed.
+The repo has been pushed to GitHub and verified through a disposable clone
+workflow. The next publication gate is a clean fresh-clone install/test pass.
 
-Recent broad gate:
+Use this checklist before treating GitHub as the canonical release snapshot.
 
-    1701 passed, 23 skipped in 937.49s
+## 1. Confirm branch state
 
+From the real working repo, not the disposable clone:
 
-## Required before publication
-
-### 1. Broad validation
-
-Run:
-
-    unset PYTHONPATH
-
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1     python -m pytest -c pytest.ini --rootdir=.       tests/test_import_provenance.py       llm_engines/tests       language_tutor/tests       agent_lib/tests       engram_lite/tests       llm_inspector_ui/tests       llm_inspector/tests       rag_lib/tests       llm_harness_core/tests       engram/tests       --run-engram       -x --tb=short -W error
-
-### 2. Remove generated artifacts
-
-Before hygiene or commit:
-
-    rm -rf .pytest_cache
-    find . -type d -name '__pycache__' -prune -exec rm -rf {} +
-    find . -type f -name '*.pyc' -delete
-    find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
-    find . -type f -name '*.patch' -delete
-
-### 3. Publication hygiene
-
-Run:
-
-    PYTHONDONTWRITEBYTECODE=1     python scripts/check_publication_hygiene.py
+```bash
+cd ~/ai_tools
+git status --short --branch
+git log --oneline --decorate --max-count=5
+git remote -v
+```
 
 Expected:
 
-    Publication hygiene check passed.
+- on `main`, not detached HEAD,
+- branch up to date with `origin/main`, unless intentional local changes exist,
+- no unresolved merge/rebase state.
 
-### 4. Status check
+## 2. Clean generated artifacts
 
-Run:
+```bash
+find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+find . -type f -name '*.pyc' -delete
+find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
+rm -rf .pytest_cache .mypy_cache .ruff_cache
+```
 
-    git status --short
+## 3. Dry-run Makefile targets
+
+```bash
+make -n install
+make -n test-core
+```
 
 Expected:
 
-- only intentional source/doc changes before commit,
-- no `.pytest_cache`, `__pycache__`, `*.pyc`, `*.egg-info`, `*.patch`, or generated tarballs.
+- install uses `<repo>/.venv/bin/python -m pip`,
+- tests use absolute `<repo>/.venv/bin/python` even after `cd package`,
+- no `$(TEST_PYTHON)-m` or `$(TEST_PYTHON)scripts/...` concatenation appears.
+
+## 4. Baseline install and tests
+
+```bash
+rm -rf .venv
+make install
+make test-core
+```
+
+Default install should not require PyTorch. Torch-only tests should skip unless
+ML extras are installed.
+
+## 5. Optional ML/GPU tests
+
+CPU/default ML extras:
+
+```bash
+make install-ml
+make test-ml
+```
+
+CUDA/GPU path:
+
+```bash
+make install-gpu
+make test-ml
+```
+
+If the CUDA PyTorch wheel index is wrong for the machine, use the official
+PyTorch installer guidance for the OS/Python/CUDA target, then rerun
+`make install-ml`.
+
+## 6. Import provenance check
+
+```bash
+.venv/bin/python - <<'PY'
+import engram
+print(engram.__file__)
+PY
+```
+
+Expected path:
+
+```text
+<repo>/engram/src/engram/__init__.py
+```
+
+Do not publish if this resolves to `engram/__init__.py`, `engram/engram`, or
+another obsolete path.
+
+## 7. Hygiene and teaching checks
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python scripts/check_publication_hygiene.py
+PYTHONDONTWRITEBYTECODE=1 python scripts/check_teaching_artifacts.py
+```
+
+Expected:
+
+```text
+Publication hygiene check passed.
+```
+
+and no missing notebooks/tutorial examples.
+
+## 8. Fresh clone verification
+
+```bash
+cd ~
+rm -rf ai_tools_clone_check
+git clone https://github.com/jdean314159/ai_tools ai_tools_clone_check
+cd ai_tools_clone_check
+make -n install
+make -n test-core
+make install
+make test-core
+```
+
+Only edit in `~/ai_tools`. Treat `~/ai_tools_clone_check` as disposable.
 
 ## Do not publish if
 
-- broad gate fails,
+- branch is detached or mid-rebase,
+- default install requires system `python3-torch`, PyTorch, or sentence-transformers,
+- `make -n test-core` shows relative `.venv/bin/python` after `cd`,
 - publication hygiene fails,
-- docs still describe the old `llm_inspector_ui describe_ui` failure as active,
-- readonly DB warnings remain uninvestigated and unexplained.
+- `import engram` resolves outside `engram/src/engram`,
+- generated caches or package metadata are present.

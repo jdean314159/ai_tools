@@ -91,7 +91,7 @@ The repo should treat the following as first-class engineering artifacts:
 
 - root continuity documents:
   - `VISION.md`
-  - `CURRENT_STATE.md`
+  - `STATUS.md`
   - `ROADMAP.md`
   - `ADR_INDEX.md`
 - repo-local and package-local `AGENT.md` files
@@ -111,6 +111,25 @@ Packages should not only expose runtime functionality. They should also expose t
 This is part of what makes `ai_tools` both a harness and a laboratory.
 
 ---
+
+
+## 2B. Packaging and Dependency Policy
+
+The default repo path must remain lightweight and reproducible:
+
+- `make install` creates and uses a project-local `.venv`.
+- default install and `make test-core` should not require PyTorch or CUDA.
+- heavyweight local ML features live behind explicit extras/targets such as
+  `make install-ml`, `make install-gpu`, and `make test-ml`.
+- package `dev` extras should mean development/test tooling, not every runtime
+  backend.
+- unpublished sibling packages should be installed by the root `Makefile`, not
+  pulled from PyPI through package extras.
+- full Engram uses `engram/src/engram` as its canonical import path; old
+  top-level package trees must not be restored.
+
+This policy keeps the suite usable as a teaching/workbench repo while still
+supporting advanced neural, HuggingFace, and GPU workflows explicitly.
 
 ## 3. Package-Level Responsibilities
 

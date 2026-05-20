@@ -11,7 +11,7 @@ REQUIRED_ROOT_DOCS = [
     "README.md",
     "START_HERE.md",
     "VISION.md",
-    "CURRENT_STATE.md",
+    "STATUS.md",
     "ROADMAP.md",
     "ADR_INDEX.md",
     "LEARNING_PATH.md",
@@ -26,6 +26,7 @@ LEGACY_BASENAMES = {
 
 SKIP_DIR_NAMES = {
     ".git",
+    ".venv",
 }
 
 BANNED_DIR_NAMES = {
@@ -35,6 +36,7 @@ BANNED_DIR_NAMES = {
     "test_survey_results",
     "local_artifacts",
 }
+
 
 BANNED_DIR_SUFFIXES = {
     ".egg-info",

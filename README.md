@@ -59,6 +59,32 @@ Use the teaching path first, then come back to the deeper documents.
 - [AGENT_FILE_SPEC.md](./AGENT_FILE_SPEC.md) — spec for repo-local and package-local `AGENT.md` files **[Maintainer]**
 - [TASK_MANIFEST_SPEC.md](./TASK_MANIFEST_SPEC.md) — spec for JSON task/progress manifests **[Maintainer]**
 
+## Current install and dependency posture
+
+The repo is intended to be cloneable and testable without a heavyweight local
+ML stack.
+
+```bash
+make install
+make test-core
+```
+
+Default install creates and uses a project-local `.venv`. PyTorch, HuggingFace
+local model execution, sentence-transformers local embeddings, vLLM,
+llama.cpp builds, and CUDA wheels are optional capability tiers, not baseline
+requirements.
+
+Use explicit optional targets when needed:
+
+```bash
+make install-ml      # PyTorch-backed neural/local-model features
+make install-gpu     # CUDA PyTorch + GPU-oriented extras
+make test-ml         # torch-dependent tests
+```
+
+A plain `import engram` should resolve to `engram/src/engram/__init__.py` and
+should not require `sentence_transformers` or PyTorch.
+
 ## Packages
 
 Package-level labels below are meant as learning-orientation hints, not hard barriers.

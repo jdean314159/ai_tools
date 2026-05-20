@@ -10,9 +10,9 @@ Read these first:
 
 1. `VISION.md`
 2. `PACKAGE_ROLES.md`
-3. `CURRENT_STATE.md`
-4. `course/CURRICULUM.md`
-5. `TASKS.json`
+3. `STATUS.md`
+4. `QUALITY_CLEANUP_PLAN.md`
+5. `course/CURRICULUM.md`
 
 ## Default package order
 
@@ -35,7 +35,8 @@ Use this order unless the task says otherwise:
 - Do not broaden agent write permissions to make tests pass.
 - Empty write allowlists must mean no writes.
 - Keep examples runnable without live model access where practical.
-- Update docs and validation scripts together when notebook names or course order changes.
+- Update docs and validation scripts together when notebook names, course order, package layout, or install targets change.
+- Keep default install/test paths lightweight; PyTorch and GPU stacks belong behind explicit ML/GPU targets.
 
 ## Verification commands
 
@@ -45,5 +46,7 @@ Use the narrowest command that validates the touched package first, then broader
 python -m compileall -q agent_lib engram_lite llm_inspector_ui scripts course
 python -m pytest -q agent_lib/tests/test_programming_harness.py llm_inspector_ui/tests/test_rag_retrieval_ui.py
 python scripts/check_teaching_artifacts.py
+make -n install
+make -n test-core
 python scripts/check_publication_hygiene.py
 ```

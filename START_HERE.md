@@ -56,20 +56,21 @@ ls
 
 You should see files such as `README.md`, `LEARNING_PATH.md`, and the `course/` directory.
 
-### 2. Create a virtual environment and install packages
 
-Use a virtual environment on all platforms. Install project dependencies into a per-project `venv`, not into the system Python.
+### 2. Install packages into the project virtual environment
+
+The root `Makefile` creates and uses a project-local `.venv`. Do not install
+into the system Python.
 
 #### macOS / Linux
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
 make install
+source .venv/bin/activate
 ```
 
-Verify that you are using the virtual environment’s Python:
+Verify that you are using the project virtual environment when running Python
+commands manually:
 
 ```bash
 which python
@@ -80,33 +81,73 @@ python --version
 
 #### Windows
 
-In Command Prompt or PowerShell:
+The root `Makefile` is primarily maintained for macOS/Linux shell workflows.
+On Windows, use WSL/Linux for the smoothest path, or create and activate the
+virtual environment manually before installing packages.
 
 ```powershell
 py -m venv .venv
 .venv\Scripts\activate
 python -m pip install --upgrade pip
-make install
+python -m pip install -e .\llm_harness_core[dev]
+```
+Then install the remaining packages using the order shown in the root
+`Makefile`.
+
+If you run Python package installation against the system Python on Debian or
+Ubuntu, you may see an `externally-managed-environment` error. That is expected.
+Use the project `.venv` created by `make install`.
+
+#### Optional PyTorch / GPU features
+
+The default install does not require PyTorch.
+
+Install PyTorch-backed local ML features only if you want neural memory,
+HuggingFace local model execution, sentence-transformers-backed local
+embeddings, or optimization experiments.
+
+CPU/default ML extras:
+
+```bash
+make install-ml
+make test-ml
 ```
 
-Verify that you are using the virtual environment’s Python:
+NVIDIA/CUDA path:
 
-```powershell
-where python
-python --version
+```bash
+make install-gpu
+make test-ml
 ```
 
-One of the `where python` results should point to `.venv\Scripts\python.exe`.
+#### Optional PyTorch features
 
-#### Debian / Ubuntu note
+The default install does not require PyTorch.
 
-If you run `make install` against the system Python on Debian or Ubuntu, you may see an `externally-managed-environment` error. That is expected. Create and activate the virtual environment first, then run `make install`.
+Install PyTorch-backed local ML features only if you want neural memory,
+HuggingFace local model execution, sentence-transformers-backed embeddings,
+or optimization experiments.
+
+CPU/default install:
+
+    make install-ml
+
+NVIDIA/CUDA install:
+
+    make install-gpu
+
+If CUDA wheel selection fails, use the official PyTorch install selector
+for your OS, Python version, and CUDA/ROCm/CPU target, then rerun:
+
+    make install-ml
 
 #### If activation differs in your shell
 
-Activation commands can vary slightly by shell, especially on Windows. If the command above does not work in your shell, create `.venv` the same way and then use the activation command appropriate for that shell.
+If CUDA wheel selection fails, use the official PyTorch install selector for
+your OS, Python version, and CUDA/ROCm/CPU target, then rerun `make install-ml`.
 
-If you only want to read first and install later, that is fine. The next two commands are the fastest way to get a visible result after install.
+If you only want to read first and install later, that is fine. The next two
+commands are the fastest way to get a visible result after install.
 
 ### 3. Run the smallest starter project
 
