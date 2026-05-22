@@ -138,3 +138,10 @@ Needed before serious `agent_lib` expansion. Should define filesystem, process, 
 ### Package import side-effect policy
 
 May be folded into ADR-008 or added later. Should define what may and may not happen at top-level import time.
+
+## ADR-009 — Freeze engram, dissolve engram_lite, rename to engram
+**File:** `adr/ADR-009-engram-freeze-and-rename.md`
+**Status:** Accepted
+**Summary:** Heavy engram archived at github.com/jdean314159/engram. Original
+standalone engram_lite implementation restored and renamed to `engram`. ADR-007
+superseded. engram_ui engine migration deferred to follow-on ADR.

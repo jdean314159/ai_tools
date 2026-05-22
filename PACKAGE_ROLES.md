@@ -1,20 +1,18 @@
 # Package Roles and Current Support Status
 
-Last updated: 2026-05-20
+Last updated: 2026-05-22
 
 ## Status summary
 
-The repo is past the main packaging/import stabilization checkpoint and has
-also completed a GitHub publication/clone-verification pass. Most packages use
-`src/` layout; `llm_engines` intentionally remains on direct layout.
+The engram freeze and rename is complete. The monorepo now has a single memory
+library: `engram` (the restored standalone, formerly engram_lite v0.2.0).
 
-The default install path is now expected to be lightweight:
+Default install is lightweight:
 
     make install
     make test-core
 
-PyTorch and heavyweight local-model packages are optional extras, reached via
-`make install-ml`, `make install-gpu`, and `make test-ml`.
+PyTorch and heavyweight local-model packages are optional extras.
 
 See `STATUS.md` for the authoritative current baseline and active work list.
 
@@ -22,29 +20,20 @@ See `STATUS.md` for the authoritative current baseline and active work list.
 
 | Package | Role | Current status | Notes |
 |---|---|---|---|
-| `llm_harness_core` | Shared harness/interoperability primitives. | Core package. | Keep APIs small and dependency-light. Avoid moving implementation-heavy utilities here unless they are true contracts. |
-| `llm_engines` | Engine abstraction for Ollama, OpenAI-compatible APIs, Anthropic, vLLM, llama.cpp, HuggingFace, and future backends. | Intentional direct layout: `llm_engines/llm_engines`. | `dev` should stay lightweight. HuggingFace/PyTorch/vLLM/llama.cpp belong behind explicit extras. |
-| `engram` | Lightweight memory path for teaching and production-hardening. | Default memory path. | Should remain the simpler baseline and comparison target. ADR-007 facade migration is still active work. |
-| `engram` | Full memory runtime with advanced memory layers and retrieval policy. | Advanced package on `src` layout. | Canonical import path is `engram/src/engram`. Base imports should not require episodic/local-embedding/neural extras. |
-| `engram_ui` | Streamlit sandbox/reference UI for full Engram. | Top-level package on `src` layout. | Installed by the root `Makefile` after `engram`. Keep UI dependencies separate from the memory runtime. |
+| `llm_harness_core` | Shared harness/interoperability primitives. | Core package. | Keep APIs small and dependency-light. |
+| `llm_engines` | Engine abstraction for Ollama, OpenAI-compatible APIs, Anthropic, vLLM, llama.cpp, and future backends. | Intentional direct layout: `llm_engines/llm_engines`. | `dev` should stay lightweight. HuggingFace/PyTorch/vLLM/llama.cpp behind explicit extras. |
+| `engram` | Standalone memory library. JSONL source-of-truth, optional ChromaDB, RRF hybrid retrieval, semantic graph. | Active and recommended. Renamed from engram_lite. | Default memory path for teaching and production use. No torch required by default. |
+| `engram_ui` | Streamlit sandbox/reference UI for engram. | **Broken** — pending engine reconciliation (engram.engine.* imports unresolved). | Do not use until engine reconciliation migration to llm_engines is complete. |
 | `llm_inspector` | Inspection/provenance layer for traces, evidence, prompt construction, and comparison workflows. | Core observability package. | Important for making memory/RAG/agent behavior inspectable. |
-| `llm_inspector_ui` | Interactive workbench for trace inspection and debugging. | Active package on `src` layout. | Previous `describe_ui` import blocker is resolved. Do not treat it as active. |
+| `llm_inspector_ui` | Interactive workbench for trace inspection and debugging. | Active. | Do not add engram_ui-style engine dependencies here. |
 | `rag_lib` | RAG building blocks, labs, and evaluation utilities. | Default retrieval path. | Keep examples runnable without live model access where practical. |
 | `agent_lib` | Agent abstractions and coordination primitives. | Experimental/advanced. | Continue only with explicit sandbox, policy, and trace boundaries. |
-| `language_tutor` | Reference app using engines, memory, and optional richer features. | Reference application. | Should default to the lightweight stack and make richer memory/voice features optional. |
+| `language_tutor` | Reference app using engines, memory, and optional richer features. | Active. Engine imports migrated to llm_engines. | Default memory path is `engram`. |
 
 ## Dependency discipline
 
-Use the root `Makefile` for local development instead of installing packages
-out of order by hand:
-
-    make install
-    make test-core
+    make install       # installs all packages in correct monorepo order
+    make test-core     # runs default suite
 
 Do not add unpublished sibling packages as PyPI dependencies in package extras.
-For example, `engram[dev]` should not depend on `llm-inspector`; the root
-`Makefile` installs sibling packages in monorepo order.
-
-Keep `dev` extras for test/development tooling. Put heavyweight runtime stacks
-behind explicit extras such as `ml`, `ml-dev`, `local-embeddings`,
-`huggingface`, `local-backends`, or `experimental`.
+Keep `dev` extras for test/development tooling only.
