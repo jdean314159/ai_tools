@@ -20,7 +20,7 @@ def describe_memory(memory: Any) -> CapabilityDescriptor:
     }
     return CapabilityDescriptor(
         kind=CapabilityKind.MEMORY,
-        provider="engram_lite",
+        provider="engram",
         component=memory.__class__.__name__,
         version="0.1.0",
         summary="Prompt augmentation with lightweight user-preferred memory hygiene, canonical updates, and retrieval.",

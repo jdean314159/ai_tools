@@ -237,7 +237,7 @@ def build_prompt_trace_from_result(
                 tokens=prompt_tokens
                 if isinstance(prompt_tokens, int)
                 else count_text_tokens(prompt, token_counter=token_counter),
-                meta={"engine": "engram_lite.build_prompt"},
+                meta={"engine": "engram.build_prompt"},
             )
         )
 

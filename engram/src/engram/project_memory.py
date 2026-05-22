@@ -40,11 +40,11 @@ class PromptBudget:
 
 class ProjectMemory:
     """
-    engram_lite v0.2: production memory system with hybrid retrieval,
+    engram v0.2: production memory system with hybrid retrieval,
     automatic assistant pairing, and semantic graph with forgetting.
     """
 
-    augmenter_id = "engram_lite"
+    augmenter_id = "engram"
 
     def describe_component(self):
         return describe_memory(self)
@@ -1272,7 +1272,7 @@ class ProjectMemory:
 
     def index_text(self, text: str, *args: Any, **kwargs: Any) -> Any:
         del args, kwargs
-        return SimpleNamespace(indexed_text=str(text), backend="engram_lite")
+        return SimpleNamespace(indexed_text=str(text), backend="engram")
 
     def run_lifecycle_maintenance(self) -> dict:
         stats: dict = {}
@@ -1284,7 +1284,7 @@ class ProjectMemory:
     def get_stats(self) -> dict[str, Any]:
         turns = self._sessions.get(self.session_id or "", [])
         stats: dict[str, Any] = {
-            "backend": "engram_lite",
+            "backend": "engram",
             "version": "0.2.0",
             "working": {
                 "message_count": len(turns),

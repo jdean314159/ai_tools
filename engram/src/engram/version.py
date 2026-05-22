@@ -3,11 +3,11 @@ SCHEMA_VERSION = "2.0"
 
 SCHEMA_MIGRATIONS = {
     "1.0": {
-        "description": "Original engram_lite (text-only, no pairing)",
+        "description": "Original engram (text-only, no pairing)",
         "features": ["jsonl_storage", "text_scoring", "session_history"],
     },
     "2.0": {
-        "description": "Restored engram_lite (vector search, pairing, semantic)",
+        "description": "Restored engram (vector search, pairing, semantic)",
         "features": [
             "jsonl_storage",
             "text_scoring",

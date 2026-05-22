@@ -1,5 +1,5 @@
 """
-engram_lite.inspection — prompt-build trace types.
+engram.inspection — prompt-build trace types..
 
 These dataclasses record what happened during prompt assembly: which memory
 sections were included, what evidence was retrieved, how token budget was
@@ -51,7 +51,7 @@ def _evidence_provenance(evidence: Any) -> dict[str, Any]:
     meta = dict(getattr(evidence, "meta", {}) or {})
     prov: dict[str, Any] = {
         "source": getattr(evidence, "source", "memory"),
-        "augmenter": "engram_lite",
+        "augmenter": "engram",
     }
     for key in ("session_id", "project_id", "episode_id", "topic_key"):
         if key in meta:
@@ -75,7 +75,7 @@ def build_interop_events(trace: Any) -> list:
     events = [
         TraceEvent(
             event_type="prompt_build_completed",
-            source_package="engram_lite",
+            source_package="engram",
             source_component="PromptBuildTrace",
             payload={
                 "section_count": len(trace.sections),
@@ -92,7 +92,7 @@ def build_interop_events(trace: Any) -> list:
         events.append(
             TraceEvent(
                 event_type="memory_evidence_included",
-                source_package="engram_lite",
+                source_package="engram",
                 source_component="PromptBuildTrace",
                 payload={
                     "source": evidence.source,

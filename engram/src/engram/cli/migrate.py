@@ -1,4 +1,4 @@
-"""Migration tool: upgrade engram_lite v1.0 projects to v2.0."""
+"""Migration tool: upgrade engram v1.0 projects to v2.0."""
 from __future__ import annotations
 import argparse
 import json
@@ -123,7 +123,7 @@ def migrate_semantic_graph(project_dir: Path, llm_engine=None) -> int:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Migrate engram_lite project to v2.0")
+    parser = argparse.ArgumentParser(description="Migrate engram project to v2.0")
     parser.add_argument("project_dir", type=Path)
     parser.add_argument("--embedder-model", default="nomic-embed-text")
     parser.add_argument("--skip-embeddings", action="store_true")

@@ -31,7 +31,7 @@ class SchemaManager:
         from ..version import __version__
         data = {
             "version": version,
-            "engram_lite_version": __version__,
+            "engram_version": __version__,
             "created_at": time.time(),
             "metadata": metadata or {},
         }

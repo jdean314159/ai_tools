@@ -25,7 +25,7 @@ class EmbeddingService:
         except ImportError:
             raise ImportError(
                 "sentence-transformers not installed: "
-                "pip install engram_lite[sentence-transformers]"
+                "pip install engram[sentence-transformers]"
             )
 
     @staticmethod
