@@ -7,9 +7,9 @@ from pathlib import Path
 
 
 def reconcile_project(project_dir: Path, embedder_model: str, dry_run: bool = False):
-    from engram_lite.embeddings.ollama import OllamaEmbedder
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
-    from engram_lite.storage.chromadb_store import ChromaDBStore
+    from engram.embeddings.ollama import OllamaEmbedder
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.storage.chromadb_store import ChromaDBStore
 
     print(f"Reconciling: {project_dir}")
     episodes_file = project_dir / "episodes.jsonl"

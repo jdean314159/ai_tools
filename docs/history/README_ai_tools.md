@@ -2,7 +2,7 @@
 
 `ai_tools` is the umbrella system that ties together the local-LLM toolchain:
 
-- **`engram-lite`** for memory, retrieval, and prompt assembly
+- **`engram`** for memory, retrieval, and prompt assembly
 - **`llm_engines`** for model discovery, provisioning, backend configuration, and inference
 - **`llm_inspector`** for trace normalization, comparison, diffing, and export
 - **`llm_inspector_ui`** for the interactive chat workbench
@@ -36,7 +36,7 @@ The system is designed so that core libraries do the work, and the UI composes t
 
 ## Package roles
 
-### `engram-lite`
+### `engram`
 
 Owns:
 
@@ -52,7 +52,7 @@ Does **not** own:
 - generic chat UI
 - multi-system comparison UX
 
-`engram-lite` should expose a stable prompt-building surface and a stable trace API.
+`engram` should expose a stable prompt-building surface and a stable trace API.
 
 ### `llm_engines`
 
@@ -274,7 +274,7 @@ ai_tools/
   docs/
   examples/
 
-  engram_lite/
+  engram/
   llm_engines/
   llm_inspector/
   llm_inspector_ui/
@@ -335,7 +335,7 @@ The UI should build a run plan and return one or more run artifacts.
 
 The current design direction is:
 
-- move memory/prompt tracing into `engram-lite` / Engram itself
+- move memory/prompt tracing into `engram` / Engram itself
 - keep `llm_inspector` as a thin normalized observability layer
 - keep model/backend logic in `llm_engines`
 - move generic chat/inspection UI responsibility into `llm_inspector_ui`
@@ -358,7 +358,7 @@ Good candidates for this umbrella layer:
 What should *not* live here long-term:
 
 - duplicated engine logic from `llm_engines`
-- duplicated memory logic from `engram-lite`
+- duplicated memory logic from `engram`
 - duplicated trace logic from `llm_inspector`
 - UI business logic that belongs in `llm_inspector_ui`
 
@@ -413,7 +413,7 @@ Longer-term priorities:
 
 It exists to make these separate capabilities work together cleanly:
 
-- **memory** from `engram-lite`
+- **memory** from `engram`
 - **execution** from `llm_engines`
 - **observability** from `llm_inspector`
 - **interactive experimentation** from `llm_inspector_ui`

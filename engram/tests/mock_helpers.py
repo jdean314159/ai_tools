@@ -1,7 +1,7 @@
 """Mock helpers for tests - no pytest dependency."""
 from __future__ import annotations
 from unittest.mock import MagicMock
-from engram_lite.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
+from engram.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
 
 
 class MockEmbedder(Embedder):

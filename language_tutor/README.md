@@ -5,7 +5,7 @@
 It is not just a standalone tutor. It exists to demonstrate how the stack is supposed to be composed in a real application:
 
 - `llm_engines` for model/backend abstraction
-- `engram_lite` or `engram` for memory
+- `engram` or `engram` for memory
 - drill and session logic as application behavior
 - `llm_inspector` / `llm_inspector_ui` as the long-term observability path
 
@@ -46,7 +46,7 @@ The package therefore matters even when the immediate work is on shared librarie
 The intended composition path is:
 
 ```text
-llm_engines + (engram_lite or engram) + language_tutor
+llm_engines + (engram or engram) + language_tutor
 ```
 
 with the longer-term observability path:
@@ -69,14 +69,14 @@ for curriculum retrieval, explanation retrieval, or source-grounded tutoring con
 
 | Backend | Default | Purpose |
 |---------|---------|---------|
-| `engram_lite` | ✓ | Default tutor memory path; matures the lightweight augmentation contract under real app usage. |
+| `engram` | ✓ | Default tutor memory path; matures the lightweight augmentation contract under real app usage. |
 | `engram` | Optional | Exercises the full multi-layer memory stack, richer lifecycle behavior, semantic graph, and advanced persistence. |
 
 You can select the backend when constructing `TutorSession(...)` or through the session start API.
 
 This split is deliberate:
 
-- `engram_lite` keeps the reference app practical and lower-friction
+- `engram` keeps the reference app practical and lower-friction
 - full `engram` keeps the app useful as a heavier integration target and evaluation surface
 
 ---
@@ -210,7 +210,7 @@ So the current status is:
 
 `language_tutor` is explicitly meant to act as an integration vehicle for the other libraries in this repo.
 
-Its default memory backend is `engram_lite`, with full `engram` available as an explicit selection when you want to exercise the heavier multi-layer memory stack.
+Its default memory backend is `engram`, with full `engram` available as an explicit selection when you want to exercise the heavier multi-layer memory stack.
 
 ```bash
 python -m pytest -q language_tutor/tests

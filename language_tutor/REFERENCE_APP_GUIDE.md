@@ -28,7 +28,7 @@ In the course sequence, this is **Stage 5 — composed application**.
 ```text
 language_tutor
 ├── llm_engines         engine selection and normalized backend access
-├── engram_lite         default lightweight memory path
+├── engram         default lightweight memory path
 ├── engram              optional advanced memory path
 ├── llm_harness_core    shared capability/result/trace contracts
 ├── llm_inspector       intended comparison/reporting path
@@ -72,7 +72,7 @@ Where to see it here:
 - `engine_manager.py`
 - `llm_engines_adapter.py`
 
-### 2. `engram_lite` and `engram`
+### 2. `engram` and `engram`
 Teach that memory is not merely “save chat history.” It is prompt construction plus inspectable retrieval.
 
 Where to see it here:
@@ -80,7 +80,7 @@ Where to see it here:
 - `TutorSession.handle_text()`
 
 Recommended teaching default:
-- start with `engram_lite`
+- start with `engram`
 - switch to `engram` only when richer memory behavior is the lesson
 
 ### 3. `llm_harness_core`
@@ -120,7 +120,7 @@ Trace how a message moves through:
 5. post-processing and persistence
 
 ### Pass 3 — compare memory backends
-Run the same scenario with `engram_lite` and `engram`.
+Run the same scenario with `engram` and `engram`.
 Ask what changes in behavior, complexity, and inspectability.
 
 ### Pass 4 — inspect the shared contracts
@@ -164,7 +164,7 @@ curl -X POST http://localhost:8080/api/session/start \
 After working through this guide, a learner should be able to explain:
 
 - why the app depends on `llm_engines` rather than calling a backend directly
-- why `engram_lite` is the default teaching memory path
+- why `engram` is the default teaching memory path
 - how shared interop results make the app inspectable
 - where `rag_lib` could fit without pretending it is already fully integrated
 - why a reference application is necessary in a teaching repo with many libraries

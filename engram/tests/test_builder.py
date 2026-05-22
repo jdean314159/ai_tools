@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from engram_lite.prompting.builder import (
+from engram.prompting.builder import (
     _parts_from_prompt,
     build_prompt_from_context,
     build_prompt_trace_from_result,
@@ -29,7 +29,7 @@ from engram_lite.prompting.builder import (
     safe_score,
     safe_text,
 )
-from engram_lite.retrieval.context import ContextResult
+from engram.retrieval.context import ContextResult
 
 
 # ---------------------------------------------------------------------------

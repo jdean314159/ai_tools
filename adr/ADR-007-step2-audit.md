@@ -1,6 +1,6 @@
 # ADR-007 Migration — Step 2 Audit
 
-Classification of every `engram_lite` public symbol against its `engram`
+Classification of every `engram` public symbol against its `engram`
 equivalent, to drive the facade migration. Verb key:
 
 | Tag | Meaning | engram change? |
@@ -12,7 +12,7 @@ equivalent, to drive the facade migration. Verb key:
 | **shim-only** | lite-specific framing, no engram home; adapter implements against engram primitives | none |
 | **lift** | genuine capability engram lacks; implement in engram, then delegate | yes (Step 3) |
 
-The migration vehicle is an **adapter shim**: `engram_lite/project_memory.py`
+The migration vehicle is an **adapter shim**: `engram/project_memory.py`
 becomes a thin `ProjectMemory` class wrapping an internal `engram.ProjectMemory`,
 configured for SQLite + ChromaDB defaults. engram stays frozen for Step 2.
 The six **lift** rows become a Step 3 backlog — initially shim-implemented
@@ -63,11 +63,11 @@ etc.), promoted to first-class engram methods later.
 | `ForgettingConfig`, `ForgettingPolicy` | `engram.memory.semantic_forgetting` | re-export (done) |
 | `detect_contradiction` | `engram.memory.contradiction` | re-export (done) |
 | `Telemetry`, `TelemetryEvent`, `log_sink`, `json_file_sink` | `engram.telemetry` | re-export (done) |
-| `__version__` | `engram_lite.version` | local (facade discipline — keep) |
+| `__version__` | `engram.version` | local (facade discipline — keep) |
 
 ## Step 2 work order
 
-1. Write `engram_lite/project_memory.py` as the adapter shim:
+1. Write `engram/project_memory.py` as the adapter shim:
    - `__init__(**lite_kwargs)` maps lite constructor kwargs onto an internal
      `engram.ProjectMemory` configured for SQLite + ChromaDB defaults, RTRL
      disabled, advanced retrieval policy off. Store as `self._em`.
@@ -75,14 +75,14 @@ etc.), promoted to first-class engram methods later.
      rows by delegating to `self._em`.
    - Implement the 6 **lift** rows against `self._em`'s internal layers
      (clearly marked `# Step 3 lift candidate`).
-2. Replace `engram_lite/__init__.py` interop imports:
+2. Replace `engram/__init__.py` interop imports:
    `describe_memory`, `trace_to_memory_records` → `from engram.interop import ...`;
    keep `augment_result_to_interop_result` local until lifted.
 3. Delete the reconciled subpackages: `embeddings/`, `storage/`, `semantic/`,
    `retrieval/`, `prompting/`, `memory/`, `cli/`, `config/`, `contracts.py`,
    `concurrency.py`, `telemetry.py`, `inspection.py`, plus the old
    `interop.py` body once re-pointed.
-4. Run, in order: `test_public_api_contract.py`, full `engram_lite` suite,
+4. Run, in order: `test_public_api_contract.py`, full `engram` suite,
    full `engram` suite, `integration_tests/`, then NB04 end-to-end.
 5. Update `PACKAGE_ROLES.md` and `VISION.md`.
 

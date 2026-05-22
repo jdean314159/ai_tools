@@ -2,7 +2,7 @@
 from __future__ import annotations
 import tempfile
 from pathlib import Path
-from engram_lite import ProjectMemory
+from engram import ProjectMemory
 
 
 def test_default_threshold_set():
@@ -72,7 +72,7 @@ def test_per_call_threshold_overrides_instance():
 def test_threshold_telemetry():
     """Telemetry includes threshold filter counts."""
     events = []
-    from engram_lite import Telemetry
+    from engram import Telemetry
     tel = Telemetry()
     tel.add_sink(lambda e: events.append(e))
 

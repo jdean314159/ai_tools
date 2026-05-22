@@ -26,7 +26,7 @@ Introduce a new dependency-light package, `llm_harness_core`, containing only sh
 Adapt foundational packages first:
 
 1. `llm_engines` publishes engine descriptors and converts generation responses to `OperationResult`.
-2. `engram_lite` publishes memory descriptors and converts prompt-build traces to shared `TraceEvent` objects.
+2. `engram` publishes memory descriptors and converts prompt-build traces to shared `TraceEvent` objects.
 
 ## Consequences
 Positive:

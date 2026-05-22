@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from engram_lite import ProjectMemory
+from engram import ProjectMemory
 
 
 def test_build_prompt_includes_recent_working_turns() -> None:

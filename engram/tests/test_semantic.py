@@ -1,10 +1,10 @@
 from __future__ import annotations
 import tempfile
-from engram_lite import ProjectMemory
-from engram_lite.semantic.graph import SemanticGraph
-from engram_lite.semantic.extractor import SemanticExtractor
-from engram_lite.semantic.forgetting import ForgettingConfig, ForgettingPolicy
-from engram_lite.semantic.contradiction import detect_contradiction
+from engram import ProjectMemory
+from engram.semantic.graph import SemanticGraph
+from engram.semantic.extractor import SemanticExtractor
+from engram.semantic.forgetting import ForgettingConfig, ForgettingPolicy
+from engram.semantic.contradiction import detect_contradiction
 
 
 def test_graph_add_and_query(tmp_path):

@@ -4,8 +4,8 @@ import time
 import tempfile
 import pytest
 from pathlib import Path
-from engram_lite.semantic.graph import SemanticGraph
-from engram_lite.semantic.forgetting import ForgettingConfig, ForgettingPolicy
+from engram.semantic.graph import SemanticGraph
+from engram.semantic.forgetting import ForgettingConfig, ForgettingPolicy
 
 
 def make_graph(tmp_path=None):

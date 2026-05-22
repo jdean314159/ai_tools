@@ -9,9 +9,9 @@ from pathlib import Path
 
 
 def migrate_embeddings(project_dir: Path, embedder_model: str, batch_size: int = 50) -> int:
-    from engram_lite.embeddings.ollama import OllamaEmbedder
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
-    from engram_lite.storage.chromadb_store import ChromaDBStore
+    from engram.embeddings.ollama import OllamaEmbedder
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.storage.chromadb_store import ChromaDBStore
 
     episodes_file = project_dir / "episodes.jsonl"
     if not episodes_file.exists():
@@ -83,8 +83,8 @@ def migrate_paired_exchanges(project_dir: Path) -> int:
 
 
 def migrate_semantic_graph(project_dir: Path, llm_engine=None) -> int:
-    from engram_lite.semantic.extractor import SemanticExtractor
-    from engram_lite.semantic.graph import SemanticGraph
+    from engram.semantic.extractor import SemanticExtractor
+    from engram.semantic.graph import SemanticGraph
 
     episodes_file = project_dir / "episodes.jsonl"
     if not episodes_file.exists():
@@ -151,8 +151,8 @@ def main():
         print("\nPhase 3: Extracting semantic facts...")
         migrate_semantic_graph(args.project_dir)
 
-    from engram_lite.storage.schema import SchemaManager
-    from engram_lite.version import SCHEMA_VERSION
+    from engram.storage.schema import SchemaManager
+    from engram.version import SCHEMA_VERSION
     SchemaManager(args.project_dir).set_version(SCHEMA_VERSION)
     print(f"\nMigration complete! Schema: {SCHEMA_VERSION}")
 

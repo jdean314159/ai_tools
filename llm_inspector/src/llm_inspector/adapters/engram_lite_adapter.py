@@ -56,7 +56,7 @@ class EngramLiteAugmenter(ContextAugmenter):
         return self._name
 
     def augment(self, req: AugmentRequest) -> Trace:
-        from engram_lite import ProjectMemory
+        from engram import ProjectMemory
 
         pm = ProjectMemory(base_dir=self.base_dir, project_id=self.project_id, session_id=req.session_id)
         pm.new_session(req.session_id)

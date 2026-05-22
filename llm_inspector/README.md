@@ -31,7 +31,7 @@ This is a **core** package and is treated as **active and stable**.
 Typical composition:
 
 ```text
-engram_lite or rag_lib -> llm_inspector -> llm_inspector_ui
+engram or rag_lib -> llm_inspector -> llm_inspector_ui
 ```
 
 ## Interop

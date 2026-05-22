@@ -73,7 +73,7 @@ def make_project(base_dir: Path, project_id: str = "test_project"):
 # ---------------------------------------------------------------------------
 
 def test_migrate_paired_exchanges_basic(tmp_path):
-    from engram_lite.cli.migrate import migrate_paired_exchanges
+    from engram.cli.migrate import migrate_paired_exchanges
 
     project_dir, _ = make_project(tmp_path)
     original_episode_count = len(list(project_dir.glob("episodes.jsonl")))
@@ -96,7 +96,7 @@ def test_migrate_paired_exchanges_basic(tmp_path):
 
 def test_migrate_paired_exchanges_format(tmp_path):
     """Paired episodes use correct User:/Assistant: format."""
-    from engram_lite.cli.migrate import migrate_paired_exchanges
+    from engram.cli.migrate import migrate_paired_exchanges
 
     project_dir, _ = make_project(tmp_path)
     migrate_paired_exchanges(project_dir)
@@ -115,7 +115,7 @@ def test_migrate_paired_exchanges_format(tmp_path):
 
 def test_migrate_paired_exchanges_metadata(tmp_path):
     """Paired episodes include session_id and original texts."""
-    from engram_lite.cli.migrate import migrate_paired_exchanges
+    from engram.cli.migrate import migrate_paired_exchanges
 
     project_dir, _ = make_project(tmp_path)
     migrate_paired_exchanges(project_dir)
@@ -137,7 +137,7 @@ def test_migrate_paired_exchanges_metadata(tmp_path):
 
 def test_migrate_no_sessions_dir(tmp_path):
     """Projects without sessions directory skip pairing gracefully."""
-    from engram_lite.cli.migrate import migrate_paired_exchanges
+    from engram.cli.migrate import migrate_paired_exchanges
 
     project_dir = tmp_path / "project"
     project_dir.mkdir()
@@ -149,7 +149,7 @@ def test_migrate_no_sessions_dir(tmp_path):
 
 def test_migrate_empty_sessions(tmp_path):
     """Sessions with no assistant turns produce no pairs."""
-    from engram_lite.cli.migrate import migrate_paired_exchanges
+    from engram.cli.migrate import migrate_paired_exchanges
 
     project_dir = tmp_path / "project"
     project_dir.mkdir()
@@ -175,8 +175,8 @@ def test_migrate_empty_sessions(tmp_path):
 
 def test_migrate_semantic_graph_pattern_only(tmp_path):
     """Pattern-only extraction produces facts without LLM."""
-    from engram_lite.cli.migrate import migrate_semantic_graph
-    from engram_lite.semantic.graph import SemanticGraph
+    from engram.cli.migrate import migrate_semantic_graph
+    from engram.semantic.graph import SemanticGraph
 
     project_dir, _ = make_project(tmp_path)
     extracted = migrate_semantic_graph(project_dir, llm_engine=None)
@@ -192,8 +192,8 @@ def test_migrate_semantic_graph_pattern_only(tmp_path):
 
 def test_migrate_semantic_graph_creates_valid_graph(tmp_path):
     """Migrated graph can be loaded as SemanticGraph."""
-    from engram_lite.cli.migrate import migrate_semantic_graph
-    from engram_lite.semantic.graph import SemanticGraph
+    from engram.cli.migrate import migrate_semantic_graph
+    from engram.semantic.graph import SemanticGraph
 
     project_dir, _ = make_project(tmp_path)
     migrate_semantic_graph(project_dir, llm_engine=None)
@@ -206,7 +206,7 @@ def test_migrate_semantic_graph_creates_valid_graph(tmp_path):
 
 def test_migrate_semantic_no_episodes(tmp_path):
     """Migration with empty episodes.jsonl produces no facts."""
-    from engram_lite.cli.migrate import migrate_semantic_graph
+    from engram.cli.migrate import migrate_semantic_graph
 
     project_dir = tmp_path / "project"
     project_dir.mkdir()
@@ -222,9 +222,9 @@ def test_migrate_semantic_no_episodes(tmp_path):
 
 def test_migration_sets_schema_version(tmp_path):
     """Full migration sets schema version to SCHEMA_VERSION."""
-    from engram_lite.cli.migrate import migrate_paired_exchanges, migrate_semantic_graph
-    from engram_lite.storage.schema import SchemaManager
-    from engram_lite.version import SCHEMA_VERSION
+    from engram.cli.migrate import migrate_paired_exchanges, migrate_semantic_graph
+    from engram.storage.schema import SchemaManager
+    from engram.version import SCHEMA_VERSION
 
     project_dir, _ = make_project(tmp_path)
     migrate_paired_exchanges(project_dir)
@@ -239,8 +239,8 @@ def test_migration_sets_schema_version(tmp_path):
 
 def test_schema_manager_detects_old_version(tmp_path):
     """Old-version project triggers migration warning."""
-    from engram_lite.storage.schema import SchemaManager
-    from engram_lite.version import SCHEMA_VERSION
+    from engram.storage.schema import SchemaManager
+    from engram.version import SCHEMA_VERSION
 
     project_dir = tmp_path / "project"
     project_dir.mkdir()
@@ -254,7 +254,7 @@ def test_schema_manager_detects_old_version(tmp_path):
 
 def test_schema_manager_no_file_returns_none(tmp_path):
     """Missing schema file returns None version."""
-    from engram_lite.storage.schema import SchemaManager
+    from engram.storage.schema import SchemaManager
 
     mgr = SchemaManager(tmp_path / "project")
     assert mgr.get_version() is None
@@ -263,7 +263,7 @@ def test_schema_manager_no_file_returns_none(tmp_path):
 
 def test_schema_manager_persist_reload(tmp_path):
     """Schema version persists across instances."""
-    from engram_lite.storage.schema import SchemaManager
+    from engram.storage.schema import SchemaManager
 
     path = tmp_path / "project"
     path.mkdir()

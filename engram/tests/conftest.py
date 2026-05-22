@@ -3,7 +3,7 @@ import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
-from engram_lite.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
+from engram.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
 
 
 class MockEmbedder(Embedder):
@@ -66,7 +66,7 @@ def mock_llm():
 @pytest.fixture
 def temp_memory(mock_embedder):
     """Full-featured memory with mock embedder (no Ollama needed)."""
-    from engram_lite import ProjectMemory
+    from engram import ProjectMemory
     with tempfile.TemporaryDirectory() as tmpdir:
         mem = ProjectMemory(
             base_dir=tmpdir,
@@ -83,7 +83,7 @@ def temp_memory(mock_embedder):
 @pytest.fixture
 def temp_memory_no_embedder():
     """Text-only memory (backward compat)."""
-    from engram_lite import ProjectMemory
+    from engram import ProjectMemory
     with tempfile.TemporaryDirectory() as tmpdir:
         mem = ProjectMemory(
             base_dir=tmpdir,

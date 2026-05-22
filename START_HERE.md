@@ -41,7 +41,7 @@ Focus first on:
 - `course/`
 - `llm_engines/`
 - `llm_inspector/`
-- `engram_lite/`
+- `engram/`
 - `rag_lib/`
 - `language_tutor/` later
 
@@ -199,7 +199,7 @@ Use this order:
 
 1. `llm_engines`
 2. `llm_inspector`
-3. `engram_lite`
+3. `engram`
 4. `rag_lib`
 5. `language_tutor`
 6. `agent_lib` last

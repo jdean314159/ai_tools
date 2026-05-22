@@ -1,4 +1,4 @@
-from engram_lite import ProjectMemory, trace_to_memory_records
+from engram import ProjectMemory, trace_to_memory_records
 
 
 def test_project_memory_exposes_shared_descriptor() -> None:

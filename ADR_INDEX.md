@@ -25,8 +25,8 @@ Completed since the previous transfer update:
 - Root `conftest.py` remains as the single centralized transitional pytest bootstrap.
 - Publication hygiene checker now rejects transient artifacts such as `.pytest_cache/`, `*.egg-info/`, `*.bak`, `*.orig`, `*.rej`, `*.patch`, `local_artifacts/`, `test_reports/`, and `test_survey_results/`.
 - Transient hygiene artifacts were removed.
-- `engram_lite` embedding compatibility modules now behave as facade re-exports over `engram`.
-- `llm_inspector` normalizes delegated `engram` trace events back to the `engram_lite` adapter boundary while preserving upstream provenance.
+- `engram` embedding compatibility modules now behave as facade re-exports over `engram`.
+- `llm_inspector` normalizes delegated `engram` trace events back to the `engram` adapter boundary while preserving upstream provenance.
 
 Current policy:
 
@@ -91,16 +91,16 @@ Use it to answer:
 - Scope: suite-wide
 - Decision: use a dependency-light shared core, `llm_harness_core`, for cross-package schemas.
 
-### ADR-007 — `engram_lite` as a Facade Over `engram`
+### ADR-007 — `engram` as a Facade Over `engram`
 
-- File: `adr/ADR-007-engram-lite-as-engram-facade.md`
+- File: `adr/ADR-007-engram-as-engram-facade.md`
 - Status: Accepted, but implementation should be re-verified
-- Scope: `engram`, `engram_lite`, workbench defaults
-- Decision: `engram_lite` is intended to be a curated/default facade over `engram`.
+- Scope: `engram`, `engram`, workbench defaults
+- Decision: `engram` is intended to be a curated/default facade over `engram`.
 
 Implementation warning:
 
-The current code may still contain substantial independent `engram_lite` implementation. The cleanup thread should either finish the facade migration or amend ADR-007. Preferred direction is to finish the facade migration.
+The current code may still contain substantial independent `engram` implementation. The cleanup thread should either finish the facade migration or amend ADR-007. Preferred direction is to finish the facade migration.
 
 ### ADR-008 — Monorepo Packaging and Import Policy
 
@@ -122,7 +122,7 @@ Treat these as settled unless a new ADR explicitly reverses them:
 3. Engram retrieval policy is explicit.
 4. Persistence strategy must match backend realities.
 5. `llm_harness_core` is the shared interop layer.
-6. `engram_lite` is intended to be a curated/default facade over `engram` unless ADR-007 is amended.
+6. `engram` is intended to be a curated/default facade over `engram` unless ADR-007 is amended.
 7. Packaging/import behavior should be standardized rather than repaired with growing path hacks.
 
 ## ADRs that may still be needed

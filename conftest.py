@@ -35,7 +35,6 @@ SOURCE_PACKAGE_EXPECTATIONS = {
     "llm_harness_core": REPO_ROOT / "llm_harness_core" / "src" / "llm_harness_core",
     "llm_engines": REPO_ROOT / "llm_engines" / "llm_engines",
     "engram_ui": REPO_ROOT / "engram_ui" / "src" / "engram_ui",
-    "engram": REPO_ROOT / "engram" / "src" / "engram",
     "llm_inspector": REPO_ROOT / "llm_inspector" / "src" / "llm_inspector",
     "rag_lib": REPO_ROOT / "rag_lib" / "src" / "rag_lib",
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",

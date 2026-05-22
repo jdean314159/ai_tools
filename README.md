@@ -93,7 +93,7 @@ Package-level labels below are meant as learning-orientation hints, not hard bar
 |---|---|---|---|
 | [llm_harness_core](./llm_harness_core/README.md) | Shared interoperability core | Intermediate | Common schemas for capabilities, messages, evidence, results, and trace events |
 | [llm_engines](./llm_engines/README.md) | Engine abstraction | Beginner | Common model/backend interface, capability descriptors, normalized responses |
-| [engram_lite](./engram_lite/README.md) | Lightweight memory augmentation | Beginner | Prompt building, evidence traces, inspectable memory behavior |
+| [engram](./engram/README.md) | Lightweight memory augmentation | Beginner | Prompt building, evidence traces, inspectable memory behavior |
 | [engram](./engram/README.md) | Full memory runtime | Advanced | Richer persistent/project memory and advanced retrieval policies |
 | [rag_lib](./rag_lib/README.md) | Retrieval and retrieval diagnostics | Beginner–Intermediate | Inspectable retrieval, reranking, and prompt assembly |
 | [llm_inspector](./llm_inspector/README.md) | Observability layer | Beginner | Trace normalization, comparison, evidence/report conversion |
@@ -118,17 +118,17 @@ Category meanings:
 | [llm_engines](./llm_engines/README.md) | Core | Active and stable | Yes | Primary engine/backend abstraction |
 | [llm_inspector](./llm_inspector/README.md) | Core | Active and stable | Yes | Main trace/comparison layer |
 | [llm_inspector_ui](./llm_inspector_ui/README.md) | Core | Active, still growing | Yes | Shared workbench for inspecting system behavior |
-| [engram_lite](./engram_lite/README.md) | Default | Active and recommended | Yes | Preferred first memory path for most users and courses |
+| [engram](./engram/README.md) | Default | Active and recommended | Yes | Preferred first memory path for most users and courses |
 | [rag_lib](./rag_lib/README.md) | Default | Active and recommended | Yes | Preferred retrieval path for most users and courses |
-| [engram](./engram/README.md) | Advanced | Active, maturing toward shared interop | After `engram_lite` | Richer memory runtime with more complexity and policy surface |
+| [engram](./engram/README.md) | Advanced | Active, maturing toward shared interop | After `engram` | Richer memory runtime with more complexity and policy surface |
 | [language_tutor](./language_tutor/README.md) | Reference app | Active, still being aligned to the current stack | After core/default packages | Best current example of an application built from the suite |
 | [agent_lib](./agent_lib/README.md) | Experimental | Active, improving, but not the first default for general use | Later | Strong teaching and research value, but still evolving around interop and safety/isolation reporting |
 
 Recommended first paths:
 - **Minimal stack**: `llm_engines` + `llm_inspector`
-- **Memory-first stack**: `llm_engines` + `engram_lite` + `llm_inspector`
+- **Memory-first stack**: `llm_engines` + `engram` + `llm_inspector`
 - **RAG-first stack**: `llm_engines` + `rag_lib` + `llm_inspector`
-- **Advanced memory path**: substitute `engram` for `engram_lite` when you need richer memory behavior and are willing to take on more complexity
+- **Advanced memory path**: substitute `engram` for `engram` when you need richer memory behavior and are willing to take on more complexity
 - **Agent path**: add `agent_lib` only after the engine, memory/retrieval, and inspection layers are understood
 
 For the current implementation snapshot and the ordered next phases, see [STATUS.md](./STATUS.md) and [ROADMAP.md](./ROADMAP.md).
@@ -150,18 +150,18 @@ Use [llm_harness_core/EVALUATION_WALKTHROUGH.md](./llm_harness_core/EVALUATION_W
 The suite is designed so packages can be used independently or in composition.
 
 ```text
-llm_engines + engram_lite + llm_inspector + llm_inspector_ui
+llm_engines + engram + llm_inspector + llm_inspector_ui
 llm_engines + rag_lib + llm_inspector + llm_inspector_ui
-llm_engines + engram_lite + rag_lib + llm_inspector + llm_inspector_ui
+llm_engines + engram + rag_lib + llm_inspector + llm_inspector_ui
 ```
 
 Reference applications and workflows then sit on top:
 
 ```text
-llm_engines + engram_lite -> language_tutor (default)
+llm_engines + engram -> language_tutor (default)
 llm_engines + engram      -> language_tutor (optional)
 
-llm_engines + engram_lite + llm_inspector -> agent_lib (default memory path)
+llm_engines + engram + llm_inspector -> agent_lib (default memory path)
 llm_engines + engram      + llm_inspector -> agent_lib (optional richer memory path)
 ```
 
@@ -196,7 +196,7 @@ Use [GITHUB_PUBLICATION_CHECKLIST.md](./GITHUB_PUBLICATION_CHECKLIST.md) before 
 The repo also includes:
 - [scripts/check_teaching_artifacts.py](./scripts/check_teaching_artifacts.py) — validates the curriculum-facing assets
 - [scripts/check_publication_hygiene.py](./scripts/check_publication_hygiene.py) — validates tree hygiene and doc placement for public release
-- `integration_tests/test_augmenter_spine.py` — verifies the prompt-augmentation spine across baseline, `engram_lite`, RAG, and optional full `engram`
+- `integration_tests/test_augmenter_spine.py` — verifies the prompt-augmentation spine across baseline, `engram`, RAG, and optional full `engram`
 
 For the default integration smoke test:
 

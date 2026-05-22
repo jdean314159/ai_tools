@@ -209,7 +209,7 @@ class WorkbenchOrchestrator:
         return settings
 
     def _make_augment_request(self, plan: RunPlan):
-        from engram_lite.contracts import AugmentRequest
+        from engram.contracts import AugmentRequest
 
         return AugmentRequest(
             session_id=plan.session_id,

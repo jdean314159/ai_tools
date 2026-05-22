@@ -123,8 +123,8 @@ Learners should stop treating model outputs as opaque and start treating the app
 Show memory augmentation as an inspectable prompt-construction problem.
 
 ### Learn here
-- [`engram_lite`](./engram_lite/README.md)
-- notebook: [`course/notebooks/04_memory_with_engram_lite.ipynb`](./course/notebooks/04_memory_with_engram_lite.ipynb)
+- [`engram`](./engram/README.md)
+- notebook: [`course/notebooks/04_memory_with_engram.ipynb`](./course/notebooks/04_memory_with_engram.ipynb)
 - starter project: [`course/starter_projects/memory_tutor`](./course/starter_projects/memory_tutor)
 
 ### Questions to answer
@@ -238,14 +238,14 @@ Recommended rule: do not teach agents before learners can explain engine abstrac
 ### Default path for most learners
 - `llm_engines`
 - `llm_inspector`
-- `engram_lite`
+- `engram`
 - `rag_lib`
 - `language_tutor`
 - `agent_lib` last
 
 ### Advanced path
 Use these only after the default path is understood:
-- `engram` instead of `engram_lite` when richer persistent memory is the real learning target
+- `engram` instead of `engram` when richer persistent memory is the real learning target
 - integration-mode agent orchestration when comparing external orchestration against native runtime design
 
 ---

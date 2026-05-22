@@ -42,7 +42,7 @@ A package-local `AGENT.md` should provide local overrides and details for one pa
 
 Examples:
 
-- `engram_lite/AGENT.md`
+- `engram/AGENT.md`
 - `rag_lib/AGENT.md`
 - `agent_lib/AGENT.md`
 
@@ -142,7 +142,7 @@ They should prefer bullets and short sections over essays.
 Create package-local `AGENT.md` files first for the packages where local guidance provides the most leverage:
 
 1. `agent_lib`
-2. `engram_lite`
+2. `engram`
 3. `rag_lib`
 4. `llm_inspector_ui`
 5. `language_tutor`

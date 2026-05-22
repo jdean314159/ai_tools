@@ -10,15 +10,15 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 def test_cache_miss_returns_none(tmp_path):
-    from engram_lite.embeddings.cache import EmbeddingCache
+    from engram.embeddings.cache import EmbeddingCache
     cache = EmbeddingCache(tmp_path / "cache.db")
     result = cache.get("unseen text", "model:test")
     assert result is None
 
 
 def test_cache_put_and_get(tmp_path):
-    from engram_lite.embeddings.cache import EmbeddingCache
-    from engram_lite.embeddings.base import EmbeddingResult
+    from engram.embeddings.cache import EmbeddingCache
+    from engram.embeddings.base import EmbeddingResult
 
     cache = EmbeddingCache(tmp_path / "cache.db")
     embedding = [0.1, 0.2, 0.3, 0.4]
@@ -36,8 +36,8 @@ def test_cache_put_and_get(tmp_path):
 
 def test_cache_different_models_isolated(tmp_path):
     """Same text, different model names = different cache entries."""
-    from engram_lite.embeddings.cache import EmbeddingCache
-    from engram_lite.embeddings.base import EmbeddingResult
+    from engram.embeddings.cache import EmbeddingCache
+    from engram.embeddings.base import EmbeddingResult
 
     cache = EmbeddingCache(tmp_path / "cache.db")
     text = "shared text"
@@ -51,8 +51,8 @@ def test_cache_different_models_isolated(tmp_path):
 
 def test_cache_put_overwrites(tmp_path):
     """Second put for same key replaces first."""
-    from engram_lite.embeddings.cache import EmbeddingCache
-    from engram_lite.embeddings.base import EmbeddingResult
+    from engram.embeddings.cache import EmbeddingCache
+    from engram.embeddings.base import EmbeddingResult
 
     cache = EmbeddingCache(tmp_path / "cache.db")
     text = "same text"
@@ -66,8 +66,8 @@ def test_cache_put_overwrites(tmp_path):
 
 def test_cache_persists_across_instances(tmp_path):
     """Cache data survives closing and reopening."""
-    from engram_lite.embeddings.cache import EmbeddingCache
-    from engram_lite.embeddings.base import EmbeddingResult
+    from engram.embeddings.cache import EmbeddingCache
+    from engram.embeddings.base import EmbeddingResult
 
     cache_path = tmp_path / "cache.db"
     embedding = [0.5, 0.6, 0.7]
@@ -80,8 +80,8 @@ def test_cache_persists_across_instances(tmp_path):
 
 
 def test_cache_stats(tmp_path):
-    from engram_lite.embeddings.cache import EmbeddingCache
-    from engram_lite.embeddings.base import EmbeddingResult
+    from engram.embeddings.cache import EmbeddingCache
+    from engram.embeddings.base import EmbeddingResult
 
     cache = EmbeddingCache(tmp_path / "cache.db")
     cache.put(EmbeddingResult(text="a", embedding=[1.0], model="m:1", dimension=1))
@@ -95,7 +95,7 @@ def test_cache_stats(tmp_path):
 
 def test_cache_key_is_deterministic(tmp_path):
     """Same text+model always produces same cache key."""
-    from engram_lite.embeddings.cache import EmbeddingCache
+    from engram.embeddings.cache import EmbeddingCache
     cache = EmbeddingCache(tmp_path / "cache.db")
     key1 = cache._make_key("hello", "model:x")
     key2 = cache._make_key("hello", "model:x")
@@ -110,7 +110,7 @@ def test_cache_key_is_deterministic(tmp_path):
 
 def test_cached_embedder_hit_prevents_underlying_call(tmp_path):
     """Cache hit should not call underlying embedder again."""
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
     from tests.conftest import MockEmbedder
 
     call_count = 0
@@ -143,8 +143,8 @@ def test_cached_embedder_hit_prevents_underlying_call(tmp_path):
 
 def test_cached_embedder_batch_mixed(tmp_path):
     """Batch with some cached, some not."""
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
-    from engram_lite.embeddings.base import EmbeddingResult
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.embeddings.base import EmbeddingResult
     from tests.conftest import MockEmbedder
 
     cache = EmbeddingCache(tmp_path / "cache.db")
@@ -164,7 +164,7 @@ def test_cached_embedder_batch_mixed(tmp_path):
 
 def test_cached_embedder_hit_count_accumulated(tmp_path):
     """Hit/miss counters accumulate across multiple calls."""
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
     from tests.conftest import MockEmbedder
 
     cache = EmbeddingCache(tmp_path / "cache.db")
@@ -187,7 +187,7 @@ def test_cached_embedder_hit_count_accumulated(tmp_path):
 
 def test_cached_embedder_dimension_passthrough(tmp_path):
     """CachedEmbedder passes through dimension from underlying embedder."""
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
     from tests.conftest import MockEmbedder
 
     cache = EmbeddingCache(tmp_path / "cache.db")

@@ -59,7 +59,9 @@ class ProjectMemory:
         token_counter_model: str = "cl100k_base",
         base_dir: str | Path | None = None,
         project_id: str = "default",
-        session_id: str | None = None,
+            project_type: Any = None,
+            llm_engine: Any = None,
+            session_id: str | None = None,
 
         # Embedding / vector search
         embedder: Optional[Any] = None,
@@ -91,6 +93,8 @@ class ProjectMemory:
         self.base_dir = Path(base_dir) if base_dir is not None else None
         self.project_id = project_id
         self.session_id = session_id
+        self.project_type = project_type
+        self.llm_engine = llm_engine
         self.extra_config = dict(kwargs)
 
         self.budget = PromptBudget(total_prompt_tokens=int(total_prompt_tokens))
@@ -159,7 +163,7 @@ class ProjectMemory:
             elif schema_mgr.needs_migration(SCHEMA_VERSION):
                 current = schema_mgr.get_version()
                 logger.warning(
-                    f"Project schema {current} differs from engram_lite {SCHEMA_VERSION}. "
+                    f"Project schema {current} differs from engram {SCHEMA_VERSION}. "
                     f"Consider running: engram-lite-migrate {self._storage_root}"
                 )
 
@@ -398,9 +402,9 @@ class ProjectMemory:
     # Turn ingestion with pairing
     # ------------------------------------------------------------------
 
-    def add_turn(self, role: str, text: str, session_id: str) -> None:
+    def add_turn(self, role: str, text: str, session_id: str | None = None) -> None:
+        session_id = session_id or self.session_id or "default"
         self.new_session(session_id)
-
         entry = {"role": str(role), "text": str(text)}
         self._sessions[session_id].append(entry)
         self._append_jsonl(self._session_path(session_id), entry)
@@ -444,6 +448,35 @@ class ProjectMemory:
         if normalized_role == "assistant":
             self._quality_stats["assistant_auto_ingest_skipped"] += 1
         logger.debug(f"Turn role '{role}' stored to session only")
+
+    def build_prompt_interop(
+        self,
+        user_message: str,
+        *,
+        query: str | None = None,
+        max_prompt_tokens: int | None = None,
+        reserve_output_tokens: int = 512,
+    ) -> Any:
+        from llm_harness_core import OperationResult
+        from .inspection import build_interop_events
+        result = self.build_prompt(
+            user_message=user_message,
+            query=query,
+            max_prompt_tokens=max_prompt_tokens,
+            reserve_output_tokens=reserve_output_tokens,
+            return_trace=True,
+        )
+        trace = result.get("trace")
+        trace_events = build_interop_events(trace) if trace is not None else []
+        return OperationResult(
+            ok=True,
+            value=result.get("prompt"),
+            diagnostics={
+                "trace": trace,
+                "prompt_tokens": result.get("prompt_tokens"),
+                "trace_events": trace_events,
+            },
+        )
 
     def _handle_assistant_turn(self, assistant_text: str, session_id: str) -> None:
         session_history = self._sessions.get(session_id, [])

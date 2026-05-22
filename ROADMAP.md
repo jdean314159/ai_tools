@@ -62,18 +62,18 @@ A clean snapshot can pass the hygiene checker without manual inspection.
 
 ### Goal
 
-Make `engram`, `engram_lite`, ADR-007, tests, and docs agree.
+Make `engram`, `engram`, ADR-007, tests, and docs agree.
 
 ### Work
 
-- Decide whether `engram_lite` is strictly a facade or a lightweight independent implementation.
+- Decide whether `engram` is strictly a facade or a lightweight independent implementation.
 - Preferred: keep it as a facade over `engram`.
 - Move duplicated implementation into `engram` or explain why it remains lite-specific.
 - Keep compatibility shims where useful, but document removal expectations.
 
 ### Done when
 
-`engram_lite` public API contract tests pass and its code structure matches the documented role.
+`engram` public API contract tests pass and its code structure matches the documented role.
 
 ## Phase 3 — Standardize remaining package layouts — mostly complete
 
@@ -99,7 +99,7 @@ Make `llm_inspector_ui` a reliable teaching and diagnostic workbench.
 
 - Validate baseline, memory, and RAG flows.
 - Improve explanatory UI text.
-- Keep `engram_lite` as the default memory path unless intentionally testing full `engram`.
+- Keep `engram` as the default memory path unless intentionally testing full `engram`.
 - Add integration tests for visible traces and exported artifacts.
 
 ### Done when
@@ -115,7 +115,7 @@ Make `language_tutor` the canonical example of composing the libraries.
 ### Work
 
 - Align with modern `llm_engines`.
-- Use `engram_lite` by default, with full `engram` optional.
+- Use `engram` by default, with full `engram` optional.
 - Expose useful observability hooks.
 
 ### Done when

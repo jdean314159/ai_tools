@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from llm_harness_core import CapabilityDescriptor, CapabilityKind
-from engram_lite.contracts import AugmentRequest, AugmentResult, PromptAugmenter
+from engram.contracts import AugmentRequest, AugmentResult, PromptAugmenter
 
 
 @dataclass
@@ -124,7 +124,7 @@ class EngramLiteAugmenter(PromptAugmenter):
     def _ensure_pm(self):
         if self._pm is not None:
             return self._pm
-        from engram_lite import ProjectMemory
+        from engram import ProjectMemory
 
         self._pm = ProjectMemory(
             base_dir=self.base_dir,
@@ -413,7 +413,7 @@ class AugmenterService:
     def list_augmenters(self) -> list[str]:
         augmenters = ["baseline"]
         try:
-            import engram_lite  # noqa: F401
+            import engram  # noqa: F401
             augmenters.append("engram_lite")
         except Exception:
             pass
@@ -506,8 +506,8 @@ class AugmenterService:
 
         if augmenter_id == "engram_lite":
             try:
-                import engram_lite  # noqa: F401
-                from engram_lite import ProjectMemory  # noqa: F401
+                import engram  # noqa: F401
+                from engram import ProjectMemory  # noqa: F401
 
                 base_dir = Path(options.get("base_dir", self.engram_base_dir))
                 project_id = str(options.get("project_id", self.engram_project_id))

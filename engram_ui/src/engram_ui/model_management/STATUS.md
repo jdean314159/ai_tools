@@ -13,7 +13,7 @@ Nine packages on `src/` layout:
     agent_lib/src/agent_lib
     engram/src/engram
     engram/src/engram_ui              (under engram/, not its own top-level)
-    engram_lite/src/engram_lite
+    engram/src/engram
     language_tutor/src/language_tutor
     llm_harness_core/src/llm_harness_core
     llm_inspector/src/llm_inspector
@@ -168,7 +168,7 @@ Public API regression test (fast, run after any __init__.py change):
     Phase C: wire into ProjectMemory and UnifiedRetriever.
     ~2-3 days of focused work.
 
-11. **engram_lite.ProjectMemory true facade migration** - ADR-007 is
+11. **engram.ProjectMemory true facade migration** - ADR-007 is
     partially implemented. Submodule re-exports are done. The centerpiece
     project_memory.py (1,306 lines) is still parallel implementation.
     Migrating it to delegate to engram.ProjectMemory is the real work.

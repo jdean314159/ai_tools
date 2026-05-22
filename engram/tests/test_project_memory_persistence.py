@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from engram_lite import ProjectMemory
+from engram import ProjectMemory
 
 
 def test_recent_turns_and_episodes_persist_across_reopen(tmp_path: Path) -> None:

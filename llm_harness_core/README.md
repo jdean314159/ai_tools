@@ -30,7 +30,7 @@ Reach for it when you want to understand how packages in the suite exchange:
 `llm_harness_core` sits underneath the higher-level packages:
 
 - `llm_engines` converts backend/model behavior into shared result shapes
-- `engram_lite` and `rag_lib` adapt augmentation and retrieval behavior into shared records/events
+- `engram` and `rag_lib` adapt augmentation and retrieval behavior into shared records/events
 - `llm_inspector` and `llm_inspector_ui` rely on the shared vocabulary so they can compare systems consistently
 - teaching and evaluation assets use the shared evaluator protocol to avoid package-local scoring conventions
 

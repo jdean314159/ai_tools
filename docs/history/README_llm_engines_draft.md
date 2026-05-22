@@ -39,7 +39,7 @@ It should not own:
 
 In the larger split:
 
-- `engram-lite` builds memory-aware prompts
+- `engram` builds memory-aware prompts
 - `llm_engines` executes them
 - `llm_inspector` observes and compares them
 - `llm_inspector_ui` gives users a single place to configure and test them

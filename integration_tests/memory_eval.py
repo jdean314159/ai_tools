@@ -393,7 +393,7 @@ class EngramLiteAdapter(BackendAdapter):
     backend_name = "engram_lite"
 
     def __init__(self, base_dir: Path, project_id: str = "memory_eval", session_id: str = "seed"):
-        from engram_lite import ProjectMemory
+        from engram import ProjectMemory
 
         self.base_dir = Path(base_dir)
         self.project_id = project_id

@@ -1,6 +1,6 @@
 from __future__ import annotations
 import tempfile
-from engram_lite import ProjectMemory
+from engram import ProjectMemory
 
 
 def make_memory(tmpdir, **kwargs):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from engram_lite import ProjectMemory
+from engram import ProjectMemory
 
 
 def test_store_episode_filters_ephemeral_noise() -> None:

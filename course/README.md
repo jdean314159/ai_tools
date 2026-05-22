@@ -43,7 +43,7 @@ All exercises include a Colab fallback. Local Ollama is a one-line swap.
 | [01](notebooks/01_environment_setup.ipynb) | Environment Setup | 2 | none |
 | [02](notebooks/02_engine_basics.ipynb) | Engine Abstraction | 3–4 | `llm_engines` |
 | [03](notebooks/03_inspecting_model_behavior.ipynb) | Inspecting Model Behavior | 3–4 | `llm_inspector` |
-| [04](notebooks/04_memory_with_engram_lite.ipynb) | Memory | 5–6 | `engram_lite`, `engram` |
+| [04](notebooks/04_memory_with_engram.ipynb) | Memory | 5–6 | `engram`, `engram` |
 | [05](notebooks/05_rag_with_rag_lib.ipynb) | RAG Fundamentals | 7 | `rag_lib` |
 | [06](notebooks/06_advanced_rag_and_evaluation.ipynb) | Advanced RAG + Evaluation | 8 | `rag_lib`, `llm_inspector` |
 | [07](notebooks/07_reference_app_walkthrough.ipynb) | Reference App Walkthrough | 9 | all |
@@ -57,7 +57,7 @@ Three minimal scaffolds for independent work after the notebooks:
 - [`starter_projects/minimal_chat_app/`](starter_projects/minimal_chat_app/) —
   single-turn chat via `llm_engines`
 - [`starter_projects/memory_tutor/`](starter_projects/memory_tutor/) —
-  conversation with `engram_lite` memory
+  conversation with `engram` memory
 - [`starter_projects/source_grounded_qa/`](starter_projects/source_grounded_qa/) —
   retrieval-backed Q&A with `rag_lib`
 

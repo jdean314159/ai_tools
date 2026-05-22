@@ -52,13 +52,13 @@ requires_nomic = pytest.mark.skipif(
 
 @pytest.fixture
 def ollama_embedder():
-    from engram_lite.embeddings.ollama import OllamaEmbedder
+    from engram.embeddings.ollama import OllamaEmbedder
     return OllamaEmbedder(model="nomic-embed-text")
 
 
 @pytest.fixture
 def memory_with_real_embedder(tmp_path, ollama_embedder):
-    from engram_lite import ProjectMemory
+    from engram import ProjectMemory
     mem = ProjectMemory(
         base_dir=tmp_path,
         project_id="integration_test",
@@ -87,7 +87,7 @@ def test_real_embedder_dimension(ollama_embedder):
 @requires_nomic
 def test_embedding_cache_reduces_ollama_calls(tmp_path, ollama_embedder):
     """Cache should prevent redundant Ollama calls."""
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
 
     cache = EmbeddingCache(tmp_path / "cache.db")
     cached = CachedEmbedder(ollama_embedder, cache)
@@ -132,7 +132,7 @@ def test_full_workflow_with_real_embedder(memory_with_real_embedder):
 @requires_nomic
 def test_persistence_across_reopen_with_embeddings(tmp_path, ollama_embedder):
     """Close memory, reopen, verify ChromaDB persists."""
-    from engram_lite import ProjectMemory
+    from engram import ProjectMemory
 
     # First session
     mem1 = ProjectMemory(
@@ -144,7 +144,7 @@ def test_persistence_across_reopen_with_embeddings(tmp_path, ollama_embedder):
     mem1.close()
 
     # Reopen
-    from engram_lite.embeddings.ollama import OllamaEmbedder
+    from engram.embeddings.ollama import OllamaEmbedder
     mem2 = ProjectMemory(
         base_dir=tmp_path, project_id="persist_test", session_id="s1",
         embedder=OllamaEmbedder(model="nomic-embed-text"),
@@ -160,8 +160,8 @@ def test_persistence_across_reopen_with_embeddings(tmp_path, ollama_embedder):
 @requires_nomic
 def test_dimension_mismatch_raises_error(tmp_path, ollama_embedder):
     """Switching to incompatible embedder should raise DimensionMismatchError."""
-    from engram_lite import ProjectMemory
-    from engram_lite.storage.chromadb_store import DimensionMismatchError
+    from engram import ProjectMemory
+    from engram.storage.chromadb_store import DimensionMismatchError
 
     # Create with real 768-dim embedder
     mem = ProjectMemory(

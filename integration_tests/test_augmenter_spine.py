@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from engram_lite.contracts import AugmentRequest
+from engram.contracts import AugmentRequest
 from llm_harness_core import RetrievedDocument, TraceEvent
 from llm_inspector_ui.services.augmenter_service import AugmenterService, RagAugmenter
 from llm_inspector_ui.services.inspector_service import InspectorService

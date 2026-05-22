@@ -24,7 +24,7 @@ See `STATUS.md` for the authoritative current baseline and active work list.
 |---|---|---|---|
 | `llm_harness_core` | Shared harness/interoperability primitives. | Core package. | Keep APIs small and dependency-light. Avoid moving implementation-heavy utilities here unless they are true contracts. |
 | `llm_engines` | Engine abstraction for Ollama, OpenAI-compatible APIs, Anthropic, vLLM, llama.cpp, HuggingFace, and future backends. | Intentional direct layout: `llm_engines/llm_engines`. | `dev` should stay lightweight. HuggingFace/PyTorch/vLLM/llama.cpp belong behind explicit extras. |
-| `engram_lite` | Lightweight memory path for teaching and production-hardening. | Default memory path. | Should remain the simpler baseline and comparison target. ADR-007 facade migration is still active work. |
+| `engram` | Lightweight memory path for teaching and production-hardening. | Default memory path. | Should remain the simpler baseline and comparison target. ADR-007 facade migration is still active work. |
 | `engram` | Full memory runtime with advanced memory layers and retrieval policy. | Advanced package on `src` layout. | Canonical import path is `engram/src/engram`. Base imports should not require episodic/local-embedding/neural extras. |
 | `engram_ui` | Streamlit sandbox/reference UI for full Engram. | Top-level package on `src` layout. | Installed by the root `Makefile` after `engram`. Keep UI dependencies separate from the memory runtime. |
 | `llm_inspector` | Inspection/provenance layer for traces, evidence, prompt construction, and comparison workflows. | Core observability package. | Important for making memory/RAG/agent behavior inspectable. |

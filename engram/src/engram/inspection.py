@@ -47,6 +47,67 @@ class EvidenceTrace:
             score=self.score,
             metadata=dict(self.meta),
         )
+def _evidence_provenance(evidence: Any) -> dict[str, Any]:
+    meta = dict(getattr(evidence, "meta", {}) or {})
+    prov: dict[str, Any] = {
+        "source": getattr(evidence, "source", "memory"),
+        "augmenter": "engram_lite",
+    }
+    for key in ("session_id", "project_id", "episode_id", "topic_key"):
+        if key in meta:
+            prov[key] = meta[key]
+    return prov
+
+
+def _evidence_transformations(evidence: Any) -> tuple[str, ...]:
+    transformations = ["selected"]
+    text = str(getattr(evidence, "text", "") or "")
+    meta = dict(getattr(evidence, "meta", {}) or {})
+    if getattr(evidence, "source", "") == "working" and ": " in text[:24]:
+        transformations.append("role_prefixed")
+    if meta.get("truncated") or meta.get("compressed"):
+        transformations.append("truncated")
+    return tuple(transformations)
+
+
+def build_interop_events(trace: Any) -> list:
+    from llm_harness_core import TraceEvent
+    events = [
+        TraceEvent(
+            event_type="prompt_build_completed",
+            source_package="engram_lite",
+            source_component="PromptBuildTrace",
+            payload={
+                "section_count": len(trace.sections),
+                "evidence_count": len(trace.evidence),
+                "compressed": trace.token_accounting.compressed,
+                "truncated": trace.token_accounting.truncated,
+                "total_tokens": trace.token_accounting.total_tokens,
+            },
+            message="Prompt build finished.",
+            tags=("prompt", "memory"),
+        )
+    ]
+    for evidence in trace.evidence:
+        events.append(
+            TraceEvent(
+                event_type="memory_evidence_included",
+                source_package="engram_lite",
+                source_component="PromptBuildTrace",
+                payload={
+                    "source": evidence.source,
+                    "text": evidence.text,
+                    "score": evidence.score,
+                    "metadata": dict(evidence.meta),
+                    "provenance": _evidence_provenance(evidence),
+                    "transformations": list(_evidence_transformations(evidence)),
+                },
+                message=f"Included {evidence.source} memory evidence.",
+                tags=("memory", evidence.source),
+            )
+        )
+    return events
+
 
 
 @dataclass(frozen=True)
@@ -74,39 +135,7 @@ class PromptBuildTrace:
         return asdict(self)
 
     def to_interop_events(self) -> list[TraceEvent]:
-        events: list[TraceEvent] = [
-            TraceEvent(
-                event_type="prompt_build_completed",
-                source_package="engram_lite",
-                source_component="PromptBuildTrace",
-                payload={
-                    "section_count": len(self.sections),
-                    "evidence_count": len(self.evidence),
-                    "compressed": self.token_accounting.compressed,
-                    "truncated": self.token_accounting.truncated,
-                    "total_tokens": self.token_accounting.total_tokens,
-                },
-                message="Prompt build finished.",
-                tags=("prompt", "memory"),
-            )
-        ]
-        for evidence in self.evidence:
-            events.append(
-                TraceEvent(
-                    event_type="memory_evidence_included",
-                    source_package="engram_lite",
-                    source_component="PromptBuildTrace",
-                    payload={
-                        "source": evidence.source,
-                        "text": evidence.text,
-                        "score": evidence.score,
-                        "metadata": dict(evidence.meta),
-                    },
-                    message=f"Included {evidence.source} memory evidence.",
-                    tags=("memory", evidence.source),
-                )
-            )
-        return events
+        return build_interop_events(self)
 
 
 # ---------------------------------------------------------------------------

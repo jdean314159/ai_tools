@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 import pytest
-from engram_lite.semantic.extractor import SemanticExtractor, ExtractedFact, ExtractionResult
+from engram.semantic.extractor import SemanticExtractor, ExtractedFact, ExtractionResult
 
 
 # ---------------------------------------------------------------------------

@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "llm-inspector-ui"
 version = "0.1.0"
-description = "Interactive chat and inspection UI for llm_inspector, llm_engines, and engram-lite"
+description = "Interactive chat and inspection UI for llm_inspector, llm_engines, and engram"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "streamlit",
-  "engram-lite",
+  "engram",
   "llm_inspector",
   "llm_engines",
   "llm-harness-core",

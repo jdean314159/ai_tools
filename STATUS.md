@@ -37,7 +37,7 @@ Packages on `src/` layout:
 
     agent_lib/src/agent_lib
     engram/src/engram
-    engram_lite/src/engram_lite
+    engram/src/engram
     engram_ui/src/engram_ui
     language_tutor/src/language_tutor
     llm_harness_core/src/llm_harness_core
@@ -166,9 +166,9 @@ Expected path:
 9. **model_management.py decomposition**
    Continue the same decomposition discipline used for `project_memory.py`.
 
-10. **engram_lite true facade migration**
+10. **engram true facade migration**
     ADR-007 is partially implemented. The major remaining work is moving
-    `engram_lite.ProjectMemory` to delegate to `engram.ProjectMemory` rather
+    `engram.ProjectMemory` to delegate to `engram.ProjectMemory` rather
     than remain a parallel implementation.
 
 ## Notes for next session

@@ -43,7 +43,7 @@ The full package-local gate is:
     llm_engines/tests
     language_tutor/tests
     agent_lib/tests
-    engram_lite/tests
+    engram/tests
     llm_inspector_ui/tests
     llm_inspector/tests
     rag_lib/tests

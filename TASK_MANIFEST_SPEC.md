@@ -48,7 +48,7 @@ Examples:
 
 - `TASK_MANIFEST.json`
 - `agent_lib/TASK_MANIFEST.json`
-- `engram_lite/TASK_MANIFEST.json`
+- `engram/TASK_MANIFEST.json`
 
 ---
 
@@ -84,26 +84,26 @@ Recommended task shape:
 
 ```json
 {
-  "id": "engram-lite-001",
+  "id": "engram-001",
   "title": "Improve episodic retrieval precision",
   "status": "ready",
   "priority": "high",
-  "package": "engram_lite",
+  "package": "engram",
   "kind": "implementation",
   "summary": "Tighten retrieval scoring and reduce redundant recalls.",
   "rationale": "Current retrieval still admits moderate false positives.",
   "dependencies": ["interop-006"],
   "constraints": [
-    "Keep engram_lite lightweight.",
+    "Keep engram lightweight.",
     "Do not import heavy engram lifecycle machinery."
   ],
   "likely_files": [
-    "engram_lite/engram_lite/project_memory.py",
-    "engram_lite/engram_lite/memory/quality.py"
+    "engram/engram/project_memory.py",
+    "engram/engram/memory/quality.py"
   ],
   "verification": [
     "Add targeted retrieval tests.",
-    "Run engram_lite test suite."
+    "Run engram test suite."
   ],
   "notes": [],
   "completion_evidence": []
@@ -213,7 +213,7 @@ Agents and humans should update manifests conservatively:
 Use manifests first where work is multi-step, safety-sensitive, or likely to span sessions:
 
 1. `agent_lib`
-2. `engram_lite`
+2. `engram`
 3. `rag_lib`
 4. repo root for cross-package phases
 

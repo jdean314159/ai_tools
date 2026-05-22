@@ -185,7 +185,7 @@ def create_memory_backend(
         token_counter = None
 
     if backend == "engram_lite":
-        from engram_lite import ProjectMemory as LiteProjectMemory
+        from engram import ProjectMemory as LiteProjectMemory
 
         memory = LiteProjectMemory(
             project_id=f"{language}_tutor",

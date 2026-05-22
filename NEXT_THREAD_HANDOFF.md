@@ -3,17 +3,17 @@
 Last updated: 2026-05-21
 
 Rehydrate the next thread from this file. Read the "Architecture findings"
-section before doing any engram_lite work — the direction changed mid-session.
+section before doing any engram work — the direction changed mid-session.
 
 ## Current objective
 
-Decide what `engram` / `engram_lite` should be, then run a best-of-breed eval
+Decide what `engram` / `engram` should be, then run a best-of-breed eval
 to pick the winning memory configuration. **Do not keep building the
-engram_lite facade (ADR-007 Step 2).** The step-back analysis below concluded
+engram facade (ADR-007 Step 2).** The step-back analysis below concluded
 the facade was solving the wrong problem; it is on hold pending the architecture
 decision.
 
-Immediate next action: locate the past eval run where engram_lite outscored
+Immediate next action: locate the past eval run where engram outscored
 engram (judge = Claude or local LLM), then build the ablation matrix
 (see "Best-of-breed plan").
 
@@ -49,12 +49,12 @@ Work splits into KEEP (good regardless of architecture decision) and ON HOLD.
   imports; torch is imported lazily in `_make_coordinator` and gated per-test via
   `require("torch")`.
 
-### ON HOLD — engram_lite facade (ADR-007 Step 2)
+### ON HOLD — engram facade (ADR-007 Step 2)
 
-- Wrote `engram_lite/src/engram_lite/project_memory.py` as a ~497-line facade:
+- Wrote `engram/src/engram/project_memory.py` as a ~497-line facade:
   composition over `engram.ProjectMemory`, exactly the 22 contracted public
   methods, defaults to `OllamaEmbedder`, `base_dir=None` → temp dir, RTRL off.
-- Re-pointed `engram_lite/__init__.py` and trimmed `interop.py` so
+- Re-pointed `engram/__init__.py` and trimmed `interop.py` so
   `describe_memory` / `trace_to_memory_records` re-export from `engram.interop`;
   only `augment_result_to_interop_result` stays local.
 - **Status:** `test_public_api_contract.py` passes (AST-verified: 22/22 methods,
@@ -89,7 +89,7 @@ replace:
   other; `engram` does not depend on `llm_engines`. `engram_ui` imports
   `engram.engine`, NOT `llm_engines`. (See the reconciliation note already in
   `engram_ui/.../model_management/STATUS.md`, dated 2026-05-11.)
-- **Two memory libraries** — `engram/memory` (mature) and `engram_lite`
+- **Two memory libraries** — `engram/memory` (mature) and `engram`
   (diverged). Same niche.
 - **Two prompt builders inside engram** — `engram/prompt/builder.py` and
   `engram/prompting/builder.py`.
@@ -99,31 +99,31 @@ the larger, identical pattern sat unaddressed in the engine layer.
 
 ### 2. Jeff's original intent + the proposed direction
 
-`engram_lite` was meant to BE the memory component — the clean end-state of
+`engram` was meant to BE the memory component — the clean end-state of
 decomposing the monolith (engines → `llm_engines`, UI → `engram_ui`, memory →
-`engram_lite`). `engram` itself got all the development and became the de-facto
+`engram`). `engram` itself got all the development and became the de-facto
 memory lib, so they collided.
 
-Jeff's proposed process: move the memory functions into `engram_lite` and pull
+Jeff's proposed process: move the memory functions into `engram` and pull
 `engram` (the original integrated standalone system) into a separate repo "as it
 originally was."
 
 **Unresolved hinge decision:** is the extracted standalone `engram` going to be
 **frozen** (archived reference; build forward only on the monorepo components) or
 **living** (kept in development)? Frozen → clean, low-risk, endorse. Living → it
-must consume `llm_engines`/`engram_lite` or it re-diverges into two memory libs
+must consume `llm_engines`/`engram` or it re-diverges into two memory libs
 across two repos, and the solo-dev monorepo workflow (one venv, editable
 installs, atomic commits) is lost. This decision sets the whole process.
 
-Note on the hard part: "move memory into engram_lite" requires disentangling the
+Note on the hard part: "move memory into engram" requires disentangling the
 memory subtree from `engram.engine`, the two prompt builders, telemetry, interop,
 and the cognitive layer's LLM calls (repoint to `llm_engines`). That disentangling
 is the real work and is unavoidable under any naming/repo choice; the
 `git filter-repo` repo split is the easy part. Naming: once the old engram leaves
-the monorepo, "engram_lite" will hold the full multi-layer system — decide whether
+the monorepo, "engram" will hold the full multi-layer system — decide whether
 the monorepo memory lib reclaims the name `engram` or renames honestly.
 
-### 3. engram and engram_lite have largely CONVERGED (key eval finding)
+### 3. engram and engram have largely CONVERGED (key eval finding)
 
 Comparing the 3-week-old standalone lite backup against current engram:
 
@@ -165,11 +165,11 @@ embedder-aware threshold defaults; nomic task prefixes (`search_query:` /
 through the EF `__call__`, so prefixes need `query_embeddings=` plumbing in
 engram's `search`.
 
-## Found eval results — engram vs engram_lite comparison
+## Found eval results — engram vs engram comparison
 
 Source: "AI tools repository assessment and review" thread (~early May 2026).
 
-| Metric | engram | engram_lite |
+| Metric | engram | engram |
 |--------|--------|-------------|
 | Decoy resistance baseline | 50–53% ❌ | **80%** ✓ |
 | Decoy resistance stress | 58% | **82%** ✓ |
@@ -177,15 +177,15 @@ Source: "AI tools repository assessment and review" thread (~early May 2026).
 | Recall paraphrase baseline | **98%** | 92% |
 | Contradiction bleed stress | **13–17%** | 18% |
 
-**Overall: engram_lite 12 better, engram 6 better, 18 within 5pp.**
+**Overall: engram 12 better, engram 6 better, 18 within 5pp.**
 
 **Root cause of the gap (already identified at the time):** The 27pp decoy
 resistance difference was traced to a single missing feature —
-`vector_similarity_threshold` filtering. engram_lite had a tuned 0.4 threshold;
+`vector_similarity_threshold` filtering. engram had a tuned 0.4 threshold;
 engram lacked it (ChromaDB collection not set to `hnsw:space: cosine`, no
 similarity floor on returned results). The fix was estimated at 1–2 hours and
 listed as an open item but was not completed before this session. When the
-threshold approach was applied to engram_lite and re-evaluated, the assessment
+threshold approach was applied to engram and re-evaluated, the assessment
 became "essentially tied, most differences within 5pp."
 
 **Implication for the best-of-breed plan:** The historical lite win was tuning,
@@ -242,7 +242,7 @@ real dependency map (was deferred this session):
 # Who imports the duplicate engine layer (blast radius for consolidation)?
 grep -rn "engram.engine\|from engram import.*Engine" --include=*.py \
   engram_ui/src language_tutor llm_engines 2>/dev/null
-# What does the language tutor import for memory — engram, engram_lite, or engram.engine?
+# What does the language tutor import for memory — engram, engram, or engram.engine?
 grep -rn "import engram" --include=*.py language_tutor 2>/dev/null | head
 ```
 
@@ -252,5 +252,5 @@ Patches (git-apply-able) and full files were delivered as downloads:
 `engram_option_b.patch`, `episodic_embedder_fixes.patch`,
 `conftest_engram_ui_path.patch`, `test_rtrl_signal_torch_guard.patch`,
 `project_memory.py` (the facade shim), `dedup_diagnostic.py`.
-The 3-week-old standalone engram_lite backup is the reference for lite's
+The 3-week-old standalone engram backup is the reference for lite's
 distinctive ingestion/retrieval (Tier-2 material overwritten in the live tree).

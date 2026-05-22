@@ -153,26 +153,26 @@ Typical responsibilities:
 
 ---
 
-### 3.2 `engram_lite`
+### 3.2 `engram`
 
 **Responsibility:** Curated facade over `engram` for teaching and small applications.
 
-`engram_lite` exposes a stable, minimal public API that students learn first.
-All implementation lives in `engram`; `engram_lite.__init__` re-exports a
+`engram` exposes a stable, minimal public API that students learn first.
+All implementation lives in `engram`; `engram.__init__` re-exports a
 constrained subset.  The "lite" badge is enforced by facade discipline: the
 RTRL neural layer, advanced retrieval policies, and internal configuration
 surfaces are not exposed.
 
 Typical responsibilities (via facade):
 
-- storing recent/project memory (via `engram_lite.ProjectMemory`)
+- storing recent/project memory (via `engram.ProjectMemory`)
 - retrieving relevant prior context
 - assembling memory-augmented prompts
 - emitting inspectable memory traces
 - exposing evidence used for augmentation
 
-The public API is locked by `engram_lite/tests/test_public_api_contract.py`.
-Students outgrow `engram_lite` by changing the import line to `engram`, not by
+The public API is locked by `engram/tests/test_public_api_contract.py`.
+Students outgrow `engram` by changing the import line to `engram`, not by
 migrating data or rewriting code.  See ADR-007 for the architectural decision.
 
 ---
@@ -182,7 +182,7 @@ migrating data or rewriting code.  See ADR-007 for the architectural decision.
 **Responsibility:** Full memory runtime and canonical implementation for shared primitives.
 
 `engram` is the single implementation behind both the full runtime and the
-`engram_lite` facade.  It owns the canonical source for: telemetry,
+`engram` facade.  It owns the canonical source for: telemetry,
 inspection types, embeddings, semantic graph and extraction, prompting
 utilities, storage primitives (ChromaDB, schema management), augmenter
 contracts, ingestion policy, and token counting.  Advanced capabilities —
@@ -345,7 +345,7 @@ The dependency graph should remain disciplined.
 - `llm_harness_core` depends on no heavy package in the suite.
 - `llm_engines` depends on `llm_harness_core`.
 - `engram` depends on `llm_harness_core`.
-- `engram_lite` depends on `engram` (facade) and `llm_harness_core`.
+- `engram` depends on `engram` (facade) and `llm_harness_core`.
 - `llm_inspector` depends on `llm_harness_core`.
 - `llm_inspector_ui` depends on `llm_inspector`, `llm_harness_core`, and selected feature packages.
 - `rag_lib` depends on `llm_harness_core`.
@@ -362,7 +362,7 @@ The interop layer is the stable bottom. It should not depend upward.
 Typical flow:
 
 1. A user prompt is created.
-2. `engram_lite` or `engram` retrieves relevant memory.
+2. `engram` or `engram` retrieves relevant memory.
 3. Memory contributions are represented as `MemoryRecord` and trace events.
 4. Prompt/context is assembled.
 5. `llm_engines` executes the model call.
@@ -464,7 +464,7 @@ As of this document, the following broad direction has been implemented:
 
 - A minimal interoperability package exists: `llm_harness_core`.
 - `llm_engines` has been adapted to convert to/from shared interop types.
-- `engram_lite` has been adapted to emit shared memory and trace objects.
+- `engram` has been adapted to emit shared memory and trace objects.
 - `llm_inspector` has been adapted to consume and expose shared interop types.
 - `llm_inspector_ui` has been adapted to render shared traces and capability descriptors.
 - `rag_lib` has been adapted to emit retrieval-stage diagnostics and shared retrieval objects.
@@ -522,7 +522,7 @@ Users should be able to adopt the suite in several ways:
 Examples:
 
 - just `llm_engines` for model abstraction
-- just `engram_lite` for memory augmentation
+- just `engram` for memory augmentation
 - just `rag_lib` for retrieval
 - just `llm_inspector_ui` for inspection
 
@@ -530,9 +530,9 @@ Examples:
 
 Examples:
 
-- `llm_engines` + `engram_lite`
+- `llm_engines` + `engram`
 - `llm_engines` + `rag_lib`
-- `engram_lite` + `llm_inspector_ui`
+- `engram` + `llm_inspector_ui`
 - `rag_lib` + `llm_inspector_ui`
 
 ### 11.3 Use the full harness
@@ -621,7 +621,7 @@ When resuming work in a new thread, the following assumptions should be treated 
 1. The suite is intended for **understanding and better using LLMs**, not just building applications.
 2. The architecture is modular on purpose, so packages should remain independently useful.
 3. `llm_harness_core` is the shared interop layer and should remain small and authoritative.
-4. The observability path is central: `engram_lite` → `llm_inspector` → `llm_inspector_ui`, with `rag_lib` now included in that same inspectable pipeline.
+4. The observability path is central: `engram` → `llm_inspector` → `llm_inspector_ui`, with `rag_lib` now included in that same inspectable pipeline.
 5. The UI is expected to visualize memory behavior, engine capability, and RAG retrievals.
 6. `agent_lib` is the next major subsystem that needs the same level of interop and observability.
 7. The guiding principle is that **important system behavior should be visible, attributable, and explainable**.
@@ -639,11 +639,11 @@ When resuming work in a new thread, the following assumptions should be treated 
 Use this when starting a new thread if needed:
 
 - `ai_tools` is a modular local-first LLM harness plus inspection environment.
-- Main packages: `llm_engines`, `engram_lite`, `engram`, `llm_inspector`, `llm_inspector_ui`, `rag_lib`, `agent_lib`.
+- Main packages: `llm_engines`, `engram`, `engram`, `llm_inspector`, `llm_inspector_ui`, `rag_lib`, `agent_lib`.
 - Goal is not just app-building; it is also helping users understand and better utilize LLMs.
 - Shared interop package now exists: `llm_harness_core`.
 - Shared objects include capabilities, messages, retrieved docs, memory records, trace events, and operation results.
-- `llm_engines`, `engram_lite`, `llm_inspector`, `llm_inspector_ui`, and `rag_lib` have begun interop alignment.
+- `llm_engines`, `engram`, `llm_inspector`, `llm_inspector_ui`, and `rag_lib` have begun interop alignment.
 - `llm_inspector_ui` is intended to inspect engine behavior, memory augmentation, and RAG retrievals.
 - `rag_lib` should expose retrieval-stage diagnostics, not just return results.
 - `agent_lib` is the next major subsystem needing interop + observability alignment.

@@ -1,7 +1,7 @@
 """Tests for hybrid retrieval (RRF) module."""
 from __future__ import annotations
 import pytest
-from engram_lite.retrieval.hybrid import reciprocal_rank_fusion, hybrid_episode_search
+from engram.retrieval.hybrid import reciprocal_rank_fusion, hybrid_episode_search
 import time
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from agent_lib import AgentAction, AgentContext, AgentRuntime, AgentTask, EngramLiteMemoryAdapter, LocalToolRuntime, SequencePlanner
-from engram_lite import ProjectMemory
+from engram import ProjectMemory
 
 
 class RecordingPlanner:

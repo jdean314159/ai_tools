@@ -86,17 +86,17 @@ def tmp():
 # ---------------------------------------------------------------------------
 
 def _import_all():
-    from engram_lite.retrieval.hybrid import reciprocal_rank_fusion, hybrid_episode_search
-    from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
-    from engram_lite.embeddings.base import EmbeddingResult
-    from engram_lite.semantic.graph import SemanticGraph
-    from engram_lite.semantic.forgetting import ForgettingConfig, ForgettingPolicy
-    from engram_lite.semantic.extractor import SemanticExtractor
-    from engram_lite.semantic.contradiction import detect_contradiction
-    from engram_lite.cli.migrate import migrate_paired_exchanges, migrate_semantic_graph
-    from engram_lite.storage.schema import SchemaManager
-    from engram_lite.version import SCHEMA_VERSION
-    from engram_lite import ProjectMemory
+    from engram.retrieval.hybrid import reciprocal_rank_fusion, hybrid_episode_search
+    from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
+    from engram.embeddings.base import EmbeddingResult
+    from engram.semantic.graph import SemanticGraph
+    from engram.semantic.forgetting import ForgettingConfig, ForgettingPolicy
+    from engram.semantic.extractor import SemanticExtractor
+    from engram.semantic.contradiction import detect_contradiction
+    from engram.cli.migrate import migrate_paired_exchanges, migrate_semantic_graph
+    from engram.storage.schema import SchemaManager
+    from engram.version import SCHEMA_VERSION
+    from engram import ProjectMemory
     from mock_helpers import MockEmbedder
     return {k: v for k, v in locals().items()}
 
@@ -754,8 +754,8 @@ def suite_ollama(r: TestRunner, ns: dict):
               skip_reason="nomic-embed-text not pulled (run: ollama pull nomic-embed-text)")
         return
 
-    from engram_lite.embeddings.ollama import OllamaEmbedder
-    from engram_lite import ProjectMemory
+    from engram.embeddings.ollama import OllamaEmbedder
+    from engram import ProjectMemory
 
     def embedder_dimension():
         e = OllamaEmbedder(model="nomic-embed-text")
@@ -779,7 +779,7 @@ def suite_ollama(r: TestRunner, ns: dict):
             mem.close()
 
     def embedding_cache():
-        from engram_lite.embeddings.cache import EmbeddingCache, CachedEmbedder
+        from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
         e = OllamaEmbedder(model="nomic-embed-text")
         with tempfile.TemporaryDirectory() as d:
             cached = CachedEmbedder(e, EmbeddingCache(Path(d) / "cache.db"))
@@ -790,8 +790,8 @@ def suite_ollama(r: TestRunner, ns: dict):
             assert cached.hits == 1 and cached.misses == 1
 
     def dimension_mismatch():
-        from engram_lite.storage.chromadb_store import DimensionMismatchError
-        from engram_lite import ProjectMemory
+        from engram.storage.chromadb_store import DimensionMismatchError
+        from engram import ProjectMemory
         from mock_helpers import MockEmbedder
         e = OllamaEmbedder(model="nomic-embed-text")
         with tempfile.TemporaryDirectory() as d:

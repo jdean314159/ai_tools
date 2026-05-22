@@ -72,7 +72,7 @@ The convenience runner is:
 The summary helper is:
 - `summarize_answer_uplift.py`
 
-This harness compares `engram_lite` and `engram` on:
+This harness compares `engram` and `engram` on:
 - signal retention
 - paraphrase recall
 - decoy rejection

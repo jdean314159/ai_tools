@@ -10,7 +10,7 @@ This is the first hands-on package in the teaching path.
 
 - teaching path stage: Stage 1 in [`../LEARNING_PATH.md`](../LEARNING_PATH.md)
 - pair it first with `llm_inspector` or `llm_inspector_ui`
-- then add `engram_lite` or `rag_lib`
+- then add `engram` or `rag_lib`
 
 ## Current support status
 

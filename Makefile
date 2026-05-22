@@ -36,7 +36,6 @@ install: venv
 	$(PIP) install -e './llm_harness_core[dev]'
 	$(PIP) install -e './llm_engines[dev]'
 	$(PIP) install -e './engram[dev]'
-	$(PIP) install -e './engram_lite[dev]'
 	$(PIP) install -e './llm_inspector[dev]'
 	$(PIP) install -e './rag_lib[dev]'
 	$(PIP) install -e './llm_inspector_ui[dev]'
@@ -69,7 +68,7 @@ test-core:
 	cd llm_engines && $(TEST_PYTHON) -m pytest tests/ \
 		-m "not ollama and not anthropic and not openai and not vllm and not slow" \
 		-v
-	cd engram_lite && $(TEST_PYTHON) -m pytest tests/ -v
+	$(TEST_PYTHON) -m pytest engram/tests/ -v
 	cd llm_inspector && $(TEST_PYTHON) -m pytest tests/ -v
 	cd agent_lib && $(TEST_PYTHON) -m pytest tests/ -v
 	cd rag_lib && PYTHONPATH=src $(TEST_PYTHON) -m pytest tests/ -v
@@ -106,11 +105,9 @@ test-all: test-core test-integration test-agent test-rag test-tutor
 
 .PHONY: run-ui
 run-ui:
-	cd engram && streamlit run engram_ui/app.py
 	
 .PHONY: test-ml
 test-ml: venv
-	cd engram && $(TEST_PYTHON) -m pytest tests/harness/test_rtrl_signal.py -v
 	cd llm_engines && $(TEST_PYTHON) -m pytest tests/test_optimizations.py -v	
 
 # ---------------------------------------------------------------------------

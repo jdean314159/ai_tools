@@ -10,7 +10,7 @@ Its purpose is not only to help build agentic workflows. It is also meant to hel
 - where failures or stalls happen
 - which safeguards constrain execution
 
-In the broader `ai_tools` vision, `agent_lib` should become the agent-side analogue of what `rag_lib` is for retrieval and what `engram_lite` is for memory augmentation: a reusable subsystem that also exposes educational, diagnostic, and observable behavior.
+In the broader `ai_tools` vision, `agent_lib` should become the agent-side analogue of what `rag_lib` is for retrieval and what `engram` is for memory augmentation: a reusable subsystem that also exposes educational, diagnostic, and observable behavior.
 
 ---
 
@@ -21,7 +21,7 @@ In the broader `ai_tools` vision, `agent_lib` should become the agent-side analo
 The intended composition path is:
 
 ```text
-llm_engines + engram_lite + llm_inspector -> agent_lib
+llm_engines + engram + llm_inspector -> agent_lib
 ```
 
 With optional advanced integrations:
@@ -46,7 +46,7 @@ Agent behavior now has a first shared interop vocabulary, but the package still 
 - canonical agent runtime contracts
 - a minimal planner / executor / tool runtime loop
 - `llm_inspector` trace emission for each step
-- lightweight memory adapters for `engram_lite`
+- lightweight memory adapters for `engram`
 - optional full `engram` memory path
 - deterministic test helpers such as `SequencePlanner`
 - programming-task examples and config-driven workflows
@@ -124,7 +124,7 @@ It demonstrates:
 
 - planner/executor role separation via `EngineRoles(planner="mentor", executor="worker")`
 - local file-oriented tools such as `read_file`, `replace_text`, and `run_check`
-- `engram_lite` as the default memory path
+- `engram` as the default memory path
 - durable programming-task state and persisted plans under `.agent_state/`
 - context-budget management with artifact-backed tool outputs
 - `llm_inspector` traces for each step
@@ -132,7 +132,7 @@ It demonstrates:
 ```python
 from agent_lib.examples import run_programming_demo
 
-run, root = run_programming_demo(memory_backend="engram_lite")
+run, root = run_programming_demo(memory_backend="engram")
 print(run.final_output)
 print((root / "main.py").read_text())
 ```
@@ -150,7 +150,7 @@ from agent_lib.examples import (
 
 config = build_default_programming_config(
     session_id="programming_demo",
-    memory_backend="engram_lite",
+    memory_backend="engram",
     role_bindings=ProgrammingRoleBindings(
         planner="deepseek_mentor",
         executor="local_worker",

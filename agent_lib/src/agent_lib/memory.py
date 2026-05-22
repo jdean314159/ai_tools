@@ -186,7 +186,7 @@ def create_memory_adapter(
         return NullMemoryAdapter()
     if selected == "engram_lite":
         if memory is None:
-            from engram_lite import ProjectMemory
+            from engram import ProjectMemory
             memory = ProjectMemory(base_dir=base_dir, project_id=project_id, session_id=session_id)
         return EngramLiteMemoryAdapter(memory)
     if selected == "engram":

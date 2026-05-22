@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 def make_store(tmp_path, dim=8, name="test_collection"):
     """Create a ChromaDBStore with mock chromadb."""
     try:
-        from engram_lite.storage.chromadb_store import ChromaDBStore
+        from engram.storage.chromadb_store import ChromaDBStore
         return ChromaDBStore(
             persist_directory=tmp_path / "chroma",
             collection_name=name,
@@ -90,7 +90,7 @@ def test_n_capped_at_count(tmp_path):
 
 def test_dimension_mismatch_raises(tmp_path):
     """Opening existing collection with wrong dimension raises DimensionMismatchError."""
-    from engram_lite.storage.chromadb_store import ChromaDBStore, DimensionMismatchError
+    from engram.storage.chromadb_store import ChromaDBStore, DimensionMismatchError
 
     # Create with 8-dim
     s1 = ChromaDBStore(tmp_path / "chroma", "col", embedding_dimension=8)
@@ -104,7 +104,7 @@ def test_dimension_mismatch_raises(tmp_path):
 
 def test_dimension_mismatch_message_is_helpful(tmp_path):
     """Error message should tell user what to do."""
-    from engram_lite.storage.chromadb_store import ChromaDBStore, DimensionMismatchError
+    from engram.storage.chromadb_store import ChromaDBStore, DimensionMismatchError
 
     ChromaDBStore(tmp_path / "chroma", "col", embedding_dimension=8)
     try:
@@ -115,7 +115,7 @@ def test_dimension_mismatch_message_is_helpful(tmp_path):
 
 def test_new_collection_no_mismatch(tmp_path):
     """New collection with any dimension is fine."""
-    from engram_lite.storage.chromadb_store import ChromaDBStore
+    from engram.storage.chromadb_store import ChromaDBStore
     store = ChromaDBStore(tmp_path / "chroma", "new_col", embedding_dimension=1024)
     assert store.count() == 0
 
