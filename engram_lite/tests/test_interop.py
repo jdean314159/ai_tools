@@ -20,5 +20,5 @@ def test_prompt_trace_converts_to_interop_events_and_memory_records() -> None:
 
     assert events
     assert events[0].event_type == "prompt_build_completed"
-    assert all(event.source_package in ("engram", "engram_lite") for event in events)
+    assert all(event.source_package == "engram_lite" for event in events)
     assert isinstance(records, list)

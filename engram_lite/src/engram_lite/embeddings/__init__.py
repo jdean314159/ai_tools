@@ -1,27 +1,10 @@
-"""Compatibility re-exports from engram.embeddings."""
-
-from engram.embeddings import (
-    BatchEmbeddingResult,
-    CachedEmbedder,
-    Embedder,
-    EmbeddingCache,
-    EmbeddingResult,
-    EmbeddingService,
-    OllamaEmbedder,
-)
-
-try:
-    from engram.embeddings import SentenceTransformersEmbedder
-except ImportError:
-    SentenceTransformersEmbedder = None
+from .base import Embedder, EmbeddingResult, BatchEmbeddingResult
+from .ollama import OllamaEmbedder
+from .cache import EmbeddingCache, CachedEmbedder
+from .factory import EmbeddingService
 
 __all__ = [
-    "Embedder",
-    "EmbeddingResult",
-    "BatchEmbeddingResult",
-    "OllamaEmbedder",
-    "EmbeddingService",
-    "EmbeddingCache",
-    "CachedEmbedder",
-    "SentenceTransformersEmbedder",
+    "Embedder", "EmbeddingResult", "BatchEmbeddingResult",
+    "OllamaEmbedder", "EmbeddingService",
+    "EmbeddingCache", "CachedEmbedder",
 ]

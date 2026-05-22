@@ -1,5 +1,11 @@
-"""Pytest configuration for engram_lite.
+from __future__ import annotations
 
-Import bootstrapping is intentionally centralized in the repository-root
-conftest.py while the monorepo packaging cleanup is in progress.
-"""
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+SRC = ROOT / "src"
+MONOREPO_CORE = ROOT.parent / "llm_harness_core" / "src"
+for candidate in (SRC, ROOT, MONOREPO_CORE):
+    if str(candidate) not in sys.path:
+        sys.path.insert(0, str(candidate))

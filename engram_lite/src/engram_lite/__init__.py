@@ -1,32 +1,35 @@
-# Core — re-exported from engram
-from engram.memory.augment import AugmentRequest, AugmentResult, PromptAugmenter
+# Core
+from .contracts import AugmentRequest, AugmentResult, PromptAugmenter
 from .project_memory import ProjectMemory
+from .types import ProjectType, TokenBudget
 from .interop import augment_result_to_interop_result, describe_memory, trace_to_memory_records
 from .version import __version__
 
 # Embeddings
-from engram.embeddings import Embedder, EmbeddingResult, BatchEmbeddingResult
-from engram.embeddings import OllamaEmbedder
-from engram.embeddings import EmbeddingCache, CachedEmbedder
-from engram.embeddings import EmbeddingService
+from .embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
+from .embeddings.ollama import OllamaEmbedder
+from .embeddings.cache import EmbeddingCache, CachedEmbedder
+from .embeddings.factory import EmbeddingService
 
-# Storage — re-exported from engram
-from engram.storage import ChromaDBStore, DimensionMismatchError, SchemaManager
+# Storage
+from .storage.chromadb_store import ChromaDBStore, DimensionMismatchError
+from .storage.schema import SchemaManager
 
 # Semantic
-from engram.semantic import SemanticGraph
-from engram.semantic import SemanticExtractor, ExtractedFact, ExtractionResult
-from engram.memory.semantic_forgetting import ForgettingConfig, ForgettingPolicy
-from engram.memory.contradiction import detect_contradiction
+from .semantic.graph import SemanticGraph
+from .semantic.extractor import SemanticExtractor, ExtractedFact, ExtractionResult
+from .semantic.forgetting import ForgettingConfig, ForgettingPolicy
+from .semantic.contradiction import detect_contradiction
 
-# Telemetry — re-exported from engram
-from engram.telemetry import Telemetry, TelemetryEvent, log_sink, json_file_sink
+# Telemetry
+from .telemetry import Telemetry, TelemetryEvent, log_sink, json_file_sink
 
 __all__ = [
     "__version__",
     # Core
     "AugmentRequest", "AugmentResult", "PromptAugmenter",
     "ProjectMemory",
+    "ProjectType", "TokenBudget",
     "describe_memory", "trace_to_memory_records",
     "augment_result_to_interop_result",
     # Embeddings

@@ -9,7 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
-from engram.memory.augment import AugmentRequest, AugmentResult
+from .contracts import AugmentRequest, AugmentResult
 from .interop import describe_memory
 from .memory import (
     LightweightIngestionPolicy,
@@ -20,9 +20,9 @@ from .memory import (
     score_text,
     text_similarity,
 )
-from engram.prompting import build_prompt_from_context
-from engram.telemetry import Telemetry
-from engram.utils.tokens import get_token_counter
+from .prompting.builder import build_prompt_from_context
+from .telemetry import Telemetry
+from .utils.tokens import get_token_counter
 
 if TYPE_CHECKING:
     from .embeddings.base import Embedder
@@ -145,7 +145,7 @@ class ProjectMemory:
         # Writer lock (only when persistent storage configured)
         self._writer_lock = None
         if self._storage_root is not None:
-            from engram.utils.concurrency import WriterLock
+            from .concurrency import WriterLock
             self._writer_lock = WriterLock(self._storage_root)
             self._writer_lock.acquire()
 

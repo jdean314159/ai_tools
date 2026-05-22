@@ -1,11 +1,9 @@
 from __future__ import annotations
-
-import tempfile
-from unittest.mock import MagicMock
-
 import pytest
-
-from engram_lite.embeddings.base import BatchEmbeddingResult, Embedder, EmbeddingResult
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock
+from engram_lite.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
 
 
 class MockEmbedder(Embedder):
