@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engram import ProjectMemory
-    from engram.engine.base import LLMEngine
+    from llm_engines.contracts.engine import ChatModel as LLMEngine
 
 
 @dataclass

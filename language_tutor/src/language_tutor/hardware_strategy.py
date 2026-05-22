@@ -14,8 +14,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-# Delegate hardware/engine discovery to Engram
-from engram.engine.discovery import (
+# Delegate hardware/engine discovery to llm_engines
+from llm_engines.discovery import (
     HardwareProfile,
     OllamaModelInfo,
     EngineAvailability,
@@ -597,8 +597,7 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
                 print("  ✗ Could not start Ollama. Start it manually: ollama serve")
                 return None
 
-        from engram.engine.discovery import MODEL_SIZES as _MS
-        size_hint = _MS.get(model, 0) if hasattr(_MS, '__contains__') else 0
+        size_hint = MODEL_SIZES.get(model, 0)
         size_str  = f" ({size_hint:.0f}GB)" if size_hint else ""
         ok_disk, free_gb = check_disk_space("/", required_gb=size_hint * 1.1)
         if not ok_disk:
