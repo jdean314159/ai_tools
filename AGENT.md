@@ -2,17 +2,17 @@
 
 ## Mission
 
-Stabilize and evolve the `ai_tools` monorepo as a layered toolkit for local-first LLM applications, teaching materials, memory, retrieval, inspection, reference apps, and agent orchestration.
+Build and maintain `ai_tools` as a suite of reusable, local-first Python libraries that others can use to build their own LLM-based projects.
 
 ## Canonical orientation files
 
 Read these first:
 
-1. `VISION.md`
-2. `PACKAGE_ROLES.md`
-3. `STATUS.md`
-4. `QUALITY_CLEANUP_PLAN.md`
-5. `course/CURRICULUM.md`
+1. `docs/design/VISION.md`
+2. `docs/internal/MEMBERSHIP.md`
+3. `docs/internal/STATUS.md`
+4. `docs/internal/PACKAGE_ROLES.md`
+5. `docs/internal/QUALITY_CLEANUP_PLAN.md`
 
 ## Default package order
 
@@ -24,9 +24,8 @@ Use this order unless the task says otherwise:
 4. `llm_inspector`
 5. `rag_lib`
 6. `llm_inspector_ui`
-7. `language_tutor`
-8. `agent_lib`
-9. `engram`
+7. `agent_lib`
+8. `examples/`
 
 ## Safety and editing rules
 

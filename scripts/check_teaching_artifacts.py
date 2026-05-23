@@ -15,9 +15,8 @@ MIN_NOTEBOOKS = 6
 MIN_STARTER_PROJECTS = 3
 
 ROOT_ENTRY_DOCS = [
-    ROOT / 'START_HERE.md',
-    ROOT / 'LEARNING_PATH.md',
-]
+    ROOT / 'docs' / 'learning' / 'START_HERE.md',
+    ROOT / 'docs' / 'learning' / 'LEARNING_PATH.md',]
 
 REFERENCE_GUIDES = [
     ROOT / 'language_tutor' / 'REFERENCE_APP_GUIDE.md',

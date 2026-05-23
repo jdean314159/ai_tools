@@ -239,9 +239,8 @@ pytest -q
 
 For repo-wide architecture and current priorities, see:
 
-- `../VISION.md`
-- `../CURRENT_STATE.md`
-- `../ROADMAP.md`
+- `../docs/design/VISION.md`
+- `../docs/internal/ROADMAP.md`
 - `../ADR_INDEX.md`
 
 

@@ -52,7 +52,7 @@ Use it to answer:
 - where the authoritative decision record lives
 - which areas still need explicit ADR coverage
 
-`VISION.md` is the architecture baseline. `ADR_INDEX.md` is the decision map.
+`docs/design/VISION.md` is the architecture baseline. `ADR_INDEX.md` is the decision map.
 
 ## Existing ADRs
 

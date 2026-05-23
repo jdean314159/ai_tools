@@ -9,13 +9,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 REQUIRED_ROOT_DOCS = [
     "README.md",
-    "START_HERE.md",
-    "VISION.md",
-    "STATUS.md",
-    "ROADMAP.md",
     "ADR_INDEX.md",
-    "LEARNING_PATH.md",
-    "GITHUB_PUBLICATION_CHECKLIST.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
 ]
 
 LEGACY_BASENAMES = {
