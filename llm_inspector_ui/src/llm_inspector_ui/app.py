@@ -97,11 +97,6 @@ def _default_profile_values() -> dict[str, object]:
             "baseline": {
                 "system_prompt": "",
             },
-            "engram_lite": {
-                "base_dir": str(APP_DIR / "memory" / "lite"),
-                "project_id": "inspector-ui",
-                "system_prompt": "",
-            },
             "engram": {
                 "base_dir": str(APP_DIR / "memory" / "engram"),
                 "project_id": "inspector-ui",
@@ -129,12 +124,6 @@ def _profile_to_controls(profile: WorkbenchProfile) -> dict[str, object]:
             "baseline": {
                 "system_prompt": "",
                 **dict((profile.augmenter_options or {}).get("baseline", {}) or {}),
-            },
-            "engram_lite": {
-                "base_dir": str(APP_DIR / "memory" / "lite"),
-                "project_id": "inspector-ui",
-                "system_prompt": "",
-                **dict((profile.augmenter_options or {}).get("engram_lite", {}) or {}),
             },
             "engram": {
                 "base_dir": str(APP_DIR / "memory" / "engram"),
@@ -411,22 +400,6 @@ def sidebar_controls():
         help="Used only by the baseline augmenter in this first pass.",
         key="baseline_system_prompt_input",
     )
-
-    engram_lite_base_dir = st.sidebar.text_input(
-        "engram_lite base dir",
-        value=engram_lite_options.get("base_dir", str(APP_DIR / "memory" / "lite")),
-        key="engram_lite_base_dir_input",
-    )
-    engram_lite_project_id = st.sidebar.text_input(
-        "engram_lite project id",
-        value=engram_lite_options.get("project_id", "inspector-ui"),
-        key="engram_lite_project_id_input",
-    )
-    engram_lite_system_prompt = st.sidebar.text_area(
-        "engram_lite system prompt",
-        value=engram_lite_options.get("system_prompt", ""),
-        key="engram_lite_system_prompt_input",
-    )
     engram_base_dir = st.sidebar.text_input(
         "Engram base dir",
         value=engram_options.get("base_dir", str(APP_DIR / "memory" / "engram")),
@@ -472,11 +445,6 @@ def sidebar_controls():
         "augmenter_options": {
             "baseline": {
                 "system_prompt": system_prompt,
-            },
-            "engram_lite": {
-                "base_dir": engram_lite_base_dir,
-                "project_id": engram_lite_project_id,
-                "system_prompt": engram_lite_system_prompt,
             },
             "engram": {
                 "base_dir": engram_base_dir,

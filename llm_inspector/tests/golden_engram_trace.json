@@ -18,7 +18,7 @@
           "event_type": "memory_evidence_included"
         },
         "provenance": {
-          "augmenter": "engram_lite",
+          "augmenter": "engram",
           "source": "working"
         },
         "score": null,
@@ -48,7 +48,7 @@
       },
       {
         "meta": {
-          "engine": "engram_lite.build_prompt"
+          "engine": "engram.build_prompt"
         },
         "origin": "prompt",
         "text": "## Working\n1. user: hello world\n\n## User\nhello world",
@@ -94,7 +94,7 @@
       },
       "severity": "info",
       "source_component": "PromptBuildTrace",
-      "source_package": "engram_lite",
+      "source_package": "engram",
       "tags": [
         "prompt",
         "memory"
@@ -107,7 +107,7 @@
       "payload": {
         "metadata": {},
         "provenance": {
-          "augmenter": "engram_lite",
+          "augmenter": "engram",
           "source": "working"
         },
         "score": null,
@@ -120,7 +120,7 @@
       },
       "severity": "info",
       "source_component": "PromptBuildTrace",
-      "source_package": "engram_lite",
+      "source_package": "engram",
       "tags": [
         "memory",
         "working"

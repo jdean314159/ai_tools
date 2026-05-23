@@ -12,7 +12,6 @@ def _prepend_repo_pythonpath(env: dict[str, str], repo_root: Path) -> None:
     candidates = [
         repo_root,
         repo_root / "llm_harness_core" / "src",
-        repo_root / "engram_lite" / "src",
         repo_root / "engram" / "src",
         repo_root / "llm_engines" / "src",
         repo_root / "llm_inspector" / "src",

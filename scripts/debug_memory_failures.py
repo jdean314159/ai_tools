@@ -14,7 +14,6 @@ def _add_repo_paths(repo_root: Path) -> None:
     candidates = [
         repo_root,
         repo_root / "engram",
-        repo_root / "engram_lite",
         repo_root / "llm_engines",
         repo_root / "llm_inspector",
         repo_root / "llm_inspector_ui",
@@ -201,7 +200,6 @@ def _run_diagnostic(repo_root: Path, backend: str, scenario: str, probe_names: l
 
     adapters = {
         "engram": memory_eval.EngramAdapter,
-        "engram_lite": memory_eval.EngramLiteAdapter,
     }
     if backend not in adapters:
         raise KeyError(f"Unknown backend '{backend}'. Expected one of: {', '.join(sorted(adapters))}")
@@ -346,10 +344,10 @@ def _markdown_report(data: dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Diagnose failed engram/engram_lite memory probes by printing stored memory, retrieved candidates, prompt assembly, and trace output."
+        description="Diagnose failed engram memory probes by printing stored memory, retrieved candidates, prompt assembly, and trace output."
     )
     parser.add_argument("--repo-root", default=".", help="Path to the ai_tools repo root.")
-    parser.add_argument("--backend", default="engram", choices=("engram", "engram_lite"))
+    parser.add_argument("--backend", default="engram", choices=("engram"))
     parser.add_argument("--scenario", default="stress", choices=("default", "stress"))
     parser.add_argument(
         "--probe",
