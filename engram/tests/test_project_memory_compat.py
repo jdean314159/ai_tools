@@ -31,5 +31,5 @@ def test_minimal_episode_and_stats_api_for_app_integrations() -> None:
     assert episode_id
     assert results
     assert hasattr(results[0], "text")
-    assert stats["backend"] == "engram_lite"
+    assert stats["backend"] == "engram"
     assert stats["episodic"]["count"] >= 1
