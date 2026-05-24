@@ -2,10 +2,31 @@
 """Validate publication hygiene for the ai_tools monorepo."""
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+def _git_tracked_files() -> set[Path]:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return {ROOT / line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+
+def _git_tracked_dirs() -> set[Path]:
+    """Directories that contain at least one git-tracked file."""
+    dirs: set[Path] = set()
+    for f in _git_tracked_files():
+        for parent in f.parents:
+            if parent == ROOT:
+                break
+            dirs.add(parent)
+    return dirs
 
 REQUIRED_ROOT_DOCS = [
     "README.md",
@@ -62,8 +83,8 @@ def _preview(paths: list[Path], limit: int = 10) -> str:
 def _find_banned_dirs() -> dict[str, list[Path]]:
     findings: dict[str, list[Path]] = {}
 
-    for path in ROOT.rglob("*"):
-        if not path.is_dir() or _is_under_skipped_dir(path):
+    for path in _git_tracked_dirs():
+        if _is_under_skipped_dir(path):
             continue
 
         rel = path.relative_to(ROOT)
@@ -86,9 +107,10 @@ def _find_banned_dirs() -> dict[str, list[Path]]:
 def _find_banned_files() -> dict[str, list[Path]]:
     findings: dict[str, list[Path]] = {}
 
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or _is_under_skipped_dir(path):
-            continue
+    for path in _git_tracked_dirs():
+        for path in _git_tracked_files():
+            if _is_under_skipped_dir(path):
+                continue
 
         rel = path.relative_to(ROOT)
 
