@@ -39,7 +39,6 @@ install: venv
 	$(PIP) install -e './llm_inspector[dev]'
 	$(PIP) install -e './rag_lib[dev]'
 	$(PIP) install -e './llm_inspector_ui[dev]'
-	$(PIP) install -e './engram_ui[dev]'
 	$(PIP) install -e './language_tutor[dev]'
 	$(PIP) install -e './agent_lib[dev]'
 	@echo ""
