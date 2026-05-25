@@ -1,5 +1,46 @@
 # llm_engines
 
+## Tier: stable
+
+## Scope
+
+One interface over multiple LLM backends (Ollama, Anthropic, OpenAI, vLLM,
+llama.cpp). Does not handle memory, retrieval, or agent orchestration.
+
+## Quick start
+
+```python
+from llm_engines import get_engine, ChatMessage, GenerationRequest
+
+engine = get_engine("ollama", "qwen3:8b")
+response = engine.generate(GenerationRequest(
+    messages=[ChatMessage(role="user", content="What is RAG?")]
+))
+print(response.text)
+```
+
+With tool calling:
+
+```python
+from llm_engines import get_engine, ToolExecutor, tool
+
+@tool
+def add(a: int, b: int) -> int:
+    return a + b
+
+engine = get_engine("ollama", "qwen3:8b")
+executor = ToolExecutor(tools=[add])
+```
+
+With a config-file profile (failover across backends):
+
+```python
+from llm_engines import EngineFactory
+engine = EngineFactory.from_profile("default_local")
+```
+
+
+
 `llm_engines` is the backend and model abstraction layer for the `ai_tools` suite.
 
 It provides a stable way to call LLM backends without forcing the rest of the stack to understand backend-specific quirks.

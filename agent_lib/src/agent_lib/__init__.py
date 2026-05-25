@@ -1,3 +1,26 @@
+"""
+agent_lib — EXPERIMENTAL
+
+Inspectable agent-orchestration layer for the ai_tools stack.
+
+**This package is experimental. The API may change without notice between
+releases. Do not build production systems on it.**
+
+Core workflow:
+    from agent_lib import AgentRuntime, AgentTask, LLMActionPlanner, RoleEngineSet
+    from llm_engines import get_engine
+
+    engines = RoleEngineSet(planner=get_engine("ollama", "qwen3:27b"),
+                            executor=get_engine("ollama", "qwen3:8b"))
+    planner = LLMActionPlanner(engines=engines)
+    runtime = AgentRuntime(planner=planner)
+    task = AgentTask(goal="Summarize the repo README", context={})
+    run = runtime.run(task)
+
+For deterministic testing, use SequencePlanner instead of LLMActionPlanner.
+"""
+
+# --- Contracts (stable within experimental tier) ---
 from .contracts import (
     AgentAction,
     AgentContext,
@@ -14,6 +37,8 @@ from .contracts import (
     ToolRuntime,
     ToolSpec,
 )
+
+# --- Coordination / mailbox ---
 from .coordination import (
     CoordinationMessage,
     ExternalAgentSession,
@@ -23,40 +48,26 @@ from .coordination import (
     InMemoryMailbox,
     SessionMailbox,
 )
+
+# --- Memory adapters ---
 from .memory import (
-    EngramLiteMemoryAdapter,
+    EngramLiteMemoryAdapter,  # deprecated alias — use EngramMemoryAdapter
     EngramMemoryAdapter,
     NullMemoryAdapter,
     create_memory_adapter,
 )
+
+# --- Planners ---
 from .planners import SequencePlanner
 from .llm_engines_adapter import LLMActionPlanner, RoleEngineSet, action_from_payload, extract_json_object
-from .programming import (
-    ContextBudgetConfig,
-    FailurePolicy,
-    ToolFailurePolicy,
-    ProgrammingFailureController,
-    PatchProposal,
-    PlanStep,
-    ProgrammingContextManager,
-    ProgrammingRoleBindings,
-    ProgrammingRuntimeConfig,
-    ProgrammingTask,
-    ProgrammingToolRuntime,
-    WorkspaceAllocation,
-    WorkspaceIsolationManager,
-    PatchOwnership,
-    execute_workspace_command,
-    ProgrammingTaskState,
-    ProgrammingTaskStateStore,
-    ProgrammingStateTracker,
-    VerificationResult,
-    WorkspacePolicy,
-    build_programming_task,
-    load_programming_runtime_config,
-    save_programming_runtime_config,
-)
+
+# --- Runtime ---
 from .runtime import AgentRuntime, InspectorTraceEmitter
+
+# --- Tools ---
+from .tools import LocalTool, LocalToolRuntime
+
+# --- Interop ---
 from .interop import (
     describe_agent_runtime,
     describe_tool_runtime,
@@ -66,65 +77,60 @@ from .interop import (
     step_to_interop_events,
     tool_result_to_operation_result,
 )
-from .tools import LocalTool, LocalToolRuntime
 
-from .eval import (
-    AgentRedTeamScenario,
-    DEFAULT_SCENARIOS as RED_TEAM_DEFAULT_SCENARIOS,
-    ScenarioRun as RedTeamScenarioRun,
-    evaluate_lab as evaluate_agent_red_team_lab,
-    render_scenario as render_agent_red_team_scenario,
-    run_scenario as run_agent_red_team_scenario,
+# --- Programming task module (advanced; import from agent_lib.programming directly) ---
+from .programming import (
+    ProgrammingTask,
+    ProgrammingRuntimeConfig,
+    ProgrammingRoleBindings,
+    WorkspacePolicy,
+    build_programming_task,
 )
 
-from .examples import (
-    FileWorkspace,
-    IntegrationDemoResult,
-    ModeComparisonResult,
-    ProgrammingBenchmarkCase,
-    ProgrammingBenchmarkReport,
-    ProgrammingBenchmarkResult,
-    build_default_programming_config,
-    build_minimum_reliable_programming_config,
-    build_representative_programming_cases,
-    load_role_engines_from_llm_engines_config,
-    make_external_programming_team,
-    make_external_session_coordinator,
-    make_programming_demo_runtime,
-    make_programming_runtime_from_config,
-    make_programming_tool_runtime,
-    resolve_programming_role_engines,
-    run_integration_programming_demo,
-    run_mode_comparison_demo,
-    run_programming_benchmark,
-    run_programming_demo,
-    run_programming_demo_from_config,
-    run_programming_demo_from_file,
-    resume_programming_demo,
-    write_programming_config_file,
-)
+__version__ = "0.1.0"
+
 __all__ = [
-    "make_external_session_coordinator",
-    "make_external_programming_team",
-    "SessionMailbox",
-    "InMemoryMailbox",
-    "FileReservation",
-    "ExternalSessionCoordinator",
-    "ExternalAgentTeam",
-    "ExternalAgentSession",
-    "CoordinationMessage",
+    "__version__",
+    # Contracts
     "AgentAction",
     "AgentContext",
     "AgentObservation",
     "AgentRun",
-    "AgentRuntime",
     "AgentStep",
     "AgentTask",
     "AgentTraceEmitter",
     "EngineRoles",
-    "EngramLiteMemoryAdapter",
+    "Planner",
+    "StopReason",
+    "ToolCall",
+    "ToolResult",
+    "ToolRuntime",
+    "ToolSpec",
+    # Coordination
+    "CoordinationMessage",
+    "ExternalAgentSession",
+    "ExternalAgentTeam",
+    "ExternalSessionCoordinator",
+    "FileReservation",
+    "InMemoryMailbox",
+    "SessionMailbox",
+    # Memory adapters
     "EngramMemoryAdapter",
+    "NullMemoryAdapter",
+    "create_memory_adapter",
+    # Planners and action execution
+    "SequencePlanner",
+    "LLMActionPlanner",
+    "RoleEngineSet",
+    "action_from_payload",
+    "extract_json_object",
+    # Runtime
+    "AgentRuntime",
     "InspectorTraceEmitter",
+    # Tools
+    "LocalTool",
+    "LocalToolRuntime",
+    # Interop
     "describe_agent_runtime",
     "describe_tool_runtime",
     "run_to_interop_events",
@@ -132,70 +138,10 @@ __all__ = [
     "run_to_operation_result",
     "step_to_interop_events",
     "tool_result_to_operation_result",
-    "LocalTool",
-    "LocalToolRuntime",
-    "NullMemoryAdapter",
-    "Planner",
-    "SequencePlanner",
-    "LLMActionPlanner",
-    "RoleEngineSet",
-    "action_from_payload",
-    "extract_json_object",
-    "ContextBudgetConfig",
-    "FailurePolicy",
-    "ToolFailurePolicy",
-    "ProgrammingFailureController",
-    "PatchProposal",
-    "PlanStep",
-    "ProgrammingRoleBindings",
-    "ProgrammingRuntimeConfig",
-    "ProgrammingContextManager",
+    # Programming task (core types only; builders/runners in agent_lib.programming)
     "ProgrammingTask",
-    "ProgrammingToolRuntime",
-    "WorkspaceAllocation",
-    "WorkspaceIsolationManager",
-    "PatchOwnership",
-    "execute_workspace_command",
-    "ProgrammingTaskState",
-    "ProgrammingTaskStateStore",
-    "ProgrammingStateTracker",
-    "VerificationResult",
+    "ProgrammingRuntimeConfig",
+    "ProgrammingRoleBindings",
     "WorkspacePolicy",
     "build_programming_task",
-    "load_programming_runtime_config",
-    "save_programming_runtime_config",
-    "StopReason",
-    "ToolCall",
-    "ToolResult",
-    "ToolRuntime",
-    "ToolSpec",
-    "create_memory_adapter",
-    "FileWorkspace",
-    "IntegrationDemoResult",
-    "ModeComparisonResult",
-    "ProgrammingBenchmarkCase",
-    "ProgrammingBenchmarkReport",
-    "ProgrammingBenchmarkResult",
-    "build_default_programming_config",
-    "build_minimum_reliable_programming_config",
-    "build_representative_programming_cases",
-    "load_role_engines_from_llm_engines_config",
-    "make_programming_demo_runtime",
-    "make_programming_runtime_from_config",
-    "make_programming_tool_runtime",
-    "resolve_programming_role_engines",
-    "run_integration_programming_demo",
-    "run_mode_comparison_demo",
-    "run_programming_benchmark",
-    "run_programming_demo",
-    "run_programming_demo_from_config",
-    "run_programming_demo_from_file",
-    "resume_programming_demo",
-    "write_programming_config_file",
-    "AgentRedTeamScenario",
-    "RED_TEAM_DEFAULT_SCENARIOS",
-    "RedTeamScenarioRun",
-    "run_agent_red_team_scenario",
-    "render_agent_red_team_scenario",
-    "evaluate_agent_red_team_lab",
 ]

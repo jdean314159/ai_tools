@@ -1,5 +1,49 @@
 # engram
 
+## Tier: beta
+
+## Scope
+
+Lightweight project memory for LLM applications. Stores conversation turns,
+retrieves relevant prior context, and assembles memory-augmented prompts.
+Does not run inference — it enriches prompts that other packages execute.
+
+Internal storage layers (SQLite, ChromaDB, semantic graph) are implementation
+details. The public API is `ProjectMemory`.
+
+## Quick start
+
+```python
+from engram import ProjectMemory
+
+mem = ProjectMemory(base_dir="~/.myapp", project_id="demo")
+mem.new_session("s1")
+mem.add_turn("user", "My name is Jeff and I work on LLM security.")
+result = mem.build_prompt("What do I work on?", session_id="s1")
+print(result["prompt"])
+```
+
+With llm_engines:
+
+```python
+from engram import ProjectMemory
+from llm_engines import get_engine, GenerationRequest, ChatMessage
+
+mem = ProjectMemory(base_dir="~/.myapp", project_id="demo")
+engine = get_engine("ollama", "qwen3:8b")
+
+user_msg = "What projects am I working on?"
+mem.add_turn("user", user_msg, "s1")
+prompt = mem.build_prompt(user_msg, session_id="s1")["prompt"]
+
+response = engine.generate(GenerationRequest(
+    messages=[ChatMessage(role="user", content=prompt)]
+))
+mem.add_turn("assistant", response.text, "s1")
+```
+
+
+
 `engram` is the lightweight memory augmentation package in the `ai_tools` suite.
 
 It is intended to be the easiest way to add inspectable memory behavior to an LLM workflow without adopting the full `engram` runtime.

@@ -1,5 +1,46 @@
 # agent_lib
 
+## Tier: **experimental** — API may change without notice
+
+## Scope
+
+Inspectable agent-orchestration layer. Provides the planner/executor/tool-runtime
+loop, coordination primitives (mailbox, sessions), and memory adapters so agent
+workflows can be built on top of `llm_engines` and `engram`. Does not provide
+its own inference backend or memory store.
+
+**Do not build production systems on `agent_lib`.** The API will move.
+
+## Quick start
+
+```python
+# agent_lib is EXPERIMENTAL — expect API changes
+from agent_lib import AgentRuntime, AgentTask, LLMActionPlanner, RoleEngineSet
+from llm_engines import get_engine
+
+engines = RoleEngineSet(
+    planner=get_engine("ollama", "qwen3:27b"),
+    executor=get_engine("ollama", "qwen3:8b"),
+)
+planner = LLMActionPlanner(engines=engines)
+runtime = AgentRuntime(planner=planner)
+
+task = AgentTask(goal="Summarize the contents of README.md", context={})
+run = runtime.run(task)
+print(run.result)
+```
+
+For deterministic unit tests, substitute `SequencePlanner`:
+
+```python
+from agent_lib import SequencePlanner, AgentRuntime, AgentAction
+
+planner = SequencePlanner(actions=[AgentAction(type="finish", payload={"result": "done"})])
+runtime = AgentRuntime(planner=planner)
+```
+
+
+
 `agent_lib` is the inspectable agent-orchestration layer for the `ai_tools` stack.
 
 Its purpose is not only to help build agentic workflows. It is also meant to help users understand how those workflows behave:

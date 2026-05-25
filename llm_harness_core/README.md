@@ -1,5 +1,42 @@
 # llm-harness-core
 
+## Tier: stable
+
+## Scope
+
+Shared interoperability contracts for the ai_tools suite. Provides the common
+vocabulary (messages, traces, results, memory records) that other packages
+exchange. Does not run inference, manage memory, or perform retrieval.
+
+Intended users: library authors building on the suite, not end users directly.
+
+## Quick start
+
+```python
+from llm_harness_core import (
+    LLMMessage, Role,
+    OperationResult,
+    MemoryRecord,
+    TraceEvent,
+)
+
+# Build a shared message
+msg = LLMMessage(role=Role.USER, content="Hello")
+
+# Wrap a result in the shared envelope
+result = OperationResult.ok(value={"answer": "42"})
+
+# Create a trace event for an inspection pipeline
+event = TraceEvent(
+    event_type="retrieval_completed",
+    source_package="rag_lib",
+    source_component="BM25Retriever",
+    payload={"hits": 5},
+)
+```
+
+
+
 `llm_harness_core` is the small shared interoperability layer for the `ai_tools` suite.
 
 ## Start here if you are learning from this repo

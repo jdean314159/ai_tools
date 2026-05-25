@@ -7,7 +7,7 @@ Three tabs:
 
 Degrades gracefully when:
   - Engram is not installed (shows install message)
-  - The augmenter is engram_lite (no synthesis layer)
+  - The augmenter has no synthesis layer
   - No rules have been synthesised yet (prompts user to run synthesis)
 
 Author: Jeffrey Dean
@@ -42,7 +42,7 @@ def _get_pm(base_dir: Path, project_id: str, project_type: str = "programming_as
 
 
 def _has_synthesis(pm) -> bool:
-    """True when pm has the synthesis API (full engram, not engram_lite)."""
+    """True when pm has the synthesis API."""
     return (
         pm is not None
         and hasattr(pm, "synthesize_now")
@@ -110,7 +110,7 @@ def render_synthesis_panel(
     if not _has_synthesis(pm):
         st.info(
             "Synthesis layer is not available for this augmenter. "
-            "Switch to the **engram** augmenter (not engram_lite) to use procedural memory."
+            "Switch to the **engram** augmenter to use procedural memory."
         )
         pm.close()
         return

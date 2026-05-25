@@ -16,8 +16,7 @@ from llm_inspector_ui.utils.trace_access import (
 
 _AUGMENTER_LABELS = {
     "baseline": "control branch",
-    "engram_lite": "lightweight memory branch",
-    "engram": "advanced memory branch",
+    "engram": "memory branch",
     "rag": "retrieval-augmented branch",
 }
 
@@ -69,7 +68,7 @@ def describe_compare_group_for_beginners(runs: list[RunArtifact]) -> list[str]:
             "Treat baseline as the control branch. The other branches only help if they improve the answer enough to justify the extra complexity.",
         )
 
-    if any(name in names for name in ("engram_lite", "engram", "rag")):
+    if any(name in names for name in ("engram", "rag")):
         steps.append(
             "Use Evidence and Retrieval to see whether the added support is relevant and whether the answer actually used it."
         )
@@ -106,8 +105,7 @@ def describe_run_for_teaching(run: RunArtifact) -> str:
 def describe_run_for_beginners(run: RunArtifact) -> str:
     branch_name = {
         "baseline": "baseline branch",
-        "engram_lite": "lightweight memory branch",
-        "engram": "advanced memory branch",
+        "engram": "memory branch",
         "rag": "retrieval branch",
     }.get(run.augmenter_id, f"{run.augmenter_id} branch")
 

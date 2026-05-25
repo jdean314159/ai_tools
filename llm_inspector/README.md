@@ -1,5 +1,45 @@
 # llm_inspector
 
+## Tier: beta
+
+## Scope
+
+Observability layer for LLM workflows. Normalizes traces from engines, memory
+augmentation, and retrieval into a common model so runs can be inspected,
+compared, and exported. Does not run inference or manage memory itself.
+
+## Quick start
+
+Inspect a single augmented run:
+
+```python
+from llm_inspector import (
+    ContextInspector, BaselineAugmenter, make_engram,
+    AugmentRequest, Turn, render_comparison,
+)
+
+inspector = ContextInspector()
+req = AugmentRequest(turn=Turn(role="user", text="What is RAG?"), session_id="s1")
+
+baseline = BaselineAugmenter()
+memory = make_engram(base_dir="~/.myapp", project_id="demo")
+
+inspector.add(baseline.augment(req), label="baseline")
+inspector.add(memory.augment(req), label="with_memory")
+
+report = inspector.compare()
+print(render_comparison(report))
+```
+
+Export a report:
+
+```python
+from llm_inspector import report_to_json
+print(report_to_json(report))
+```
+
+
+
 `llm_inspector` is the observability layer for the `ai_tools` suite.
 
 Its job is to normalize what happened across engines, memory augmentation, retrieval, and eventually agent workflows, so that humans can inspect and compare behavior.

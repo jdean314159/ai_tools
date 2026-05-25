@@ -83,7 +83,7 @@ Keep package layout intentional and validated.
 
 ### Work
 
-Most packages now use `src/` layout. `llm_engines` intentionally remains on direct layout. `engram_ui` is a top-level `src/` package. Do not reintroduce old top-level import-shadowing trees such as `engram/engram` or `engram/__init__.py`.
+Most packages now use `src/` layout. `llm_engines` intentionally remains on direct layout. Do not reintroduce old top-level import-shadowing trees such as `engram/engram` or `engram/__init__.py`.
 
 ### Done when
 
@@ -123,6 +123,13 @@ Make `language_tutor` the canonical example of composing the libraries.
 The app demonstrates the current stack rather than older integration patterns.
 
 ## Phase 6 — Agent work
+
+### Design guidance
+
+Before expanding `agent_lib` or starting the ASC rebuild, read
+`docs/design/AGENT_BUILD_NOTES.md`. It captures settled reasoning on
+co-evolution, the worker/mentor pattern, gated oversight, long-horizon loops,
+and context-rot reduction via Engram primitives, plus the cheapest first move.
 
 ### Goal
 

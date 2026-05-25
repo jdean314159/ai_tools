@@ -1,15 +1,26 @@
-"""Top-level public API for llm_inspector.
+"""
+llm_inspector
 
-llm_inspector is a general observability toolkit for context augmentation:
-memory, retrieval, prompt assembly, and comparison workflows. The package
-includes a lightweight normalized trace model, augmentation protocols,
-inspectors for compare/diff/bundle flows, exporters and console renderers,
-and optional adapters for baseline, Engram, and RAG-oriented integrations.
+Observability layer for LLM workflows. Normalizes traces from engines, memory
+augmentation, and retrieval into a common model so runs can be inspected,
+diffed, and exported.
 
-The top-level package exports the stable public surface so callers can rely on
-`import llm_inspector` for the common workflow without digging through
-subpackages. Optional integrations remain lazy and do not import heavy
-dependencies at module import time.
+Does not run inference itself — it inspects what other packages produce.
+
+Quick start:
+    from llm_inspector import ContextInspector, BaselineAugmenter, AugmentRequest, Turn
+
+    inspector = ContextInspector()
+    augmenter = BaselineAugmenter()
+    req = AugmentRequest(turn=Turn(role="user", text="What is RAG?"), session_id="s1")
+    trace = augmenter.augment(req)
+    inspector.add(trace, label="baseline")
+    report = inspector.compare()
+    print(render_comparison(report))
+
+With engram memory:
+    from llm_inspector import make_engram
+    augmenter = make_engram(base_dir="~/.myapp", project_id="demo")
 """
 
 from importlib import import_module
@@ -17,7 +28,6 @@ from typing import Any
 
 from llm_inspector.adapters import AdapterRegistry, AdapterSpec
 from llm_inspector.adapters.engram_adapter import EngramAugmenter, make_engram
-from llm_inspector.adapters.engram_lite_adapter import EngramLiteAugmenter, make_engram_lite
 from llm_inspector.augmenters import BaselineAugmenter
 from llm_inspector.core import (
     ContextResult,
@@ -117,14 +127,12 @@ __all__ = [
     "trace_to_interop_events",
     "trace_to_memory_records",
     "report_to_operation_result",
-    # Adapter registry and optional integrations
+    # Adapter registry and engram integration
     "AdapterSpec",
     "AdapterRegistry",
     "EngramAugmenter",
-    "EngramLiteAugmenter",
-    "make_engram_lite",
     "make_engram",
-    # RAG utilities (lazy imports; require llm_engines installed)
+    # RAG utilities (lazy; require rag_lib installed)
     "RAGInspector",
     "EngramRAGAdapter",
     "ChromaDBRAGAdapter",

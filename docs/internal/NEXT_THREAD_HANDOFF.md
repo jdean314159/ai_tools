@@ -1,107 +1,67 @@
 # Next Thread Handoff — ai_tools
 
-Last updated: 2026-05-22
+Last updated: 2026-05-24
 
 ## Current state
 
-The engram freeze and rename is complete. All tests pass. See STATUS.md for
-the full picture.
+The engram freeze and rename is complete. `engram_ui` has been deleted
+(ADR-010) as redundant with `llm_inspector_ui` — no package is currently
+broken. The public-API pass (MEMBERSHIP step 3) is done for all packages.
+See STATUS.md for the full per-package picture.
 
-## Immediate next objective: engram_ui engine reconciliation
+Completed in the most recent session:
 
-engram_ui imports from engram.engine.* which no longer exists. It is
-currently broken. The migration target is llm_engines.
+- Public API defined per package (`__all__` + scope/quickstart README) for
+  `llm_engines`, `llm_harness_core`, `engram`, `rag_lib`, `llm_inspector`,
+  `llm_inspector_ui`, `agent_lib`.
+- `llm_engines`: core types (`ChatMessage`, `GenerationRequest`,
+  `GenerationResponse`, `ChatModel`) added to the public surface.
+- `engram`: `__all__` trimmed; storage/semantic/telemetry layers no longer
+  exported from the top level.
+- Stale `engram_lite` residue removed: `engram_lite_adapter.py` and its test
+  deleted; `llm_inspector_ui` duplicate augmenter collapsed into the single
+  `engram` augmenter; remaining `engram_lite` UI strings cleaned.
+- Agent design guidance captured in `docs/design/AGENT_BUILD_NOTES.md`;
+  ADR-011 (agent execution isolation) added as Proposed.
+- Doc sync: STATUS, ROADMAP, VISION (§3.2/3.3 facade language corrected to
+  match ADR-009), PACKAGE_ROLES, ADR_INDEX brought current.
 
-Before starting any code changes, write an ADR scoping this migration.
-The key question is whether engram_ui should be a thin shim over
-llm_engines or whether it warrants deeper redesign.
+## Immediate next objective: language_tutor acceptance slice
 
-## Blast radius (from last session)
+The next step is the API acceptance test, per MEMBERSHIP step 4: hand-build
+**one** `language_tutor` capability against the refreshed public API.
 
-engram_ui/src/engram_ui/engine_factory.py:17
-    from engram.engine import create_failover_engine
+Why this first:
 
-engram_ui/src/engram_ui/runtime_manager.py:23
-    from engram.engine.config_loader import load_config
+- It validates that the trimmed public surfaces (especially `engram` and
+  `llm_engines`) are sufficient to build a real app without reaching into
+  internals. If the slice forces a private import, the API is incomplete and
+  that is the signal to fix it before the full rebuild.
+- It produces the fixed, verifiable target that the eventual worker/mentor
+  agent loop should be developed against (see AGENT_BUILD_NOTES §7).
+- It is the cheapest move that advances both the examples plan and the agent
+  plan at once.
 
-engram_ui/src/engram_ui/runtime_manager.py:141
-    from engram.engine.runtime_status import build_llama_cpp_launch_command
+Suggested scope for the slice: pick a single vertical (e.g. ingest a small
+vocabulary set, run one tutoring turn through `engram` memory + an
+`llm_engines` engine, emit the trace). Harvest domain logic from the existing
+`language_tutor/`; rewrite all integration glue against the public API rather
+than porting the old imports.
 
-engram_ui/src/engram_ui/app.py:29
-    from engram.engine import load_config
+## After the slice
 
-engram_ui/src/engram_ui/app.py:31
-    from engram.engine.model_discovery import list_ollama_models, list_vllm_models
+1. If gaps are found, fix the public APIs (small, targeted) and re-run.
+2. Promote the validated slice into `examples/`.
+3. Repeat for the rest of `language_tutor`; then consider the ASC rebuild,
+   gated on `agent_lib` reaching beta (AGENT_BUILD_NOTES §4, ADR-011).
+4. Separately, the course split (move `course/` to its own repo consuming
+   `ai_tools` as a dependency) can proceed in parallel; it is mostly mechanical
+   and validated by a local `pip install`, not in-repo tests.
 
-engram_ui/src/engram_ui/app.py:40
-    from engram.engine.runtime_status import (...)
+## Validation
 
-engram_ui/src/engram_ui/model_management/profiles.py:12
-    from engram.engine.model_manager import add_engine_to_profile
+    make test-core
 
-engram_ui/src/engram_ui/model_management/add_models.py:17
-    from engram.engine.model_manager import (...)
-
-engram_ui/src/engram_ui/model_management/add_models.py:33
-    from engram.engine.runtime_status import (...)
-
-engram_ui/src/engram_ui/model_management/_shared.py:19
-    from engram.engine.model_manager import (...)
-
-engram_ui/src/engram_ui/model_management/_shared.py:22
-    from engram.engine.model_discovery import (...)
-
-engram_ui/src/engram_ui/model_management/_shared.py:23
-    from engram.engine.runtime_status import (...)
-
-engram_ui/src/engram_ui/model_management/_shared.py:52
-    import engram.engine  (used to resolve path to llm_engines.yaml)
-
-engram_ui/src/engram_ui/model_management/inventory.py:14
-    from engram.engine.model_manager import (...)
-
-engram_ui/src/engram_ui/diagnostics_bridge.py:139
-    import engram.engine  (used to resolve path to llm_engines.yaml)
-
-engram_ui/src/engram_ui/diagnostics_bridge.py:169
-    from engram.engine.model_manager import GPUInfo, SystemInfo
-
-
-## Key mapping questions to resolve before coding
-
-engram.engine.model_manager (add_engine_to_profile, GPUInfo, SystemInfo, etc.)
-    Does llm_engines have equivalents, or does this logic move into engram_ui?
-
-engram.engine.runtime_status (build_llama_cpp_launch_command, etc.)
-    Launch command logic may need to live in engram_ui itself.
-
-engram.engine.config_loader.load_config
-    llm_engines has its own config_loader; check compatibility.
-
-llm_engines.yaml path: currently resolved via engram.engine.__file__
-    The file now lives at llm_engines/llm_engines/data/llm_engines.yaml.
-    Use importlib.resources or a direct relative path.
-
-
-## First commands in next thread
-
-    cd ~/ai_tools
-    git status --short --branch
-    git log --oneline --decorate --max-count=6
-
-    # Confirm engram_ui is broken as expected
-    .venv/bin/python -c "import engram_ui" 2>&1 | head -5
-
-    # Check what model_manager exports (key unknown)
-    grep -n "^def \|^class \|GPUInfo\|SystemInfo\|add_engine" \
-      llm_engines/llm_engines/*.py 2>/dev/null | grep -v test | head -20
-
-
-## Minor cleanup still pending (low priority)
-
-- get_stats() reports "backend": "engram_lite" — update string to "engram"
-- inspection.py emits source_package="engram_lite" — update to "engram"
-- Delete engram/src/engram_lite_facade_backup/ if it exists
-- README.md package table and VISION.md sections 3.2/3.3 still describe the
-  two-library world — update after engram_ui migration so docs reflect stable
-  final state
+No code logic changed in the most recent session beyond `__all__`/adapter
+trims, so the gate should be green. Re-run after the acceptance slice introduces
+real consuming code.

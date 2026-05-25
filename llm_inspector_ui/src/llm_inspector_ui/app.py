@@ -390,7 +390,6 @@ def sidebar_controls():
     )
 
     baseline_options = current.get("augmenter_options", {}).get("baseline", {}) if isinstance(current, dict) else {}
-    engram_lite_options = current.get("augmenter_options", {}).get("engram_lite", {}) if isinstance(current, dict) else {}
     engram_options = current.get("augmenter_options", {}).get("engram", {}) if isinstance(current, dict) else {}
     rag_options = current.get("augmenter_options", {}).get("rag", {}) if isinstance(current, dict) else {}
 

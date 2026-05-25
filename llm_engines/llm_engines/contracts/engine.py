@@ -240,6 +240,11 @@ class GenerationResponse(BaseModel):
     active_optimizations: list[ActiveInferenceOptimization] = Field(default_factory=list)
     raw_provider_payload: dict[str, Any] | None = None  # Preserved for debugging
 
+    @property
+    def text(self) -> str:
+        """Convenience accessor for the response text (``message.content``)."""
+        return self.message.content or ""
+
     def to_interop_result(self) -> OperationResult[InteropMessage]:
         warnings: list[OperationWarning] = []
         if self.finish_reason == "length":

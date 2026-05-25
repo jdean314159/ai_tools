@@ -9,7 +9,7 @@ Design principles:
   - Read-only by default (dry_run=True)
   - Mutation requires explicit per-finding confirmation
   - Bulk apply requires a global checkbox acknowledgement
-  - Degrades gracefully for engram_lite (no audit_memory)
+  - Degrades gracefully when the augmenter has no audit_memory
 
 Author: Jeffrey Dean
 """
@@ -113,7 +113,7 @@ def render_audit_panel(
     if not _has_audit(pm):
         st.info(
             "Audit is not available for this augmenter. "
-            "Switch to the **engram** augmenter (not engram_lite)."
+            "Switch to the **engram** augmenter."
         )
         pm.close()
         return

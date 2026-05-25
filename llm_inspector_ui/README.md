@@ -1,5 +1,32 @@
 # llm_inspector_ui
 
+## Tier: beta
+
+## Scope
+
+Interactive web workbench for inspecting engine behavior, memory augmentation,
+and RAG retrieval. A general-purpose diagnostic tool — run it, do not import it.
+Does not expose a programmatic API beyond the two interop helpers in `__init__`.
+
+## Quick start
+
+```bash
+cd ai_tools
+make run-ui
+# or:
+python -m llm_inspector_ui
+```
+
+Then open http://localhost:7860 in your browser.
+
+The workbench lets you:
+- select a backend and model
+- run baseline, memory-augmented, and RAG-augmented queries side by side
+- inspect what context and evidence reached the model
+- export traces for offline analysis
+
+
+
 `llm_inspector_ui` is the interactive workbench for the `ai_tools` suite.
 
 It is intended to help users understand and better utilize LLM systems by making engine choice, memory augmentation, and retrieval behavior visible in one place.

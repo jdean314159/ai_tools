@@ -155,15 +155,14 @@ Typical responsibilities:
 
 ### 3.2 `engram`
 
-**Responsibility:** Curated facade over `engram` for teaching and small applications.
+**Responsibility:** Standalone lightweight project memory for LLM applications.
 
-`engram` exposes a stable, minimal public API that students learn first.
-All implementation lives in `engram`; `engram.__init__` re-exports a
-constrained subset.  The "lite" badge is enforced by facade discipline: the
-RTRL neural layer, advanced retrieval policies, and internal configuration
-surfaces are not exposed.
+`engram` is a single, self-contained implementation — there is no facade layer.
+It exposes a minimal public API: `ProjectMemory` plus core types (`ProjectType`,
+`TokenBudget`, the augmenter contracts) and interop helpers. Internal storage,
+semantic, and telemetry layers are not part of the public surface (`__all__`).
 
-Typical responsibilities (via facade):
+Typical responsibilities:
 
 - storing recent/project memory (via `engram.ProjectMemory`)
 - retrieving relevant prior context
@@ -171,23 +170,23 @@ Typical responsibilities (via facade):
 - emitting inspectable memory traces
 - exposing evidence used for augmentation
 
-The public API is locked by `engram/tests/test_public_api_contract.py`.
-Students outgrow `engram` by changing the import line to `engram`, not by
-migrating data or rewriting code.  See ADR-007 for the architectural decision.
+By default it is lightweight: JSONL source-of-truth, optional ChromaDB, RRF
+hybrid retrieval, no torch dependency. See ADR-009 for the freeze/rename
+decision (supersedes the earlier facade design in ADR-007).
 
 ---
 
-### 3.3 `engram`
+### 3.3 Archived: heavy `engram` runtime
 
-**Responsibility:** Full memory runtime and canonical implementation for shared primitives.
+**Status:** Archived out of the monorepo (ADR-009); read-only at
+github.com/jdean314159/engram.
 
-`engram` is the single implementation behind both the full runtime and the
-`engram` facade.  It owns the canonical source for: telemetry,
-inspection types, embeddings, semantic graph and extraction, prompting
-utilities, storage primitives (ChromaDB, schema management), augmenter
-contracts, ingestion policy, and token counting.  Advanced capabilities —
-RTRL neural layer, multi-tier persistence, retrieval policies, lifecycle
-management, and procedural memory — are `engram`-only.
+The original full memory runtime — RTRL neural layer, multi-tier persistence,
+advanced retrieval policies, lifecycle management, and procedural memory — was
+frozen and archived. Those capabilities are **not** part of the `engram`
+package shipped in this suite; the standalone `engram` in §3.2 is the supported
+memory path. This subsection is retained only to record where the heavy runtime
+went.
 
 Typical responsibilities:
 
@@ -345,7 +344,6 @@ The dependency graph should remain disciplined.
 - `llm_harness_core` depends on no heavy package in the suite.
 - `llm_engines` depends on `llm_harness_core`.
 - `engram` depends on `llm_harness_core`.
-- `engram` depends on `engram` (facade) and `llm_harness_core`.
 - `llm_inspector` depends on `llm_harness_core`.
 - `llm_inspector_ui` depends on `llm_inspector`, `llm_harness_core`, and selected feature packages.
 - `rag_lib` depends on `llm_harness_core`.

@@ -1,5 +1,42 @@
 # rag_lib
 
+## Tier: beta
+
+## Scope
+
+Retrieval-augmented generation pipeline. Ingests documents, indexes them, and
+retrieves relevant chunks to augment LLM prompts. Chunkers, rerankers, and
+embedders are implementation details — the public API is `RAGPipeline`.
+Does not run inference.
+
+## Quick start
+
+```python
+from rag_lib import RAGPipeline
+
+pipeline = RAGPipeline()                    # uses default config
+pipeline.ingest("./docs")                   # index a directory
+results = pipeline.retrieve("What is RAG?") # retrieve relevant chunks
+prompt = pipeline.assemble_prompt("What is RAG?")
+print(prompt)
+```
+
+With evaluation:
+
+```python
+from rag_lib import RAGPipeline
+
+pipeline = RAGPipeline(config="rag_config.yaml")
+pipeline.ingest("./docs")
+report = pipeline.evaluate(
+    queries=["What is RAG?", "How does chunking work?"],
+    ground_truth="ground_truth.json",
+)
+print(report)
+```
+
+
+
 `rag_lib` is the retrieval package for the `ai_tools` suite.
 
 Its job is not only to retrieve context for LLMs, but also to make retrieval behavior inspectable so users can understand what the retriever did and why.

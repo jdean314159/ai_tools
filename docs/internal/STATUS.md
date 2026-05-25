@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-05-22
+Last updated: 2026-05-24
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -9,21 +9,35 @@ first when starting a new thread or resuming work after a handoff.
 
 The engram freeze and rename is complete:
 
-- `engram/` is now the standalone memory library (formerly engram_lite v0.2.0).
+- `engram/` is the standalone memory library (formerly engram_lite v0.2.0).
   Import path: `engram/src/engram`. PyPI name: `engram`.
 - Heavy engram is archived (read-only) at github.com/jdean314159/engram.
 - `engram_lite` package no longer exists in the monorepo.
 - All library callers (`language_tutor`, `llm_inspector`, `llm_inspector_ui`,
-  `agent_lib`) have been migrated to `import engram`.
-- `language_tutor` engine imports migrated from `engram.engine.*` to
-  `llm_engines`.
-- All tests passing (`make test-core`).
+  `agent_lib`) use `import engram`.
 
-One known broken package:
+`engram_ui` was deleted (ADR-010) as redundant with `llm_inspector_ui`. No
+package is currently broken.
 
-- `engram_ui` still imports from `engram.engine.*` (now archived). It will not
-  run until the engine reconciliation migration is complete. This is tracked as
-  the next major workstream (see ROADMAP.md Phase engine-reconciliation).
+Public-API pass (MEMBERSHIP step 3) — in progress:
+
+- Per-package public API defined via `__all__` + scope/quickstart README for
+  `llm_engines`, `llm_harness_core`, `engram`, `rag_lib`, `llm_inspector`,
+  `llm_inspector_ui`, `agent_lib`.
+- `llm_engines`: added core types (`ChatMessage`, `GenerationRequest`,
+  `GenerationResponse`, `ChatModel`) to the public surface.
+- `engram`: `__all__` trimmed to the public surface; storage/semantic/telemetry
+  layers no longer exported from the top level.
+- `llm_inspector`: removed stale `EngramLiteAugmenter`/`make_engram_lite`;
+  deleted `engram_lite_adapter.py` and its test.
+- `llm_inspector_ui`: collapsed the duplicate `engram_lite` augmenter into the
+  single `engram` augmenter; removed remaining `engram_lite` UI strings.
+- `agent_lib`: `__all__` trimmed to coordination primitives + core programming
+  types; benchmark/demo/red-team runners no longer top-level exports; loud
+  EXPERIMENTAL notice added.
+
+Agent design guidance for future work captured in
+`docs/design/AGENT_BUILD_NOTES.md`.
 
 ## Package layout
 
@@ -31,7 +45,6 @@ Packages on `src/` layout:
 
     agent_lib/src/agent_lib
     engram/src/engram              ← renamed from engram_lite
-    engram_ui/src/engram_ui        ← broken until engine reconciliation
     language_tutor/src/language_tutor
     llm_harness_core/src/llm_harness_core
     llm_inspector/src/llm_inspector
@@ -62,33 +75,32 @@ One package intentionally remains on direct layout:
 
 ## Active work — in priority order
 
-1. **engram_ui engine reconciliation**
-   Migrate `engram_ui` off `engram.engine.*` to `llm_engines`. Approximately
-   7 files, 16 import lines. Deserves its own ADR before starting.
-   See: grep results in NEXT_THREAD_HANDOFF.md.
+1. **language_tutor acceptance slice (next objective).**
+   Hand-build one `language_tutor` capability against the refreshed public API
+   as the API acceptance test (MEMBERSHIP step 4). Validates that `engram` and
+   `llm_engines` public surfaces are sufficient without reaching into internals,
+   and produces the fixed target for the eventual agent loop. See
+   NEXT_THREAD_HANDOFF.md for scope and AGENT_BUILD_NOTES.md §7 for rationale.
 
-2. **Cosmetic string cleanup in engram**
-   `get_stats()` reports `"backend": "engram_lite"`, `version: "0.2.0"`.
-   `inspection.py` emits `source_package="engram_lite"`. Update to `"engram"`.
+2. **Promote validated slice into `examples/`**, then repeat for the rest of
+   `language_tutor`.
 
-3. **engram_lite console script cleanup**
-   Verify old `.venv/bin/engram-lite-*` entries are gone after clean reinstall.
+3. **Course split.** Move `course/` to its own repo consuming `ai_tools` as a
+   dependency. Mostly mechanical; validated by a local `pip install`, not
+   in-repo tests. Can proceed in parallel.
 
-4. **engram_ui facade_backup directory**
-   Delete `engram_lite/src/engram_lite_facade_backup/` (safety copy, no longer
-   needed).
+4. **ASC rebuild.** Worker/mentor orchestrator on `agent_lib`. Gated on
+   `agent_lib` reaching beta and on ADR-011 (agent execution isolation) being
+   accepted. See AGENT_BUILD_NOTES.md §4.
 
-5. **Root doc sync**
-   VISION.md §3.2/3.3, README.md package table — still describe the two-library
-   world. Update after engram_ui migration so docs reflect stable final state.
-
-6. **PyTorch optionality and fresh-clone verification**
-   Still valid from previous pass. Run after engram_ui migration.
+5. **PyTorch optionality and fresh-clone verification.** Carry-over hygiene
+   check from a previous pass.
 
 ## Notes for next session
 
 - Work from `~/ai_tools`, confirm `git status --short --branch` shows `main`.
-- `engram_ui` will fail to import until engine reconciliation is done — this is
-  expected and not a regression.
-- Before engine reconciliation, read the blast radius grep in
-  NEXT_THREAD_HANDOFF.md and write an ADR scoping the migration.
+- No package is currently broken; `make test-core` should be green.
+- Agent work has captured design guidance — read `docs/design/AGENT_BUILD_NOTES.md`
+  and ADR-011 before expanding `agent_lib`.
+- Decision rule for agent_lib growth: build a capability when a concrete run
+  fails without it, not when a design discussion suggests it.

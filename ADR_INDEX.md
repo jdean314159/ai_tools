@@ -131,10 +131,6 @@ Treat these as settled unless a new ADR explicitly reverses them:
 
 Needed to define shared event categories, required fields, severity semantics, provenance, and compatibility policy.
 
-### Agent execution isolation model
-
-Needed before serious `agent_lib` expansion. Should define filesystem, process, network, and worktree boundaries.
-
 ### Package import side-effect policy
 
 May be folded into ADR-008 or added later. Should define what may and may not happen at top-level import time.
@@ -145,3 +141,17 @@ May be folded into ADR-008 or added later. Should define what may and may not ha
 **Summary:** Heavy engram archived at github.com/jdean314159/engram. Original
 standalone engram_lite implementation restored and renamed to `engram`. ADR-007
 superseded. engram_ui engine migration deferred to follow-on ADR.
+
+## ADR-010 — Archive engram_ui, add chat panel to llm_inspector_ui
+**File:** `adr/ADR-010-archive-engram-ui-add-chat-panel.md`
+**Status:** Accepted
+**Summary:** `engram_ui` deleted as redundant with `llm_inspector_ui`. Streamlit
+dependency dropped from the active package set. No package broken as a result.
+
+## ADR-011 — Agent execution isolation model
+**File:** `adr/ADR-011-agent-execution-isolation.md`
+**Status:** Proposed
+**Summary:** Frames the filesystem/process/network/worktree boundary decisions
+needed before serious `agent_lib` expansion. Recommends enforced (container,
+network-default-deny) over advisory confinement. Left Proposed pending the first
+real ASC-build run, per the co-evolution rule in AGENT_BUILD_NOTES.
