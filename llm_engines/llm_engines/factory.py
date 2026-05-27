@@ -175,14 +175,24 @@ def _engine_from_config_dict(
         if "is_cloud" in engine_cfg:
             kwargs["is_cloud"] = bool(engine_cfg["is_cloud"])
 
-    # llama.cpp
+    # llama.cpp (in-process via llama-cpp-python)
     if backend in ("llamacpp", "llama_cpp"):
-        if "base_url" in engine_cfg:
-            kwargs["base_url"] = engine_cfg["base_url"]
+        # Generic "model" arg maps to LlamaCppEngine's model_path. Accept
+        # "gguf_path" as a config-file alias for the same thing.
+        if "model" in kwargs:
+            kwargs["model_path"] = kwargs.pop("model")
         if "gguf_path" in engine_cfg:
-            kwargs["gguf_path"] = engine_cfg["gguf_path"]
-        if "n_gpu_layers" in engine_cfg:
-            kwargs["n_gpu_layers"] = int(engine_cfg["n_gpu_layers"])
+            kwargs["model_path"] = engine_cfg["gguf_path"]
+        # base_url doesn't apply to in-process llama.cpp; drop silently if set.
+        kwargs.pop("base_url", None)
+        # Pass through LlamaCppEngine.__init__ kwargs, coercing types so YAML
+        # string values work the same as Python ints/bools.
+        for kw in ("n_gpu_layers", "n_ctx", "n_threads"):
+            if kw in engine_cfg and engine_cfg[kw] is not None:
+                kwargs[kw] = int(engine_cfg[kw])
+        for kw in ("verbose", "embedding"):
+            if kw in engine_cfg:
+                kwargs[kw] = bool(engine_cfg[kw])
 
     # Pass-through options
     options = engine_cfg.get("options", {})
