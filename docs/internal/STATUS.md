@@ -1,43 +1,48 @@
 # Repo Status
 
-Last updated: 2026-05-24
+Last updated: 2026-05-27
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-The engram freeze and rename is complete:
+**Phase: foundation complete; entering project-driven refinement.**
 
-- `engram/` is the standalone memory library (formerly engram_lite v0.2.0).
-  Import path: `engram/src/engram`. PyPI name: `engram`.
-- Heavy engram is archived (read-only) at github.com/jdean314159/engram.
-- `engram_lite` package no longer exists in the monorepo.
-- All library callers (`language_tutor`, `llm_inspector`, `llm_inspector_ui`,
-  `agent_lib`) use `import engram`.
+The public-API pass (MEMBERSHIP step 3) is complete for all seven packages
+(`__all__` + scope/quickstart README each). Two reference examples exist in
+`examples/`. The next phase is to drive real, demanding projects *through*
+ai_tools and let the friction reshape the libraries — closing the co-evolution
+loop rather than adding more speculative design surface. See
+NEXT_THREAD_HANDOFF.md.
 
-`engram_ui` was deleted (ADR-010) as redundant with `llm_inspector_ui`. No
-package is currently broken.
+Foundation state:
 
-Public-API pass (MEMBERSHIP step 3) — in progress:
+- `engram/` is the standalone memory library (formerly engram_lite). Heavy
+  engram archived at github.com/jdean314159/engram. `engram_ui` deleted
+  (ADR-010). No package is broken.
+- All seven packages have a defined public surface. `engram` trimmed to
+  `ProjectMemory` + core types; `agent_lib` trimmed to coordination primitives
+  with a loud EXPERIMENTAL notice.
+- `llm_engines` gained, justified by real consumers this phase: a `.text`
+  convenience on `GenerationResponse`; a `CacheStats` type; a `session_id`
+  prefix-cache hint on `GenerationRequest`; and a llama.cpp factory routing fix
+  (`get_engine("llamacpp", ...)` now works via the public surface).
+- `examples/language_tutor` — full tutor (adopted from a Codex draft, refined:
+  StructuredOutputHandler, merged per-turn analysis, session_id). Tests pass.
+- `examples/agent_coordination_teaching` — `agent_lib` coordination teaching
+  example (adopted from a Codex draft, refined: public-import fix, structured
+  output, isolation notes per ADR-011, public-API audit test, session_id).
+  Tests pass. Explicitly NOT the worker/mentor ASC.
 
-- Per-package public API defined via `__all__` + scope/quickstart README for
-  `llm_engines`, `llm_harness_core`, `engram`, `rag_lib`, `llm_inspector`,
-  `llm_inspector_ui`, `agent_lib`.
-- `llm_engines`: added core types (`ChatMessage`, `GenerationRequest`,
-  `GenerationResponse`, `ChatModel`) to the public surface.
-- `engram`: `__all__` trimmed to the public surface; storage/semantic/telemetry
-  layers no longer exported from the top level.
-- `llm_inspector`: removed stale `EngramLiteAugmenter`/`make_engram_lite`;
-  deleted `engram_lite_adapter.py` and its test.
-- `llm_inspector_ui`: collapsed the duplicate `engram_lite` augmenter into the
-  single `engram` augmenter; removed remaining `engram_lite` UI strings.
-- `agent_lib`: `__all__` trimmed to coordination primitives + core programming
-  types; benchmark/demo/red-team runners no longer top-level exports; loud
-  EXPERIMENTAL notice added.
+Design guidance captured (deferred work, not built): `AGENT_BUILD_NOTES.md`
+(worker/mentor pattern, roles, context-rot reduction, §8 future dedicated agent
+repo), `INFERENCE_OPTIMIZATION.md` (RLM pattern, KV-cache layer, §3a RAM/NVMe
+tiering, §6 multi-agent implications), `ADR-011` (agent execution isolation,
+Proposed).
 
-Agent design guidance for future work captured in
-`docs/design/AGENT_BUILD_NOTES.md`.
+Course materials will move to a separate repo (decided). Documentation serves
+as the project's externalized memory across bounded AI sessions and tools.
 
 ## Package layout
 
@@ -73,34 +78,49 @@ One package intentionally remains on direct layout:
     .venv/bin/python -c "import engram; print(engram.__file__)"
     # Expected: <repo>/engram/src/engram/__init__.py
 
-## Active work — in priority order
+## Active work — the project-driven refinement phase
 
-1. **language_tutor acceptance slice (next objective).**
-   Hand-build one `language_tutor` capability against the refreshed public API
-   as the API acceptance test (MEMBERSHIP step 4). Validates that `engram` and
-   `llm_engines` public surfaces are sufficient without reaching into internals,
-   and produces the fixed target for the eventual agent loop. See
-   NEXT_THREAD_HANDOFF.md for scope and AGENT_BUILD_NOTES.md §7 for rationale.
+The foundation is built. The validated next move (per the critique recorded in
+the design discussion) is to **run real, demanding projects through ai_tools as
+a hard external consumer**, and let each project's friction reshape the
+libraries. This closes the co-evolution loop that documentation and examples
+alone leave open. Each project is treated as a multi-session campaign with its
+own continuity, so the work survives bounded sessions rather than losing to
+session-sized tasks.
 
-2. **Promote validated slice into `examples/`**, then repeat for the rest of
-   `language_tutor`.
+Candidate projects (each stress-tests a different part of the stack):
 
-3. **Course split.** Move `course/` to its own repo consuming `ai_tools` as a
-   dependency. Mostly mechanical; validated by a local `pip install`, not
-   in-repo tests. Can proceed in parallel.
+1. **NetFlow analysis (recommended first).** Quadratic-complexity security
+   analysis over connection data — your dissertation domain. Stresses: RLM
+   pattern (`rag_lib`), large-context handling, `engram` for cross-pass state,
+   `llm_engines` cache behavior, local-first inference on the 3090. The
+   strongest loop-closer because it exercises the most-deferred capabilities.
+2. **Photo organization (90k+ collection).** Stresses: batch pipelines,
+   non-LLM tooling integration, `engram` for identity/cluster memory at scale.
+3. **Mystery-novel development tool.** Stresses: multi-agent coordination
+   (Brainstormer/Writer/Critic/Continuity), `agent_lib`, long-form `engram`
+   memory — the natural trigger for the future agent orchestration repo.
 
-4. **ASC rebuild.** Worker/mentor orchestrator on `agent_lib`. Gated on
-   `agent_lib` reaching beta and on ADR-011 (agent execution isolation) being
-   accepted. See AGENT_BUILD_NOTES.md §4.
+The discipline for each: build the project as a real consumer using only public
+APIs; when the API forces a private reach or is missing something, that gap is a
+justified `llm_engines`/`engram`/`rag_lib` change (the `.text` / llamacpp-factory
+pattern); record gaps in the project's API_CHANGES record.
 
-5. **PyTorch optionality and fresh-clone verification.** Carry-over hygiene
-   check from a previous pass.
+## Carry-over items to verify in a fresh thread
+
+- The three `session_id` one-liners in the examples (tutor `_generate`,
+  coordination `planner.py` and `workers.py`) — confirm applied.
+- `examples/language_tutor_slice/` — the minimal acceptance slice. Now redundant
+  given the full tutor was adopted. Remove if not already removed.
+- `make test-core` green; both example test suites pass locally against the stub
+  and, ideally, once against a real Ollama model.
 
 ## Notes for next session
 
 - Work from `~/ai_tools`, confirm `git status --short --branch` shows `main`.
-- No package is currently broken; `make test-core` should be green.
-- Agent work has captured design guidance — read `docs/design/AGENT_BUILD_NOTES.md`
-  and ADR-011 before expanding `agent_lib`.
-- Decision rule for agent_lib growth: build a capability when a concrete run
-  fails without it, not when a design discussion suggests it.
+- No package is broken; `make test-core` should be green.
+- Decision rule for any library growth: build a capability when a concrete
+  project run fails without it, not when a design discussion suggests it.
+- Design guidance for deferred work lives in `docs/design/AGENT_BUILD_NOTES.md`
+  and `docs/design/INFERENCE_OPTIMIZATION.md`; consult before building anything
+  in those areas.

@@ -1,67 +1,68 @@
 # Next Thread Handoff — ai_tools
 
-Last updated: 2026-05-24
+Last updated: 2026-05-27
 
-## Current state
+## Read these first
 
-The engram freeze and rename is complete. `engram_ui` has been deleted
-(ADR-010) as redundant with `llm_inspector_ui` — no package is currently
-broken. The public-API pass (MEMBERSHIP step 3) is done for all packages.
-See STATUS.md for the full per-package picture.
+1. `docs/internal/STATUS.md` — current repo state (single source of truth).
+2. This file — what to do next and why.
 
-Completed in the most recent session:
+## Where we are
 
-- Public API defined per package (`__all__` + scope/quickstart README) for
-  `llm_engines`, `llm_harness_core`, `engram`, `rag_lib`, `llm_inspector`,
-  `llm_inspector_ui`, `agent_lib`.
-- `llm_engines`: core types (`ChatMessage`, `GenerationRequest`,
-  `GenerationResponse`, `ChatModel`) added to the public surface.
-- `engram`: `__all__` trimmed; storage/semantic/telemetry layers no longer
-  exported from the top level.
-- Stale `engram_lite` residue removed: `engram_lite_adapter.py` and its test
-  deleted; `llm_inspector_ui` duplicate augmenter collapsed into the single
-  `engram` augmenter; remaining `engram_lite` UI strings cleaned.
-- Agent design guidance captured in `docs/design/AGENT_BUILD_NOTES.md`;
-  ADR-011 (agent execution isolation) added as Proposed.
-- Doc sync: STATUS, ROADMAP, VISION (§3.2/3.3 facade language corrected to
-  match ADR-009), PACKAGE_ROLES, ADR_INDEX brought current.
+Foundation phase is complete: all seven packages have a defined public API,
+two reference examples exist (`examples/language_tutor`,
+`examples/agent_coordination_teaching`), and design guidance for deferred work
+is captured (`AGENT_BUILD_NOTES.md`, `INFERENCE_OPTIMIZATION.md`, ADR-011).
 
-## Immediate next objective: language_tutor acceptance slice
+A critic-mode review concluded the project is sound in direction but documents
+more than it builds, and that the bounded-session workflow structurally biases
+work toward session-sized tasks (cleanup, API defs, single examples, notes) and
+away from the sustained, multi-session integration that would most validate the
+toolkit. The agreed corrective: **drive real, demanding projects through
+ai_tools and let the friction reshape the libraries.**
 
-The next step is the API acceptance test, per MEMBERSHIP step 4: hand-build
-**one** `language_tutor` capability against the refreshed public API.
+## Immediate objective: start the first project campaign
 
-Why this first:
+Pick one real project and build it *through* ai_tools as a demanding external
+consumer. Recommended first: **NetFlow analysis** (quadratic-complexity security
+analysis over connection data — the user's dissertation domain). It exercises
+the most-deferred capabilities: the RLM pattern in `rag_lib`, large-context
+handling, `engram` for cross-pass state, and `llm_engines` cache behavior on the
+local 3090. Alternatives: photo organization (batch/scale), mystery-novel tool
+(multi-agent — natural trigger for the future agent repo).
 
-- It validates that the trimmed public surfaces (especially `engram` and
-  `llm_engines`) are sufficient to build a real app without reaching into
-  internals. If the slice forces a private import, the API is incomplete and
-  that is the signal to fix it before the full rebuild.
-- It produces the fixed, verifiable target that the eventual worker/mentor
-  agent loop should be developed against (see AGENT_BUILD_NOTES §7).
-- It is the cheapest move that advances both the examples plan and the agent
-  plan at once.
+**Working method for the campaign:**
 
-Suggested scope for the slice: pick a single vertical (e.g. ingest a small
-vocabulary set, run one tutoring turn through `engram` memory + an
-`llm_engines` engine, emit the trace). Harvest domain logic from the existing
-`language_tutor/`; rewrite all integration glue against the public API rather
-than porting the old imports.
+- Treat it as a multi-session campaign with its own continuity. At project
+  start, create `docs/projects/<name>/CAMPAIGN.md` to hold the running state
+  (goal, current step, decisions, open gaps) so the work survives across threads
+  and tools — the same externalized-memory pattern the rest of the repo uses.
+- Build using only public APIs. When the API forces a private reach or is
+  missing something, that gap is a justified library change (the established
+  `.text` / llamacpp-factory pattern). Surface the gap, fix the public surface,
+  record it in the campaign's API_CHANGES section.
+- Real-model validation matters here in a way stubs cannot provide. Run against
+  local Ollama (or llama.cpp) on the 3090, not just deterministic stubs.
+- Apply deferred design guidance only when the project actually demands it.
+  `INFERENCE_OPTIMIZATION.md` (RLM, cache) and `AGENT_BUILD_NOTES.md` (agents)
+  are the briefs; consult when triggered, don't build ahead of need.
 
-## After the slice
+## Carry-over to verify before starting
 
-1. If gaps are found, fix the public APIs (small, targeted) and re-run.
-2. Promote the validated slice into `examples/`.
-3. Repeat for the rest of `language_tutor`; then consider the ASC rebuild,
-   gated on `agent_lib` reaching beta (AGENT_BUILD_NOTES §4, ADR-011).
-4. Separately, the course split (move `course/` to its own repo consuming
-   `ai_tools` as a dependency) can proceed in parallel; it is mostly mechanical
-   and validated by a local `pip install`, not in-repo tests.
+- Three `session_id` one-liners in the examples applied (tutor `_generate`,
+  coordination `planner.py`, `workers.py`).
+- `examples/language_tutor_slice/` removed (redundant after full tutor adoption).
+- `make test-core` green; example test suites pass.
 
 ## Validation
 
-    make test-core
+    make install && make test-core
+    # plus, for the chosen project, real-model runs on local hardware
 
-No code logic changed in the most recent session beyond `__all__`/adapter
-trims, so the gate should be green. Re-run after the acceptance slice introduces
-real consuming code.
+## Open decisions (not blocking)
+
+- Which project runs first (recommend NetFlow).
+- Whether to begin dogfooding `engram` as the continuity/memory substrate for
+  the project campaigns themselves (indexing STATUS/ADR/campaign docs so a fresh
+  thread retrieves relevant prior decisions instead of re-reading everything).
+  Real use of the toolkit and a hard test of it at once.

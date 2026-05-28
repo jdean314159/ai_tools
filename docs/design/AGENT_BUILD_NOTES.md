@@ -97,8 +97,60 @@ Everything above converges on one cheap first move:
 
 Do not build the §6 reducer or the §1 kernel before step 3 produces a real transcript. The brainstorm tells you *how* you would build them; a failed/rotted run tells you *that* you must, and with what policy.
 
+## 8. Future: dedicated agent orchestration repo
+
+The `examples/agent_coordination_teaching` example is correctly scoped as a
+teaching artifact — it demonstrates `agent_lib` coordination primitives and is
+intentionally narrow. A more extensive capability, implementing the worker/mentor
+pattern in §4 as a real orchestrator, belongs in its own repository as a peer
+to `ai_tools`, not inside it.
+
+**Shape:** a standalone repo that consumes `ai_tools` packages as library
+dependencies (same pattern as the planned course split). Its design brief is
+already written — §§1–6 above plus ADR-011.
+
+**Trigger:** start the repo when a concrete task makes `agent_coordination_teaching`
+demonstrably insufficient. A natural candidate: point the coordination example
+at the `language_tutor` rebuild and note where the single-pass dispatch breaks
+down. That failure is the evidence base for the first commits.
+
+**Non-negotiables from day one** (do not retrofit):
+
+- Isolation per ADR-011's recommended baseline: rootless container, workspace
+  bind-mounted read/write, `--network none` by default. The lesson from
+  `agent_coordination_teaching` is that sandboxing added late is sandboxing
+  applied inconsistently.
+- Worker/mentor wiring with an optional, pluggable mentor (§4 boundary
+  decisions). The cloud mentor must never be required — the local-only path
+  must degrade gracefully, not fail.
+- Objective escalation triggers only (§4) — no self-reported "I am stuck."
+- Cost circuit-breaker on mentor calls from the first session that uses a
+  cloud mentor.
+
+**What `examples/agent_coordination_teaching` provides to bootstrap it:**
+the coordination primitive patterns (mailbox, ExternalSessionCoordinator,
+exchange log, monitor), planner/worker wiring, and the isolation gap inventory
+documented in that example's API_CHANGES.md and README.
+
+**Inference-optimization findings that apply directly** (see
+`docs/design/INFERENCE_OPTIMIZATION.md` §3a and §6): `session_id` is necessary
+but not sufficient for shared-prefix workers (a layered prefix key is the
+eventual need); KV-cache contention is a hard concurrency limit on a single
+local GPU, mitigated by RAM/NVMe tier offload; aggregated `CacheStats` becomes
+the fleet-level scheduling and debugging signal; the cost circuit-breaker
+should be expressed in dollars (from cache hit ratios), not call count; and the
+shared-vs-per-agent Engram memory choice now carries a cost axis as well as a
+correctness one. Instrument cache telemetry from the first session that runs
+real concurrent workers.
+
 ---
 
 ## Reference
 
-This document distills a design discussion held 2026-05-24. It is guidance for a future build, not a record of work performed. When the ASC rebuild or any agent functionality begins, start here, then update or supersede sections as real runs provide evidence. Related: `docs/design/VISION.md` (harness principles), `docs/internal/MEMBERSHIP.md` (execution sequence), `adr/` (ADR on agent execution isolation is still needed before serious `agent_lib` expansion — see `ADR_INDEX.md`).
+This document distills a design discussion held 2026-05-24, with §8 added
+2026-05-27 after `examples/agent_coordination_teaching` was completed. It is
+guidance for a future build, not a record of work performed. When the dedicated
+agent orchestration repo is started, begin with §§1–6 and ADR-011, then update
+or supersede sections as real runs provide evidence. Related:
+`docs/design/VISION.md` (harness principles), `docs/internal/MEMBERSHIP.md`
+(execution sequence), `adr/ADR-011-agent-execution-isolation.md`.
