@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "diagnostics-agent"
+version = "0.1.0"
+description = "Read-only sandbox spine for local diagnostics."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "llm-engines",
+  "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+]
+ui = [
+  "streamlit",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
