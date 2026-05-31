@@ -81,6 +81,7 @@ If they must read source to use it, the public API or quickstart is not done.
 | `llm_inspector_ui` | tool | beta | run as workbench | General dev tool. Add chat panel (ADR-010). |
 | `agent_lib` | block | **experimental** | coordination primitives | Mark experimental loudly. Do not oversell. |
 | `language_tutor` | example (rebuild) | — | n/a | Freeze as reference source; rebuild in `examples/`. |
+| `diagnostics_agent` | example (campaign) | — | n/a | Built with the blocks; code in `examples/`, campaign docs in `docs/projects/`. |
 | `engram_ui` | out | — | n/a | Archive (ADR-010). |
 | `course/` | out | — | n/a | Split to its own repo (last step). |
 | ASC | example (rebuild, later) | — | n/a | Built with `agent_lib`; gated on `agent_lib` reaching beta. |
@@ -103,6 +104,11 @@ Examples are documentation. A ported-as-is app imports whatever internal surface
 it was built against and teaches users to reach into internals — and rots faster
 than prose because it is executable. Examples must therefore be **built against
 the final public API**, not migrated from earlier internal versions.
+
+An example may begin as an **active campaign** (in-flight, with its own continuity
+in `docs/projects/<name>/`) and graduate to a frozen reference once its shape
+settles. `diagnostics_agent` is currently in the campaign stage. Campaign status
+is declared in the example's README tier note.
 
 - **Port** = move files, fix imports. **Forbidden** for examples.
 - **Harvest** = extract the domain logic that is independent of how the app talks

@@ -10,6 +10,7 @@
 # Usage:
 #   make install          Install all packages in editable mode
 #   make test             Run all offline unit tests
+#   make test-diagnostics Run diagnostics_agent example tests
 #   make test-integration Run cross-package integration tests
 #   make test-live        Run live Ollama conformance tests
 #   make smoke            Run the llm_engines smoke test
@@ -40,9 +41,10 @@ install: venv
 	$(PIP) install -e './rag_lib[dev]'
 	$(PIP) install -e './llm_inspector_ui[dev]'
 	$(PIP) install -e './language_tutor[dev]'
+	$(PIP) install -e './examples/diagnostics_agent[dev]'
 	$(PIP) install -e './agent_lib[dev]'
 	@echo ""
-	@echo "Core packages installed in dependency order. Run 'make test-core', 'make test-agent', 'make test-rag', 'make test-integration', or 'make test-tutor' to verify."
+	@echo "Core packages installed in dependency order. Run 'make test-core', 'make test-agent', 'make test-rag', 'make test-integration', 'make test-tutor', or 'make test-diagnostics' to verify."
 	
 install-ml: install
 	$(PIP) install -e './engram[ml-dev]'	
@@ -87,6 +89,10 @@ test-integration:
 .PHONY: test-tutor
 test-tutor:
 	cd language_tutor && $(TEST_PYTHON) -m pytest tests/ -v
+
+.PHONY: test-diagnostics
+test-diagnostics:
+	cd examples/diagnostics_agent && $(TEST_PYTHON) -m pytest tests/ -v
 
 .PHONY: test-live
 test-live:
@@ -179,6 +185,7 @@ help:
 	@echo "  make test             Offline unit tests (no services needed)"
 	@echo "  make test-agent       Agent kernel tests"
 	@echo "  make test-rag         rag_lib unit tests"
+	@echo "  make test-diagnostics diagnostics_agent example tests"
 	@echo "  make test-integration Cross-package integration tests"
 	@echo "  make test-live        Live Ollama conformance (ollama serve required)"
 	@echo "  make test-live-embed  Live Ollama + embedding model tests"
