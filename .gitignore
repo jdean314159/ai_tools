@@ -29,6 +29,7 @@ env/
 *.sqlite3
 *.sqlite3-*
 *.log
+!**/tests/fixtures/*.log
 *.jsonl
 telemetry.jsonl
 calibration.json

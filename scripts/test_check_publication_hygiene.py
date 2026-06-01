@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+# hygiene: ignore-fixture-references
+
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,6 +14,7 @@ SPEC = importlib.util.spec_from_file_location("check_publication_hygiene", SCRIP
 assert SPEC is not None
 checker = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
+sys.modules[SPEC.name] = checker
 SPEC.loader.exec_module(checker)
 
 
@@ -162,6 +166,77 @@ def test_banned_files_in_multiple_directories_are_all_found(hygiene_root: Path) 
         Path("three/c.orig"),
         Path("two/b.pyo"),
     ]
+
+
+def test_referenced_untracked_fixture_fails_in_both_modes(
+    hygiene_root: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _write(
+        hygiene_root / "pkg" / "tests" / "test_logs.py",
+        "from pathlib import Path\n"
+        "FIXTURES = Path(__file__).parent / 'fixtures'\n"
+        "def test_log():\n"
+        "    assert (FIXTURES / 'sample.log').read_text()\n",
+    )
+    _write(hygiene_root / "pkg" / "tests" / "fixtures" / "sample.log", "warning\n")
+
+    assert checker.main([]) == 1
+    strict_output = capsys.readouterr().out
+    assert "Referenced fixture files must be tracked:" in strict_output
+    assert "pkg/tests/test_logs.py references untracked fixture" in strict_output
+    assert "pkg/tests/fixtures/sample.log" in strict_output
+
+    assert checker.main(["--tracked-only"]) == 1
+    tracked_only_output = capsys.readouterr().out
+    assert "Referenced fixture files must be tracked:" in tracked_only_output
+
+
+def test_referenced_tracked_fixture_passes(
+    hygiene_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write(
+        hygiene_root / "pkg" / "tests" / "test_logs.py",
+        "from pathlib import Path\n"
+        "FIXTURES = Path(__file__).parent / 'fixtures'\n"
+        "def test_log():\n"
+        "    assert (FIXTURES / 'sample.log').read_text()\n",
+    )
+    fixture = _write(hygiene_root / "pkg" / "tests" / "fixtures" / "sample.log", "warning\n")
+    _track(monkeypatch, fixture)
+
+    assert checker.main([]) == 0
+
+
+def test_referenced_missing_fixture_fails(hygiene_root: Path) -> None:
+    _write(
+        hygiene_root / "pkg" / "tests" / "test_logs.py",
+        "from pathlib import Path\n"
+        "FIXTURES = Path(__file__).parent / 'fixtures'\n"
+        "def test_log():\n"
+        "    assert (FIXTURES / 'missing.log').read_text()\n",
+    )
+
+    assert checker.main([]) == 1
+
+
+def test_direct_fixture_string_reference_must_be_tracked(
+    hygiene_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write(
+        hygiene_root / "pkg" / "tests" / "test_logs.py",
+        "def test_log():\n"
+        "    assert open('fixtures/direct.log').read()\n",
+    )
+    fixture = _write(hygiene_root / "pkg" / "tests" / "fixtures" / "direct.log", "warning\n")
+    _track(monkeypatch, fixture)
+
+    references = checker._fixture_references()
+
+    assert references[0].fixture_path == fixture.resolve()
+    assert checker.main([]) == 0
 
 
 if __name__ == "__main__":

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import os
 import subprocess
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -33,6 +35,11 @@ LEGACY_BASENAMES = {
     "README_llm_inspector.legacy.md",
     "README_llm_inspector_ui.legacy.md",
 }
+
+FIXTURE_DIR_NAME = "fixtures"
+TEST_FILE_PREFIX = "test_"
+TEST_FILE_SUFFIX = "_test.py"
+FIXTURE_REFERENCE_SKIP_MARKER = "hygiene: ignore-fixture-references"
 
 SKIP_DIR_NAMES = {
     ".git",
@@ -77,6 +84,14 @@ def _walk_working_tree() -> Iterator[Path]:
             yield base / dirname
         for filename in filenames:
             yield base / filename
+
+
+def _iter_test_files() -> Iterator[Path]:
+    for path in _walk_working_tree():
+        if not path.is_file() or path.suffix != ".py":
+            continue
+        if path.name.startswith(TEST_FILE_PREFIX) or path.name.endswith(TEST_FILE_SUFFIX):
+            yield path
 
 
 def _preview(paths: list[Path], limit: int = 10) -> str:
@@ -147,6 +162,162 @@ def _format_findings(title: str, findings: dict[str, list[Path]]) -> list[str]:
     return lines
 
 
+@dataclass(frozen=True)
+class FixtureReference:
+    source_file: Path
+    fixture_path: Path
+
+
+def _fixture_references() -> list[FixtureReference]:
+    references: list[FixtureReference] = []
+    for test_file in _iter_test_files():
+        references.extend(_fixture_references_in_test(test_file))
+    return sorted(references, key=lambda ref: (ref.source_file, ref.fixture_path))
+
+
+def _fixture_references_in_test(test_file: Path) -> list[FixtureReference]:
+    try:
+        source = test_file.read_text(encoding="utf-8")
+        if FIXTURE_REFERENCE_SKIP_MARKER in source:
+            return []
+        tree = ast.parse(source, filename=str(test_file))
+    except (OSError, SyntaxError, UnicodeDecodeError):
+        return []
+
+    references: set[Path] = set()
+    fixture_names = _fixture_dir_names(tree)
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+            parts = _path_join_parts(node)
+            if parts and _parts_reference_fixture_file(parts):
+                references.add(_resolve_fixture_parts(test_file, parts))
+                continue
+
+            if (
+                isinstance(node.left, ast.Name)
+                and node.left.id in fixture_names
+                and isinstance(node.right, ast.Constant)
+                and isinstance(node.right.value, str)
+            ):
+                references.add((test_file.parent / FIXTURE_DIR_NAME / node.right.value).resolve())
+                continue
+
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            direct = _fixture_path_from_string(test_file, node.value)
+            if direct is not None:
+                references.add(direct)
+
+    return [
+        FixtureReference(source_file=test_file.resolve(), fixture_path=fixture)
+        for fixture in sorted(references)
+    ]
+
+
+def _fixture_dir_names(tree: ast.AST) -> set[str]:
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        parts = _path_join_parts(node.value)
+        if not parts or parts[-1] != FIXTURE_DIR_NAME:
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                names.add(target.id)
+    return names
+
+
+def _parts_reference_fixture_file(parts: tuple[str, ...]) -> bool:
+    if FIXTURE_DIR_NAME not in parts:
+        return False
+    return parts.index(FIXTURE_DIR_NAME) < len(parts) - 1
+
+
+def _path_join_parts(node: ast.AST) -> tuple[str, ...] | None:
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+        left = _path_join_parts(node.left)
+        right = _path_join_parts(node.right)
+        if left is None or right is None:
+            return None
+        return (*left, *right)
+
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return (node.value,)
+
+    if _is_test_file_parent_expr(node):
+        return ("__TEST_PARENT__",)
+
+    return None
+
+
+def _is_test_file_parent_expr(node: ast.AST) -> bool:
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr == "parent"
+        and _is_path_dunder_file_expr(node.value)
+    )
+
+
+def _is_path_dunder_file_expr(node: ast.AST) -> bool:
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "Path"
+        and len(node.args) == 1
+        and isinstance(node.args[0], ast.Name)
+        and node.args[0].id == "__file__"
+    ):
+        return True
+
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "resolve"
+        and isinstance(node.func.value, ast.Call)
+        and _is_path_dunder_file_expr(node.func.value)
+    )
+
+
+def _resolve_fixture_parts(test_file: Path, parts: tuple[str, ...]) -> Path:
+    if parts[0] == "__TEST_PARENT__":
+        return test_file.parent.joinpath(*parts[1:]).resolve()
+    return ROOT.joinpath(*parts).resolve()
+
+
+def _fixture_path_from_string(test_file: Path, value: str) -> Path | None:
+    normalized = value.replace("\\", "/")
+    parts = [part for part in normalized.split("/") if part not in {"", "."}]
+    if FIXTURE_DIR_NAME not in parts:
+        return None
+
+    fixture_index = parts.index(FIXTURE_DIR_NAME)
+    if fixture_index == len(parts) - 1:
+        return None
+    if fixture_index == 0:
+        return test_file.parent.joinpath(*parts).resolve()
+    return ROOT.joinpath(*parts).resolve()
+
+
+def _find_untracked_fixture_references() -> list[str]:
+    tracked = {path.resolve() for path in _git_tracked_files()}
+    problems: list[str] = []
+
+    for reference in _fixture_references():
+        source_rel = reference.source_file.relative_to(ROOT)
+        try:
+            fixture_rel = reference.fixture_path.relative_to(ROOT)
+        except ValueError:
+            fixture_rel = reference.fixture_path
+
+        if not reference.fixture_path.exists():
+            problems.append(f"{source_rel} references missing fixture {fixture_rel}")
+        elif reference.fixture_path.resolve() not in tracked:
+            problems.append(f"{source_rel} references untracked fixture {fixture_rel}")
+
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -190,6 +361,11 @@ def main(argv: list[str] | None = None) -> int:
             + ", ".join(str(p) for p in sorted(misplaced_legacy))
         )
 
+    untracked_fixtures = _find_untracked_fixture_references()
+    if untracked_fixtures:
+        problems.append("Referenced fixture files must be tracked:")
+        problems.extend(f"- {problem}" for problem in untracked_fixtures)
+
     if warnings:
         print("Publication hygiene warnings:")
         for warning in warnings:
@@ -210,6 +386,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("Untracked banned artifacts: none")
     print("Legacy package READMEs are confined to docs/history/.")
+    print("Referenced fixture files are tracked.")
     return 0
 
 

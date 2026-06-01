@@ -1,0 +1,3 @@
+{"__REALTIME_TIMESTAMP": "1780081200000000", "_HOSTNAME": "host", "SYSLOG_IDENTIFIER": "bluetoothd", "_PID": "700", "PRIORITY": "3", "MESSAGE": "adapter reset failed on hci0"}
+{"__REALTIME_TIMESTAMP": "1780081201000000", "_HOSTNAME": "host", "SYSLOG_IDENTIFIER": "pipewire", "_PID": "800", "PRIORITY": "4", "MESSAGE": "node graph rate mismatch detected"}
+{"__REALTIME_TIMESTAMP": "1780081202000000", "_HOSTNAME": "host", "SYSLOG_IDENTIFIER": "gnome-shell", "_PID": "900", "PRIORITY": "4", "MESSAGE": "frame clock stall on monitor DP-1"}

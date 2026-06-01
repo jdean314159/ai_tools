@@ -1,0 +1,4 @@
+2026-05-29T15:00:01-07:00 host kernel: Out of memory: Killed process 4242 (chrome)
+2026-05-29T15:00:02-07:00 host kernel: oom-kill: constraint=CONSTRAINT_NONE
+2026-05-29T15:01:00-07:00 host systemd[1]: warning Started daily apt upgrade check
+2026-05-29T15:02:00-07:00 host NetworkManager[900]: info device eth0 carrier up
