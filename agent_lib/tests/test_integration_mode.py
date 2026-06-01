@@ -1,6 +1,8 @@
 from agent_lib import (
     ExternalSessionCoordinator,
     InMemoryMailbox,
+)
+from agent_lib.examples import (
     make_external_programming_team,
     make_external_session_coordinator,
 )

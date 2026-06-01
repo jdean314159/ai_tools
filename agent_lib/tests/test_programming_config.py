@@ -83,7 +83,7 @@ def test_programming_demo_can_run_from_config_with_named_role_engines(tmp_path) 
     assert run.steps[1].trace is not None and run.steps[1].trace.metrics.model == "worker-mock"
 
 
-from agent_lib import load_programming_runtime_config, save_programming_runtime_config
+from agent_lib.programming import load_programming_runtime_config, save_programming_runtime_config
 from agent_lib.examples import run_programming_demo_from_file, write_programming_config_file
 
 

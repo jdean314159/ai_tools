@@ -1,0 +1,25 @@
+# Super Claude Kit - Session files (generated at runtime)
+.claude/**
+CLAUDE.md
+
+# Internal notes (not for repo)
+__notepad__/*
+
+# OS files
+.DS_Store
+Thumbs.db
+scatch.pad.txt
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Backup files
+*.bak
+*.backup
+
+# Tool binaries (built locally by users)
+tools/*/bin/

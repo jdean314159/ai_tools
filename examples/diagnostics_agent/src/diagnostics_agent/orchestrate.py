@@ -10,6 +10,7 @@ from diagnostics_agent.collect import CollectedLogs, Collector
 from diagnostics_agent.errors import CollectionReadError, InterpreterError
 from diagnostics_agent.interpret import Interpretation, LogInterpreter
 from diagnostics_agent.sandbox import ReadOnlySandbox, SandboxResult
+from diagnostics_agent.system_facts import SystemFacts, collect_system_facts
 from diagnostics_agent.triage import LogTriage, TriageSummary
 
 
@@ -66,13 +67,18 @@ class DiagnosticsOrchestrator:
                 collected=collected,
             )
             summary = self.triage.triage(text)
-            interpretation, interpretation_error = self._interpret(summary)
+            system_facts = self._collect_system_facts()
+            interpretation, interpretation_error = self._interpret(
+                summary,
+                system_facts=system_facts,
+            )
             audit = self._build_audit(
                 run_started=run_started,
                 collected=collected,
                 sandbox_result=sandbox_result,
                 read_command=read_command,
                 summary=summary,
+                system_facts=system_facts,
                 interpretation=interpretation,
                 interpretation_error=interpretation_error,
             )
@@ -118,9 +124,20 @@ class DiagnosticsOrchestrator:
         mounts = tuple(config.mounts) + ((str(staging_dir), self.sandbox_mount),)
         return ReadOnlySandbox(replace(config, mounts=mounts))
 
-    def _interpret(self, summary: TriageSummary) -> tuple[Interpretation | None, str | None]:
+    def _collect_system_facts(self) -> SystemFacts | None:
         try:
-            return self.interpreter.interpret(summary), None
+            return collect_system_facts()
+        except Exception:
+            return None
+
+    def _interpret(
+        self,
+        summary: TriageSummary,
+        *,
+        system_facts: SystemFacts | None,
+    ) -> tuple[Interpretation | None, str | None]:
+        try:
+            return self.interpreter.interpret(summary, system_facts=system_facts), None
         except InterpreterError as exc:
             return None, str(exc)
 
@@ -132,6 +149,7 @@ class DiagnosticsOrchestrator:
         sandbox_result: SandboxResult | None,
         read_command: list[str],
         summary: TriageSummary,
+        system_facts: SystemFacts | None,
         interpretation: Interpretation | None,
         interpretation_error: str | None,
     ) -> dict:
@@ -145,6 +163,7 @@ class DiagnosticsOrchestrator:
                 "sandbox": _sandbox_result_to_dict(sandbox_result),
             },
             "summary": summary.to_dict(),
+            "system_facts": system_facts.to_dict() if system_facts is not None else None,
             "interpretation": (
                 interpretation.model_dump(mode="json")
                 if interpretation is not None

@@ -29,11 +29,11 @@ It should not duplicate the entire repo architecture. Root documents already cov
 
 ### Root `AGENT.md`
 
-A root-level `AGENT.md` should summarize repo-wide operating rules and point to the canonical root docs:
+A root-level `AGENT.md` should summarize repo-wide operating rules and point to the canonical repo docs:
 
-- `VISION.md`
-- `CURRENT_STATE.md`
-- `ROADMAP.md`
+- `docs/design/VISION.md`
+- `docs/internal/STATUS.md`
+- `docs/internal/ROADMAP.md`
 - `ADR_INDEX.md`
 
 ### Package-local `AGENT.md`
@@ -92,7 +92,7 @@ Common safe tasks for agents or humans.
 Common failure modes or bad edits.
 
 ## Related docs
-Links to `VISION.md`, ADRs, README, manifests, or other local docs.
+Links to `docs/design/VISION.md`, ADRs, README, manifests, or other local docs.
 ```
 
 ---

@@ -28,6 +28,7 @@ With llm_engines:
 # Core — public API
 from .contracts import AugmentRequest, AugmentResult, PromptAugmenter
 from .project_memory import ProjectMemory
+from .telemetry import Telemetry, TelemetryEvent
 from .types import ProjectType, TokenBudget
 from .interop import augment_result_to_interop_result, describe_memory, trace_to_memory_records
 
@@ -44,6 +45,9 @@ __all__ = [
     # Config types
     "ProjectType",
     "TokenBudget",
+    # Telemetry configuration
+    "Telemetry",
+    "TelemetryEvent",
     # Augmenter protocol (implement to plug in a custom memory backend)
     "AugmentRequest",
     "AugmentResult",

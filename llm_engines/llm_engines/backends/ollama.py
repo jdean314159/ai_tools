@@ -33,7 +33,6 @@ from llm_engines.contracts import (
     EmbeddingRequest,
     EmbeddingResponse,
     EngineCapabilities,
-    EngineConfigError,
     GenerationError,
     GenerationRequest,
     GenerationResponse,
@@ -48,6 +47,7 @@ from llm_engines.discovery import (
     ensure_ollama_model,
     list_ollama_models,
 )
+from llm_engines.utils.json_schema import inline_local_json_schema_refs
 
 BACKEND = "ollama"
 
@@ -158,7 +158,13 @@ class OllamaEngine:
             f"Pull with: ollama pull {self.model}"
         )
 
-    def _base_payload(self, messages: list[dict], max_tokens: int, temperature: float) -> dict:
+    def _base_payload(
+        self,
+        messages: list[dict],
+        max_tokens: int,
+        temperature: float,
+        json_schema: dict[str, Any] | None = None,
+    ) -> dict:
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
@@ -173,6 +179,8 @@ class OllamaEngine:
         }
         if self.num_gpu is not None:
             payload["options"]["num_gpu"] = self.num_gpu
+        if json_schema is not None:
+            payload["format"] = inline_local_json_schema_refs(json_schema)
         return payload
 
     def _post_json(self, endpoint: str, payload: dict, timeout: int = 300) -> dict:
@@ -235,9 +243,9 @@ class OllamaEngine:
             chat=True,
             streaming=True,
             async_streaming=False,
-            tool_calling=False,       # Phase 2
+            tool_calling=False,
             embeddings=True,
-            structured_output=False,  # Phase 2
+            structured_output=True,
             batch_generation=False,
             vision=False,
             usage_reporting=True,
@@ -253,6 +261,7 @@ class OllamaEngine:
             self._format_messages(request),
             request.max_tokens,
             request.temperature,
+            request.json_schema,
         )
         if request.stop:
             payload["options"]["stop"] = request.stop

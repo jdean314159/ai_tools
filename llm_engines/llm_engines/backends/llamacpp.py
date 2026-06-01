@@ -40,18 +40,16 @@ from llm_engines.contracts import (
     GenerationError,
     GenerationRequest,
     GenerationResponse,
-    EmbeddingModel,
     EmbeddingRequest,
     EmbeddingResponse,
-    LogprobModel,
     LogprobResult,
     TokenLogprob,
-    StreamingModel,
     UsageStats,
 )
+from llm_engines.utils.json_schema import inline_local_json_schema_refs
 
 try:
-    from llama_cpp import Llama, LlamaTokenizer  # type: ignore
+    from llama_cpp import Llama  # type: ignore
 except ImportError as _e:
     raise ImportError(
         "LlamaCppEngine requires llama-cpp-python. "
@@ -129,7 +127,7 @@ class LlamaCppEngine:
             async_streaming=False,
             tool_calling=False,
             embeddings=self._embedding_mode,
-            structured_output=False,
+            structured_output=True,
             batch_generation=False,
             vision=False,
             usage_reporting=True,
@@ -146,16 +144,22 @@ class LlamaCppEngine:
             )
 
         messages = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        completion_kwargs: dict[str, Any] = {
+            "messages": messages,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "stop": request.stop or [],
+            "stream": False,
+        }
+        if request.json_schema is not None:
+            completion_kwargs["response_format"] = {
+                "type": "json_schema",
+                "schema": inline_local_json_schema_refs(request.json_schema),
+            }
 
         t0 = time.perf_counter()
         try:
-            raw = self._llm.create_chat_completion(
-                messages=messages,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                stop=request.stop or [],
-                stream=False,
-            )
+            raw = self._llm.create_chat_completion(**completion_kwargs)
         except Exception as e:
             raise GenerationError(f"LlamaCppEngine generation failed: {e}") from e
 

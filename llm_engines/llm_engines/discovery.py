@@ -39,6 +39,10 @@ logger = logging.getLogger(__name__)
 _OLLAMA_BASE = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 
+class OllamaModelResolutionError(ValueError):
+    """Raised when an Ollama model cannot be resolved to a local GGUF blob."""
+
+
 # ---------------------------------------------------------------------------
 # Hardware detection
 # ---------------------------------------------------------------------------
@@ -240,6 +244,108 @@ def list_ollama_models(base_url: str = _OLLAMA_BASE) -> list[OllamaModelInfo]:
         return sorted(models, key=lambda m: m.size_gb, reverse=True)
     except Exception:
         return []
+
+
+def resolve_ollama_gguf_path(
+    model: str,
+    *,
+    models_dir: str | Path | None = None,
+) -> Path:
+    """Resolve an Ollama model name[:tag] to the on-disk GGUF blob path.
+
+    Ollama's manifest/blob layout is an implementation detail, not a stable
+    public API. This helper fails loudly and names the path it inspected so a
+    future layout change produces an actionable diagnostic instead of a guessed
+    model path.
+    """
+    root = _ollama_models_dir(models_dir)
+    manifests_root = root / "manifests"
+    if not manifests_root.exists():
+        searched = ", ".join(str(path / "manifests") for path in _ollama_models_dir_candidates(models_dir))
+        raise OllamaModelResolutionError(
+            f"Ollama manifests directory not found: {manifests_root}. Searched: {searched}"
+        )
+
+    model_parts, tag = _split_ollama_model_ref(model)
+    matches = [
+        path
+        for path in manifests_root.rglob(tag)
+        if path.is_file() and list(path.parts[-(len(model_parts) + 1) :]) == [*model_parts, tag]
+    ]
+    if not matches:
+        raise OllamaModelResolutionError(
+            f"Ollama manifest for model '{model}' was not found under {manifests_root}"
+        )
+    if len(matches) > 1:
+        rendered = ", ".join(str(path) for path in sorted(matches))
+        raise OllamaModelResolutionError(
+            f"Ollama model '{model}' is ambiguous; matching manifests: {rendered}"
+        )
+
+    manifest_path = matches[0]
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise OllamaModelResolutionError(
+            f"Ollama manifest for model '{model}' could not be read as JSON: {manifest_path}"
+        ) from exc
+
+    layers = [
+        layer
+        for layer in manifest.get("layers", [])
+        if isinstance(layer, dict) and "model" in str(layer.get("mediaType", "")).lower()
+    ]
+    if len(layers) != 1:
+        raise OllamaModelResolutionError(
+            f"Ollama manifest {manifest_path} must contain exactly one model layer; found {len(layers)}"
+        )
+
+    digest = layers[0].get("digest")
+    if not isinstance(digest, str) or not digest.startswith("sha256:"):
+        raise OllamaModelResolutionError(
+            f"Ollama model layer in {manifest_path} has no sha256 digest"
+        )
+
+    blob_path = root / "blobs" / digest.replace(":", "-", 1)
+    if not blob_path.exists():
+        raise OllamaModelResolutionError(
+            f"Ollama GGUF blob for model '{model}' does not exist: {blob_path}"
+        )
+    return blob_path
+
+
+def _ollama_models_dir(models_dir: str | Path | None) -> Path:
+    candidates = _ollama_models_dir_candidates(models_dir)
+    for candidate in candidates:
+        if (candidate / "manifests").exists():
+            return candidate
+    return candidates[0]
+
+
+def _ollama_models_dir_candidates(models_dir: str | Path | None) -> list[Path]:
+    if models_dir is not None:
+        return [Path(models_dir).expanduser()]
+    env_dir = os.getenv("OLLAMA_MODELS")
+    if env_dir:
+        return [Path(env_dir).expanduser()]
+    return [
+        Path("~/.ollama/models").expanduser(),
+        Path("/usr/share/ollama/.ollama/models"),
+    ]
+
+
+def _split_ollama_model_ref(model: str) -> tuple[list[str], str]:
+    cleaned = model.strip()
+    if not cleaned:
+        raise OllamaModelResolutionError("Ollama model name must not be empty")
+    name, separator, tag = cleaned.rpartition(":")
+    if not separator:
+        name = cleaned
+        tag = "latest"
+    parts = [part for part in name.split("/") if part]
+    if not parts or not tag:
+        raise OllamaModelResolutionError(f"Invalid Ollama model reference: {model!r}")
+    return parts, tag
 
 
 def pull_ollama_model(

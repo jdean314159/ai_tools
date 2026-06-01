@@ -17,6 +17,8 @@ from diagnostics_agent import (
     SandboxConfig,
     SandboxResult,
 )
+from diagnostics_agent.interpret import Interpretation
+from diagnostics_agent.system_facts import SystemFacts
 from llm_engines.contracts import ChatMessage, GenerationRequest, GenerationResponse, UsageStats
 
 
@@ -39,6 +41,7 @@ def test_full_chain_without_sandbox_returns_summary_interpretation_and_audit() -
     assert result.interpretation_error is None
     assert result.audit["collection"]["command"] == ["fake-collect"]
     assert result.audit["read"]["sandbox_enabled"] is False
+    assert result.audit["system_facts"] is not None
     json.dumps(result.audit)
     json.dumps(result.to_dict())
 
@@ -118,6 +121,57 @@ def test_sandbox_read_failure_aborts_before_triage() -> None:
     assert triage.called is False
     assert collector.staging_dir is not None
     assert not collector.staging_dir.exists()
+
+
+def test_system_facts_are_passed_to_interpreter_and_audit(monkeypatch) -> None:
+    facts = SystemFacts(
+        hostname="hammerhead",
+        kernel_release="6.17.0-23-generic",
+        kernel_version="#1 SMP",
+        os_name="Ubuntu 25.10",
+        os_version="25.10",
+        arch="x86_64",
+    )
+    collector = _FakeCollector(_sample_log())
+    interpreter = _CapturingInterpreter()
+    monkeypatch.setattr(
+        "diagnostics_agent.orchestrate.collect_system_facts",
+        lambda: facts,
+    )
+    orchestrator = DiagnosticsOrchestrator(
+        collector=collector,
+        triage=LogTriage(),
+        interpreter=interpreter,  # type: ignore[arg-type]
+        sandbox=None,
+    )
+
+    result = orchestrator.run()
+
+    assert interpreter.system_facts == facts
+    assert result.audit["system_facts"] == facts.to_dict()
+    assert result.interpretation is not None
+
+
+def test_system_fact_collection_failure_is_non_fatal(monkeypatch) -> None:
+    collector = _FakeCollector(_sample_log())
+    interpreter = _CapturingInterpreter()
+
+    def fail() -> SystemFacts:
+        raise OSError("cannot read facts")
+
+    monkeypatch.setattr("diagnostics_agent.orchestrate.collect_system_facts", fail)
+    orchestrator = DiagnosticsOrchestrator(
+        collector=collector,
+        triage=LogTriage(),
+        interpreter=interpreter,  # type: ignore[arg-type]
+        sandbox=None,
+    )
+
+    result = orchestrator.run()
+
+    assert interpreter.system_facts is None
+    assert result.audit["system_facts"] is None
+    assert result.interpretation is not None
 
 
 @pytest.mark.skipif(which("podman") is None, reason="podman is not installed")
@@ -260,6 +314,24 @@ class _TriageShouldNotRun:
     def triage(self, source: str):
         self.called = True
         raise AssertionError("triage should not run after a sandbox read failure")
+
+
+class _CapturingInterpreter:
+    def __init__(self) -> None:
+        self.system_facts: SystemFacts | None | object = object()
+
+    def interpret(self, summary, *, system_facts=None) -> Interpretation:
+        self.system_facts = system_facts
+        return Interpretation.model_validate(
+            {
+                "reasoning": "x",
+                "summary": f"{summary.total_lines} lines reviewed.",
+                "security_risk": "low",
+                "operational_risk": "low",
+                "prioritized_concerns": [],
+                "recommended_checks": ["Review logs."],
+            }
+        )
 
 
 class _StubEngine:

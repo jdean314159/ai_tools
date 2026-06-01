@@ -49,6 +49,7 @@ All exercises include a Colab fallback. Local Ollama is a one-line swap.
 | [07](notebooks/07_reference_app_walkthrough.ipynb) | Reference App Walkthrough | 9 | all |
 | [08](notebooks/08_agent_safety_and_failure_modes.ipynb) | Agent Safety + Failure Modes | 9 | `agent_lib` |
 | [09](notebooks/09_evaluating_llm_applications.ipynb) | Evaluation + Capstone | 10 | `llm_harness_core` |
+| [10](notebooks/10_context_engineering.ipynb) | Context Engineering + Inference Optimisation | 10–11 | `llm_engines`, `rag_lib`, `engram` |
 
 ## Starter Projects
 

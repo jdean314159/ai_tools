@@ -1,8 +1,23 @@
 from __future__ import annotations
+import sys
 import pytest
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
+
+ENGRAM_ROOT = Path(__file__).resolve().parents[1]
+ENGRAM_SRC = ENGRAM_ROOT / "src"
+CORE_SRC = ENGRAM_ROOT.parent / "llm_harness_core" / "src"
+for candidate in (CORE_SRC, ENGRAM_SRC):
+    text = str(candidate)
+    while text in sys.path:
+        sys.path.remove(text)
+    sys.path.insert(0, text)
+
+for module_name in list(sys.modules):
+    if module_name == "engram" or module_name.startswith("engram."):
+        sys.modules.pop(module_name, None)
+
 from engram.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
 
 

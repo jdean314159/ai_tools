@@ -12,8 +12,7 @@ Live tests: pytest tests/contract_tests/ --backend ollama --model qwen3:8b
 from __future__ import annotations
 
 import json
-from io import BytesIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -104,6 +103,21 @@ def ollama_engine():
 
 def _req(content: str = "Hello") -> GenerationRequest:
     return GenerationRequest(messages=[ChatMessage(role="user", content=content)])
+
+
+def _nested_schema() -> dict:
+    return {
+        "$defs": {
+            "Concern": {
+                "type": "object",
+                "properties": {"finding_ref": {"type": "string"}},
+                "required": ["finding_ref"],
+            }
+        },
+        "type": "object",
+        "properties": {"concern": {"$ref": "#/$defs/Concern"}},
+        "required": ["concern"],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +217,64 @@ class TestOllamaGenerate:
         assert "keep_alive" in captured[0]
         assert captured[0]["keep_alive"] == 300  # default
 
+    def test_json_schema_in_payload_format_when_set(self, ollama_engine) -> None:
+        schema = {
+            "type": "object",
+            "properties": {"summary": {"type": "string"}},
+            "required": ["summary"],
+        }
+        captured = []
+
+        def capture(req, timeout=None):
+            if req.data:
+                captured.append(json.loads(req.data))
+            return _fake_urlopen(_chat_response('{"summary":"ok"}'))
+
+        request = GenerationRequest(
+            messages=[ChatMessage(role="user", content="Hi")],
+            json_schema=schema,
+        )
+        with patch("urllib.request.urlopen", side_effect=capture):
+            ollama_engine.generate(request)
+
+        assert captured[0]["format"] == schema
+
+    def test_nested_json_schema_refs_are_inlined_in_payload_format(self, ollama_engine) -> None:
+        schema = _nested_schema()
+        captured = []
+
+        def capture(req, timeout=None):
+            if req.data:
+                captured.append(json.loads(req.data))
+            return _fake_urlopen(_chat_response('{"concern":{"finding_ref":"x"}}'))
+
+        request = GenerationRequest(
+            messages=[ChatMessage(role="user", content="Hi")],
+            json_schema=schema,
+        )
+        with patch("urllib.request.urlopen", side_effect=capture):
+            ollama_engine.generate(request)
+
+        payload_schema = captured[0]["format"]
+        assert "$defs" not in payload_schema
+        assert "$ref" not in json.dumps(payload_schema)
+        assert payload_schema["properties"]["concern"]["type"] == "object"
+        assert payload_schema["properties"]["concern"]["properties"]["finding_ref"]["type"] == "string"
+        assert schema["properties"]["concern"]["$ref"] == "#/$defs/Concern"
+
+    def test_format_absent_without_json_schema(self, ollama_engine) -> None:
+        captured = []
+
+        def capture(req, timeout=None):
+            if req.data:
+                captured.append(json.loads(req.data))
+            return _fake_urlopen(_chat_response())
+
+        with patch("urllib.request.urlopen", side_effect=capture):
+            ollama_engine.generate(_req())
+
+        assert "format" not in captured[0]
+
 
 # ---------------------------------------------------------------------------
 # EmbeddingModel
@@ -244,6 +316,7 @@ class TestOllamaCapabilities:
         assert caps.embeddings is True
         assert caps.async_streaming is False
         assert caps.tool_calling is False  # Phase 2
+        assert caps.structured_output is True
 
     def test_logprobs_capability_matches_version(self) -> None:
         """Logprobs capability should be False for Ollama < 0.12.11."""

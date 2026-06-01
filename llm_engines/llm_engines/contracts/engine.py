@@ -168,6 +168,31 @@ class UsageStats(BaseModel):
     total_tokens: int | None = None
     latency_ms: float | None = None  # float: sub-ms precision for fast local inference
 
+class CacheStats(BaseModel):
+    """KV-cache statistics for a single generation.
+
+    Populated by backends that expose cache data (vLLM, some llama.cpp
+    configurations). Fields default to zero/None when the backend does not
+    report cache information — callers should treat a zero ``hit_ratio`` as
+    "unknown", not "no hits." Useful for tuning prefix reuse across sessions
+    and diagnosing repeated context overhead in agent workflows.
+    """
+
+    prompt_cache_hit_tokens: int = 0   # tokens served from existing KV cache
+    prompt_cache_miss_tokens: int = 0  # tokens requiring fresh attention computation
+    cache_key: str | None = None       # key used for this cache entry (if backend reports it)
+
+    @property
+    def hit_ratio(self) -> float:
+        """Fraction of prompt tokens served from cache. 0.0 when unknown."""
+        total = self.prompt_cache_hit_tokens + self.prompt_cache_miss_tokens
+        return self.prompt_cache_hit_tokens / total if total else 0.0
+
+    @property
+    def total_cached_tokens(self) -> int:
+        return self.prompt_cache_hit_tokens + self.prompt_cache_miss_tokens
+
+
 
 class ToolCall(BaseModel):
     """Structured tool invocation returned by the model."""
@@ -228,6 +253,12 @@ class GenerationRequest(BaseModel):
     json_schema: dict[str, Any] | None = None  # For structured output
     metadata: dict[str, Any] = Field(default_factory=dict)
     optimizations: InferenceOptimizationRequest | None = None
+    session_id: str | None = None
+    # ^^^  Hint for KV prefix-cache reuse. Backends that support prefix caching
+    #      (vLLM, llama.cpp with cache_prompt=True) can use this to group requests
+    #      that share a long common prefix (e.g. system prompt + tool spec) and
+    #      serve those tokens from cache rather than recomputing attention.
+    #      Ignored by backends that do not support prefix caching.
 
 
 class GenerationResponse(BaseModel):
@@ -238,6 +269,10 @@ class GenerationResponse(BaseModel):
     model_name: str
     backend: str
     active_optimizations: list[ActiveInferenceOptimization] = Field(default_factory=list)
+    cache_stats: CacheStats = Field(default_factory=CacheStats)
+    # ^^^  KV-cache statistics populated by backends that expose cache data.
+    # Zero-value CacheStats (hit_ratio == 0.0) means the backend did not
+    # report cache information — not that there were no cache hits.
     raw_provider_payload: dict[str, Any] | None = None  # Preserved for debugging
 
     @property

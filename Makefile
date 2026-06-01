@@ -40,7 +40,7 @@ install: venv
 	$(PIP) install -e './llm_inspector[dev]'
 	$(PIP) install -e './rag_lib[dev]'
 	$(PIP) install -e './llm_inspector_ui[dev]'
-	$(PIP) install -e './language_tutor[dev]'
+	$(PIP) install -e './examples/language_tutor[dev]'   
 	$(PIP) install -e './examples/diagnostics_agent[dev]'
 	$(PIP) install -e './agent_lib[dev]'
 	@echo ""
@@ -88,7 +88,7 @@ test-integration:
 
 .PHONY: test-tutor
 test-tutor:
-	cd language_tutor && $(TEST_PYTHON) -m pytest tests/ -v
+	cd examples/language_tutor && $(TEST_PYTHON) -m pytest test_language_tutor.py -v
 
 .PHONY: test-diagnostics
 test-diagnostics:

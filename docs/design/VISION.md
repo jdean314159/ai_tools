@@ -1,7 +1,7 @@
 # AI Tools Vision Document
 
 **Status:** Working architecture reference  
-**Intended location:** `ai_tools/VISION.md` at monorepo root  
+**Canonical location:** `docs/design/VISION.md`
 **Purpose:** Canonical continuity document for future development, new threads, and architectural alignment.
 
 ---
@@ -89,10 +89,10 @@ In this repo, a *harness* means the combination of:
 
 The repo should treat the following as first-class engineering artifacts:
 
-- root continuity documents:
-  - `VISION.md`
-  - `STATUS.md`
-  - `ROADMAP.md`
+- continuity documents:
+  - `docs/design/VISION.md`
+  - `docs/internal/STATUS.md`
+  - `docs/internal/ROADMAP.md`
   - `ADR_INDEX.md`
 - repo-local and package-local `AGENT.md` files
 - JSON task/progress manifests that agents and humans can both read
@@ -646,4 +646,3 @@ Use this when starting a new thread if needed:
 - `rag_lib` should expose retrieval-stage diagnostics, not just return results.
 - `agent_lib` is the next major subsystem needing interop + observability alignment.
 - Architectural rule: important behavior should be visible, attributable, and explainable.
-

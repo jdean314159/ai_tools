@@ -6,13 +6,11 @@ from agent_lib import (
     AgentAction,
     AgentRuntime,
     AgentTask,
-    ProgrammingToolRuntime,
     LocalTool,
     ToolCall,
     LocalToolRuntime,
     ToolResult,
     WorkspacePolicy,
-    execute_workspace_command,
     SequencePlanner,
     describe_agent_runtime,
     describe_tool_runtime,
@@ -21,6 +19,7 @@ from agent_lib import (
     run_to_operation_result,
     tool_result_to_operation_result,
 )
+from agent_lib.programming import ProgrammingToolRuntime, execute_workspace_command
 
 
 def _build_runtime(*, failing: bool = False) -> AgentRuntime:

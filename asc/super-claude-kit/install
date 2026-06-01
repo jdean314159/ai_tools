@@ -1,0 +1,456 @@
+#!/bin/bash
+# Super Claude Kit Installation Script
+# Works both locally (for testing) and remotely (curl | bash)
+# Author: Arpit Nath
+
+set -eo pipefail
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🚀 Super Claude Kit Installation"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+GITHUB_REPO="arpitnath/super-claude-kit"
+VERSION="${VERSION:-v1.2.1}"
+GITHUB_RAW="https://raw.githubusercontent.com/$GITHUB_REPO/$VERSION"
+
+INSTALL_DIR="$(pwd)"
+
+set +u
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+  SCRIPT_DIR=""
+fi
+set -u
+
+INSTALL_MODE="remote"
+if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/manifest.json" ] && [ -d "$SCRIPT_DIR/hooks" ]; then
+  INSTALL_MODE="local"
+  echo "📦 Local installation mode detected"
+  echo ""
+else
+  echo "🌐 Remote installation mode (downloading from GitHub)"
+  echo "📌 Installing version: $VERSION"
+  echo ""
+fi
+
+echo ""
+
+if [ ! -d "$INSTALL_DIR/.git" ]; then
+  echo "ℹ️  Git repository not detected"
+  echo "   Super Claude Kit will use file-based change tracking"
+  echo "   (Git provides additional context but is not required)"
+  echo ""
+fi
+
+echo "Creating .claude directories..."
+mkdir -p "$INSTALL_DIR/.claude/hooks"
+mkdir -p "$INSTALL_DIR/.claude/agents"
+mkdir -p "$INSTALL_DIR/.claude/workers"
+mkdir -p "$INSTALL_DIR/.claude/skills"
+mkdir -p "$INSTALL_DIR/.claude/scripts"
+mkdir -p "$INSTALL_DIR/.claude/docs"
+mkdir -p "$INSTALL_DIR/.claude/lib"
+mkdir -p "$INSTALL_DIR/.claude/tools"
+mkdir -p "$INSTALL_DIR/.claude/shared"
+mkdir -p "$INSTALL_DIR/.claude/commands"
+echo "✓ Directories created"
+echo ""
+
+echo "Loading manifest..."
+if [ "$INSTALL_MODE" = "local" ]; then
+  MANIFEST=$(cat "$SCRIPT_DIR/manifest.json")
+else
+  MANIFEST=$(curl -fsSL "$GITHUB_RAW/manifest.json")
+fi
+echo "✓ Manifest loaded"
+echo ""
+
+install_file() {
+  local source_path=$1
+  local dest_path=$2
+
+  if [ "$INSTALL_MODE" = "local" ]; then
+    cp "$SCRIPT_DIR/$source_path" "$INSTALL_DIR/$dest_path"
+  else
+    curl -fsSL "$GITHUB_RAW/$source_path" -o "$INSTALL_DIR/$dest_path"
+  fi
+}
+
+echo "Installing hooks..."
+HOOK_COUNT=0
+for hook in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(h) for h in json.load(sys.stdin)['components']['hooks']]"); do
+  hook=${hook%$'\r'}
+  [ -z "$hook" ] && continue
+  install_file "hooks/$hook" ".claude/hooks/$hook"
+  chmod +x ".claude/hooks/$hook"
+  HOOK_COUNT=$((HOOK_COUNT + 1))
+done
+echo "✓ Installed $HOOK_COUNT hooks"
+echo ""
+
+echo "Installing library files..."
+LIB_COUNT=0
+for lib_file in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(l) for l in json.load(sys.stdin)['components'].get('lib', [])]" 2>/dev/null || echo ""); do
+  lib_file=${lib_file%$'\r'}
+  if [ -n "$lib_file" ]; then
+    install_file "lib/$lib_file" ".claude/lib/$lib_file"
+    chmod +x ".claude/lib/$lib_file"
+    LIB_COUNT=$((LIB_COUNT + 1))
+  fi
+done
+if [ "$LIB_COUNT" -gt 0 ]; then
+  echo "✓ Installed $LIB_COUNT library files"
+else
+  echo "✓ No library files to install"
+fi
+echo ""
+
+echo "Installing utility scripts..."
+SCRIPT_COUNT=0
+for script in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(s) for s in json.load(sys.stdin)['components']['scripts']]"); do
+  script=${script%$'\r'}
+  [ -z "$script" ] && continue
+  install_file "scripts/$script" ".claude/scripts/$script"
+  chmod +x ".claude/scripts/$script"
+  SCRIPT_COUNT=$((SCRIPT_COUNT + 1))
+done
+echo "✓ Installed $SCRIPT_COUNT utility scripts"
+echo ""
+
+echo "Installing dependency tools..."
+TOOL_COUNT=0
+for tool in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(t) for t in json.load(sys.stdin)['components'].get('tools', [])]" 2>/dev/null || echo ""); do
+  tool=${tool%$'\r'}
+  if [ -n "$tool" ]; then
+    mkdir -p "$INSTALL_DIR/.claude/tools/$tool"
+
+    if [ "$INSTALL_MODE" = "local" ]; then
+      cp -r "$SCRIPT_DIR/tools/$tool/"* "$INSTALL_DIR/.claude/tools/$tool/"
+    else
+      curl -fsSL "$GITHUB_RAW/tools/$tool/tool.json" -o "$INSTALL_DIR/.claude/tools/$tool/tool.json"
+
+      ENTRY=$(cat "$INSTALL_DIR/.claude/tools/$tool/tool.json" | python3 -c "import sys, json; print(json.load(sys.stdin).get('entry', ''))" 2>/dev/null || echo "")
+      ENTRY=${ENTRY%$'\r'}
+      if [ -n "$ENTRY" ]; then
+        curl -fsSL "$GITHUB_RAW/tools/$tool/$ENTRY" -o "$INSTALL_DIR/.claude/tools/$tool/$ENTRY"
+        chmod +x "$INSTALL_DIR/.claude/tools/$tool/$ENTRY"
+      fi
+    fi
+
+    TOOL_COUNT=$((TOOL_COUNT + 1))
+  fi
+done
+if [ "$TOOL_COUNT" -gt 0 ]; then
+  echo "✓ Installed $TOOL_COUNT dependency tools"
+else
+  echo "✓ No tools to install (will be added in updates)"
+fi
+echo ""
+
+echo "Installing skills..."
+SKILL_COUNT=0
+for skill in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(s) for s in json.load(sys.stdin)['components']['skills']]"); do
+  skill=${skill%$'\r'}
+  [ -z "$skill" ] && continue
+  mkdir -p "$INSTALL_DIR/.claude/skills/$skill"
+  install_file "skills/$skill/SKILL.md" ".claude/skills/$skill/SKILL.md"
+  SKILL_COUNT=$((SKILL_COUNT + 1))
+done
+echo "✓ Installed $SKILL_COUNT skills"
+echo ""
+
+echo "Installing sub-agents..."
+AGENT_COUNT=0
+for agent in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(a) for a in json.load(sys.stdin)['components']['agents']]"); do
+  agent=${agent%$'\r'}
+  [ -z "$agent" ] && continue
+  install_file "agents/$agent" ".claude/agents/$agent"
+  AGENT_COUNT=$((AGENT_COUNT + 1))
+done
+echo "✓ Installed $AGENT_COUNT sub-agents"
+echo ""
+
+echo "Installing worker profiles..."
+WORKER_COUNT=0
+for worker in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(w) for w in json.load(sys.stdin)['components'].get('workers', [])]" 2>/dev/null || echo ""); do
+  worker=${worker%$'\r'}
+  [ -z "$worker" ] && continue
+  install_file "workers/$worker" ".claude/workers/$worker"
+  WORKER_COUNT=$((WORKER_COUNT + 1))
+done
+if [ "$WORKER_COUNT" -gt 0 ]; then
+  echo "✓ Installed $WORKER_COUNT worker profiles"
+else
+  echo "✓ No worker profiles defined (create your own in ~/.claude/workers)"
+fi
+echo ""
+
+echo "Installing documentation..."
+for doc in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(d) for d in json.load(sys.stdin)['components']['docs']]"); do
+  doc=${doc%$'\r'}
+  [ -z "$doc" ] && continue
+  install_file "docs/$doc" ".claude/docs/$doc"
+done
+echo "✓ Documentation installed"
+echo ""
+
+echo "Installing slash commands..."
+mkdir -p "$INSTALL_DIR/.claude/commands"
+COMMAND_COUNT=0
+for command_file in $(echo "$MANIFEST" | python3 -c "import sys, json; [print(c) for c in json.load(sys.stdin)['components'].get('commands', [])]" 2>/dev/null || echo ""); do
+  command_file=${command_file%$'\r'}
+  if [ -n "$command_file" ]; then
+    DEST_DIR=$(dirname "$command_file")
+    [ "$DEST_DIR" = "." ] && DEST_DIR=""
+    mkdir -p "$INSTALL_DIR/.claude/commands/$DEST_DIR"
+    install_file "commands/$command_file" ".claude/commands/$command_file"
+    COMMAND_COUNT=$((COMMAND_COUNT + 1))
+  fi
+done
+if [ "$COMMAND_COUNT" -gt 0 ]; then
+  echo "✓ Installed $COMMAND_COUNT slash command templates"
+else
+  echo "✓ No slash commands defined (safe to add later)"
+fi
+echo ""
+
+echo "Preparing local bin directory..."
+mkdir -p "$INSTALL_DIR/.claude/bin"
+echo "✓ .claude/bin ready (no compilation required)"
+echo ""
+
+echo "Configuring Claude Code..."
+SETTINGS_FILE="$INSTALL_DIR/.claude/settings.local.json"
+
+# Hook matcher defaults (Read guards can be re-enabled via SUPER_CLAUDE_ENABLE_READ_GUARDS=1)
+PRE_MATCHER_DEFAULT="Task"
+POST_MATCHER_DEFAULT="TodoWrite|Task|Edit|Write"
+if [ "${SUPER_CLAUDE_ENABLE_READ_GUARDS:-0}" = "1" ]; then
+  PRE_MATCHER_DEFAULT="Read|Task"
+  POST_MATCHER_DEFAULT="TodoWrite|Task|Read|Edit|Write"
+fi
+PRE_TOOL_MATCHER="${SUPER_CLAUDE_PRE_TOOL_MATCHER:-$PRE_MATCHER_DEFAULT}"
+POST_TOOL_MATCHER="${SUPER_CLAUDE_POST_TOOL_MATCHER:-$POST_MATCHER_DEFAULT}"
+if [ ! -f "$SETTINGS_FILE" ]; then
+  cat > "$SETTINGS_FILE" << EOF
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(uv:*)",
+      "Bash(find:*)",
+      "Bash(mv:*)",
+      "Bash(grep:*)",
+      "Bash(npm:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Write",
+      "Edit",
+      "Bash(chmod:*)",
+      "Bash(touch:*)",
+      "Bash(powershell:*)",
+      "Bash(claude mcp:*)",
+      "mcp__desktop-commander__create_directory",
+      "mcp__desktop-commander__write_file",
+      "mcp__desktop-commander__list_directory",
+      "mcp__desktop-commander__start_process",
+      "mcp__desktop-commander__read_file",
+      "mcp__desktop-commander__edit_block",
+      "mcp__desktop-commander__search_code",
+      "mcp__desktop-commander__move_file",
+      "mcp__desktop-commander__search_files"
+    ],
+    "deny": []
+  },
+  "mcpServers": {
+    "agent-mail": {
+      "transport": "http",
+      "url": "http://127.0.0.1:8765/mcp/"
+    }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "${PRE_TOOL_MATCHER}",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-use.sh",
+            "timeout": 5,
+            "suppressOutput": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "${POST_TOOL_MATCHER}",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-tool-use.sh",
+            "timeout": 5,
+            "suppressOutput": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/user-prompt-submit.sh",
+            "timeout": 30,
+            "suppressOutput": true
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+  echo "✓ Created settings.local.json (pure bash hooks)"
+else
+  echo "✓ settings.local.json exists, ensuring hooks reference bash scripts..."
+  PRE_TOOL_MATCHER_VALUE="$PRE_TOOL_MATCHER" POST_TOOL_MATCHER_VALUE="$POST_TOOL_MATCHER" python3 <<'PYTHON_MERGE'
+import json
+import os
+
+PRE_MATCHER = os.environ.get('PRE_TOOL_MATCHER_VALUE', 'Task')
+POST_MATCHER = os.environ.get('POST_TOOL_MATCHER_VALUE', 'TodoWrite|Task|Edit|Write')
+
+with open('.claude/settings.local.json', 'r') as f:
+    existing = json.load(f)
+
+required_hooks = {
+    "SessionStart": [{
+        "matcher": "startup",
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/session-start.sh"}]
+    }],
+    "PreToolUse": [{
+        "matcher": PRE_MATCHER,
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/pre-tool-use.sh", "timeout": 5, "suppressOutput": True}]
+    }],
+    "PostToolUse": [{
+        "matcher": POST_MATCHER,
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/post-tool-use.sh", "timeout": 5, "suppressOutput": True}]
+    }],
+    "UserPromptSubmit": [{
+        "matcher": "",
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/user-prompt-submit.sh", "timeout": 30, "suppressOutput": True}]
+    }]
+}
+
+hooks = existing.setdefault('hooks', {})
+updated = False
+
+for hook_name, hook_config in required_hooks.items():
+    if hooks.get(hook_name) != hook_config:
+        hooks[hook_name] = hook_config
+        updated = True
+        print(f"  + Ensured {hook_name} hook")
+
+if updated:
+    with open('.claude/settings.local.json', 'w') as f:
+        json.dump(existing, f, indent=2)
+    print("  ✓ Hooks updated to bash implementations")
+else:
+    print("  ✓ Hooks already configured for bash scripts")
+PYTHON_MERGE
+fi
+echo ""
+
+echo "Updating .gitignore..."
+if [ -f "$INSTALL_DIR/.gitignore" ]; then
+  if ! grep -q "Super Claude Kit" "$INSTALL_DIR/.gitignore" 2>/dev/null; then
+    echo "" >> "$INSTALL_DIR/.gitignore"
+    echo "$MANIFEST" | python3 -c "import sys, json; [print(e) for e in json.load(sys.stdin)['gitignore_entries']]" >> "$INSTALL_DIR/.gitignore"
+    echo "✓ Added Super Claude Kit entries to .gitignore"
+  else
+    echo "✓ .gitignore already contains Super Claude Kit entries"
+  fi
+else
+  echo "$MANIFEST" | python3 -c "import sys, json; [print(e) for e in json.load(sys.stdin)['gitignore_entries']]" > "$INSTALL_DIR/.gitignore"
+  echo "✓ Created .gitignore with Super Claude Kit entries"
+fi
+echo ""
+
+echo "Updating project instructions..."
+if [ -f "$INSTALL_DIR/CLAUDE.md" ]; then
+  if ! grep -q "Super Claude Kit Integration" "$INSTALL_DIR/CLAUDE.md" 2>/dev/null; then
+    echo "" >> "$INSTALL_DIR/CLAUDE.md"
+    echo "---" >> "$INSTALL_DIR/CLAUDE.md"
+    echo "" >> "$INSTALL_DIR/CLAUDE.md"
+    install_file "CLAUDE_TEMPLATE.md" ".claude/CLAUDE_TEMPLATE.tmp"
+    cat "$INSTALL_DIR/.claude/CLAUDE_TEMPLATE.tmp" >> "$INSTALL_DIR/CLAUDE.md"
+    rm "$INSTALL_DIR/.claude/CLAUDE_TEMPLATE.tmp"
+    echo "✓ Added Super Claude Kit section to CLAUDE.md"
+  else
+    echo "✓ CLAUDE.md already has Super Claude Kit integration"
+  fi
+else
+  install_file "CLAUDE_TEMPLATE.md" "CLAUDE.md"
+  echo "✓ Created CLAUDE.md with Super Claude Kit instructions"
+fi
+echo ""
+
+echo "Initializing capsule system..."
+cd "$INSTALL_DIR"
+bash .claude/hooks/init-capsule-session.sh >/dev/null 2>&1 || true
+bash .claude/hooks/update-capsule.sh >/dev/null 2>&1 || true
+
+if [ -f "$INSTALL_DIR/.claude/capsule.toon" ]; then
+  echo "✓ Capsule initialized successfully"
+else
+  echo "⚠️  Capsule initialization skipped (may need git repository)"
+fi
+echo ""
+
+echo "Saving version information..."
+MANIFEST_VERSION=$(echo "$MANIFEST" | python3 -c "import sys, json; print(json.load(sys.stdin)['version'])")
+MANIFEST_VERSION=${MANIFEST_VERSION%$'\r'}
+echo "$MANIFEST_VERSION" > "$INSTALL_DIR/.claude/.super-claude-version"
+date +%s > "$INSTALL_DIR/.claude/.super-claude-installed"
+echo "✓ Version $MANIFEST_VERSION tracked"
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Super Claude Kit Installed Successfully!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📊 Installed components:"
+echo "   • $HOOK_COUNT hooks"
+echo "   • $SCRIPT_COUNT utility scripts"
+if [ "$TOOL_COUNT" -gt 0 ]; then
+  echo "   • $TOOL_COUNT dependency tools"
+fi
+echo "   • $SKILL_COUNT skills"
+echo "   • $AGENT_COUNT sub-agents"
+echo "   • Documentation & templates"
+echo ""
+echo "🚀 Next steps:"
+echo "   1. Run tests: bash .claude/scripts/test-super-claude.sh"
+echo "   2. Start Claude Code in this directory"
+echo "   3. Look for: '🚀 Super Claude Kit ACTIVATED'"
+echo ""
+echo "📖 Documentation:"
+echo "   • Usage guide: .claude/docs/CAPSULE_USAGE_GUIDE.md"
+echo "   • Project instructions: CLAUDE.md"
+echo "   • View stats: bash .claude/scripts/show-stats.sh"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

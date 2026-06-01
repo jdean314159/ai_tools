@@ -223,9 +223,9 @@ Use manifests first where work is multi-step, safety-sensitive, or likely to spa
 
 The manifest does not replace:
 
-- `VISION.md` for architecture
-- `CURRENT_STATE.md` for implementation snapshot
-- `ROADMAP.md` for ordered phases
+- `docs/design/VISION.md` for architecture
+- `docs/internal/STATUS.md` for implementation snapshot
+- `docs/internal/ROADMAP.md` for ordered phases
 - `ADR_INDEX.md` and ADRs for decisions
 - `AGENT.md` files for local context
 

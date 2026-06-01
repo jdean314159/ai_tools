@@ -7,6 +7,7 @@ from shutil import which
 import subprocess
 import time
 from collections.abc import Sequence
+from typing import Literal
 from uuid import uuid4
 
 from diagnostics_agent.errors import ImageNotAvailableError, MountError, RuntimeNotFoundError
@@ -20,7 +21,8 @@ class SandboxConfig:
     cpus: str = "1.0"
     pids_limit: int = 128
     timeout_s: float = 30.0
-    max_output_bytes: int = 1_048_576
+    max_output_bytes: int = 16_777_216
+    truncate_keep: Literal["head", "tail"] = "tail"
     user: str = "65534:65534"
     tmpfs_tmp: bool = True
     tmpfs_size: str = "16m"
@@ -145,8 +147,16 @@ class ReadOnlySandbox:
                 check=False,
             )
 
-        stdout, stdout_truncated = _truncate_text(stdout, self.config.max_output_bytes)
-        stderr, stderr_truncated = _truncate_text(stderr, self.config.max_output_bytes)
+        stdout, stdout_truncated = _truncate_text(
+            stdout,
+            self.config.max_output_bytes,
+            keep=self.config.truncate_keep,
+        )
+        stderr, stderr_truncated = _truncate_text(
+            stderr,
+            self.config.max_output_bytes,
+            keep=self.config.truncate_keep,
+        )
 
         return SandboxResult(
             argv=argv,
@@ -218,8 +228,27 @@ def _coerce_output(output: str | bytes | None) -> str:
     return output
 
 
-def _truncate_text(text: str, max_bytes: int) -> tuple[str, bool]:
+def _truncate_text(
+    text: str,
+    max_bytes: int,
+    *,
+    keep: Literal["head", "tail"] = "tail",
+) -> tuple[str, bool]:
+    if keep not in ("head", "tail"):
+        raise ValueError("keep must be 'head' or 'tail'")
+    if max_bytes <= 0:
+        return "", bool(text)
+
     encoded = text.encode("utf-8")
     if len(encoded) <= max_bytes:
         return text, False
-    return encoded[:max_bytes].decode("utf-8", errors="ignore"), True
+
+    if keep == "head":
+        truncated = encoded[:max_bytes].decode("utf-8", errors="ignore")
+        return truncated, True
+
+    decoded = encoded[-max_bytes:].decode("utf-8", errors="ignore")
+    newline_index = decoded.find("\n")
+    if newline_index >= 0:
+        decoded = decoded[newline_index + 1 :]
+    return decoded, True

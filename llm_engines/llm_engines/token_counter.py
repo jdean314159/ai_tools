@@ -21,8 +21,8 @@ try:
         """Count tokens using cl100k_base. ~±10% accuracy for most models."""
         return len(_ENCODER.encode(text))
 
-except ImportError:
-    logger.debug("tiktoken not installed — using len//4 token approximation")
+except Exception as exc:
+    logger.debug("tiktoken unavailable (%s) — using len//4 token approximation", exc)
     _ENCODER = None
 
     def count_tokens(text: str) -> int:

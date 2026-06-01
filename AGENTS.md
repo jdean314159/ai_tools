@@ -2,12 +2,14 @@
 
 ## Project orientation
 
-Treat the root `VISION.md` as the canonical architecture and handoff document.
+Treat `docs/design/VISION.md` as the canonical architecture and handoff
+document. For current implementation status, use `docs/internal/STATUS.md`;
+the older `CURRENT_STATE.md` name has been consolidated into `STATUS.md`.
 Before making architectural changes, read:
-- `VISION.md`
-- `CURRENT_STATE.md`
-- `ROADMAP.md`
-- `START_HERE.md`
+- `docs/design/VISION.md`
+- `docs/internal/STATUS.md`
+- `docs/internal/ROADMAP.md`
+- `docs/learning/START_HERE.md`
 - relevant package README files
 
 ## Change policy

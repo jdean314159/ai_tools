@@ -2,7 +2,10 @@
 """Validate publication hygiene for the ai_tools monorepo."""
 from __future__ import annotations
 
+import argparse
+import os
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path
 
 
@@ -17,16 +20,6 @@ def _git_tracked_files() -> set[Path]:
     )
     return {ROOT / line.strip() for line in result.stdout.splitlines() if line.strip()}
 
-
-def _git_tracked_dirs() -> set[Path]:
-    """Directories that contain at least one git-tracked file."""
-    dirs: set[Path] = set()
-    for f in _git_tracked_files():
-        for parent in f.parents:
-            if parent == ROOT:
-                break
-            dirs.add(parent)
-    return dirs
 
 REQUIRED_ROOT_DOCS = [
     "README.md",
@@ -49,6 +42,8 @@ SKIP_DIR_NAMES = {
 BANNED_DIR_NAMES = {
     "__pycache__",
     ".pytest_cache",
+    ".ruff_cache",
+    ".language_tutor_example",
     "test_reports",
     "test_survey_results",
     "local_artifacts",
@@ -73,6 +68,17 @@ def _is_under_skipped_dir(path: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in path.relative_to(ROOT).parts)
 
 
+def _walk_working_tree() -> Iterator[Path]:
+    """Yield files and directories under ROOT, pruning only explicitly skipped dirs."""
+    for dirpath, dirnames, filenames in os.walk(ROOT):
+        dirnames[:] = [name for name in dirnames if name not in SKIP_DIR_NAMES]
+        base = Path(dirpath)
+        for dirname in dirnames:
+            yield base / dirname
+        for filename in filenames:
+            yield base / filename
+
+
 def _preview(paths: list[Path], limit: int = 10) -> str:
     rendered = ", ".join(str(path) for path in paths[:limit])
     if len(paths) > limit:
@@ -80,60 +86,96 @@ def _preview(paths: list[Path], limit: int = 10) -> str:
     return rendered
 
 
-def _find_banned_dirs() -> dict[str, list[Path]]:
-    findings: dict[str, list[Path]] = {}
+def _banned_reason(path: Path) -> str | None:
+    name = path.name
 
-    for path in _git_tracked_dirs():
-        if _is_under_skipped_dir(path):
+    if path.is_dir():
+        if name in BANNED_DIR_NAMES:
+            return name
+        for suffix in BANNED_DIR_SUFFIXES:
+            if name.endswith(suffix):
+                return f"*{suffix}"
+        return None
+
+    for suffix in BANNED_FILE_SUFFIXES:
+        if name.endswith(suffix):
+            return f"*{suffix}"
+    return None
+
+
+def _is_under_reported_banned_dir(path: Path, banned_dirs: list[Path]) -> bool:
+    return any(parent == path or parent in path.parents for parent in banned_dirs)
+
+
+def _is_tracked_path(path: Path, tracked: set[Path]) -> bool:
+    if path.is_dir():
+        return any(tracked_file == path or path in tracked_file.parents for tracked_file in tracked)
+    return path in tracked
+
+
+def _classify_findings() -> dict[str, dict[str, list[Path]]]:
+    """Return banned paths split by tracked publish gate and untracked workspace gate."""
+    tracked = {path.resolve() for path in _git_tracked_files()}
+    result: dict[str, dict[str, list[Path]]] = {"tracked": {}, "untracked": {}}
+    reported_banned_dirs: list[Path] = []
+
+    for path in _walk_working_tree():
+        path = path.resolve()
+        if _is_under_reported_banned_dir(path, reported_banned_dirs):
             continue
 
-        rel = path.relative_to(ROOT)
-        reason: str | None = None
+        reason = _banned_reason(path)
+        if reason is None:
+            continue
 
-        if path.name in BANNED_DIR_NAMES:
-            reason = path.name
-        else:
-            for suffix in BANNED_DIR_SUFFIXES:
-                if path.name.endswith(suffix):
-                    reason = f"*{suffix}"
-                    break
+        bucket = "tracked" if _is_tracked_path(path, tracked) else "untracked"
+        result[bucket].setdefault(reason, []).append(path.relative_to(ROOT))
 
-        if reason:
-            findings.setdefault(reason, []).append(rel)
+        if path.is_dir():
+            reported_banned_dirs.append(path)
 
-    return findings
+    return result
 
 
-def _find_banned_files() -> dict[str, list[Path]]:
-    findings: dict[str, list[Path]] = {}
+def _format_findings(title: str, findings: dict[str, list[Path]]) -> list[str]:
+    if not findings:
+        return [f"{title}: none"]
 
-    for path in _git_tracked_dirs():
-        for path in _git_tracked_files():
-            if _is_under_skipped_dir(path):
-                continue
-
-        rel = path.relative_to(ROOT)
-
-        for suffix in BANNED_FILE_SUFFIXES:
-            if path.name.endswith(suffix):
-                findings.setdefault(f"*{suffix}", []).append(rel)
-                break
-
-    return findings
+    lines = [f"{title}:"]
+    for reason, paths in sorted(findings.items()):
+        lines.append(f"- {reason}: {_preview(sorted(paths))}")
+    return lines
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--tracked-only",
+        action="store_true",
+        help="Fail only on tracked banned artifacts; report untracked artifacts as warnings.",
+    )
+    args = parser.parse_args(argv)
+
     problems: list[str] = []
+    warnings: list[str] = []
 
     for rel in REQUIRED_ROOT_DOCS:
         if not (ROOT / rel).exists():
             problems.append(f"missing required root document: {rel}")
 
-    for reason, paths in sorted(_find_banned_dirs().items()):
-        problems.append(f"found banned directory pattern {reason}: {_preview(sorted(paths))}")
+    findings = _classify_findings()
+    tracked_findings = findings["tracked"]
+    untracked_findings = findings["untracked"]
 
-    for reason, paths in sorted(_find_banned_files().items()):
-        problems.append(f"found banned file pattern {reason}: {_preview(sorted(paths))}")
+    if tracked_findings:
+        problems.extend(_format_findings("Tracked banned artifacts", tracked_findings))
+
+    if untracked_findings:
+        formatted_untracked = _format_findings("Untracked banned artifacts", untracked_findings)
+        if args.tracked_only:
+            warnings.extend(formatted_untracked)
+        else:
+            problems.extend(formatted_untracked)
 
     misplaced_legacy = []
     for path in ROOT.rglob("*.md"):
@@ -148,15 +190,25 @@ def main() -> int:
             + ", ".join(str(p) for p in sorted(misplaced_legacy))
         )
 
+    if warnings:
+        print("Publication hygiene warnings:")
+        for warning in warnings:
+            print(warning)
+
     if problems:
         print("Publication hygiene check failed:")
         for problem in problems:
-            print(f"- {problem}")
+            print(problem)
         return 1
 
     print("Publication hygiene check passed.")
+    print("Mode:", "tracked-only" if args.tracked_only else "strict")
     print("Required root docs present:", ", ".join(REQUIRED_ROOT_DOCS))
-    print("No banned transient artifacts found.")
+    print("Tracked banned artifacts: none")
+    if args.tracked_only:
+        print("Untracked banned artifacts do not fail in tracked-only mode.")
+    else:
+        print("Untracked banned artifacts: none")
     print("Legacy package READMEs are confined to docs/history/.")
     return 0
 

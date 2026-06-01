@@ -1,0 +1,168 @@
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+
+import pytest
+
+
+SCRIPT_PATH = Path(__file__).with_name("check_publication_hygiene.py")
+SPEC = importlib.util.spec_from_file_location("check_publication_hygiene", SCRIPT_PATH)
+assert SPEC is not None
+checker = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+SPEC.loader.exec_module(checker)
+
+
+REQUIRED_DOCS = ("README.md", "ADR_INDEX.md", "LICENSE", "CONTRIBUTING.md")
+
+
+def _write(path: Path, text: str = "x") -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def _clean_root(tmp_path: Path) -> Path:
+    for name in REQUIRED_DOCS:
+        _write(tmp_path / name)
+    return tmp_path
+
+
+@pytest.fixture()
+def hygiene_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    root = _clean_root(tmp_path)
+    monkeypatch.setattr(checker, "ROOT", root)
+    monkeypatch.setattr(checker, "_git_tracked_files", lambda: set())
+    return root
+
+
+def _track(monkeypatch: pytest.MonkeyPatch, *paths: Path) -> None:
+    monkeypatch.setattr(checker, "_git_tracked_files", lambda: {path.resolve() for path in paths})
+
+
+def test_untracked_banned_dir_fails_strict_and_warns_tracked_only(
+    hygiene_root: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _write(hygiene_root / ".pytest_cache" / "v" / "cache")
+
+    assert checker.main([]) == 1
+    strict_output = capsys.readouterr().out
+    assert "Untracked banned artifacts:" in strict_output
+    assert ".pytest_cache" in strict_output
+
+    assert checker.main(["--tracked-only"]) == 0
+    tracked_only_output = capsys.readouterr().out
+    assert "Publication hygiene warnings:" in tracked_only_output
+    assert "Untracked banned artifacts:" in tracked_only_output
+    assert ".pytest_cache" in tracked_only_output
+
+
+def test_tracked_banned_file_fails_in_both_modes(
+    hygiene_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pyc = _write(hygiene_root / "pkg" / "module.pyc")
+    _track(monkeypatch, pyc)
+
+    assert checker.main([]) == 1
+    strict_output = capsys.readouterr().out
+    assert "Tracked banned artifacts:" in strict_output
+    assert "pkg/module.pyc" in strict_output
+
+    assert checker.main(["--tracked-only"]) == 1
+    tracked_only_output = capsys.readouterr().out
+    assert "Tracked banned artifacts:" in tracked_only_output
+    assert "pkg/module.pyc" in tracked_only_output
+
+
+def test_banned_dir_reported_once_not_per_child(hygiene_root: Path) -> None:
+    _write(hygiene_root / "__pycache__" / "a.pyc")
+    _write(hygiene_root / "__pycache__" / "b.pyc")
+    _write(hygiene_root / "__pycache__" / "c.pyc")
+
+    findings = checker._classify_findings()
+
+    assert findings["untracked"] == {"__pycache__": [Path("__pycache__")]}
+
+
+def test_egg_info_suffix_dir_is_caught(hygiene_root: Path) -> None:
+    _write(hygiene_root / "pkg.egg-info" / "PKG-INFO")
+
+    findings = checker._classify_findings()
+
+    assert findings["untracked"] == {"*.egg-info": [Path("pkg.egg-info")]}
+
+
+def test_ruff_cache_is_caught(hygiene_root: Path) -> None:
+    _write(hygiene_root / ".ruff_cache" / "0.15.14" / "cache")
+
+    findings = checker._classify_findings()
+
+    assert findings["untracked"] == {".ruff_cache": [Path(".ruff_cache")]}
+
+
+def test_language_tutor_example_is_caught_literal(hygiene_root: Path) -> None:
+    _write(hygiene_root / ".language_tutor_example" / "memory" / "records.jsonl")
+
+    findings = checker._classify_findings()
+
+    assert findings["untracked"] == {
+        ".language_tutor_example": [Path(".language_tutor_example")]
+    }
+
+
+def test_clean_tree_passes_in_both_modes(
+    hygiene_root: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert checker.main([]) == 0
+    strict_output = capsys.readouterr().out
+    assert "Mode: strict" in strict_output
+    assert "Tracked banned artifacts: none" in strict_output
+    assert "Untracked banned artifacts: none" in strict_output
+
+    assert checker.main(["--tracked-only"]) == 0
+    tracked_only_output = capsys.readouterr().out
+    assert "Mode: tracked-only" in tracked_only_output
+    assert "Tracked banned artifacts: none" in tracked_only_output
+
+
+def test_missing_required_doc_still_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    monkeypatch.setattr(checker, "_git_tracked_files", lambda: set())
+
+    assert checker.main([]) == 1
+
+
+def test_skip_dirs_are_not_descended(hygiene_root: Path) -> None:
+    _write(hygiene_root / ".venv" / "lib" / "ignored.pyc")
+
+    findings = checker._classify_findings()
+
+    assert findings == {"tracked": {}, "untracked": {}}
+
+
+def test_banned_files_in_multiple_directories_are_all_found(hygiene_root: Path) -> None:
+    _write(hygiene_root / "one" / "a.pyc")
+    _write(hygiene_root / "two" / "b.pyo")
+    _write(hygiene_root / "three" / "c.orig")
+
+    findings = checker._classify_findings()
+    found = sorted(
+        path
+        for paths in findings["untracked"].values()
+        for path in paths
+    )
+
+    assert found == [
+        Path("one/a.pyc"),
+        Path("three/c.orig"),
+        Path("two/b.pyo"),
+    ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__]))

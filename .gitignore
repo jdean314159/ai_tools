@@ -55,3 +55,7 @@ engram_lite/data/
 **/.writer.lock
 **/neural_memory.json
 **/*.tmp
+*.bak
+.language_tutor_example/
+examples/*/runs/
+asc/mcp_agent_mail/.env

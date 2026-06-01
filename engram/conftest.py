@@ -6,6 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "src"
 MONOREPO_CORE = ROOT.parent / "llm_harness_core" / "src"
-for candidate in (SRC, ROOT, MONOREPO_CORE):
-    if str(candidate) not in sys.path:
-        sys.path.insert(0, str(candidate))
+for candidate in (ROOT, MONOREPO_CORE, SRC):
+    text = str(candidate)
+    while text in sys.path:
+        sys.path.remove(text)
+    sys.path.insert(0, text)

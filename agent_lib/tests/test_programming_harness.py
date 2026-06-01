@@ -13,16 +13,17 @@ from agent_lib import (
     AgentAction,
     AgentRuntime,
     AgentTask,
-    FileWorkspace,
     LocalTool,
     LocalToolRuntime,
-    ProgrammingToolRuntime,
     SequencePlanner,
     WorkspacePolicy,
+)
+from agent_lib.programming import (
+    ProgrammingToolRuntime,
     WorkspaceIsolationManager,
     execute_workspace_command,
 )
-from agent_lib.examples import make_programming_tool_runtime, resume_programming_demo, run_programming_demo
+from agent_lib.examples import FileWorkspace, make_programming_tool_runtime, resume_programming_demo, run_programming_demo
 
 
 

@@ -15,6 +15,7 @@ from diagnostics_agent import (
     TriageConfig,
 )
 from diagnostics_agent.interpret import _apply_risk_coherence
+from diagnostics_agent.system_facts import SystemFacts
 from llm_engines.contracts import ChatMessage, GenerationRequest, GenerationResponse, UsageStats
 
 
@@ -38,6 +39,39 @@ def test_interpret_builds_schema_request_with_summary_content() -> None:
 
     system_text = request.messages[0].content or ""
     assert "Do not invent events" in system_text
+    assert "Verified host facts" not in user_text
+    assert "never assert an OS version" in system_text
+
+
+def test_interpret_includes_system_facts_before_triage_json() -> None:
+    engine = _StubEngine(_valid_interpretation_json())
+    facts = SystemFacts(
+        hostname="hammerhead",
+        kernel_release="6.17.0-23-generic",
+        kernel_version="#1 SMP",
+        os_name="Ubuntu 25.10",
+        os_version="25.10",
+        arch="x86_64",
+    )
+
+    LogInterpreter(engine).interpret(_summary(), system_facts=facts)
+
+    user_text = engine.requests[0].messages[1].content or ""
+    assert "Verified host facts" in user_text
+    assert "- hostname: hammerhead" in user_text
+    assert "- os: Ubuntu 25.10" in user_text
+    assert "- kernel: 6.17.0-23-generic" in user_text
+    assert user_text.index("Verified host facts") < user_text.index("Triage summary JSON:")
+
+
+def test_interpret_without_system_facts_keeps_prompt_unanchored() -> None:
+    engine = _StubEngine(_valid_interpretation_json())
+
+    LogInterpreter(engine).interpret(_summary())
+
+    user_text = engine.requests[0].messages[1].content or ""
+    assert "Verified host facts" not in user_text
+    assert "No verified host facts" not in user_text
 
 
 def test_prompt_guides_auth_risk_by_service_and_count() -> None:
@@ -75,6 +109,17 @@ def test_interpret_parses_valid_json_response() -> None:
     assert result.operational_risk == "medium"
     assert result.prioritized_concerns[0].finding_ref == "ssh_failed_auth"
     assert result.recommended_checks == ["Review recent auth logs by source IP."]
+
+
+def test_interpret_extracts_json_from_markdown_response() -> None:
+    interpreter = LogInterpreter(
+        _StubEngine(f"Here is the object:\n```json\n{_valid_interpretation_json()}\n```")
+    )
+
+    result = interpreter.interpret(_summary())
+
+    assert result.summary == "Repeated SSH failures and app warnings need review."
+    assert result.security_risk == "medium"
 
 
 def test_interpret_normalizes_log_severity_labels_to_risk_labels() -> None:

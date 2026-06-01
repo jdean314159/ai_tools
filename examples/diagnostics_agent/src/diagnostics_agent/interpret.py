@@ -7,7 +7,9 @@ from pydantic import BaseModel, field_validator
 
 from diagnostics_agent.engine_guard import require_local_engine
 from diagnostics_agent.errors import InterpretationParseError
+from diagnostics_agent.system_facts import SystemFacts
 from diagnostics_agent.triage import TriageSummary
+from llm_engines import StructuredOutputError, StructuredOutputHandler
 from llm_engines.contracts import ChatMessage, GenerationRequest
 
 
@@ -57,29 +59,54 @@ class LogInterpreter:
         self.max_tokens = max_tokens
         require_local_engine(engine, allow_remote=allow_remote)
 
-    def interpret(self, summary: TriageSummary) -> Interpretation:
-        request = self._build_request(summary)
+    def interpret(
+        self,
+        summary: TriageSummary,
+        *,
+        system_facts: SystemFacts | None = None,
+    ) -> Interpretation:
+        request = self._build_request(summary, system_facts=system_facts)
         last_exc: Exception | None = None
         for attempt in range(2):
             response = self.engine.generate(request)
             try:
-                interpretation = Interpretation.model_validate_json(response.text)
+                interpretation = StructuredOutputHandler.parse(
+                    response.text,
+                    Interpretation,
+                    allow_repair=True,
+                )
                 interpretation = _apply_operational_floor(interpretation, summary)
                 return _apply_risk_coherence(interpretation)
-            except Exception as exc:
+            except StructuredOutputError as exc:
                 last_exc = exc
                 if attempt == 0:
-                    request = self._append_correction(request, response.text, exc)
+                    details = StructuredOutputHandler.parse_with_details(
+                        response.text,
+                        Interpretation,
+                        allow_repair=True,
+                    )
+                    request = self._append_correction(
+                        request,
+                        response.text,
+                        exc,
+                        extracted_json=details.extracted_json,
+                        parse_error=details.error,
+                    )
 
         raise InterpretationParseError(
             "engine response was not valid Interpretation JSON after retry"
         ) from last_exc
 
-    def _build_request(self, summary: TriageSummary) -> GenerationRequest:
+    def _build_request(
+        self,
+        summary: TriageSummary,
+        *,
+        system_facts: SystemFacts | None = None,
+    ) -> GenerationRequest:
         return GenerationRequest(
             messages=[
                 ChatMessage(role="system", content=_SYSTEM_PROMPT),
-                ChatMessage(role="user", content=_user_prompt(summary)),
+                ChatMessage(role="user", content=_user_prompt(summary, system_facts=system_facts)),
             ],
             temperature=self.temperature,
             max_tokens=self.max_tokens,
@@ -91,10 +118,16 @@ class LogInterpreter:
         original: GenerationRequest,
         bad_output: str,
         exc: Exception,
+        *,
+        extracted_json: str | None = None,
+        parse_error: str | None = None,
     ) -> GenerationRequest:
+        details = f"Validation error: {parse_error or exc}. "
+        if extracted_json:
+            details += f"Extracted JSON: {extracted_json}. "
         correction = (
             "Your response did not validate against the required schema. "
-            f"Validation error: {exc}. "
+            f"{details}"
             "Return the complete object including security_risk, operational_risk, "
             "prioritized_concerns "
             "(a list of concern objects with finding_ref, severity, and rationale) "
@@ -123,7 +156,9 @@ _SYSTEM_PROMPT = (
     "Interpret only the triage summary provided. Do not invent events, files, users, hosts, "
     "network addresses, or causes that are not present in the summary. Correlate repeated "
     "events and findings, prioritize by actual operational or security risk, and recommend "
-    "only read-only follow-up checks."
+    "only read-only follow-up checks. When 'Verified host facts' are provided, treat them "
+    "as authoritative: never contradict them and never assert an OS version, kernel version, "
+    "or hostname that is not listed there."
 )
 
 _FIELD_GUIDE = (
@@ -147,9 +182,14 @@ _FIELD_GUIDE = (
 )
 
 
-def _user_prompt(summary: TriageSummary) -> str:
+def _user_prompt(
+    summary: TriageSummary,
+    *,
+    system_facts: SystemFacts | None = None,
+) -> str:
+    facts = f"{system_facts.as_prompt_block()}\n\n" if system_facts is not None else ""
     summary_json = json.dumps(_summary_for_prompt(summary), sort_keys=True, separators=(",", ":"))
-    return f"{_FIELD_GUIDE}\nTriage summary JSON:\n{summary_json}"
+    return f"{facts}{_FIELD_GUIDE}\nTriage summary JSON:\n{summary_json}"
 
 
 def _summary_for_prompt(summary: TriageSummary) -> dict:

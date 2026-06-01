@@ -7,6 +7,12 @@ LOCAL_BACKENDS = {"ollama", "llamacpp", "llama.cpp", "llama-cpp", "vllm", "mock"
 
 
 def require_local_engine(engine, *, allow_remote: bool = False) -> None:
+    member_engines = getattr(engine, "engines", None)
+    if member_engines is not None:
+        for member in member_engines:
+            require_local_engine(member, allow_remote=allow_remote)
+        return
+
     backend = engine_backend_id(engine)
     if backend not in LOCAL_BACKENDS and not allow_remote:
         raise RemoteEngineRefused(

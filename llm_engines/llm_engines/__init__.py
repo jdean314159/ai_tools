@@ -38,7 +38,9 @@ from llm_engines.discovery import (
     available_engines,
     check_ollama_running,
     list_ollama_models,
+    OllamaModelResolutionError,
     pull_ollama_model,
+    resolve_ollama_gguf_path,
     start_ollama,
 )
 from llm_engines.token_counter import count_tokens, compress_prompt
@@ -64,6 +66,7 @@ __all__ = [
     # Core types every caller needs
     "ChatMessage",
     "ChatModel",
+    "CacheStats",
     "GenerationRequest",
     "GenerationResponse",
     # Tool support
@@ -84,7 +87,9 @@ __all__ = [
     "available_engines",
     "check_ollama_running",
     "list_ollama_models",
+    "OllamaModelResolutionError",
     "pull_ollama_model",
+    "resolve_ollama_gguf_path",
     "start_ollama",
     # Resource advisory
     "probe_system_resources",

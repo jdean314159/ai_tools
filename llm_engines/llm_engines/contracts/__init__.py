@@ -28,6 +28,7 @@ from .engine import (
     # Message / request / response
     FinishReason,
     UsageStats,
+    CacheStats,
     ToolCall,
     ChatMessage,
     GenerationRequest,

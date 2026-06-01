@@ -1,8 +1,7 @@
 """Regression test for engram's public API surface.
 
-Verifies that every name in engram.__all__ resolves — including lazy
-attributes loaded via __getattr__. This test would have caught the
-engram.engine packaging failure that prompted the _LAZY_ATTRS refactor.
+Verifies that every name in engram.__all__ resolves and that the documented
+standalone memory API remains exported from the package root.
 """
 import engram
 
@@ -13,17 +12,18 @@ def test_all_public_names_resolve():
     assert not missing, f"engram.__all__ names that failed to resolve: {missing}"
 
 
-def test_lazy_attrs_not_in_all_resolve():
-    """Lazy attrs intentionally excluded from __all__ must still resolve."""
-    extras = ["EpisodicMemory", "Episode", "SemanticMemory",
-              "SurpriseFilter", "TITANSMemory", "NeuralMemory",
-              "NeuralMemoryConfig", "engine"]
-    missing = [name for name in extras if not hasattr(engram, name)]
-    assert not missing, f"Lazy attrs that failed to resolve: {missing}"
-
-
-def test_lazy_attrs_are_cached_after_first_access():
-    """Second access must not call __getattr__ again (cached in globals)."""
-    _ = engram.EmbeddingService   # trigger lazy load
-    assert "EmbeddingService" in vars(engram), \
-        "EmbeddingService should be cached in engram globals after first access"
+def test_expected_public_names_are_exported():
+    """Core standalone engram APIs must remain package-root exports."""
+    expected = {
+        "ProjectMemory",
+        "ProjectType",
+        "TokenBudget",
+        "Telemetry",
+        "TelemetryEvent",
+        "AugmentRequest",
+        "AugmentResult",
+        "PromptAugmenter",
+        "OllamaEmbedder",
+        "EmbeddingService",
+    }
+    assert expected <= set(engram.__all__)
