@@ -187,10 +187,13 @@ def _engine_from_config_dict(
         kwargs.pop("base_url", None)
         # Pass through LlamaCppEngine.__init__ kwargs, coercing types so YAML
         # string values work the same as Python ints/bools.
-        for kw in ("n_gpu_layers", "n_ctx", "n_threads"):
+        for kw in ("n_gpu_layers", "n_ctx", "n_threads", "n_batch", "n_ubatch"):
             if kw in engine_cfg and engine_cfg[kw] is not None:
                 kwargs[kw] = int(engine_cfg[kw])
-        for kw in ("verbose", "embedding"):
+        for kw in ("cache_type_k", "cache_type_v"):
+            if kw in engine_cfg and engine_cfg[kw] is not None:
+                kwargs[kw] = str(engine_cfg[kw])
+        for kw in ("flash_attn", "verbose", "embedding"):
             if kw in engine_cfg:
                 kwargs[kw] = bool(engine_cfg[kw])
 

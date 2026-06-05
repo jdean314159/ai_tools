@@ -49,7 +49,12 @@ from llm_engines.contracts import (
 from llm_engines.utils.json_schema import inline_local_json_schema_refs
 
 try:
-    from llama_cpp import Llama  # type: ignore
+    from llama_cpp import (  # type: ignore
+        GGML_TYPE_F16,
+        GGML_TYPE_Q8_0,
+        GGML_TYPE_Q4_0,
+        Llama,
+    )
 except ImportError as _e:
     raise ImportError(
         "LlamaCppEngine requires llama-cpp-python. "
@@ -59,6 +64,33 @@ except ImportError as _e:
 logger = logging.getLogger(__name__)
 
 BACKEND = "llamacpp"
+
+_KV_CACHE_TYPES = {
+    "f16": GGML_TYPE_F16,
+    "q8_0": GGML_TYPE_Q8_0,
+    "q4_0": GGML_TYPE_Q4_0,}
+
+
+def _resolve_kv_cache_type(name: str, *, field: str) -> int:
+    try:
+        return _KV_CACHE_TYPES[name.lower()]
+    except KeyError as e:
+        supported = ", ".join(sorted(_KV_CACHE_TYPES))
+        raise EngineConfigError(
+            f"Unsupported {field}={name!r}; expected one of: {supported}"
+        ) from e
+
+
+def _validate_batch_settings(n_batch: int | None, n_ubatch: int | None) -> None:
+    if n_batch is not None and n_batch < 1:
+        raise EngineConfigError(f"n_batch must be >= 1 when set; got {n_batch}")
+    if n_ubatch is not None and n_ubatch < 1:
+        raise EngineConfigError(f"n_ubatch must be >= 1 when set; got {n_ubatch}")
+    if n_batch is not None and n_ubatch is not None and n_ubatch > n_batch:
+        raise EngineConfigError(
+            f"n_ubatch must be <= n_batch when both are set; "
+            f"got n_ubatch={n_ubatch}, n_batch={n_batch}"
+        )
 
 
 class LlamaCppEngine:
@@ -72,6 +104,15 @@ class LlamaCppEngine:
                         For split-offload on RTX 3090 with 32B Q4_K_M: ~40.
         n_ctx:          Context window size in tokens. Default 4096.
         n_threads:      CPU threads for inference. Default None (auto).
+        n_batch:        Logical batch size for prompt processing. Default None
+                        uses llama-cpp-python's default.
+        n_ubatch:       Physical micro-batch size. Must be <= n_batch when
+                        both are set. Default None uses binding defaults.
+        cache_type_k:   KV-cache K tensor type: "f16", "q8_0", or "q4_0".
+        cache_type_v:   KV-cache V tensor type: "f16", "q8_0", or "q4_0".
+        flash_attn:     Enable llama.cpp flash attention. Required by
+                        llama.cpp for quantized V cache types such as q8_0.
+                        Default False.
         verbose:        Enable llama.cpp verbose logging. Default False.
         embedding:      Enable embedding mode. Cannot be used with chat.
                         Create a separate instance for embeddings.
@@ -85,6 +126,11 @@ class LlamaCppEngine:
         n_gpu_layers: int = 0,
         n_ctx: int = 4096,
         n_threads: int | None = None,
+        n_batch: int | None = None,
+        n_ubatch: int | None = None,
+        cache_type_k: str = "f16",
+        cache_type_v: str = "f16",
+        flash_attn: bool = False,
         verbose: bool = False,
         embedding: bool = False,
     ) -> None:
@@ -92,6 +138,7 @@ class LlamaCppEngine:
         self.n_gpu_layers = n_gpu_layers
         self.n_ctx = n_ctx
         self._embedding_mode = embedding
+        _validate_batch_settings(n_batch, n_ubatch)
 
         kwargs: dict[str, Any] = {
             "model_path": model_path,
@@ -99,13 +146,27 @@ class LlamaCppEngine:
             "n_ctx": n_ctx,
             "verbose": verbose,
             "embedding": embedding,
+            "type_k": _resolve_kv_cache_type(cache_type_k, field="cache_type_k"),
+            "type_v": _resolve_kv_cache_type(cache_type_v, field="cache_type_v"),
         }
         if n_threads is not None:
             kwargs["n_threads"] = n_threads
+        if n_batch is not None:
+            kwargs["n_batch"] = n_batch
+        if n_ubatch is not None:
+            kwargs["n_ubatch"] = n_ubatch
+        if flash_attn:
+            kwargs["flash_attn"] = True
 
+        batch_detail = (
+            f", n_batch={n_batch}, n_ubatch={n_ubatch}"
+            if n_batch is not None or n_ubatch is not None
+            else ""
+        )
+        flash_attn_detail = ", flash_attn=True" if flash_attn else ""
         logger.info(
-            "Loading model %s (n_gpu_layers=%d, n_ctx=%d)",
-            model_path, n_gpu_layers, n_ctx,
+            "Loading model %s (n_gpu_layers=%d, n_ctx=%d%s%s)",
+            model_path, n_gpu_layers, n_ctx, batch_detail, flash_attn_detail,
         )
         try:
             self._llm = Llama(**kwargs)

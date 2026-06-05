@@ -4,7 +4,9 @@ import importlib
 import sys
 import types
 
-from llm_engines.contracts import ChatMessage, GenerationRequest
+import pytest
+
+from llm_engines.contracts import ChatMessage, EngineConfigError, GenerationRequest
 
 
 def test_llamacpp_forwards_json_schema_to_response_format(monkeypatch) -> None:
@@ -65,8 +67,100 @@ def test_llamacpp_reports_structured_output_capability(monkeypatch) -> None:
     assert engine.get_capabilities().structured_output is True
 
 
+def test_llamacpp_defaults_kv_cache_to_f16(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf")
+
+    assert engine._llm.kwargs["type_k"] == 101  # noqa: SLF001
+    assert engine._llm.kwargs["type_v"] == 101  # noqa: SLF001
+
+
+def test_llamacpp_omits_batch_kwargs_by_default(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf")
+
+    assert "n_batch" not in engine._llm.kwargs  # noqa: SLF001
+    assert "n_ubatch" not in engine._llm.kwargs  # noqa: SLF001
+
+
+def test_llamacpp_omits_flash_attn_by_default(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf")
+
+    assert "flash_attn" not in engine._llm.kwargs  # noqa: SLF001
+
+
+def test_llamacpp_forwards_flash_attn_when_true(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(
+        model_path="/models/test.gguf",
+        flash_attn=True,
+    )
+
+    assert engine._llm.kwargs["flash_attn"] is True  # noqa: SLF001
+
+
+def test_llamacpp_forwards_batch_kwargs_when_set(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(
+        model_path="/models/test.gguf",
+        n_batch=128,
+        n_ubatch=64,
+    )
+
+    assert engine._llm.kwargs["n_batch"] == 128  # noqa: SLF001
+    assert engine._llm.kwargs["n_ubatch"] == 64  # noqa: SLF001
+
+
+def test_llamacpp_rejects_invalid_n_batch(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+
+    with pytest.raises(EngineConfigError, match="n_batch must be >= 1"):
+        module.LlamaCppEngine(model_path="/models/test.gguf", n_batch=0)
+
+
+def test_llamacpp_rejects_invalid_n_ubatch(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+
+    with pytest.raises(EngineConfigError, match="n_ubatch must be >= 1"):
+        module.LlamaCppEngine(model_path="/models/test.gguf", n_ubatch=0)
+
+
+def test_llamacpp_rejects_n_ubatch_larger_than_n_batch(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+
+    with pytest.raises(EngineConfigError, match="n_ubatch must be <= n_batch"):
+        module.LlamaCppEngine(
+            model_path="/models/test.gguf",
+            n_batch=128,
+            n_ubatch=256,
+        )
+
+
+def test_llamacpp_forwards_quantized_kv_cache_types(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(
+        model_path="/models/test.gguf",
+        cache_type_k="q8_0",
+        cache_type_v="q4_0",
+    )
+
+    assert engine._llm.kwargs["type_k"] == 108  # noqa: SLF001
+    assert engine._llm.kwargs["type_v"] == 102  # noqa: SLF001
+
+
+def test_llamacpp_rejects_unknown_kv_cache_type(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+
+    with pytest.raises(EngineConfigError, match="Unsupported cache_type_k"):
+        module.LlamaCppEngine(model_path="/models/test.gguf", cache_type_k="q5_0")
+
+
 def _load_llamacpp_with_fake_dependency(monkeypatch):
     fake_module = types.ModuleType("llama_cpp")
+    fake_module.GGML_TYPE_F16 = 101
+    fake_module.GGML_TYPE_Q8_0 = 108
+    fake_module.GGML_TYPE_Q4_0 = 102
     fake_module.Llama = _FakeLlama
     monkeypatch.setitem(sys.modules, "llama_cpp", fake_module)
     sys.modules.pop("llm_engines.backends.llamacpp", None)

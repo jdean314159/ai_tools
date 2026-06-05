@@ -28,6 +28,15 @@ class TestStructuredOutputParsing:
         result = StructuredOutputHandler.parse(raw, Person)
         assert result.name == "Cara"
 
+    def test_parse_repairs_malformed_markdown_json(self) -> None:
+        raw = '```json\n{"name": "Dana", "age": 37,}\n```'
+        details = StructuredOutputHandler.parse_with_details(raw, Person)
+        assert details.success is True
+        assert details.repair_attempted is True
+        assert isinstance(details.data, Person)
+        assert details.data.name == "Dana"
+        assert details.data.age == 37
+
     def test_parse_with_details_failure_no_json(self) -> None:
         details = StructuredOutputHandler.parse_with_details("not json at all", Person)
         assert isinstance(details, ParseResult)

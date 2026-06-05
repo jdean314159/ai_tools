@@ -13,6 +13,11 @@ class EngineChoice:
     base_url: str | None = None
     n_gpu_layers: int | None = None
     n_ctx: int | None = None
+    n_batch: int | None = None
+    n_ubatch: int | None = None
+    cache_type_k: str = "f16"
+    cache_type_v: str = "f16"
+    flash_attn: bool = False
     fallback: "EngineChoice | None" = None
 
 
@@ -33,6 +38,14 @@ def build_single_engine(choice: EngineChoice):
             kwargs["n_gpu_layers"] = choice.n_gpu_layers
         if choice.n_ctx is not None:
             kwargs["n_ctx"] = choice.n_ctx
+        if choice.n_batch is not None:
+            kwargs["n_batch"] = choice.n_batch
+        if choice.n_ubatch is not None:
+            kwargs["n_ubatch"] = choice.n_ubatch
+        kwargs["cache_type_k"] = choice.cache_type_k
+        kwargs["cache_type_v"] = choice.cache_type_v
+        if choice.flash_attn:
+            kwargs["flash_attn"] = True
         engine = get_engine("llamacpp", choice.model, **kwargs)
     elif backend == "vllm":
         kwargs = {"base_url": choice.base_url} if choice.base_url else {}
