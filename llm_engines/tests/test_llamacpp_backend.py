@@ -60,6 +60,49 @@ def test_llamacpp_omits_response_format_without_json_schema(monkeypatch) -> None
     assert "response_format" not in engine._llm.calls[0]  # noqa: SLF001
 
 
+def test_llamacpp_think_false_appends_no_think_to_last_user_message(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf", think=False)
+
+    engine.generate(
+        GenerationRequest(
+            messages=[
+                ChatMessage(role="system", content="Be concise"),
+                ChatMessage(role="user", content="First"),
+                ChatMessage(role="assistant", content="OK"),
+                ChatMessage(role="user", content="Summarize"),
+            ]
+        )
+    )
+
+    messages = engine._llm.calls[0]["messages"]  # noqa: SLF001
+    assert messages[0]["content"] == "Be concise"
+    assert messages[1]["content"] == "First"
+    assert messages[3]["content"] == "Summarize /no_think"
+
+
+def test_llamacpp_think_false_appends_no_think_for_logprobs(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf", think=False)
+
+    engine.generate_with_logprobs(
+        GenerationRequest(messages=[ChatMessage(role="user", content="Score this")])
+    )
+
+    messages = engine._llm.calls[0]["messages"]  # noqa: SLF001
+    assert messages[0]["content"] == "Score this /no_think"
+
+
+def test_llamacpp_think_true_does_not_append_no_think(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf", think=True)
+
+    engine.generate(GenerationRequest(messages=[ChatMessage(role="user", content="Hi")]))
+
+    messages = engine._llm.calls[0]["messages"]  # noqa: SLF001
+    assert messages[0]["content"] == "Hi"
+
+
 def test_llamacpp_reports_structured_output_capability(monkeypatch) -> None:
     module = _load_llamacpp_with_fake_dependency(monkeypatch)
     engine = module.LlamaCppEngine(model_path="/models/test.gguf")

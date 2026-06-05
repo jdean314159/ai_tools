@@ -89,6 +89,14 @@ class StructuredOutputError(Exception):
         super().__init__("\n".join(details))
 
 
+def _strip_think_blocks(raw_output: str) -> str:
+    stripped = re.sub(r"<think>.*?</think>\s*", "", raw_output, flags=re.DOTALL | re.IGNORECASE)
+    open_match = re.search(r"<think>", stripped, flags=re.IGNORECASE)
+    if open_match and not re.search(r"</think>", stripped, flags=re.IGNORECASE):
+        stripped = stripped[: open_match.start()]
+    return stripped
+
+
 class StructuredOutputHandler:
     """Parse JSON-like model output into typed Pydantic objects."""
 
@@ -193,6 +201,8 @@ class StructuredOutputHandler:
         """Extract the first JSON object/array from common LLM output formats."""
         if not raw_output or not raw_output.strip():
             return None
+
+        raw_output = _strip_think_blocks(raw_output)
 
         json_block = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw_output, re.DOTALL | re.IGNORECASE)
         if json_block:

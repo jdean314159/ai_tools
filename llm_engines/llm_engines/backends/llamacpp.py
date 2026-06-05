@@ -30,6 +30,7 @@ Typical split-offload for Qwen2.5-32B Q4_K_M on RTX 3090 (24GB):
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any, Iterator
 
@@ -69,6 +70,14 @@ _KV_CACHE_TYPES = {
     "f16": GGML_TYPE_F16,
     "q8_0": GGML_TYPE_Q8_0,
     "q4_0": GGML_TYPE_Q4_0,}
+
+
+def _strip_think_blocks(text: str) -> str:
+    stripped = re.sub(r"<think>.*?</think>\s*", "", text, flags=re.DOTALL | re.IGNORECASE)
+    open_match = re.search(r"<think>", stripped, flags=re.IGNORECASE)
+    if open_match and not re.search(r"</think>", stripped, flags=re.IGNORECASE):
+        stripped = stripped[: open_match.start()]
+    return stripped.strip()
 
 
 def _resolve_kv_cache_type(name: str, *, field: str) -> int:
@@ -131,12 +140,14 @@ class LlamaCppEngine:
         cache_type_k: str = "f16",
         cache_type_v: str = "f16",
         flash_attn: bool = False,
+        think: bool = True,
         verbose: bool = False,
         embedding: bool = False,
     ) -> None:
         self.model_path = model_path
         self.n_gpu_layers = n_gpu_layers
         self.n_ctx = n_ctx
+        self._think = think
         self._embedding_mode = embedding
         _validate_batch_settings(n_batch, n_ubatch)
 
@@ -204,7 +215,7 @@ class LlamaCppEngine:
                 "Create a separate instance with embedding=False for chat."
             )
 
-        messages = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        messages = self._messages_for_request(request)
         completion_kwargs: dict[str, Any] = {
             "messages": messages,
             "max_tokens": request.max_tokens,
@@ -227,6 +238,8 @@ class LlamaCppEngine:
         latency_ms = (time.perf_counter() - t0) * 1000
         choice = raw["choices"][0]
         content = choice["message"]["content"] or ""
+        if not self._think:
+            content = _strip_think_blocks(content)
         finish_reason = choice.get("finish_reason", "stop") or "stop"
 
         usage = raw.get("usage", {})
@@ -258,7 +271,7 @@ class LlamaCppEngine:
         if not request.messages:
             raise GenerationError("messages list cannot be empty")
 
-        messages = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        messages = self._messages_for_request(request)
 
         try:
             for chunk in self._llm.create_chat_completion(
@@ -288,7 +301,7 @@ class LlamaCppEngine:
         if not request.messages:
             raise GenerationError("messages list cannot be empty")
 
-        messages = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        messages = self._messages_for_request(request)
 
         try:
             raw = self._llm.create_chat_completion(
@@ -304,6 +317,8 @@ class LlamaCppEngine:
 
         choice = raw["choices"][0]
         text = choice["message"]["content"] or ""
+        if not self._think:
+            text = _strip_think_blocks(text)
         token_logprobs: list[TokenLogprob] = []
 
         logprob_info = choice.get("logprobs") or {}
@@ -315,6 +330,28 @@ class LlamaCppEngine:
                 token_logprobs.append(TokenLogprob(token=token, logprob=lp))
 
         return LogprobResult(text=text, token_logprobs=token_logprobs)
+
+    def _messages_for_request(self, request: GenerationRequest) -> list[dict[str, str]]:
+        messages = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        if self._think:
+            return messages
+
+        target_index = None
+        for i in range(len(messages) - 1, -1, -1):
+            if messages[i]["role"] == "user":
+                target_index = i
+                break
+        if target_index is None:
+            for i in range(len(messages) - 1, -1, -1):
+                if messages[i]["role"] == "system":
+                    target_index = i
+                    break
+        if target_index is None:
+            target_index = len(messages) - 1
+
+        # Qwen3 supports this soft switch to suppress reasoning at generation time.
+        messages[target_index]["content"] = f"{messages[target_index]['content']} /no_think"
+        return messages
 
     # ------------------------------------------------------------------
     # EmbeddingModel Protocol

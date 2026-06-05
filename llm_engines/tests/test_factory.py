@@ -33,6 +33,43 @@ class TestCreateSingleEngine:
         engine = EngineFactory.create("custom_mock", model="custom")
         assert isinstance(engine, MockEngine)
 
+    def test_create_llamacpp_passes_kv_cache_types(self, monkeypatch) -> None:
+        calls = []
+
+        class FakeLlamaCppEngine:
+            def __init__(self, **kwargs) -> None:
+                calls.append(kwargs)
+
+        monkeypatch.setattr(
+            "llm_engines.factory._import_class",
+            lambda _dotted: FakeLlamaCppEngine,
+        )
+
+        EngineFactory.create(
+            "llamacpp",
+            model="/models/qwen.gguf",
+            n_gpu_layers="8",
+            n_ctx="8192",
+            n_batch="128",
+            n_ubatch="64",
+            cache_type_k="q8_0",
+            cache_type_v="f16",
+            flash_attn=True,
+        )
+
+        assert calls == [
+            {
+                "model_path": "/models/qwen.gguf",
+                "n_gpu_layers": 8,
+                "n_ctx": 8192,
+                "n_batch": 128,
+                "n_ubatch": 64,
+                "cache_type_k": "q8_0",
+                "cache_type_v": "f16",
+                "flash_attn": True,
+            }
+        ]
+
 
 class TestFromConfig:
 

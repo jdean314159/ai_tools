@@ -57,14 +57,13 @@ def test_build_single_engine_passes_llamacpp_knobs(monkeypatch) -> None:
             "llamacpp",
             "/models/qwen.gguf",
             {
-                "n_gpu_layers": 8,
+                "n_gpu_layers": -1,
                 "n_ctx": 8192,
                 "n_batch": 128,
-                "n_ubatch": 64,
-                "cache_type_k": "f16",
-                "cache_type_v": "f16",
+                "cache_type_k": "q8_0",
+                "cache_type_v": "q8_0",
                 "flash_attn": True,
-                "think": True,  # ← add this
+                "think": False,
             },
         )
     ]
@@ -92,16 +91,18 @@ def test_build_single_engine_passes_llamacpp_kv_cache_types(monkeypatch) -> None
         (
             "llamacpp",
             "/models/qwen.gguf",
-            {"cache_type_k": "q8_0", "cache_type_v": "f16", "think": True}  # ← add think
-,
+            {"cache_type_k": "q8_0", "cache_type_v": "f16", "think": True},
         )
     ]
 
+
 def test_build_single_engine_passes_think_false_to_llamacpp(monkeypatch) -> None:
     calls = []
+
     def fake_get_engine(backend, model, **kwargs):
         calls.append(kwargs)
         return _FakeEngine(backend)
+
     monkeypatch.setattr("diagnostics_agent.engine_select.get_engine", fake_get_engine)
     build_single_engine(EngineChoice("llamacpp", "/models/qwen.gguf", think=False))
     assert calls[0]["think"] is False

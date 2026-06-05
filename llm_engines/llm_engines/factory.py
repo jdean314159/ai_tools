@@ -193,6 +193,10 @@ def _engine_from_config_dict(
         for kw in ("cache_type_k", "cache_type_v"):
             if kw in engine_cfg and engine_cfg[kw] is not None:
                 kwargs[kw] = str(engine_cfg[kw])
+        if "thinking" in engine_cfg:
+            kwargs["think"] = bool(engine_cfg["thinking"])
+        if "think" in engine_cfg:
+            kwargs["think"] = bool(engine_cfg["think"])
         for kw in ("flash_attn", "verbose", "embedding"):
             if kw in engine_cfg:
                 kwargs[kw] = bool(engine_cfg[kw])

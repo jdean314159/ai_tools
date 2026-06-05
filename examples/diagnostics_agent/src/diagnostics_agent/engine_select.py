@@ -18,6 +18,7 @@ class EngineChoice:
     cache_type_k: str = "f16"
     cache_type_v: str = "f16"
     flash_attn: bool = False
+    think: bool = True
     fallback: "EngineChoice | None" = None
 
 
@@ -46,6 +47,7 @@ def build_single_engine(choice: EngineChoice):
         kwargs["cache_type_v"] = choice.cache_type_v
         if choice.flash_attn:
             kwargs["flash_attn"] = True
+        kwargs["think"] = choice.think
         engine = get_engine("llamacpp", choice.model, **kwargs)
     elif backend == "vllm":
         kwargs = {"base_url": choice.base_url} if choice.base_url else {}

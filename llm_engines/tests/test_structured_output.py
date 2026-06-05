@@ -28,6 +28,16 @@ class TestStructuredOutputParsing:
         result = StructuredOutputHandler.parse(raw, Person)
         assert result.name == "Cara"
 
+    def test_extract_json_ignores_closed_think_block(self) -> None:
+        raw = '<think>reasoning...\n</think>\n{"name": "Cara", "age": 41}'
+        result = StructuredOutputHandler.parse(raw, Person)
+        assert result.name == "Cara"
+        assert result.age == 41
+
+    def test_extract_json_returns_none_for_unclosed_think_block(self) -> None:
+        raw = "<think>truncated reasoning with no close"
+        assert StructuredOutputHandler._extract_json(raw) is None
+
     def test_parse_repairs_malformed_markdown_json(self) -> None:
         raw = '```json\n{"name": "Dana", "age": 37,}\n```'
         details = StructuredOutputHandler.parse_with_details(raw, Person)

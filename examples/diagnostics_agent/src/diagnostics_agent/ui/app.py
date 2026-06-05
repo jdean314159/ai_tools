@@ -26,6 +26,7 @@ _TIME_WINDOWS = {
     "Last 3 days": "-3d",
 }
 _PRIORITIES = ("emergency", "alert", "critical", "error", "warning")
+_KV_CACHE_TYPES = ("f16", "q8_0", "q4_0")
 
 
 def main() -> None:
@@ -95,6 +96,31 @@ def _render_engine_choice(st, vram: int | None) -> EngineChoice | None:
         st.caption("Raise n_gpu_layers to offload layers onto a small GPU; 0 is CPU only.")
         n_ctx_enabled = st.checkbox("Set n_ctx")
         n_ctx = int(st.number_input("n_ctx", min_value=512, value=4096, step=512)) if n_ctx_enabled else None
+        n_batch = st.number_input(
+            "n_batch",
+            min_value=1,
+            value=None,
+            step=1,
+            placeholder="default",
+        )
+        n_ubatch = st.number_input(
+            "n_ubatch",
+            min_value=1,
+            value=None,
+            step=1,
+            placeholder="default",
+        )
+        n_batch = int(n_batch) if n_batch is not None else None
+        n_ubatch = int(n_ubatch) if n_ubatch is not None else None
+        cache_type_k = st.selectbox("KV cache K type", _KV_CACHE_TYPES, index=0)
+        cache_type_v = st.selectbox("KV cache V type", _KV_CACHE_TYPES, index=0)
+        flash_attn = st.checkbox(
+            "Enable flash attention (required for quantized V cache)"
+        )
+        st.caption(
+            "q8_0 K with f16 V is the conservative small-GPU setting; "
+            "lower n_batch on constrained VRAM."
+        )
 
         models = _discover_ollama_models(st, "http://localhost:11434", vram) if source.startswith("Use") else []
         selected_model = None
@@ -118,6 +144,12 @@ def _render_engine_choice(st, vram: int | None) -> EngineChoice | None:
             model_path.strip(),
             n_gpu_layers=n_gpu_layers,
             n_ctx=n_ctx,
+            n_batch=n_batch,
+            n_ubatch=n_ubatch,
+            cache_type_k=cache_type_k,
+            cache_type_v=cache_type_v,
+            flash_attn=flash_attn,
+            think=False,
         )
         return _with_optional_ollama_fallback(st, choice, models, selected_model)
 
@@ -172,6 +204,12 @@ def _with_optional_ollama_fallback(
         base_url=choice.base_url,
         n_gpu_layers=choice.n_gpu_layers,
         n_ctx=choice.n_ctx,
+        n_batch=choice.n_batch,
+        n_ubatch=choice.n_ubatch,
+        cache_type_k=choice.cache_type_k,
+        cache_type_v=choice.cache_type_v,
+        flash_attn=choice.flash_attn,
+        think=choice.think,
         fallback=EngineChoice("ollama", fallback_model, base_url=_optional_url(fallback_url)),
     )
 

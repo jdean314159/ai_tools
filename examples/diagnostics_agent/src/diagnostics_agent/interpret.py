@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
@@ -12,6 +13,8 @@ from diagnostics_agent.triage import TriageSummary
 from llm_engines import StructuredOutputError, StructuredOutputHandler
 from llm_engines.contracts import ChatMessage, GenerationRequest
 
+
+logger = logging.getLogger(__name__)
 
 RiskLevel = Literal["info", "low", "medium", "high", "critical"]
 OverallRisk = Literal["none", "low", "medium", "high", "critical"]
@@ -79,12 +82,18 @@ class LogInterpreter:
                 return _apply_risk_coherence(interpretation)
             except StructuredOutputError as exc:
                 last_exc = exc
+                details = StructuredOutputHandler.parse_with_details(
+                    response.text,
+                    Interpretation,
+                    allow_repair=True,
+                )
+                _log_parse_failure(
+                    attempt=attempt + 1,
+                    request=request,
+                    raw_output=response.text,
+                    parse_error=details.error or str(exc),
+                )
                 if attempt == 0:
-                    details = StructuredOutputHandler.parse_with_details(
-                        response.text,
-                        Interpretation,
-                        allow_repair=True,
-                    )
                     request = self._append_correction(
                         request,
                         response.text,
@@ -149,6 +158,22 @@ class LogInterpreter:
             optimizations=original.optimizations,
             session_id=original.session_id,
         )
+
+
+def _log_parse_failure(
+    *,
+    attempt: int,
+    request: GenerationRequest,
+    raw_output: str,
+    parse_error: str,
+) -> None:
+    logger.warning(
+        "Interpretation parse failure attempt=%d response_format_json_schema=%s parse_error=%s raw_response=%s",
+        attempt,
+        request.json_schema is not None,
+        parse_error,
+        raw_output,
+    )
 
 
 _SYSTEM_PROMPT = (
