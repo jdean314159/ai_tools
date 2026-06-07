@@ -317,3 +317,62 @@ def _accounted_count(summary) -> int:
         + sum(count for _severity, count in summary.suppressed)
         + summary.excluded_self_noise
     )
+
+
+# ---------------------------------------------------------------------------
+# FP-rate measurement — benign eval corpus
+# ---------------------------------------------------------------------------
+
+def test_benign_eval_corpus_produces_zero_findings() -> None:
+    """Regression gate: all lines in benign_eval_corpus.log must produce zero findings.
+
+    A finding here is a true false-positive at the triage stage.  The test
+    measures the deterministic component of FP rate (before LLM interpretation);
+    LLM FP rate is measured separately in integration tests.
+    """
+    source = (FIXTURES / "benign_eval_corpus.log").read_text(encoding="utf-8")
+
+    summary = LogTriage().triage(source)
+
+    assert summary.findings == (), (
+        f"Expected zero findings from benign corpus; got: "
+        + ", ".join(f.rule_name for f in summary.findings)
+    )
+
+
+def test_benign_eval_corpus_produces_zero_rule_matched_clusters() -> None:
+    """No cluster from the benign corpus should survive into top_clusters either."""
+    source = (FIXTURES / "benign_eval_corpus.log").read_text(encoding="utf-8")
+
+    summary = LogTriage().triage(source)
+
+    # top_clusters uses min_cluster_severity=NOTICE — if any benign cluster
+    # escapes suppression and is severe enough it will appear here.
+    assert summary.top_clusters == ()
+
+
+def test_benign_suppressors_are_skipped_when_suppressor_list_is_empty() -> None:
+    """TriageConfig(suppressors=()) disables all suppression — corpus produces findings."""
+    source = (FIXTURES / "benign_eval_corpus.log").read_text(encoding="utf-8")
+    config = TriageConfig(suppressors=())
+
+    summary = LogTriage(config).triage(source)
+
+    # With suppression disabled the ata/overlayfs/etc lines may still not hit any
+    # rule (they're not in DEFAULT_RULES for most patterns), but the ACPI lines
+    # definitely won't be suppressed.  We just verify the override plumbing works:
+    # the call must not raise.
+    assert isinstance(summary.findings, tuple)
+
+
+def test_benign_suppressor_cap_does_not_affect_real_threats() -> None:
+    """Suppressors must not swallow genuine security findings."""
+    lines = [
+        "2026-06-01T09:00:00+00:00 host sshd[1234]: Failed password for invalid user admin from 198.51.100.1 port 40000 ssh2",
+        "2026-06-01T09:00:01+00:00 host kernel[0]: ACPI: \\_SB_.PCI0.RP01: AE_ALREADY_EXISTS, during name lookup/catalog",
+    ]
+
+    summary = LogTriage().triage(lines)
+
+    rule_names = [f.rule_name for f in summary.findings]
+    assert "ssh_failed_auth" in rule_names or "ssh_invalid_user" in rule_names

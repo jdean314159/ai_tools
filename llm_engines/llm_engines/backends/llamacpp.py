@@ -151,6 +151,15 @@ class LlamaCppEngine:
         self._embedding_mode = embedding
         _validate_batch_settings(n_batch, n_ubatch)
 
+        # full-precision cache types don't need FA; everything else does
+        if (cache_type_k not in {"f16", "f32", "bf16"}
+                or cache_type_v not in {"f16", "f32", "bf16"}) and not flash_attn:
+            logger.warning(
+                "Enabling flash_attn: quantized KV cache (k=%s, v=%s) requires it.",
+                cache_type_k, cache_type_v,
+            )
+            flash_attn = True
+
         kwargs: dict[str, Any] = {
             "model_path": model_path,
             "n_gpu_layers": n_gpu_layers,
@@ -206,6 +215,9 @@ class LlamaCppEngine:
             logprobs=True,
         )
 
+    def count_tokens(self, text: str) -> int:
+        return len(self._llm.tokenize(text.encode("utf-8")))
+
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         if not request.messages:
             raise GenerationError("messages list cannot be empty")
@@ -225,7 +237,7 @@ class LlamaCppEngine:
         }
         if request.json_schema is not None:
             completion_kwargs["response_format"] = {
-                "type": "json_schema",
+                "type": "json_object",
                 "schema": inline_local_json_schema_refs(request.json_schema),
             }
 

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import datetime, timezone
 import json
+import logging
+import math
 from pathlib import Path
 
 import pytest
@@ -14,8 +18,13 @@ from diagnostics_agent import (
     RemoteEngineRefused,
     TriageConfig,
 )
-from diagnostics_agent.interpret import _apply_risk_coherence
+from diagnostics_agent.interpret import (
+    _apply_risk_coherence,
+    _count_request_tokens,
+    _summary_for_prompt,
+)
 from diagnostics_agent.system_facts import SystemFacts
+from diagnostics_agent.triage import Finding, Severity
 from llm_engines.contracts import ChatMessage, GenerationRequest, GenerationResponse, UsageStats
 
 
@@ -31,7 +40,7 @@ def test_interpret_builds_schema_request_with_summary_content() -> None:
     request = engine.requests[0]
     assert request.json_schema == Interpretation.model_json_schema()
     assert request.temperature == 0.2
-    assert request.max_tokens == 1024
+    assert request.max_tokens == 2048
     user_text = request.messages[1].content or ""
     assert "ssh_failed_auth" in user_text
     assert "warning connection reset from <IP>:<PORT>" in user_text
@@ -550,6 +559,97 @@ def test_prompt_compacts_large_raw_examples() -> None:
     assert "y" * 500 not in user_text
 
 
+def test_prompt_under_budget_keeps_summary_unchanged() -> None:
+    engine = _CountingStubEngine(_valid_interpretation_json(), n_ctx=20_000)
+    summary = _priority_summary()
+
+    LogInterpreter(engine).interpret(summary)
+
+    assert _prompt_summary_from_request(engine.requests[0]) == _summary_for_prompt(summary)
+
+
+def test_prompt_over_budget_drops_lowest_priority_findings_and_stays_valid(
+    caplog,
+) -> None:
+    summary = _priority_summary()
+    sizing_engine = _CountingStubEngine(_valid_interpretation_json(), n_ctx=20_000)
+    sizing_interpreter = LogInterpreter(sizing_engine)
+    one_finding = _summary_for_prompt(summary)
+    one_finding["findings"] = one_finding["findings"][:1]
+    one_finding["top_clusters"] = []
+    one_finding_request = sizing_interpreter._request_for_prompt_summary(  # noqa: SLF001
+        one_finding,
+        system_facts=None,
+    )
+    one_finding_tokens = _count_request_tokens(
+        one_finding_request,
+        count_tokens=sizing_engine.count_tokens,
+    )
+    context_limit = one_finding_tokens + 2048 + 512
+    engine = _CountingStubEngine(_valid_interpretation_json(), n_ctx=context_limit)
+
+    with caplog.at_level(logging.WARNING):
+        LogInterpreter(engine).interpret(summary)
+
+    request = engine.requests[0]
+    prompt_summary = _prompt_summary_from_request(request)
+    assert _count_request_tokens(request, count_tokens=engine.count_tokens) <= (
+        context_limit - 2048 - 512
+    )
+    assert [item["rule_name"] for item in prompt_summary["findings"]] == ["critical_recent"]
+    assert prompt_summary["top_clusters"] == []
+    assert "Do not invent events" in (request.messages[0].content or "")
+    assert request.json_schema == Interpretation.model_json_schema()
+    assert "findings_dropped=2" in caplog.text
+
+
+def test_prompt_clamp_uses_engine_token_counter() -> None:
+    engine = _CountingStubEngine(_valid_interpretation_json(), n_ctx=20_000)
+
+    LogInterpreter(engine).interpret(_summary())
+
+    assert engine.counted_texts
+
+
+def test_explicit_context_limit_overrides_engine_context() -> None:
+    engine = _CountingStubEngine(_valid_interpretation_json(), n_ctx=2560)
+
+    result = LogInterpreter(engine, context_limit=20_000).interpret(_summary())
+
+    assert result.summary
+
+
+def test_configured_max_tokens_above_floor_is_used_as_reserve_and_request_cap() -> None:
+    engine = _CountingStubEngine(_valid_interpretation_json(), n_ctx=20_000)
+
+    LogInterpreter(engine, max_tokens=3072).interpret(_summary())
+
+    assert engine.requests[0].max_tokens == 3072
+
+
+def test_prompt_clamp_uses_heuristic_without_engine_counter() -> None:
+    engine = _StubEngine(_valid_interpretation_json(), n_ctx=20_000)
+
+    LogInterpreter(engine).interpret(_summary())
+
+    assert _count_request_tokens(engine.requests[0]) <= 20_000 - 2048 - 1024
+
+
+def test_fixed_prompt_over_budget_raises_clear_error() -> None:
+    engine = _CountingStubEngine(_valid_interpretation_json(), n_ctx=2560)
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"fixed prompt exceeds token budget: prompt_tokens=\d+, budget=0, "
+            r"context_limit=2560, output_reserve=2048, safety_margin=512"
+        ),
+    ):
+        LogInterpreter(engine).interpret(_priority_summary())
+
+    assert engine.requests == []
+
+
 def test_interpretation_schema_keeps_reasoning_first() -> None:
     assert list(Interpretation.model_fields)[:1] == ["reasoning"]
     assert list(Interpretation.model_fields)[:4] == [
@@ -576,6 +676,35 @@ def _auth_summary():
             "Failed password for invalid user admin from 192.0.2.10 port 53001 ssh2"
         ]
     )
+
+
+def _priority_summary():
+    summary = LogTriage().triage([])
+    findings = (
+        _finding("critical_recent", Severity.CRITICAL, "2026-06-06T12:00:00+00:00"),
+        _finding("warning_recent", Severity.WARNING, "2026-06-06T11:00:00+00:00"),
+        _finding("notice_old", Severity.NOTICE, "2026-06-05T12:00:00+00:00"),
+    )
+    return replace(summary, findings=findings)
+
+
+def _finding(rule_name: str, severity: Severity, last_seen: str) -> Finding:
+    timestamp = datetime.fromisoformat(last_seen).astimezone(timezone.utc)
+    return Finding(
+        rule_name=rule_name,
+        category="test",
+        severity=severity,
+        count=1,
+        template=f"{rule_name} template",
+        first_seen=timestamp,
+        last_seen=timestamp,
+        examples=(f"{rule_name} " + "x" * 300,),
+    )
+
+
+def _prompt_summary_from_request(request: GenerationRequest) -> dict:
+    user_text = request.messages[1].content or ""
+    return json.loads(user_text.split("Triage summary JSON:\n", 1)[1])
 
 
 def _valid_interpretation_json() -> str:
@@ -622,8 +751,15 @@ def _interpretation(
 
 
 class _StubEngine:
-    def __init__(self, content: str | list[str], *, backend: str = "ollama") -> None:
+    def __init__(
+        self,
+        content: str | list[str],
+        *,
+        backend: str = "ollama",
+        n_ctx: int = 8192,
+    ) -> None:
         self.backend = backend
+        self.n_ctx = n_ctx
         self.contents = [content] if isinstance(content, str) else list(content)
         self.requests: list[GenerationRequest] = []
 
@@ -637,3 +773,19 @@ class _StubEngine:
             model_name="stub",
             backend=self.backend,
         )
+
+
+class _CountingStubEngine(_StubEngine):
+    def __init__(
+        self,
+        content: str | list[str],
+        *,
+        backend: str = "ollama",
+        n_ctx: int = 8192,
+    ) -> None:
+        super().__init__(content, backend=backend, n_ctx=n_ctx)
+        self.counted_texts: list[str] = []
+
+    def count_tokens(self, text: str) -> int:
+        self.counted_texts.append(text)
+        return math.ceil(len(text) / 4)

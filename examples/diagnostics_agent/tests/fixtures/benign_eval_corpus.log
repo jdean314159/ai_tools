@@ -1,0 +1,31 @@
+# Labeled eval corpus — BENIGN ONLY
+# Each line is a real-pattern kernel/service message that small models (Qwen3-4B,
+# Gemma-4-E4B) consistently over-escalate to medium/high.
+# Expected triage outcome after benign suppressor cap: zero findings, zero clusters.
+# Use this file to measure FP rate: FP = findings produced / 0 expected.
+#
+# Label key (in comments, not parsed):
+#   [B] benign — covered by BENIGN_SUPPRESSORS
+#   [N] noise   — expected to stay in suppressed bucket (no rule match, below threshold)
+#
+2026-06-01T08:00:01+00:00 laptop kernel[0]: ACPI: \_SB_.PCI0.RP05.PXSX._ADR: AE_ALREADY_EXISTS, during name lookup/catalog
+2026-06-01T08:00:02+00:00 laptop kernel[0]: ACPI: \_SB_.PCI0.RP01.PXSX._ADR: AE_ALREADY_EXISTS, during name lookup/catalog
+2026-06-01T08:00:03+00:00 laptop kernel[0]: ACPI: \_SB_.PCI0.RP09.PXSX._ADR: AE_ALREADY_EXISTS, during name lookup/catalog
+2026-06-01T08:00:04+00:00 laptop kernel[0]: ata1: supports DRM functions and may not be fully accessible
+2026-06-01T08:00:05+00:00 laptop kernel[0]: ata2: supports DRM functions and may not be fully accessible
+2026-06-01T08:00:10+00:00 laptop kernel[0]: i915 0000:00:02.0: CPU pipe A FIFO underrun
+2026-06-01T08:00:11+00:00 laptop kernel[0]: i915 0000:00:02.0: CPU pipe B FIFO underrun
+2026-06-01T08:00:12+00:00 laptop kernel[0]: i915 0000:00:02.0: CPU pipe A FIFO underrun
+2026-06-01T08:00:20+00:00 laptop kernel[0]: atkbd serio0: Use 'setkeycodes e058 <keycode>' to assign a keycode
+2026-06-01T08:00:21+00:00 laptop kernel[0]: atkbd serio0: Unknown key pressed (translated set 2, code 0xe0 on isa0060/serio0)
+2026-06-01T08:00:30+00:00 laptop kernel[0]: overlayfs: upper fs /dev/sda1 does not support file handles, falling back to xino=off
+2026-06-01T08:00:40+00:00 laptop chronyd[823]: Forward time jump of 1.437 seconds detected
+2026-06-01T08:00:41+00:00 laptop chronyd[823]: Forward time jump of 0.213 seconds detected
+2026-06-01T08:00:50+00:00 laptop gnome-keyring-daemon[1200]: couldn't access /etc/machine-id
+2026-06-01T08:00:51+00:00 laptop gnome-keyring-daemon[1200]: login keyring: error reading password hash from login keyring file
+2026-06-01T08:01:00+00:00 laptop cron[300]: info session opened for cron job backup-0
+2026-06-01T08:01:01+00:00 laptop cron[301]: info session opened for cron job backup-1
+2026-06-01T08:01:10+00:00 laptop systemd[1]: info Starting Daily man-db regeneration...
+2026-06-01T08:01:11+00:00 laptop systemd[1]: info Started Daily man-db regeneration.
+2026-06-01T08:01:20+00:00 laptop dbus-daemon[700]: info [system] Successfully activated service 'org.freedesktop.NetworkManager'
+2026-06-01T08:01:30+00:00 laptop NetworkManager[900]: info [1717228890.0] device (wlan0): supplicant interface state: associating -> associated

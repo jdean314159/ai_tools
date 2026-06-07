@@ -50,7 +50,7 @@ def main() -> None:
                 result = DiagnosticsOrchestrator(
                     collector=collector,
                     triage=LogTriage(),
-                    interpreter=LogInterpreter(engine),
+                    interpreter=LogInterpreter(engine, context_limit=engine_choice.n_ctx),
                     sandbox=make_staging_sandbox(),
                 ).run()
                 st.session_state["diagnostics_result"] = result

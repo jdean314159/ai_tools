@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from typing import Literal
 
 from pydantic import BaseModel, field_validator
@@ -20,6 +21,21 @@ RiskLevel = Literal["info", "low", "medium", "high", "critical"]
 OverallRisk = Literal["none", "low", "medium", "high", "critical"]
 _RISK_RANK = {"info": 0, "none": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 _OPERATIONAL_FLOOR_CATEGORIES = {"disk", "memory", "stability"}
+_TRIAGE_SEVERITY_RANK = {
+    "UNKNOWN": 0,
+    "DEBUG": 1,
+    "INFO": 2,
+    "NOTICE": 3,
+    "WARNING": 4,
+    "ERROR": 5,
+    "CRITICAL": 6,
+    "ALERT": 7,
+    "EMERGENCY": 8,
+}
+_MIN_OUTPUT_TOKENS = 2048
+_TOKENIZER_SAFETY_MARGIN = 512
+_HEURISTIC_SAFETY_MARGIN = 1024
+_DEFAULT_CONTEXT_LIMIT = 4096
 
 
 class ConcernAssessment(BaseModel):
@@ -56,10 +72,16 @@ class LogInterpreter:
         allow_remote: bool = False,
         temperature: float = 0.2,
         max_tokens: int = 1024,
+        context_limit: int | None = None,
     ) -> None:
         self.engine = engine
         self.temperature = temperature
-        self.max_tokens = max_tokens
+        self.max_tokens = max(max_tokens, _MIN_OUTPUT_TOKENS)
+        self.context_limit = (
+            context_limit
+            if context_limit is not None
+            else getattr(engine, "n_ctx", None) or _DEFAULT_CONTEXT_LIMIT
+        )
         require_local_engine(engine, allow_remote=allow_remote)
 
     def interpret(
@@ -112,10 +134,75 @@ class LogInterpreter:
         *,
         system_facts: SystemFacts | None = None,
     ) -> GenerationRequest:
+        prompt_summary = _summary_for_prompt(summary)
+        request = self._request_for_prompt_summary(
+            prompt_summary,
+            system_facts=system_facts,
+        )
+        count_tokens = getattr(self.engine, "count_tokens", None)
+        has_tokenizer = callable(count_tokens)
+        safety_margin = (
+            _TOKENIZER_SAFETY_MARGIN if has_tokenizer else _HEURISTIC_SAFETY_MARGIN
+        )
+        budget = self.context_limit - self.max_tokens - safety_margin
+        original_tokens = _count_request_tokens(
+            request,
+            count_tokens=count_tokens if has_tokenizer else None,
+        )
+        if original_tokens <= budget:
+            return request
+
+        clamped_tokens = original_tokens
+        dropped_by_group = {"findings": 0, "top_clusters": 0}
+        while clamped_tokens > budget:
+            dropped_group = _drop_lowest_priority_evidence(prompt_summary)
+            if dropped_group is None:
+                break
+            dropped_by_group[dropped_group] += 1
+            request = self._request_for_prompt_summary(
+                prompt_summary,
+                system_facts=system_facts,
+            )
+            clamped_tokens = _count_request_tokens(
+                request,
+                count_tokens=count_tokens if has_tokenizer else None,
+            )
+
+        if clamped_tokens > budget:
+            raise ValueError(
+                "Interpretation fixed prompt exceeds token budget: "
+                f"prompt_tokens={clamped_tokens}, budget={budget}, "
+                f"context_limit={self.context_limit}, output_reserve={self.max_tokens}, "
+                f"safety_margin={safety_margin}"
+            )
+
+        logger.warning(
+            "Interpretation prompt clamped original_tokens=%d clamped_tokens=%d "
+            "context_limit=%d findings_dropped=%d top_clusters_dropped=%d",
+            original_tokens,
+            clamped_tokens,
+            self.context_limit,
+            dropped_by_group["findings"],
+            dropped_by_group["top_clusters"],
+        )
+        return request
+
+    def _request_for_prompt_summary(
+        self,
+        prompt_summary: dict,
+        *,
+        system_facts: SystemFacts | None,
+    ) -> GenerationRequest:
         return GenerationRequest(
             messages=[
                 ChatMessage(role="system", content=_SYSTEM_PROMPT),
-                ChatMessage(role="user", content=_user_prompt(summary, system_facts=system_facts)),
+                ChatMessage(
+                    role="user",
+                    content=_user_prompt_from_summary(
+                        prompt_summary,
+                        system_facts=system_facts,
+                    ),
+                ),
             ],
             temperature=self.temperature,
             max_tokens=self.max_tokens,
@@ -212,8 +299,19 @@ def _user_prompt(
     *,
     system_facts: SystemFacts | None = None,
 ) -> str:
+    return _user_prompt_from_summary(
+        _summary_for_prompt(summary),
+        system_facts=system_facts,
+    )
+
+
+def _user_prompt_from_summary(
+    prompt_summary: dict,
+    *,
+    system_facts: SystemFacts | None = None,
+) -> str:
     facts = f"{system_facts.as_prompt_block()}\n\n" if system_facts is not None else ""
-    summary_json = json.dumps(_summary_for_prompt(summary), sort_keys=True, separators=(",", ":"))
+    summary_json = json.dumps(prompt_summary, sort_keys=True, separators=(",", ":"))
     return f"{facts}{_FIELD_GUIDE}\nTriage summary JSON:\n{summary_json}"
 
 
@@ -230,6 +328,46 @@ def _truncate_prompt_text(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 3] + "..."
+
+
+def _drop_lowest_priority_evidence(prompt_summary: dict) -> str | None:
+    candidates = []
+    for group_name in ("findings", "top_clusters"):
+        for index, item in enumerate(prompt_summary.get(group_name, [])):
+            candidates.append(
+                (
+                    _TRIAGE_SEVERITY_RANK.get(item.get("severity", "UNKNOWN"), 0),
+                    item.get("last_seen") or "",
+                    item.get("count", 0),
+                    1 if group_name == "findings" else 0,
+                    group_name,
+                    index,
+                )
+            )
+    if not candidates:
+        return None
+    *_, group_name, index = min(candidates)
+    prompt_summary[group_name].pop(index)
+    return group_name
+
+
+def _count_request_tokens(
+    request: GenerationRequest,
+    *,
+    count_tokens=None,
+) -> int:
+    text = "\n".join(
+        f"{message.role}:{message.content or ''}" for message in request.messages
+    )
+    if request.json_schema is not None:
+        text += "\nresponse_schema:" + json.dumps(
+            request.json_schema,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    if count_tokens is not None:
+        return count_tokens(text)
+    return math.ceil(len(text) / 3.5)
 
 
 def _normalize_risk_label(value: object) -> object:

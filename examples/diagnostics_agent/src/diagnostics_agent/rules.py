@@ -39,3 +39,50 @@ DEFAULT_RULES: tuple[TriageRule, ...] = (
     _rule("kernel_bug", "stability", Severity.CRITICAL, r"\bkernel\b.*\bOops\b|\bBUG:\b|\bCall Trace:\b"),
     _rule("service_failed", "service", Severity.ERROR, r"\bsystemd\b.*\b(Failed to start|entered failed state)\b"),
 )
+
+
+@dataclass(frozen=True)
+class BenignSuppressor:
+    """Pattern that identifies known-benign log noise; matching clusters are suppressed."""
+
+    name: str
+    pattern: re.Pattern[str]
+
+
+def _suppress(name: str, pattern: str) -> BenignSuppressor:
+    return BenignSuppressor(name=name, pattern=re.compile(pattern, re.IGNORECASE))
+
+
+# Clusters whose template/examples match any of these patterns are unconditionally
+# suppressed before rule matching.  Each pattern is a known-benign OS/firmware
+# event that small models consistently over-escalate.
+BENIGN_SUPPRESSORS: tuple[BenignSuppressor, ...] = (
+    _suppress(
+        "acpi_ae_already_exists",
+        r"ACPI.*AE_ALREADY_EXISTS",
+    ),
+    _suppress(
+        "ata_drm_info",
+        r"ata\d+.*supports DRM functions and may not be fully accessible",
+    ),
+    _suppress(
+        "i915_fifo_underrun",
+        r"i915.*CPU pipe [A-Z] FIFO underrun",
+    ),
+    _suppress(
+        "atkbd_setkeycodes",
+        r"atkbd.*Use .setkeycodes",
+    ),
+    _suppress(
+        "overlayfs_xino_fallback",
+        r"overlayfs.*does not support file handles.*falling back to xino=off",
+    ),
+    _suppress(
+        "ntp_time_jump",
+        r"(chronyd|ntpd|systemd-timesyncd).*forward time jump detected",
+    ),
+    _suppress(
+        "gnome_keyring_noise",
+        r"(gnome-keyring|login keyring).*",
+    ),
+)

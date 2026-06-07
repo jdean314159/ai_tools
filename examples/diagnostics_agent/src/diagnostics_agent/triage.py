@@ -10,7 +10,7 @@ import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from diagnostics_agent.rules import TriageRule
+    from diagnostics_agent.rules import BenignSuppressor, TriageRule
 
 
 class Severity(IntEnum):
@@ -97,6 +97,7 @@ class TriageSummary:
 @dataclass(frozen=True)
 class TriageConfig:
     rules: tuple["TriageRule", ...] | None = None
+    suppressors: tuple["BenignSuppressor", ...] | None = None
     max_clusters: int = 25
     max_examples_per_group: int = 3
     min_cluster_severity: Severity = Severity.NOTICE
@@ -109,6 +110,13 @@ class TriageConfig:
         from diagnostics_agent.rules import DEFAULT_RULES
 
         return DEFAULT_RULES
+
+    def resolved_suppressors(self) -> tuple["BenignSuppressor", ...]:
+        if self.suppressors is not None:
+            return self.suppressors
+        from diagnostics_agent.rules import BENIGN_SUPPRESSORS
+
+        return BENIGN_SUPPRESSORS
 
 
 class LogTriage:
@@ -127,7 +135,7 @@ class LogTriage:
             records = [record for record in all_records if not _is_self_noise(record)]
             excluded_self_noise = len(all_records) - len(records)
         clusters = _build_clusters(records, self.config.max_examples_per_group)
-        findings, remaining_clusters = _classify_findings(clusters, self.config.resolved_rules())
+        findings, remaining_clusters = _classify_findings(clusters, self.config.resolved_rules(), self.config.resolved_suppressors())
 
         top_candidates = [
             cluster
@@ -428,10 +436,13 @@ def _is_self_noise(record: LogRecord) -> bool:
 def _classify_findings(
     clusters: list[EventCluster],
     rules: tuple["TriageRule", ...],
+    suppressors: tuple["BenignSuppressor", ...] = (),
 ) -> tuple[list[Finding], list[EventCluster]]:
     findings: list[Finding] = []
     remaining: list[EventCluster] = []
     for cluster in clusters:
+        if _is_benign(cluster, suppressors):
+            continue
         rule = _matching_rule(cluster, rules)
         if rule is None:
             remaining.append(cluster)
@@ -449,6 +460,15 @@ def _classify_findings(
             )
         )
     return findings, remaining
+
+
+def _is_benign(cluster: EventCluster, suppressors: tuple["BenignSuppressor", ...]) -> bool:
+    if not suppressors:
+        return False
+    haystacks = (cluster.template, *cluster.examples)
+    return any(
+        s.pattern.search(text) for s in suppressors for text in haystacks
+    )
 
 
 def _matching_rule(cluster: EventCluster, rules: tuple["TriageRule", ...]) -> "TriageRule | None":
