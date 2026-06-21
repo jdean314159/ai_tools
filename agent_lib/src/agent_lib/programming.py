@@ -3,13 +3,22 @@ from __future__ import annotations
 import json
 import tomllib
 from dataclasses import asdict, dataclass, field
+from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 import os
 import shlex
 import shutil
 import signal
 import subprocess
+import tempfile
+import time
 from typing import Any, Literal, Sequence
+
+try:  # The manager's multi-process state is supported on POSIX workstations.
+    import fcntl
+except ImportError:  # pragma: no cover - exercised only on unsupported platforms.
+    fcntl = None  # type: ignore[assignment]
 
 from .contracts import AgentContext, AgentObservation, AgentRun, AgentRunLifecycleHook, AgentStep, AgentTask, EngineRoles, ToolCall, ToolResult, ToolSpec, ToolRuntime
 
@@ -279,6 +288,7 @@ class PatchOwnership:
     paths: list[str]
     status: Literal["active", "released", "denied"] = "active"
     reason: str = ""
+    released_paths: list[str] = field(default_factory=list)
 
 
 class WorkspaceIsolationManager:
@@ -300,7 +310,39 @@ class WorkspaceIsolationManager:
         return payload if isinstance(payload, dict) else {}
 
     def _save_json(self, path: Path, payload: dict[str, Any]) -> None:
-        path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle, indent=2, sort_keys=True)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, path)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+    @contextmanager
+    def _lease_lock(self, *, timeout_seconds: float = 5.0):
+        """Serialize lease mutations across processes sharing this state root."""
+        if fcntl is None:
+            raise RuntimeError("Patch lease coordination requires POSIX fcntl support.")
+        lock_path = self._leases_path.with_suffix(".lock")
+        descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+        deadline = time.monotonic() + timeout_seconds
+        try:
+            while True:
+                try:
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(f"Timed out acquiring patch lease lock {lock_path}.")
+                    time.sleep(0.01)
+            yield
+        finally:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+            os.close(descriptor)
 
     def _is_git_repo(self, root: Path) -> bool:
         if shutil.which("git") is None:
@@ -351,27 +393,61 @@ class WorkspaceIsolationManager:
     def active_patch_owners(self) -> dict[str, dict[str, Any]]:
         return self._load_json(self._leases_path)
 
-    def acquire_patch_lease(self, owner_id: str, paths: Sequence[str]) -> PatchOwnership:
+    def acquire_patch_lease(
+        self,
+        owner_id: str,
+        paths: Sequence[str],
+        *,
+        thread_id: str = "default",
+        note: str = "",
+        metadata: dict[str, Any] | None = None,
+    ) -> PatchOwnership:
         normalized = [_normalize_rel_path(path) for path in paths if _normalize_rel_path(path)]
-        leases = self.active_patch_owners()
-        for path in normalized:
-            existing = dict(leases.get(path) or {})
-            if existing and existing.get("status") == "active" and existing.get("owner_id") != owner_id:
-                return PatchOwnership(owner_id=owner_id, paths=normalized, status="denied", reason=f"{path} is currently owned by {existing.get('owner_id')}")
-        for path in normalized:
-            leases[path] = {"owner_id": owner_id, "status": "active"}
-        self._save_json(self._leases_path, leases)
+        with self._lease_lock():
+            leases = self.active_patch_owners()
+            for path in normalized:
+                existing = dict(leases.get(path) or {})
+                if existing and existing.get("status") == "active" and existing.get("owner_id") != owner_id:
+                    return PatchOwnership(owner_id=owner_id, paths=normalized, status="denied", reason=f"{path} is currently owned by {existing.get('owner_id')}")
+            now = datetime.now(timezone.utc).isoformat()
+            for path in normalized:
+                existing = dict(leases.get(path) or {})
+                if existing.get("status") == "active" and existing.get("owner_id") == owner_id:
+                    # Preserve existing scope; only fill fields absent from a legacy record.
+                    existing.setdefault("thread_id", thread_id)
+                    existing.setdefault("note", note)
+                    existing.setdefault("created_at", now)
+                    existing.setdefault("metadata", dict(metadata or {}))
+                    leases[path] = existing
+                    continue
+                leases[path] = {
+                    "owner_id": owner_id,
+                    "status": "active",
+                    "thread_id": thread_id,
+                    "note": note,
+                    "created_at": now,
+                    "metadata": dict(metadata or {}),
+                }
+            self._save_json(self._leases_path, leases)
         return PatchOwnership(owner_id=owner_id, paths=normalized, status="active")
 
     def release_patch_lease(self, owner_id: str, paths: Sequence[str]) -> PatchOwnership:
         normalized = [_normalize_rel_path(path) for path in paths if _normalize_rel_path(path)]
-        leases = self.active_patch_owners()
-        for path in normalized:
-            existing = dict(leases.get(path) or {})
-            if existing.get("owner_id") == owner_id:
-                leases[path] = {"owner_id": owner_id, "status": "released"}
-        self._save_json(self._leases_path, leases)
-        return PatchOwnership(owner_id=owner_id, paths=normalized, status="released")
+        released_paths: list[str] = []
+        with self._lease_lock():
+            leases = self.active_patch_owners()
+            for path in normalized:
+                existing = dict(leases.get(path) or {})
+                if existing.get("owner_id") == owner_id and existing.get("status") == "active":
+                    existing["status"] = "released"
+                    leases[path] = existing
+                    released_paths.append(path)
+            self._save_json(self._leases_path, leases)
+        return PatchOwnership(owner_id=owner_id, paths=normalized, status="released", released_paths=released_paths)
+
+    def patch_lease(self, path: str) -> dict[str, Any] | None:
+        record = self.active_patch_owners().get(_normalize_rel_path(path))
+        return dict(record) if isinstance(record, dict) else None
 
 
 class ProgrammingToolRuntime:
@@ -445,6 +521,7 @@ class ProgrammingToolRuntime:
                 return self._deny(call, reason=f'Command {command!r} is not allowed by workspace policy.', error='command_denied')
             return execute_workspace_command(self.root, command, workspace_policy=self.workspace)
         return self.inner.invoke(call)
+
 
     def invoke_interop(self, call: ToolCall):
         from .interop import describe_tool_runtime, tool_result_to_operation_result

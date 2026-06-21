@@ -46,8 +46,10 @@ from .coordination import (
     ExternalSessionCoordinator,
     FileReservation,
     InMemoryMailbox,
+    ManagedCoordination,
     SessionMailbox,
     build_coordinator_tool_runtime,
+    build_managed_coordination,
     build_session_tool_runtime,
     route_by_capability,
 )
@@ -116,8 +118,10 @@ __all__ = [
     "ExternalSessionCoordinator",
     "FileReservation",
     "InMemoryMailbox",
+    "ManagedCoordination",
     "SessionMailbox",
     "build_coordinator_tool_runtime",
+    "build_managed_coordination",
     "build_session_tool_runtime",
     "route_by_capability",
     # Memory adapters

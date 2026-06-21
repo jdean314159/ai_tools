@@ -155,3 +155,15 @@ dependency dropped from the active package set. No package broken as a result.
 needed before serious `agent_lib` expansion. Recommends enforced (container,
 network-default-deny) over advisory confinement. Left Proposed pending the first
 real ASC-build run, per the co-evolution rule in AGENT_BUILD_NOTES.
+
+## ADR-017 — Coordination permission model
+**File:** `adr/ADR-017-coordination-permission-model.md`
+**Status:** Accepted
+**Summary:** Coordination routes by declared capability, scopes each session's tool grant,
+and gives coordinator runtimes an explicit deny-all grant.
+
+## ADR-018 — Unified path ownership
+**File:** `adr/ADR-018-path-ownership-target-and-debt.md`
+**Status:** Accepted; unification promoted
+**Summary:** Manager-backed sessions use one atomic, enforced lease authority; reservations
+are a derived human-readable view. The legacy mailbox fallback remains advisory-only.

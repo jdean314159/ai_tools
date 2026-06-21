@@ -52,7 +52,7 @@ class FileReservation:
     thread_id: str = "default"
     status: ReservationStatus = "active"
     note: str = ""
-    created_at: datetime = field(default_factory=_utc_now)
+    created_at: datetime | None = field(default_factory=_utc_now)
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -73,9 +73,11 @@ class SessionMailbox(Protocol):
 
 
 class InMemoryMailbox:
-    def __init__(self) -> None:
+    def __init__(self, isolation_manager: Any | None = None) -> None:
         self._sessions: dict[str, ExternalAgentSession] = {}
         self._messages: list[CoordinationMessage] = []
+        self.isolation_manager = isolation_manager
+        # This remains the complete source of truth only for legacy no-manager mailboxes.
         self._reservations: dict[str, FileReservation] = {}
 
     def register(self, session: ExternalAgentSession) -> None:
@@ -102,6 +104,11 @@ class InMemoryMailbox:
         thread_id: str = "default",
         note: str = "",
     ) -> list[FileReservation]:
+        if self.isolation_manager is not None:
+            return [
+                self._reserve_managed_path(holder, raw_path, thread_id=thread_id, note=note)
+                for raw_path in paths
+            ]
         results: list[FileReservation] = []
         for raw_path in paths:
             path = str(raw_path)
@@ -123,7 +130,52 @@ class InMemoryMailbox:
             results.append(reservation)
         return results
 
+    def _reservation_from_lease(self, path: str, record: dict[str, Any], *, status: ReservationStatus = "active") -> FileReservation:
+        created_at = record.get("created_at")
+        if isinstance(created_at, str):
+            try:
+                created_at = datetime.fromisoformat(created_at)
+            except ValueError:
+                created_at = None
+        if not isinstance(created_at, datetime):
+            created_at = None
+        return FileReservation(
+            path=path,
+            holder=str(record.get("owner_id") or ""),
+            thread_id=str(record.get("thread_id") or "default"),
+            status=status,
+            note=str(record.get("note") or ""),
+            created_at=created_at,
+            metadata=dict(record.get("metadata") or {}),
+        )
+
+    def _reserve_managed_path(self, holder: str, raw_path: str, *, thread_id: str, note: str) -> FileReservation:
+        from .programming import _normalize_rel_path
+
+        path = _normalize_rel_path(str(raw_path))
+        lease = self.isolation_manager.acquire_patch_lease(holder, [path], thread_id=thread_id, note=note)
+        record = self.isolation_manager.patch_lease(path) or {}
+        if lease.status == "denied":
+            current_holder = str(record.get("owner_id") or "")
+            return FileReservation(
+                path=path,
+                holder=holder,
+                thread_id=thread_id,
+                status="conflict",
+                note=f"Already reserved by {current_holder}.",
+                created_at=None,
+                metadata={"current_holder": current_holder},
+            )
+        return self._reservation_from_lease(path, record)
+
     def release_paths(self, holder: str, paths: Sequence[str]) -> list[FileReservation]:
+        if self.isolation_manager is not None:
+            released = self.isolation_manager.release_patch_lease(holder, paths)
+            reservations: list[FileReservation] = []
+            for path in released.released_paths:
+                record = self.isolation_manager.patch_lease(path) or {"owner_id": holder}
+                reservations.append(self._reservation_from_lease(path, record, status="released"))
+            return reservations
         released: list[FileReservation] = []
         for raw_path in paths:
             path = str(raw_path)
@@ -144,6 +196,15 @@ class InMemoryMailbox:
         return released
 
     def active_reservations(self, *, thread_id: str | None = None) -> list[FileReservation]:
+        if self.isolation_manager is not None:
+            reservations = [
+                self._reservation_from_lease(path, record)
+                for path, record in self.isolation_manager.active_patch_owners().items()
+                if record.get("status") == "active"
+            ]
+            if thread_id is not None:
+                reservations = [reservation for reservation in reservations if reservation.thread_id == thread_id]
+            return sorted(reservations, key=lambda item: item.path)
         reservations = [r for r in self._reservations.values() if r.status == "active"]
         if thread_id is not None:
             reservations = [r for r in reservations if r.thread_id == thread_id]
@@ -219,6 +280,40 @@ def build_coordinator_tool_runtime(
         root=root,
         owner_id=session.agent_id,
         isolation_manager=isolation_manager,
+    )
+
+
+@dataclass(frozen=True)
+class ManagedCoordination:
+    coordinator: "ExternalSessionCoordinator"
+    isolation_manager: Any
+    worker_runtimes: dict[str, Any]
+
+
+def build_managed_coordination(
+    team: ExternalAgentTeam,
+    inner: Any,
+    workspace: Any,
+    *,
+    root: str,
+    state_root: str,
+) -> ManagedCoordination:
+    """Construct a manager-backed coordinator and worker runtimes sharing one authority."""
+    from .programming import WorkspaceIsolationManager
+
+    manager = WorkspaceIsolationManager(state_root)
+    coordinator = ExternalSessionCoordinator(InMemoryMailbox(isolation_manager=manager))
+    coordinator.register_team(team)
+    worker_runtimes = {
+        worker.agent_id: build_session_tool_runtime(
+            worker, inner, workspace, root=root, isolation_manager=manager
+        )
+        for worker in team.workers
+    }
+    return ManagedCoordination(
+        coordinator=coordinator,
+        isolation_manager=manager,
+        worker_runtimes=worker_runtimes,
     )
 
 
