@@ -8,6 +8,44 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
+## Update — 2026-06-21 (COORD campaign closed; checkout workflow)
+
+**Repository state at handoff:** `ai_tools` is clean on `codex-cleanup-pass` at
+`3dceb3e` (`WIP: accumulated multi-thread work pre-curation`), following:
+
+- `ed73f04` — coordination control plane;
+- `a057e76` — unified atomic path ownership; and
+- `3dceb3e` — deliberate multi-thread WIP consolidation.
+
+`backup/pre-curation-20260621` anchors `a057e76`. Nothing in this campaign has
+been pushed. `computer_helper` contains the matching probe commits, including
+`c0a416e` (`test(probe): verify unified path ownership`), but its worktree still
+has pre-existing staged/untracked probe-state changes; inspect it before making
+any unrelated commit there.
+
+**COORD campaign: CLOSED.** All four ledger gaps are closed. ADR-017 established
+capability routing, per-session tool grants, and the coordinator deny-all guard.
+ADR-018 then unified path ownership: manager-backed coordination uses one
+cross-process-locked lease authority for both reservations and write enforcement;
+the no-manager mailbox remains explicitly advisory-only for compatibility. The
+library and probe commits are separate. Targeted `agent_lib` tests (73) and
+`computer_helper` tests (6) passed, as did compile and diff checks.
+
+**Open threads (none urgent):**
+
+- Write a tracked digest for the neural-eval results if neural work resumes;
+  the `affinity_weight=2.1` recall-collapse evidence currently exists only in
+  the untracked `runs/` tree.
+- The thematic curation of `3dceb3e` is intentionally deferred unless a future
+  bisect or revert needs it.
+- A deterministic control plane and unified ownership now make a live
+  multi-agent run the natural next campaign. It remains out of scope until a
+  new mandate.
+
+**Workflow rule:** do not run multiple work streams in one checkout. Create a
+branch (and, when concurrent, a separate worktree) per stream; it prevents
+staged/index overlap and preserves independently reviewable commits.
+
 Two threads closed this session, both landing on "don't build the big thing."
 
 1. **Neural memory campaign is COMPLETE and the layer is PARKED.** The
