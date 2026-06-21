@@ -41,11 +41,8 @@ print(report)
 
 Its job is not only to retrieve context for LLMs, but also to make retrieval behavior inspectable so users can understand what the retriever did and why.
 
-## Start here if you are learning from this repo
+## Using this with the rest of the suite
 
-This is the default retrieval package in the teaching path.
-
-- teaching path stage: Stage 4 in [`../LEARNING_PATH.md`](../LEARNING_PATH.md)
 - pair it with `llm_inspector` or `llm_inspector_ui`
 - compare baseline vs grounded runs using the evaluation walkthrough
 

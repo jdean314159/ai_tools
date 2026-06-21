@@ -209,6 +209,24 @@ def test_referenced_tracked_fixture_passes(
     assert checker.main([]) == 0
 
 
+def test_referenced_fixture_directory_passes_with_tracked_descendant(
+    hygiene_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write(
+        hygiene_root / "pkg" / "tests" / "test_corpus.py",
+        "from pathlib import Path\n"
+        "CORPUS = Path(__file__).parent / 'fixtures' / 'eval'\n",
+    )
+    fixture = _write(
+        hygiene_root / "pkg" / "tests" / "fixtures" / "eval" / "case.json",
+        "{}",
+    )
+    _track(monkeypatch, fixture)
+
+    assert checker.main([]) == 0
+
+
 def test_referenced_missing_fixture_fails(hygiene_root: Path) -> None:
     _write(
         hygiene_root / "pkg" / "tests" / "test_logs.py",

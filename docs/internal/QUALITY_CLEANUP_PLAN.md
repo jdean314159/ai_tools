@@ -1,6 +1,6 @@
 # Quality Cleanup Plan
 
-Last updated: 2026-05-20
+Last updated: 2026-06-01
 
 ## Status
 
@@ -45,8 +45,9 @@ Ingestion policy regex patterns were extracted to YAML.
 
 ### Phase 7 - Engine contract unification - DONE
 
-`ProjectMemory.respond()` routes through `EngramLLMAdapter` for modern engine
-integration while preserving legacy compatibility.
+Modern engine integration now goes through the `llm_engines` contracts and the
+Engram semantic extractor. The removed `EngramLLMAdapter` path should stay out
+of active tests and docs.
 
 ### Phase 8 - Test infrastructure - DONE
 
@@ -87,7 +88,7 @@ Run from a fresh clone:
 
 Optional ML gate:
 
-    make install-ml
+    make install-gpu
     make test-ml
 
 CUDA/GPU gate:

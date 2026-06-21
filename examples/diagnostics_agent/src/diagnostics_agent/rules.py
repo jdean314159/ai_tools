@@ -85,4 +85,23 @@ BENIGN_SUPPRESSORS: tuple[BenignSuppressor, ...] = (
         "gnome_keyring_noise",
         r"(gnome-keyring|login keyring).*",
     ),
+    _suppress(
+        "screensaver_unlock_noise",
+        r"pam_unix\((?:cinnamon-screensaver|gnome-screensaver|xscreensaver|"
+        r"light-locker|kscreenlocker)[^)]*\):",
+    ),
+    _suppress(
+        "polkit_session_noise",
+        r"(?:polkitd?|pkexec)\b.*(?:Operator of unix-session|"
+        r"Registered Authentication Agent|Unregistered Authentication Agent)",
+    ),
+    _suppress(
+        "gdm_session_noise",
+        r"(?:gdm-(?:session|launch-environment|password)|gdm3)\][^:]*:.*"
+        r"(?:pam_unix|session opened|session closed)",
+    ),
+    _suppress(
+        "bluetooth_tx_timeout",
+        r"Bluetooth:\s*hci\d+:\s*command\s+(?:0x[0-9a-fA-F]+|<HEX>)\s+tx timeout",
+    ),
 )

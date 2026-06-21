@@ -39,13 +39,10 @@ event = TraceEvent(
 
 `llm_harness_core` is the small shared interoperability layer for the `ai_tools` suite.
 
-## Start here if you are learning from this repo
+## Using this with the rest of the suite
 
-Use this package as the architectural reference point, not as the first hands-on package.
-
-- teaching path anchor: [`../LEARNING_PATH.md`](../LEARNING_PATH.md)
 - evaluation guide: [`EVALUATION_WALKTHROUGH.md`](./EVALUATION_WALKTHROUGH.md)
-- synthetic-data teaching support: see the utilities below
+- synthetic-data utilities: see below
 
 This package should stay small, dependency-light, and stable so the rest of the suite can compose around it.
 
@@ -69,7 +66,7 @@ Reach for it when you want to understand how packages in the suite exchange:
 - `llm_engines` converts backend/model behavior into shared result shapes
 - `engram` and `rag_lib` adapt augmentation and retrieval behavior into shared records/events
 - `llm_inspector` and `llm_inspector_ui` rely on the shared vocabulary so they can compare systems consistently
-- teaching and evaluation assets use the shared evaluator protocol to avoid package-local scoring conventions
+- evaluation assets use the shared evaluator protocol to avoid package-local scoring conventions
 
 ## Design intent
 
@@ -93,7 +90,8 @@ That includes:
 - evaluator results
 - thin evaluator wrappers for exact-match, similarity, rubric scoring, and LLM-as-a-judge integration
 
-Use [`EVALUATION_WALKTHROUGH.md`](./EVALUATION_WALKTHROUGH.md) when teaching learners how to compare baseline and augmented systems with a shared vocabulary.
+Use [`EVALUATION_WALKTHROUGH.md`](./EVALUATION_WALKTHROUGH.md) to compare
+baseline and augmented systems with a shared vocabulary.
 
 ## Synthetic data utilities
 
@@ -105,4 +103,5 @@ Use [`EVALUATION_WALKTHROUGH.md`](./EVALUATION_WALKTHROUGH.md) when teaching lea
 - `generate_synthetic_bundle(...)`
 - `write_synthetic_bundle(...)`
 
-These are intended for small teaching and evaluation corpora with `clean`, `noisy`, and `adversarial` presets.
+These are intended for small evaluation corpora with `clean`, `noisy`, and
+`adversarial` presets.

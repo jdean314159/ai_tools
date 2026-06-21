@@ -22,6 +22,24 @@ env/
 .vscode/
 
 # Local data and generated artifacts
+conversations.json
+.netflow_cache/
+docs/projects/knowledge_mvp/REVIEW_BUNDLE.html
+docs/projects/knowledge_mvp/REVIEW_DECISIONS.jsonl
+docs/projects/knowledge_mvp/REVIEW_QUEUE.jsonl
+docs/projects/knowledge_mvp/APPROVED_CLAIMS.jsonl
+docs/projects/knowledge_mvp/CANDIDATE_EXTRACTION_MANIFEST.json
+docs/projects/knowledge_mvp/CORPUS_MANIFEST.json
+docs/projects/knowledge_mvp/CORPUS_SELECTION.json
+docs/projects/knowledge_mvp/EXPORT_INTEGRITY_REPORT.json
+docs/projects/knowledge_mvp/EXPORT_INTEGRITY_REPORT.md
+docs/projects/knowledge_mvp/PHASE_5B_CLAIM_GRAPH.json
+docs/projects/knowledge_mvp/PHASE_5B_MANIFEST.json
+docs/projects/knowledge_mvp/PHASE_5B_REPORT.md
+docs/projects/knowledge_mvp/PHASE_5C_MANIFEST.json
+docs/projects/knowledge_mvp/PHASE_5C_RESULTS.json
+docs/projects/knowledge_mvp/PHASE_5C_REPORT.md
+docs/projects/knowledge_mvp/REVIEW_MANIFEST.json
 *.db
 *.db-*
 *.sqlite
@@ -52,6 +70,7 @@ Thumbs.db
 # Runtime artifacts and eval results
 engram/data/
 engram/tests/eval/eval_results_*/
+integration_tests/eval/runs/
 engram_lite/data/
 **/.writer.lock
 **/neural_memory.json
@@ -59,4 +78,10 @@ engram_lite/data/
 *.bak
 .language_tutor_example/
 examples/*/runs/
+examples/asc_probe/runs/
+examples/asc_probe/live_fixture/
+examples/netflow_behavior_lab/data/
+examples/*.zip
 asc/mcp_agent_mail/.env
+examples/asc_probe/runs/
+tests/integration_tests/eval/runs/

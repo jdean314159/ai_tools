@@ -23,7 +23,7 @@ For the next thread, fresh-clone verification and optional-dependency validation
 4. `llm_inspector_ui` is the main user-facing workbench.
 5. A clean install/test story is a release gate, not an optional polish item.
 
-## Phase 0 — Packaging/import stabilization — mostly complete
+## Phase 0 — Packaging/import stabilization — COMPLETE
 
 ### Goal
 
@@ -40,9 +40,10 @@ Make the repo boring to install, import, and test.
 
 ### Done when
 
-A fresh environment can install the packages in editable mode and run selected package/cross-package tests without manual `PYTHONPATH` dependence. Current next step: rerun this gate from a newly cloned GitHub copy after the optional ML dependency changes.
+A fresh environment can install the packages in editable mode and run selected
+package/cross-package tests without manual `PYTHONPATH` dependence.
 
-## Phase 1 — Publication hygiene — active verification
+## Phase 1 — Publication hygiene — COMPLETE
 
 ### Goal
 
@@ -52,30 +53,29 @@ Prevent local development artifacts from entering release snapshots or GitHub.
 
 - Strengthen `scripts/check_publication_hygiene.py`.
 - Fail on `.pytest_cache`, `*.egg-info`, `*.bak`, `*.orig`, `*.rej`, ad hoc patches, local DBs, and cache files unless explicitly allowed.
-- Add or maintain CI coverage for hygiene.
+- Maintain the publication-hygiene CI gate.
 
 ### Done when
 
-A clean snapshot can pass the hygiene checker without manual inspection.
+A clean snapshot passes the hygiene checker in CI without manual inspection.
 
-## Phase 2 — Resolve memory package boundary
+## Phase 2 — Resolve memory package boundary — complete
 
 ### Goal
 
-Make `engram`, `engram`, ADR-007, tests, and docs agree.
+Make `engram`, ADR-009, tests, and docs agree.
 
 ### Work
 
-- Decide whether `engram` is strictly a facade or a lightweight independent implementation.
-- Preferred: keep it as a facade over `engram`.
-- Move duplicated implementation into `engram` or explain why it remains lite-specific.
-- Keep compatibility shims where useful, but document removal expectations.
+- ADR-009 resolved the former split into the single supported `engram` package.
+- Keep the standalone implementation as the single supported memory package.
+- Retain the old backend string only as an explicit compatibility alias.
 
 ### Done when
 
 `engram` public API contract tests pass and its code structure matches the documented role.
 
-## Phase 3 — Standardize remaining package layouts — mostly complete
+## Phase 3 — Standardize remaining package layouts — complete
 
 ### Goal
 
@@ -83,7 +83,7 @@ Keep package layout intentional and validated.
 
 ### Work
 
-Most packages now use `src/` layout. `llm_engines` intentionally remains on direct layout. Do not reintroduce old top-level import-shadowing trees such as `engram/engram` or `engram/__init__.py`.
+All packages use `src/` layout (ADR-014 completed `llm_engines` migration). Do not reintroduce old top-level import-shadowing trees such as `engram/engram` or `engram/__init__.py`.
 
 ### Done when
 
@@ -99,7 +99,7 @@ Make `llm_inspector_ui` a reliable teaching and diagnostic workbench.
 
 - Validate baseline, memory, and RAG flows.
 - Improve explanatory UI text.
-- Keep `engram` as the default memory path unless intentionally testing full `engram`.
+- Keep `engram` as the default memory path.
 - Add integration tests for visible traces and exported artifacts.
 
 ### Done when
@@ -115,7 +115,7 @@ Make `language_tutor` the canonical example of composing the libraries.
 ### Work
 
 - Align with modern `llm_engines`.
-- Use `engram` by default, with full `engram` optional.
+- Use `engram` as the supported memory implementation.
 - Expose useful observability hooks.
 
 ### Done when
@@ -148,3 +148,15 @@ Agent workflows are inspectable, constrained, and testable.
 ## Standing rule
 
 Do not add new capabilities on top of unstable package/import behavior. Stabilize the foundation first.
+
+## Course extraction pre-flight
+
+Before extracting course material into a separate repository, decide whether
+these package-internal guides remain with their libraries or move with the
+course:
+
+- `llm_inspector_ui/WORKBENCH_TEACHING_GUIDE.md`
+- `llm_harness_core/EVALUATION_WALKTHROUGH.md`
+
+They remain in place for now because their links are package-internal and do
+not create a library-to-course dependency.

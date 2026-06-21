@@ -218,7 +218,7 @@ class ExternalAgentTeam:
     workers: list[ExternalAgentSession]
     critic: ExternalAgentSession | None = None
     scouts: list[ExternalAgentSession] = field(default_factory=list)
-    shared_memory_backend: str = "engram_lite"
+    shared_memory_backend: str = "engram"
 
     @property
     def all_sessions(self) -> list[ExternalAgentSession]:

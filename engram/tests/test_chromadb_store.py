@@ -71,6 +71,23 @@ def test_delete(tmp_path):
     assert store.count() == 0
 
 
+def test_update_metadata_merges_existing_fields(tmp_path):
+    store = make_store(tmp_path)
+    store.add(
+        "ep_001",
+        "episode",
+        [0.1] * 8,
+        {"importance": 0.5, "session_id": "s1"},
+    )
+
+    store.update_metadata("ep_001", {"importance": 0.8})
+
+    results = store.query([0.1] * 8, n=1)
+    metadata = results["metadatas"][0][0]
+    assert metadata["importance"] == 0.8
+    assert metadata["session_id"] == "s1"
+
+
 def test_query_empty_collection(tmp_path):
     """Query on empty collection returns empty results without error."""
     store = make_store(tmp_path)

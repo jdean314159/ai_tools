@@ -18,7 +18,7 @@ def _build_parser() -> argparse.ArgumentParser:
     init_cfg.add_argument("--output", required=True, help="Path to the JSON config file to write.")
     init_cfg.add_argument("--session-id", default="programming_demo")
     init_cfg.add_argument("--path", dest="task_path", default="main.py", help="Target source path for the demo task.")
-    init_cfg.add_argument("--memory-backend", default="engram_lite", choices=["engram_lite", "engram"])
+    init_cfg.add_argument("--memory-backend", default="engram", choices=["engram", "null"])
     init_cfg.add_argument("--mentor", default=None, help="Named mentor/planner engine in llm_engines config.")
     init_cfg.add_argument("--worker", default=None, help="Named worker/executor engine in llm_engines config.")
     init_cfg.add_argument("--critic", default=None, help="Named critic engine in llm_engines config.")

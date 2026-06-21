@@ -1,0 +1,15 @@
+{
+  "case": "ssh_bruteforce",
+  "description": "Repeated SSH authentication probes from varied source addresses.",
+  "expected_overall": {
+    "security_risk": "medium",
+    "operational_risk": "low"
+  },
+  "expected_concerns": [
+    {
+      "finding_ref": "ssh_failed_auth",
+      "expected_band": "medium",
+      "note": "Real probing at moderate volume, but not evidence of compromise."
+    }
+  ]
+}

@@ -31,15 +31,10 @@ Completed since the previous transfer update:
 Current policy:
 
 - Do not reintroduce package-local `sys.path`, `PYTHONPATH`, `sys.modules`, manual package loaders, or import reload logic.
-- Keep root `conftest.py` as temporary centralized test bootstrap until package layout consistency removes the need for it.
+- Keep root `conftest.py` as the permanent anchoring guard (deliberate compensating control; ADR-008 decision closed — do not remove).
 - Keep source/layout changes in small, separately validated commits.
 
-Next recommended increment:
-
-1. Convert `llm_engines` to `src/` layout.
-2. Update package metadata and import provenance expectations.
-3. Validate editable install and package tests.
-4. Rerun the broad gate.
+ADR-014 complete: `llm_engines` converted to `src/` layout; editable install validated.
 <!-- AI_TOOLS_CLEANUP_CHECKPOINT_END -->
 
 ## Purpose
@@ -91,16 +86,13 @@ Use it to answer:
 - Scope: suite-wide
 - Decision: use a dependency-light shared core, `llm_harness_core`, for cross-package schemas.
 
-### ADR-007 — `engram` as a Facade Over `engram`
+### ADR-007 — `engram_lite` as a Facade Over `engram` (SUPERSEDED)
 
-- File: `adr/ADR-007-engram-as-engram-facade.md`
-- Status: Accepted, but implementation should be re-verified
-- Scope: `engram`, `engram`, workbench defaults
-- Decision: `engram` is intended to be a curated/default facade over `engram`.
-
-Implementation warning:
-
-The current code may still contain substantial independent `engram` implementation. The cleanup thread should either finish the facade migration or amend ADR-007. Preferred direction is to finish the facade migration.
+- File: `adr/ADR-007-engram-lite-as-engram-facade.md`
+- Status: **Superseded by ADR-009**
+- Scope: historical only
+- Summary: ADR-009 dissolved engram_lite and renamed the standalone implementation
+  to `engram`. The facade question is resolved; do not act on this ADR.
 
 ### ADR-008 — Monorepo Packaging and Import Policy
 
@@ -122,7 +114,7 @@ Treat these as settled unless a new ADR explicitly reverses them:
 3. Engram retrieval policy is explicit.
 4. Persistence strategy must match backend realities.
 5. `llm_harness_core` is the shared interop layer.
-6. `engram` is intended to be a curated/default facade over `engram` unless ADR-007 is amended.
+6. `engram` is a standalone implementation (ADR-009); ADR-007 facade direction superseded.
 7. Packaging/import behavior should be standardized rather than repaired with growing path hacks.
 
 ## ADRs that may still be needed
@@ -155,6 +147,16 @@ dependency dropped from the active package set. No package broken as a result.
 needed before serious `agent_lib` expansion. Recommends enforced (container,
 network-default-deny) over advisory confinement. Left Proposed pending the first
 real ASC-build run, per the co-evolution rule in AGENT_BUILD_NOTES.
+
+## ADR-016 — Additive memory-layer extension seam
+**File:** `adr/ADR-016-memory-layer-extension-seam.md`
+**Status:** Accepted
+**Summary:** Adds an optional `MemoryLayer` protocol and explicit registration
+at Engram's observe, recall, prompt, and teardown seams. Existing memory layers
+remain authoritative and unchanged; extension failures cannot break core flows.
+NEURAL-02b records the default-off RTRL/TITANS adapter as the first
+implementation, using intrinsic prediction error and a generic candidate
+embedding resolver.
 
 ## ADR-017 — Coordination permission model
 **File:** `adr/ADR-017-coordination-permission-model.md`

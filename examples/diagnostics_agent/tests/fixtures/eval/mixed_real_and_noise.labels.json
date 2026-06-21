@@ -1,0 +1,15 @@
+{
+  "case": "mixed_real_and_noise",
+  "description": "A real SSH probe mixed with unrelated benign kernel noise.",
+  "expected_overall": {
+    "security_risk": "medium",
+    "operational_risk": "low"
+  },
+  "expected_concerns": [
+    {"finding_ref": "ssh_failed_auth", "expected_band": "medium"},
+    {"finding_ref": "acpi_ae_already_exists", "expected_band": "excluded"},
+    {"finding_ref": "ata_drm_info", "expected_band": "excluded"},
+    {"finding_ref": "i915_fifo_underrun", "expected_band": "excluded"},
+    {"finding_ref": "overlayfs_xino_fallback", "expected_band": "excluded"}
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "example_version": 1,
+  "domain": "software caching and deployment",
+  "claims": [
+    {
+      "candidate_id": "example-cache-adapter",
+      "statement": "Enabling the response-cache adapter reduces tail latency without increasing stale responses.",
+      "scope": "one API response-cache adapter"
+    },
+    {
+      "candidate_id": "example-cache-general",
+      "statement": "Caching can reduce repeated computation in software systems.",
+      "scope": "software systems generally"
+    },
+    {
+      "candidate_id": "example-cache-numeric",
+      "statement": "Response caching reduces infrastructure cost by 60-80%.",
+      "scope": "production API services"
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "example-local-eval",
+      "authority": "local_evaluation",
+      "scope": "one API response-cache adapter",
+      "statement": "A controlled run increased p99 latency and stale-response rate."
+    },
+    {
+      "evidence_id": "example-adr",
+      "authority": "accepted_adr",
+      "scope": "current adapter status",
+      "statement": "The adapter is disabled pending a new invalidation design and gate."
+    }
+  ],
+  "result": {
+    "relations": [
+      {
+        "candidate_id": "example-cache-adapter",
+        "evidence_id": "example-local-eval",
+        "relation": "challenges",
+        "rationale": "The controlled run directly contradicts the scoped latency and staleness hypothesis."
+      },
+      {
+        "candidate_id": "example-cache-adapter",
+        "evidence_id": "example-adr",
+        "relation": "supersedes",
+        "rationale": "The accepted decision disables the tested adapter under current conditions."
+      },
+      {
+        "candidate_id": "example-cache-general",
+        "evidence_id": "example-local-eval",
+        "relation": "qualifies",
+        "rationale": "Failure of one adapter limits application guidance but does not refute caching generally."
+      },
+      {
+        "candidate_id": "example-cache-numeric",
+        "evidence_id": "example-local-eval",
+        "relation": "unresolved",
+        "rationale": "The supplied evaluation did not measure the claimed infrastructure-cost range."
+      }
+    ],
+    "adjudications": [
+      {
+        "candidate_id": "example-cache-adapter",
+        "status": "resolved_against",
+        "current_statement": "The tested response-cache adapter did not improve tail latency safely and is disabled.",
+        "rationale": "Scoped local evaluation and the accepted decision directly control this adapter claim.",
+        "controlling_evidence_ids": [
+          "example-local-eval",
+          "example-adr"
+        ],
+        "review_required": false
+      },
+      {
+        "candidate_id": "example-cache-general",
+        "status": "qualified",
+        "current_statement": "Caching can reduce repeated computation, but the tested adapter failed its latency and staleness gate.",
+        "rationale": "The broad statement survives only with the failed adapter explicitly excluded.",
+        "controlling_evidence_ids": [
+          "example-local-eval",
+          "example-adr"
+        ],
+        "review_required": true
+      },
+      {
+        "candidate_id": "example-cache-numeric",
+        "status": "unresolved",
+        "current_statement": "The claimed 60-80% infrastructure-cost reduction is not established by the supplied evidence.",
+        "rationale": "No supplied evidence directly measures or validates the numerical range.",
+        "controlling_evidence_ids": [],
+        "review_required": true
+      }
+    ],
+    "current_guidance": "The tested response-cache adapter is disabled; caching remains a qualified general technique, and unsupported numerical benefits require review."
+  }
+}

@@ -61,13 +61,6 @@ ML extras are installed.
 
 ## 5. Optional ML/GPU tests
 
-CPU/default ML extras:
-
-```bash
-make install-ml
-make test-ml
-```
-
 CUDA/GPU path:
 
 ```bash
@@ -77,7 +70,7 @@ make test-ml
 
 If the CUDA PyTorch wheel index is wrong for the machine, use the official
 PyTorch installer guidance for the OS/Python/CUDA target, then rerun
-`make install-ml`.
+`make install-gpu`.
 
 ## 6. Import provenance check
 

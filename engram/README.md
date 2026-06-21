@@ -44,16 +44,11 @@ mem.add_turn("assistant", response.text, "s1")
 
 
 
-`engram` is the lightweight memory augmentation package in the `ai_tools` suite.
+`engram` is the memory augmentation package in the `ai_tools` suite - an
+inspectable way to add memory behavior to an LLM workflow.
 
-It is intended to be the easiest way to add inspectable memory behavior to an LLM workflow without adopting the full `engram` runtime.
+## Using this with the rest of the suite
 
-## Start here if you are learning from this repo
-
-This is the default memory package in the teaching path.
-
-- teaching path stage: Stage 3 in [`../LEARNING_PATH.md`](../LEARNING_PATH.md)
-- use this before considering full `engram`
 - inspect its behavior in `llm_inspector` and `llm_inspector_ui`
 
 ## Current support status
@@ -95,19 +90,57 @@ It can expose:
 
 This is important because the package is not meant to be a hidden prompt manipulator. It should make memory contributions visible.
 
-## Boundary relative to `engram`
+## Optional memory layers
 
-`engram` is the small, adoption-friendly memory layer.
-`engram` remains the richer and more experimental/full memory runtime.
+Experimental memory implementations can implement `MemoryLayer` and register
+explicitly with `ProjectMemory.register_layer()`. Extensions receive successful
+turn and episode observations, may contribute advisory recall-score boosts and
+prompt hints, and receive persistence and close hooks.
 
-Operationally:
+Core Engram behavior remains authoritative: extensions cannot add, remove, or
+suppress recall candidates, and extension failures are logged without breaking
+the default memory flow. No extension layers are registered by default.
 
-- choose `engram` for simpler memory augmentation and easier adoption
-- choose `engram` for richer persistent/project memory workflows
+### Isolated neural primitives
+
+`engram.neural` contains the recovered RTRL/TITANS associative-memory core,
+`NeuralMemory` wrapper, and surprise filter. These components are opt-in and
+are not imported by base `engram`.
+
+The default backend is NumPy. Install the `neural-accel` extra and explicitly
+select an accelerated device to use the optional Torch backend.
+
+`ProjectMemory` can register the neural adapter explicitly:
+
+```python
+from engram import ProjectMemory
+from engram.neural import NeuralMemoryConfig
+
+memory = ProjectMemory(
+    base_dir="~/.myapp",
+    project_id="demo",
+    embedder=my_embedder,
+    enable_neural=True,
+    neural_config=NeuralMemoryConfig(),
+)
+```
+
+Neural memory is default-off pending corpus evaluation. It learns paired
+user-to-assistant embedding associations, applies bounded surprise-based
+importance adjustments to newly stored episodes, and emits budgeted familiarity
+or novelty context hints after warmup. The hints reconstruct the learned value
+vector into approximate embedding space and cite a bounded set of aligned
+episode snippets. Neural retrieval re-ranking is disabled.
+Perplexity/logprob-based surprise filtering remains separate and is not wired
+into `ProjectMemory`.
+
+The synthesis path uses `value_dim=32`; a 64-dimensional experiment overflowed
+at full evaluation volume. Any non-finite neural state disables neural updates
+and hints rather than affecting core Engram behavior.
 
 ## Current quality controls
 
-`engram` includes a deliberately small subset of the memory-quality controls from `engram`:
+`engram` includes memory-quality controls for:
 
 - lightweight user-preferred turn ingestion and importance scoring
 - store-time near-duplicate blocking

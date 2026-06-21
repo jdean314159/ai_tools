@@ -17,7 +17,7 @@ def make_external_programming_team(
     worker_ids: Iterable[str] = ("worker",),
     critic_id: str | None = None,
     scout_ids: Iterable[str] = (),
-    shared_memory_backend: str = "engram_lite",
+    shared_memory_backend: str = "engram",
 ) -> ExternalAgentTeam:
     mentor = ExternalAgentSession(agent_id=mentor_id, role="mentor", runtime="external-session")
     workers = [ExternalAgentSession(agent_id=agent_id, role="worker", runtime="external-session") for agent_id in worker_ids]

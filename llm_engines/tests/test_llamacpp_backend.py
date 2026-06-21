@@ -26,7 +26,7 @@ def test_llamacpp_forwards_json_schema_to_response_format(monkeypatch) -> None:
     )
 
     assert engine._llm.calls[0]["response_format"] == {  # noqa: SLF001
-        "type": "json_schema",
+        "type": "json_object",
         "schema": schema,
     }
 
@@ -108,6 +108,14 @@ def test_llamacpp_reports_structured_output_capability(monkeypatch) -> None:
     engine = module.LlamaCppEngine(model_path="/models/test.gguf")
 
     assert engine.get_capabilities().structured_output is True
+
+
+def test_llamacpp_count_tokens_uses_backend_tokenizer(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf")
+
+    assert engine.count_tokens("tokenize me") == 3
+    assert engine._llm.tokenized == [b"tokenize me"]  # noqa: SLF001
 
 
 def test_llamacpp_defaults_kv_cache_to_f16(monkeypatch) -> None:
@@ -214,6 +222,11 @@ class _FakeLlama:
     def __init__(self, **kwargs) -> None:
         self.kwargs = kwargs
         self.calls: list[dict] = []
+        self.tokenized: list[bytes] = []
+
+    def tokenize(self, text: bytes) -> list[int]:
+        self.tokenized.append(text)
+        return [1, 2, 3]
 
     def create_chat_completion(self, **kwargs) -> dict:
         self.calls.append(kwargs)

@@ -134,6 +134,24 @@ class ChromaDBStore:
     def delete(self, episode_id: str):
         self.collection.delete(ids=[episode_id])
 
+    def update_metadata(
+        self,
+        doc_id: str,
+        metadata: Dict[str, Any],
+    ) -> None:
+        """Merge metadata fields into an existing document."""
+        existing = self.collection.get(ids=[doc_id], include=["metadatas"])
+        ids = existing.get("ids") or []
+        if not ids:
+            return
+        metadatas = existing.get("metadatas") or []
+        current = dict(metadatas[0] or {}) if metadatas else {}
+        current.update(metadata)
+        self.collection.update(
+            ids=[doc_id],
+            metadatas=[self._sanitize_metadata(current)],
+        )
+
     def count(self) -> int:
         return self.collection.count()
 

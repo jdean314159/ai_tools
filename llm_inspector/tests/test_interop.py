@@ -26,7 +26,7 @@ def test_turn_and_evidence_convert_to_interop_objects() -> None:
 def test_trace_event_compatibility_aliases() -> None:
     event = TraceEvent(
         event_type="memory_evidence_included",
-        source_package="engram_lite",
+        source_package="engram",
         source_component="PromptBuildTrace",
         payload={"source": "episodic"},
         message="Included episodic memory evidence.",

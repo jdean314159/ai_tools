@@ -120,7 +120,7 @@ The default repo path must remain lightweight and reproducible:
 - `make install` creates and uses a project-local `.venv`.
 - default install and `make test-core` should not require PyTorch or CUDA.
 - heavyweight local ML features live behind explicit extras/targets such as
-  `make install-ml`, `make install-gpu`, and `make test-ml`.
+  `make install-gpu` and `make test-ml`.
 - package `dev` extras should mean development/test tooling, not every runtime
   backend.
 - unpublished sibling packages should be installed by the root `Makefile`, not
@@ -159,8 +159,11 @@ Typical responsibilities:
 
 `engram` is a single, self-contained implementation — there is no facade layer.
 It exposes a minimal public API: `ProjectMemory` plus core types (`ProjectType`,
-`TokenBudget`, the augmenter contracts) and interop helpers. Internal storage,
-semantic, and telemetry layers are not part of the public surface (`__all__`).
+`TokenBudget`, the augmenter contracts), the additive `MemoryLayer` extension
+contract and payloads, and interop helpers. `engram.__all__` also includes
+telemetry types (`Telemetry`, `TelemetryEvent`) and embedding entry points
+(`OllamaEmbedder`, `EmbeddingService`) as part of the public surface. Internal
+storage and semantic implementation layers remain private.
 
 Typical responsibilities:
 
@@ -170,9 +173,10 @@ Typical responsibilities:
 - emitting inspectable memory traces
 - exposing evidence used for augmentation
 
-By default it is lightweight: JSONL source-of-truth, optional ChromaDB, RRF
-hybrid retrieval, no torch dependency. See ADR-009 for the freeze/rename
-decision (supersedes the earlier facade design in ADR-007).
+By default it is lightweight: JSONL source-of-truth, required ChromaDB for the
+episodic memory store, RRF hybrid retrieval, and no torch dependency. See
+ADR-009 for the freeze/rename decision (supersedes the earlier facade design in
+ADR-007).
 
 ---
 
@@ -181,12 +185,25 @@ decision (supersedes the earlier facade design in ADR-007).
 **Status:** Archived out of the monorepo (ADR-009); read-only at
 github.com/jdean314159/engram.
 
-The original full memory runtime — RTRL neural layer, multi-tier persistence,
-advanced retrieval policies, lifecycle management, and procedural memory — was
-frozen and archived. Those capabilities are **not** part of the `engram`
-package shipped in this suite; the standalone `engram` in §3.2 is the supported
-memory path. This subsection is retained only to record where the heavy runtime
-went.
+The original full memory runtime — integrated RTRL neural layer, multi-tier
+persistence, advanced retrieval policies, lifecycle management, and procedural
+memory — was frozen and archived. The standalone `engram` in §3.2 remains the
+supported memory path.
+
+The recovered RTRL/TITANS algorithm, neural-memory wrapper, and surprise filter
+exist as opt-in primitives under `engram.neural`. The `NeuralMemoryLayer`
+adapter integrates paired-turn learning, surprise-weighted episode importance,
+TITANS-style synthesized prompt hints, and persistence through the additive
+`MemoryLayer` boundary. Neural recall affinity is disabled after evaluation
+showed material recall loss. The adapter uses NumPy by default and is registered
+by `ProjectMemory` only when explicitly enabled with an embedder. Its
+embedding-reconstruction value dimension is 32 after the 64-dimensional
+configuration overflowed at full evaluation volume; non-finite state fails
+closed.
+
+This does not restore the archived heavy runtime: the neural layer cannot
+replace core retrieval candidates, logprob-based surprise gating remains
+unwired, and default-on status requires a separate corpus evaluation.
 
 Typical responsibilities:
 
@@ -637,7 +654,8 @@ When resuming work in a new thread, the following assumptions should be treated 
 Use this when starting a new thread if needed:
 
 - `ai_tools` is a modular local-first LLM harness plus inspection environment.
-- Main packages: `llm_engines`, `engram`, `engram`, `llm_inspector`, `llm_inspector_ui`, `rag_lib`, `agent_lib`.
+- Main packages: `llm_engines`, `engram`, `llm_inspector`,
+  `llm_inspector_ui`, `rag_lib`, `agent_lib`.
 - Goal is not just app-building; it is also helping users understand and better utilize LLMs.
 - Shared interop package now exists: `llm_harness_core`.
 - Shared objects include capabilities, messages, retrieved docs, memory records, trace events, and operation results.

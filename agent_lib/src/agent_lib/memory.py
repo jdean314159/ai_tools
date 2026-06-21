@@ -42,61 +42,6 @@ class NullMemoryAdapter:
         return None
 
 
-class EngramLiteMemoryAdapter:
-    backend_name = "engram_lite"
-
-    def __init__(self, memory: Any) -> None:
-        self.memory = memory
-
-    def recall(self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5) -> list[EvidenceItem]:
-        evidence: list[EvidenceItem] = []
-        try:
-            recent = self.memory.get_recent_turns(task.session_id, limit=limit)
-        except Exception:
-            recent = []
-        for turn in recent[-limit:]:
-            text = str(turn.get("text", "")).strip()
-            if text:
-                evidence.append(
-                    EvidenceItem(
-                        text=text,
-                        source="working",
-                        meta={"role": str(turn.get("role", "unknown"))},
-                    )
-                )
-
-        search_episodes = getattr(self.memory, "search_episodes", None)
-        if callable(search_episodes):
-            try:
-                episodes = search_episodes(task.goal, n=max(1, limit // 2), min_importance=0.0)
-            except TypeError:
-                episodes = search_episodes(task.goal)
-            except Exception:
-                episodes = []
-            for item in episodes[: max(1, limit // 2)]:
-                text = str(getattr(item, "text", "")).strip()
-                if text:
-                    evidence.append(
-                        EvidenceItem(
-                            text=text,
-                            source="episodic",
-                            meta=dict(getattr(item, "metadata", {}) or {}),
-                        )
-                    )
-        return evidence[:limit]
-
-    def trace_recall(self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5) -> Trace | None:
-        evidence = self.recall(task, steps, limit=limit)
-        return _trace_from_evidence(task, evidence, backend_name=self.backend_name)
-
-    def record_step(self, task: AgentTask, step: AgentStep) -> None:
-        if getattr(step.action, "message", "").strip():
-            self.memory.add_turn("assistant", step.action.message, task.session_id)
-        if step.observation and step.observation.text.strip():
-            role = "tool" if step.observation.tool_result is not None else "assistant"
-            self.memory.add_turn(role, step.observation.text, task.session_id)
-
-
 class EngramMemoryAdapter:
     backend_name = "engram"
 
@@ -173,6 +118,11 @@ class EngramMemoryAdapter:
                 self.memory.add_turn(role, step.observation.text, task.session_id)
 
 
+# Backward-compat alias. ADR-009 consolidated to a single engram implementation.
+# All new code should use EngramMemoryAdapter directly.
+EngramLiteMemoryAdapter = EngramMemoryAdapter
+
+
 def create_memory_adapter(
     backend: str,
     *,
@@ -184,12 +134,7 @@ def create_memory_adapter(
     selected = (backend or "null").strip().lower()
     if selected == "null":
         return NullMemoryAdapter()
-    if selected == "engram_lite":
-        if memory is None:
-            from engram import ProjectMemory
-            memory = ProjectMemory(base_dir=base_dir, project_id=project_id, session_id=session_id)
-        return EngramLiteMemoryAdapter(memory)
-    if selected == "engram":
+    if selected in ("engram", "engram_lite"):  # engram_lite is a backward-compat alias
         if memory is None:
             from pathlib import Path
             from engram import ProjectMemory, ProjectType

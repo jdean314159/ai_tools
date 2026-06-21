@@ -68,7 +68,7 @@ def test_programming_demo_can_use_llm_engines_for_mentor_and_worker(tmp_path) ->
 
     run, root = run_programming_demo(
         root=tmp_path,
-        memory_backend="engram_lite",
+        memory_backend="engram",
         planner_engine=planner_engine,
         executor_engine=executor_engine,
     )

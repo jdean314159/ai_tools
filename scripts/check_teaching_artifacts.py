@@ -19,7 +19,7 @@ ROOT_ENTRY_DOCS = [
     ROOT / 'docs' / 'learning' / 'LEARNING_PATH.md',]
 
 REFERENCE_GUIDES = [
-    ROOT / 'language_tutor' / 'REFERENCE_APP_GUIDE.md',
+    ROOT / 'examples' / 'language_tutor' / 'README.md',
     ROOT / 'llm_inspector_ui' / 'WORKBENCH_TEACHING_GUIDE.md',
     ROOT / 'llm_harness_core' / 'EVALUATION_WALKTHROUGH.md',
 ]
@@ -52,11 +52,11 @@ EXAMPLE_COMMAND_SPECS = [
 
 PYTHONPATH = ':'.join([
     str(ROOT / 'rag_lib' / 'src'),
-    str(ROOT / 'engram'),
+    str(ROOT / 'engram' / 'src'),
     str(ROOT / 'llm_inspector' / 'src'),
     str(ROOT / 'llm_harness_core' / 'src'),
     str(ROOT / 'agent_lib' / 'src'),
-    str(ROOT / 'llm_engines'),
+    str(ROOT / 'llm_engines' / 'src'),
     str(ROOT),
 ])
 
@@ -119,9 +119,9 @@ def validate_reference_guides() -> None:
         text = guide.read_text(encoding='utf-8').strip()
         if not text:
             raise AssertionError(f'Reference guide is empty: {guide}')
-        if guide.name == "REFERENCE_APP_GUIDE.md":
-            if "Stage 5" not in text or "llm_engines" not in text:
-                raise AssertionError(f'Reference guide missing expected teaching markers: {guide}')
+        if guide.parent.name == "language_tutor":
+            if "Public-API Language Tutor Example" not in text or "llm_engines" not in text:
+                raise AssertionError(f'Language tutor example guide missing expected teaching markers: {guide}')
         elif guide.name == "WORKBENCH_TEACHING_GUIDE.md":
             if "Stage 2" not in text or "Compare panel" not in text:
                 raise AssertionError(f'Workbench guide missing expected teaching markers: {guide}')

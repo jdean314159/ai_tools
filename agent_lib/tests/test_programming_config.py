@@ -36,14 +36,14 @@ def test_programming_runtime_config_round_trip() -> None:
     config = build_default_programming_config(
         session_id="cfg_demo",
         path="src/main.py",
-        memory_backend="engram_lite",
+        memory_backend="engram",
         role_bindings=ProgrammingRoleBindings(planner="mentor", executor="worker", critic="mentor"),
     )
 
     payload = config.to_dict()
     restored = ProgrammingRuntimeConfig.from_dict(payload)
 
-    assert restored.memory_backend == "engram_lite"
+    assert restored.memory_backend == "engram"
     assert restored.session_id == "cfg_demo"
     assert restored.task.metadata["path"] == "src/main.py"
     assert restored.role_bindings.executor == "worker"
@@ -65,7 +65,7 @@ def test_programming_demo_can_run_from_config_with_named_role_engines(tmp_path) 
 
     config = build_default_programming_config(
         session_id="cfg_demo",
-        memory_backend="engram_lite",
+        memory_backend="engram",
         role_bindings=ProgrammingRoleBindings(planner="deepseek", executor="local_worker", critic="deepseek"),
     )
 
@@ -90,7 +90,7 @@ from agent_lib.examples import run_programming_demo_from_file, write_programming
 def test_programming_runtime_config_can_be_saved_and_loaded_from_json(tmp_path) -> None:
     config = build_default_programming_config(
         session_id="cfg_file_demo",
-        memory_backend="engram_lite",
+        memory_backend="engram",
         role_bindings=ProgrammingRoleBindings(planner="mentor", executor="worker", critic="mentor"),
     )
     path = tmp_path / "programming_demo.json"
@@ -118,7 +118,7 @@ def test_programming_demo_can_run_from_file_config_with_named_engines(tmp_path) 
         tmp_path / "programming_demo.json",
         session_id="cfg_file_demo",
         task_path="main.py",
-        memory_backend="engram_lite",
+        memory_backend="engram",
         mentor="deepseek",
         worker="local_worker",
         critic="deepseek",

@@ -1,17 +1,25 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 import shutil
 import tempfile
+from typing import Protocol
 
 from diagnostics_agent.collect import CollectedLogs, Collector
 from diagnostics_agent.errors import CollectionReadError, InterpreterError
 from diagnostics_agent.interpret import Interpretation, LogInterpreter
-from diagnostics_agent.sandbox import ReadOnlySandbox, SandboxResult
+from diagnostics_agent.sandbox import ReadOnlySandbox, SandboxConfig, SandboxResult
 from diagnostics_agent.system_facts import SystemFacts, collect_system_facts
 from diagnostics_agent.triage import LogTriage, TriageSummary
+
+
+class Sandbox(Protocol):
+    config: SandboxConfig
+
+    def run(self, command: list[str]) -> SandboxResult: ...
 
 
 @dataclass(frozen=True)
@@ -45,7 +53,8 @@ class DiagnosticsOrchestrator:
         collector: Collector,
         triage: LogTriage,
         interpreter: LogInterpreter,
-        sandbox: ReadOnlySandbox | None = None,
+        sandbox: Sandbox | None = None,
+        sandbox_factory: Callable[[SandboxConfig], Sandbox] = ReadOnlySandbox,
         sandbox_mount: str = "/staging",
         read_command: list[str] | None = None,
     ) -> None:
@@ -53,6 +62,7 @@ class DiagnosticsOrchestrator:
         self.triage = triage
         self.interpreter = interpreter
         self.sandbox = sandbox
+        self.sandbox_factory = sandbox_factory
         self.sandbox_mount = sandbox_mount
         self.read_command = list(read_command) if read_command is not None else None
 
@@ -118,11 +128,11 @@ class DiagnosticsOrchestrator:
             )
         return sandbox_result.stdout, sandbox_result, read_command
 
-    def _sandbox_with_staging_mount(self, staging_dir: Path) -> ReadOnlySandbox:
+    def _sandbox_with_staging_mount(self, staging_dir: Path) -> Sandbox:
         assert self.sandbox is not None
         config = self.sandbox.config
         mounts = tuple(config.mounts) + ((str(staging_dir), self.sandbox_mount),)
-        return ReadOnlySandbox(replace(config, mounts=mounts))
+        return self.sandbox_factory(replace(config, mounts=mounts))
 
     def _collect_system_facts(self) -> SystemFacts | None:
         try:

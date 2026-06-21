@@ -41,6 +41,7 @@ def pytest_collection_modifyitems(items: list) -> None:
             if turboquant_ok is None:
                 try:
                     import turboquant  # noqa: F401
+
                     turboquant_ok = True
                 except ImportError:
                     turboquant_ok = False

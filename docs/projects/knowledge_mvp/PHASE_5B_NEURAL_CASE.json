@@ -1,0 +1,67 @@
+{
+  "case_version": 2,
+  "case_id": "neural-memory-arc",
+  "title": "Neural memory: early optimism, failed retrieval role, parked integration",
+  "focal_candidate_ids": [
+    "candidate-e5b8ff4a96914696",
+    "candidate-1daddd4ca13cf45a",
+    "candidate-fa30e8c2f2f35393",
+    "candidate-738380e8de4da93d"
+  ],
+  "historical_claims": [
+    {
+      "claim_id": "hypothesis-neural-affinity-improves-retrieval",
+      "source_type": "implementation_spec",
+      "source_path": "adr/ADR-016-memory-layer-extension-seam.md",
+      "scope": "ai_tools Engram neural retrieval integration",
+      "statement": "Adding neural affinity to Engram retrieval improves memory recall without materially degrading existing recall behavior."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "eval-neural-05-retrieval",
+      "authority": "local_evaluation",
+      "source_path": "SPEC-NEURAL-05-surprise-gated-storage.md",
+      "scope": "ai_tools neural retrieval re-ranking",
+      "statement": "Two clean evaluation runs found catastrophic direct-recall loss at every tested neural affinity weight; re-ranking was disabled."
+    },
+    {
+      "evidence_id": "eval-neural-06-generation",
+      "authority": "local_evaluation",
+      "source_path": "adr/ADR-016-memory-layer-extension-seam.md",
+      "scope": "ai_tools neural prompt synthesis",
+      "statement": "The generation-mode evaluation produced a clean null: hints were emitted, but no metric improved beyond noise."
+    },
+    {
+      "evidence_id": "stability-neural-06",
+      "authority": "local_evaluation",
+      "source_path": "adr/ADR-016-memory-layer-extension-seam.md",
+      "scope": "ai_tools neural implementation stability",
+      "statement": "The 64-dimensional value configuration was numerically unstable and was reverted to 32 with fail-closed guards."
+    },
+    {
+      "evidence_id": "adr-016-resolution",
+      "authority": "accepted_adr",
+      "source_path": "adr/ADR-016-memory-layer-extension-seam.md",
+      "scope": "current ai_tools neural-memory product status",
+      "statement": "The neural layer is parked and default-off; it cannot improve retrieval as integrated, and reactivation requires a concrete need plus a new predeclared gate."
+    },
+    {
+      "evidence_id": "adr-016-surprise-reframe",
+      "authority": "accepted_adr",
+      "source_path": "adr/ADR-016-memory-layer-extension-seam.md",
+      "scope": "possible future use of the existing surprise signal",
+      "statement": "The label-free surprise signal may be better suited to novelty or anomaly use, but that reframe has not earned product status."
+    }
+  ],
+  "expected": {
+    "hypothesis-neural-affinity-improves-retrieval": "resolved_against",
+    "candidate-e5b8ff4a96914696": "qualified",
+    "candidate-1daddd4ca13cf45a": "qualified",
+    "candidate-fa30e8c2f2f35393": "unresolved",
+    "candidate-738380e8de4da93d": "unresolved"
+  },
+  "expected_review_required": {
+    "candidate-738380e8de4da93d": true
+  }
+}

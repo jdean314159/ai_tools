@@ -43,7 +43,7 @@ Focus first on:
 - `llm_inspector/`
 - `engram/`
 - `rag_lib/`
-- `language_tutor/` later
+- `examples/language_tutor/` later
 
 ## First 30 minutes
 
@@ -100,51 +100,19 @@ Use the project `.venv` created by `make install`.
 
 #### Optional PyTorch / GPU features
 
-The default install does not require PyTorch.
-
-Install PyTorch-backed local ML features only if you want neural memory,
-HuggingFace local model execution, sentence-transformers-backed local
-embeddings, or optimization experiments.
-
-CPU/default ML extras:
-
-```bash
-make install-ml
-make test-ml
-```
-
-NVIDIA/CUDA path:
-
-```bash
-make install-gpu
-make test-ml
-```
-
-#### Optional PyTorch features
-
-The default install does not require PyTorch.
-
-Install PyTorch-backed local ML features only if you want neural memory,
+The default install does not require PyTorch. Install PyTorch-backed features
+only if you want
 HuggingFace local model execution, sentence-transformers-backed embeddings,
 or optimization experiments.
 
-CPU/default install:
-
-    make install-ml
-
-NVIDIA/CUDA install:
-
-    make install-gpu
-
-If CUDA wheel selection fails, use the official PyTorch install selector
-for your OS, Python version, and CUDA/ROCm/CPU target, then rerun:
-
-    make install-ml
-
-#### If activation differs in your shell
+```bash
+make install-gpu   # CUDA PyTorch + GPU extras
+make test-ml       # torch-dependent tests
+```
 
 If CUDA wheel selection fails, use the official PyTorch install selector for
-your OS, Python version, and CUDA/ROCm/CPU target, then rerun `make install-ml`.
+your OS, Python version, and CUDA/ROCm/CPU target, then rerun
+`make install-gpu`.
 
 If you only want to read first and install later, that is fine. The next two
 commands are the fastest way to get a visible result after install.
@@ -171,7 +139,7 @@ Open:
 
 - `LEARNING_PATH.md`
 - `course/README.md`
-- `PACKAGE_ROLES.md`
+- `../internal/PACKAGE_ROLES.md`
 - `course/CURRICULUM.md`
 - `llm_harness_core/EVALUATION_WALKTHROUGH.md`
 
@@ -208,5 +176,5 @@ Use this order:
 
 - Want the full teaching sequence? Go to `LEARNING_PATH.md`.
 - Want the course assets only? Go to `course/README.md`.
-- Want the reference application? Go to `language_tutor/REFERENCE_APP_GUIDE.md` after Stages 1–4.
+- Want the reference application? Go to `examples/language_tutor/README.md` after Stages 1-4.
 - Want the workbench? Go to `llm_inspector_ui/WORKBENCH_TEACHING_GUIDE.md`.

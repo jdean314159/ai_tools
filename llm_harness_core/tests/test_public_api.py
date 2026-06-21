@@ -32,7 +32,7 @@ def test_core_public_api_smoke() -> None:
     result = OperationResult.success(message, diagnostics={"backend": "mock"})
     event = TraceEvent(
         event_type="prompt_built",
-        source_package="engram_lite",
+        source_package="engram",
         source_component="ProjectMemory",
     )
     doc = RetrievedDocument(text="hello", source="rag")
@@ -47,7 +47,7 @@ def test_core_public_api_smoke() -> None:
     assert descriptor.supports("chat")
     assert result.ok is True
     assert result.value == message
-    assert event.source_package == "engram_lite"
+    assert event.source_package == "engram"
     assert doc.source == "rag"
     assert record.source == "episodic"
     assert eval_result.ok is True

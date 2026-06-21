@@ -146,7 +146,7 @@ def run_integration_programming_demo(
 def run_mode_comparison_demo(
     *,
     root: str | Path | None = None,
-    memory_backend: str = "engram_lite",
+    memory_backend: str = "engram",
 ) -> ModeComparisonResult:
     base = Path(root) if root is not None else Path(mkdtemp(prefix="agent_lib_mode_compare_"))
     base.mkdir(parents=True, exist_ok=True)

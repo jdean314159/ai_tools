@@ -39,6 +39,73 @@ class AugmentResult:
         return OperationResult.success(self.prompt, diagnostics=diagnostics)
 
 
+@dataclass(frozen=True)
+class MemoryObservation:
+    """A turn or episode presented to extension layers for learning."""
+
+    role: str
+    text: str
+    session_id: str
+    embedding: tuple[float, ...] | None = None
+    surprise: float | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class RecallQuery:
+    """A recall or prompt query presented to extension layers."""
+
+    query: str
+    session_id: str | None = None
+    embedding: tuple[float, ...] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class RecallContribution:
+    """Spread-relative advisory contributions to core recall ranking.
+
+    Each affinity value is dimensionless. The recall seam multiplies it by the
+    original candidate score spread before applying it to a candidate.
+    """
+
+    affinity: dict[str, float] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class PromptHint:
+    """An optional advisory contribution to prompt assembly."""
+
+    text: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@runtime_checkable
+class MemoryLayer(Protocol):
+    """Optional memory extension invoked at stable ProjectMemory seams."""
+
+    name: str
+
+    def observe(self, observation: MemoryObservation) -> None:
+        ...
+
+    def contribute_to_recall(self, query: RecallQuery) -> RecallContribution | None:
+        ...
+
+    def contribute_to_prompt(self, query: RecallQuery) -> PromptHint | None:
+        ...
+
+    def warmup(self, history: list[MemoryObservation]) -> None:
+        ...
+
+    def persist(self) -> None:
+        ...
+
+    def close(self) -> None:
+        ...
+
+
 @runtime_checkable
 class PromptAugmenter(Protocol):
     augmenter_id: str

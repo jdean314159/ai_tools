@@ -22,7 +22,7 @@ rag = ["rag-lib"]
 dev = ["pytest", "ruff"]
 
 [project.scripts]
-llm-inspector-ui = "llm_inspector_ui.app:main"
+llm-inspector-ui = "llm_inspector_ui.__main__:main"
 [tool.setuptools.package-dir]
 "" = "src"
 
@@ -33,4 +33,3 @@ include = ["llm_inspector_ui*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-

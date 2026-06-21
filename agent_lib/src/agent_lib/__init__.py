@@ -56,7 +56,7 @@ from .coordination import (
 
 # --- Memory adapters ---
 from .memory import (
-    EngramLiteMemoryAdapter,  # deprecated alias — use EngramMemoryAdapter
+    EngramLiteMemoryAdapter,  # backward-compat type alias for EngramMemoryAdapter (ADR-009)
     EngramMemoryAdapter,
     NullMemoryAdapter,
     create_memory_adapter,

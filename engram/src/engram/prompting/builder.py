@@ -324,6 +324,7 @@ def build_prompt_from_context(
     store_overflow_summary: bool = False,
     return_trace: bool = False,
     token_counter: Optional[TokenCounter] = None,
+    advisory_hints: Optional[list[Any]] = None,
 ) -> dict[str, Any]:
     resolved_query = query or user_message
 
@@ -359,6 +360,10 @@ def build_prompt_from_context(
     if cold_text:
         sections.append(("cold", "Cold", cold_text))
 
+    advisory_text = format_items(advisory_hints or [])
+    if advisory_text:
+        sections.append(("memory_layer", "Memory Layer Hints", advisory_text))
+
     sections.append(("user", "User", user_message))
 
     final_parts = list(sections)
@@ -385,13 +390,16 @@ def build_prompt_from_context(
         prompt = render_sections(final_parts)
         prompt_tokens = count_text_tokens(prompt, token_counter=token_counter)
 
+    advisory_tokens = count_items_tokens(advisory_hints or [], token_counter=token_counter)
     result: dict[str, Any] = {
         "prompt": prompt,
         "context": context_result,
         "prompt_tokens": prompt_tokens,
-        "memory_tokens": context_result.memory_tokens(),
+        "memory_tokens": context_result.memory_tokens() + advisory_tokens,
         "compressed": compressed,
     }
+    if advisory_hints:
+        result["advisory_hints"] = list(advisory_hints)
 
     if return_trace:
         result["trace"] = build_prompt_trace_from_result(

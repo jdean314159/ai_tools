@@ -21,7 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parent
 # llm_inspector/, rag_lib/, and llm_inspector_ui/.
 TEST_SOURCE_PATHS = [
     REPO_ROOT / "llm_harness_core" / "src",
-    REPO_ROOT / "llm_engines",
+    REPO_ROOT / "llm_engines" / "src",
     REPO_ROOT / "engram" / "src",
     REPO_ROOT / "llm_inspector" / "src",
     REPO_ROOT / "rag_lib" / "src",
@@ -31,7 +31,7 @@ TEST_SOURCE_PATHS = [
 
 SOURCE_PACKAGE_EXPECTATIONS = {
     "llm_harness_core": REPO_ROOT / "llm_harness_core" / "src" / "llm_harness_core",
-    "llm_engines": REPO_ROOT / "llm_engines" / "llm_engines",
+    "llm_engines": REPO_ROOT / "llm_engines" / "src" / "llm_engines",
     "llm_inspector": REPO_ROOT / "llm_inspector" / "src" / "llm_inspector",
     "rag_lib": REPO_ROOT / "rag_lib" / "src" / "rag_lib",
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",

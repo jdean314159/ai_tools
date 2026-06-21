@@ -24,7 +24,7 @@ def test_trace_access_normalizes_interop_events():
         "events": [
             {
                 "event_type": "memory_retrieved",
-                "source_package": "engram_lite",
+                "source_package": "engram",
                 "source_component": "ProjectMemory",
                 "payload": {"count": 2},
                 "severity": "info",
@@ -37,7 +37,7 @@ def test_trace_access_normalizes_interop_events():
     events = get_events(trace)
     assert events[0]["kind"] == "memory_retrieved"
     assert events[0]["fields"] == {"count": 2}
-    assert events[0]["source_package"] == "engram_lite"
+    assert events[0]["source_package"] == "engram"
     assert events[0]["tags"] == ("memory", "retrieval")
 
 

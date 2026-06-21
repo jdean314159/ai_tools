@@ -1,0 +1,15 @@
+{
+  "case": "disk_failing",
+  "description": "Repeated block and filesystem errors on one storage device.",
+  "expected_overall": {
+    "security_risk": "none",
+    "operational_risk": "high"
+  },
+  "expected_concerns": [
+    {
+      "finding_ref": "disk_io_error",
+      "expected_band": "high",
+      "note": "Repeated I/O and EXT4 errors indicate likely storage failure."
+    }
+  ]
+}

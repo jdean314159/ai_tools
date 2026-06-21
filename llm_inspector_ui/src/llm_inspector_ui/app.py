@@ -182,7 +182,7 @@ def sidebar_controls():
         )
         st.session_state.current_session_id = session_map[selected_label]
 
-    if st.sidebar.button("New session", use_container_width=True):
+    if st.sidebar.button("New session", width="stretch"):
         session = store.create_session("Chat Lab")
         st.session_state.current_session_id = session.session_id
         st.rerun()
@@ -219,7 +219,7 @@ def sidebar_controls():
 
     col_save, col_load = st.sidebar.columns(2)
     with col_save:
-        if st.button("Save", use_container_width=True):
+        if st.button("Save", width="stretch"):
             current = st.session_state.current_controls
             payload = dict(
                 name=profile_name or "Unnamed profile",
@@ -243,7 +243,7 @@ def sidebar_controls():
             st.rerun()
 
     with col_load:
-        if st.button("Load", use_container_width=True):
+        if st.button("Load", width="stretch"):
             if st.session_state.selected_profile_id:
                 loaded = profile_service.get_profile(st.session_state.selected_profile_id)
                 if loaded is not None:
@@ -253,7 +253,7 @@ def sidebar_controls():
     if st.session_state.selected_profile_id:
         col_dup, col_del = st.sidebar.columns(2)
         with col_dup:
-            if st.button("Duplicate", use_container_width=True):
+            if st.button("Duplicate", width="stretch"):
                 duplicated = profile_service.duplicate_profile(
                     st.session_state.selected_profile_id,
                     new_name=(profile_name or "Profile") + " (copy)",
@@ -262,7 +262,7 @@ def sidebar_controls():
                 st.session_state.current_controls = _profile_to_controls(duplicated)
                 st.rerun()
         with col_del:
-            if st.button("Delete", use_container_width=True):
+            if st.button("Delete", width="stretch"):
                 profile_service.delete_profile(st.session_state.selected_profile_id)
                 st.session_state.selected_profile_id = None
                 st.session_state.current_controls = _default_profile_values()
@@ -518,7 +518,7 @@ def _render_agent_execution_status(trace, *, include_json: bool = False) -> None
     c1.metric("Blocked", int(exec_summary.get("blocked_count", 0)))
     c2.metric("Degraded", int(exec_summary.get("degraded_count", 0)))
     c3.metric("Approval", int(exec_summary.get("approval_count", 0)))
-    st.dataframe(rows, use_container_width=True)
+    st.dataframe(rows, width="stretch")
     if include_json:
         with st.expander("Execution status JSON", expanded=False):
             st.json(exec_summary)
@@ -584,7 +584,7 @@ def render_single_run_panel(runs):
         if summary:
             st.json(summary)
         if events:
-            st.dataframe(events, use_container_width=True)
+            st.dataframe(events, width="stretch")
         elif not summary:
             st.caption("No retrieval diagnostics.")
 
@@ -598,7 +598,7 @@ def render_single_run_panel(runs):
         if rows:
             _render_agent_execution_status(selected_run.trace, include_json=True)
         if events:
-            st.dataframe(events, use_container_width=True)
+            st.dataframe(events, width="stretch")
         elif not summary and not rows:
             st.caption("No agent diagnostics.")
 
@@ -615,7 +615,7 @@ def render_single_run_panel(runs):
         if not events:
             st.caption("No events.")
         else:
-            st.dataframe(events, use_container_width=True)
+            st.dataframe(events, width="stretch")
 
     with tabs[10]:
         _render_agent_execution_status(selected_run.trace, include_json=True)

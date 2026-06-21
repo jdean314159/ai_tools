@@ -239,7 +239,7 @@ def write_programming_config_file(
     *,
     session_id: str = 'programming_demo',
     task_path: str = 'main.py',
-    memory_backend: str = 'engram_lite',
+    memory_backend: str = 'engram',
     mentor: str | None = None,
     worker: str | None = None,
     critic: str | None = None,
@@ -496,7 +496,7 @@ def build_minimum_reliable_programming_config(
     session_id: str = "programming_demo",
     path: str = "main.py",
     seed_content: str = "def add(a, b):\n    return a - b\n",
-    memory_backend: str = "engram_lite",
+    memory_backend: str = "engram",
     role_bindings: ProgrammingRoleBindings | None = None,
 ) -> ProgrammingRuntimeConfig:
     config = build_default_programming_config(
@@ -543,7 +543,7 @@ def build_default_programming_config(
     session_id: str = "programming_demo",
     path: str = "main.py",
     seed_content: str = "def add(a, b):\n    return a - b\n",
-    memory_backend: str = "engram_lite",
+    memory_backend: str = "engram",
     role_bindings: ProgrammingRoleBindings | None = None,
 ) -> ProgrammingRuntimeConfig:
     task = build_programming_task(
@@ -712,7 +712,7 @@ def make_programming_runtime_from_config(
 def make_programming_demo_runtime(
     workspace: FileWorkspace,
     *,
-    memory_backend: str = "engram_lite",
+    memory_backend: str = "engram",
     memory=None,
     memory_base_dir: str | Path | None = None,
     state_base_dir: str | Path | None = None,
@@ -792,7 +792,7 @@ def run_programming_demo_from_config(
 def run_programming_demo(
     *,
     root: str | Path | None = None,
-    memory_backend: str = "engram_lite",
+    memory_backend: str = "engram",
     seed_content: str = "def add(a, b):\n    return a - b\n",
     planner_engine=None,
     executor_engine=None,
@@ -873,7 +873,7 @@ def _run_programming_demo_with_direct_engines(
 def resume_programming_demo(
     *,
     root: str | Path,
-    memory_backend: str = "engram_lite",
+    memory_backend: str = "engram",
     planner_engine=None,
     executor_engine=None,
     critic_engine=None,

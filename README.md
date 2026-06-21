@@ -24,7 +24,6 @@ make test-core    # default test suite (no torch, no network)
 or PyTorch. Optional capability tiers:
 
 ```bash
-make install-ml   # PyTorch-backed neural / local-model features
 make install-gpu  # CUDA PyTorch + GPU extras
 make test-ml      # torch-dependent tests
 ```

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engram_lite test runner.
+engram test runner.
 
 Usage:
     python run_tests.py              # Run all tests (skip Ollama)
@@ -576,7 +576,7 @@ def suite_core(r: TestRunner, ns: dict):
         )
         results = mem.search_episodes("summary", n=5, min_importance=0.5)
         stats = mem.get_stats()
-        assert eid and results and stats["backend"] == "engram_lite"
+        assert eid and results and stats["backend"] == "engram"
 
     def persistence():
         with tempfile.TemporaryDirectory() as d:
@@ -829,7 +829,7 @@ def main():
         sys.exit(pytest.main(args))
 
     # Fallback: run directly
-    print(f"engram_lite v0.2.0 Test Runner")
+    print("engram Test Runner")
     print(f"{'='*60}")
 
     try:

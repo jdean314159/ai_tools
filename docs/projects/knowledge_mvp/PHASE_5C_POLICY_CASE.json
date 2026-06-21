@@ -1,0 +1,46 @@
+{
+  "policy_version": 1,
+  "base_case": "docs/projects/knowledge_mvp/PHASE_5B_NEURAL_CASE.json",
+  "claims": {
+    "hypothesis-neural-affinity-improves-retrieval": {
+      "trait": "directly_refuted",
+      "current_statement": "Adding neural affinity to Engram retrieval caused material direct-recall loss and is disabled.",
+      "evidence_ids": [
+        "eval-neural-05-retrieval",
+        "adr-016-resolution"
+      ]
+    },
+    "candidate-e5b8ff4a96914696": {
+      "trait": "mixed_scope",
+      "current_statement": "System-level memory mechanisms may provide some architectural benefits, but the evaluated ai_tools neural retrieval and prompt-synthesis roles did not establish those benefits.",
+      "evidence_ids": [
+        "eval-neural-05-retrieval",
+        "eval-neural-06-generation",
+        "adr-016-resolution"
+      ]
+    },
+    "candidate-1daddd4ca13cf45a": {
+      "trait": "mixed_scope",
+      "current_statement": "TITANS uses an MLP long-term-memory mechanism, but the parked ai_tools approximation did not demonstrate product benefit.",
+      "evidence_ids": [
+        "eval-neural-06-generation",
+        "adr-016-resolution"
+      ]
+    },
+    "candidate-fa30e8c2f2f35393": {
+      "trait": "unsupported_numeric",
+      "current_statement": "The claimed 70-90% storage reduction is not established by the supplied evidence.",
+      "evidence_ids": []
+    },
+    "candidate-738380e8de4da93d": {
+      "trait": "untested",
+      "current_statement": "The value of durable synthesis nodes remains untested by the supplied neural-memory evidence.",
+      "evidence_ids": []
+    }
+  },
+  "required_guidance_facts": [
+    "Neural re-ranking is disabled.",
+    "The neural layer is parked and default-off.",
+    "Reactivation requires a concrete need and a new predeclared gate."
+  ]
+}

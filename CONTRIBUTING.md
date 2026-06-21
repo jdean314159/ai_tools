@@ -12,7 +12,7 @@ import and use?* If not, it belongs elsewhere.
 ```bash
 make install      # creates .venv, installs all packages in dependency order
 make test-core    # default suite — no GPU, no network required
-make install-ml   # optional: PyTorch-backed features
+make install-gpu  # optional: CUDA PyTorch and GPU-backed features
 make test-ml      # optional: torch-dependent tests
 ```
 

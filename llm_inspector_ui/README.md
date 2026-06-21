@@ -12,12 +12,13 @@ Does not expose a programmatic API beyond the two interop helpers in `__init__`.
 
 ```bash
 cd ai_tools
-make run-ui
-# or:
+make run-inspector
+
+# or directly:
 python -m llm_inspector_ui
 ```
 
-Then open http://localhost:7860 in your browser.
+Then open http://localhost:8501 in your browser.
 
 The workbench lets you:
 - select a backend and model
@@ -31,13 +32,11 @@ The workbench lets you:
 
 It is intended to help users understand and better utilize LLM systems by making engine choice, memory augmentation, and retrieval behavior visible in one place.
 
-## Start here if you are learning from this repo
+## Using this with the rest of the suite
 
-This is the main workbench in the teaching path.
-
-- teaching path stage: Stage 2 in [`../LEARNING_PATH.md`](../LEARNING_PATH.md)
 - use it to compare baseline, memory, and retrieval runs
-- see [`WORKBENCH_TEACHING_GUIDE.md`](./WORKBENCH_TEACHING_GUIDE.md) for the instructional workflow
+- see [`WORKBENCH_TEACHING_GUIDE.md`](./WORKBENCH_TEACHING_GUIDE.md) for the
+  workbench workflow
 
 ## Current support status
 

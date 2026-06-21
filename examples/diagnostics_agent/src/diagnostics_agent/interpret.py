@@ -21,6 +21,7 @@ RiskLevel = Literal["info", "low", "medium", "high", "critical"]
 OverallRisk = Literal["none", "low", "medium", "high", "critical"]
 _RISK_RANK = {"info": 0, "none": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 _OPERATIONAL_FLOOR_CATEGORIES = {"disk", "memory", "stability"}
+_SECURITY_FLOOR_CATEGORIES = {"auth"}
 _TRIAGE_SEVERITY_RANK = {
     "UNKNOWN": 0,
     "DEBUG": 1,
@@ -101,6 +102,7 @@ class LogInterpreter:
                     allow_repair=True,
                 )
                 interpretation = _apply_operational_floor(interpretation, summary)
+                interpretation = _apply_security_floor(interpretation, summary)
                 return _apply_risk_coherence(interpretation)
             except StructuredOutputError as exc:
                 last_exc = exc
@@ -454,6 +456,66 @@ def _apply_operational_floor(
     )
 
 
+def _apply_security_floor(
+    interpretation: Interpretation,
+    summary: TriageSummary,
+) -> Interpretation:
+    floors_by_ref: dict[str, RiskLevel] = {}
+    floors_by_rule: dict[str, tuple[RiskLevel, str, str]] = {}
+    for finding in summary.findings:
+        floor = _security_floor_for_finding(finding.category, finding.severity.name)
+        if floor is None:
+            continue
+        floors_by_ref[finding.rule_name] = floor
+        floors_by_ref[finding.template] = floor
+        floors_by_rule[finding.rule_name] = (floor, finding.category, finding.severity.name)
+    if not floors_by_ref:
+        return interpretation
+
+    security_floor = max(floors_by_ref.values(), key=_risk_rank)
+    concerns = []
+    referenced_floor_rules = set()
+    for concern in interpretation.prioritized_concerns:
+        concern_floor = floors_by_ref.get(concern.finding_ref)
+        if concern_floor is not None:
+            referenced_floor_rules.update(
+                rule_name
+                for rule_name in _matching_floor_rules(concern.finding_ref, summary)
+                if rule_name in floors_by_rule
+            )
+        if concern_floor is not None and _risk_rank(concern.severity) < _risk_rank(concern_floor):
+            concerns.append(concern.model_copy(update={"severity": concern_floor}))
+        else:
+            concerns.append(concern)
+
+    for rule_name, (floor, category, severity_name) in floors_by_rule.items():
+        if rule_name in referenced_floor_rules:
+            continue
+        concerns.append(
+            ConcernAssessment(
+                finding_ref=rule_name,
+                rationale=(
+                    f"Deterministic triage classified this as an {category} "
+                    f"(security) finding at {severity_name} severity; "
+                    f"security risk is floored to {floor}."
+                ),
+                severity=floor,
+            )
+        )
+
+    if (
+        _risk_rank(interpretation.security_risk) >= _risk_rank(security_floor)
+        and concerns == interpretation.prioritized_concerns
+    ):
+        return interpretation
+    return interpretation.model_copy(
+        update={
+            "security_risk": _max_risk(interpretation.security_risk, security_floor),
+            "prioritized_concerns": concerns,
+        }
+    )
+
+
 def _apply_risk_coherence(interpretation: Interpretation) -> Interpretation:
     if not interpretation.prioritized_concerns:
         return interpretation
@@ -480,6 +542,14 @@ def _operational_floor_for_finding(category: str, severity_name: str) -> RiskLev
         return None
     if severity_name in {"CRITICAL", "ALERT", "EMERGENCY"}:
         return "high"
+    return "medium"
+
+
+def _security_floor_for_finding(category: str, severity_name: str) -> RiskLevel | None:
+    if category not in _SECURITY_FLOOR_CATEGORIES:
+        return None
+    # Current auth rules emit WARNING. Keep a flat medium floor until triage
+    # supports volume-aware escalation and higher-severity auth rules.
     return "medium"
 
 

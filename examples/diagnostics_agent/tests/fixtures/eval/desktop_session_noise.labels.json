@@ -1,0 +1,14 @@
+{
+  "case": "desktop_session_noise",
+  "description": "Benign local unlock, session-agent, display-manager, and Bluetooth timeout noise.",
+  "expected_overall": {
+    "security_risk": "none",
+    "operational_risk": "low"
+  },
+  "expected_concerns": [
+    {"finding_ref": "screensaver_unlock_noise", "expected_band": "excluded"},
+    {"finding_ref": "polkit_session_noise", "expected_band": "excluded"},
+    {"finding_ref": "gdm_session_noise", "expected_band": "excluded"},
+    {"finding_ref": "bluetooth_tx_timeout", "expected_band": "excluded"}
+  ]
+}

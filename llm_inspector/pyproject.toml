@@ -17,7 +17,6 @@ dev = [
   "ruff>=0.6",
 ]
 engram = ["engram"]
-rag = ["llm_engines"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -38,4 +37,3 @@ llm-inspect = "llm_inspector.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-

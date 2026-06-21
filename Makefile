@@ -10,6 +10,7 @@
 # Usage:
 #   make install          Install all packages in editable mode
 #   make test             Run all offline unit tests
+#   make test-ui          Run llm_inspector_ui tests
 #   make test-diagnostics Run diagnostics_agent example tests
 #   make test-integration Run cross-package integration tests
 #   make test-live        Run live Ollama conformance tests
@@ -46,13 +47,9 @@ install: venv
 	@echo ""
 	@echo "Core packages installed in dependency order. Run 'make test-core', 'make test-agent', 'make test-rag', 'make test-integration', 'make test-tutor', or 'make test-diagnostics' to verify."
 	
-install-ml: install
-	$(PIP) install -e './engram[ml-dev]'	
-
 .PHONY: install-gpu
 install-gpu: install
 	$(PIP) install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-	$(PIP) install -e './engram[neural]'
 	$(PIP) install -e './llm_engines[huggingface,optimizations]'
 	CMAKE_ARGS="-DGGML_CUDA=on" $(PIP) install llama-cpp-python
 	
@@ -71,8 +68,9 @@ test-core:
 		-v
 	$(TEST_PYTHON) -m pytest engram/tests/ -v
 	cd llm_inspector && $(TEST_PYTHON) -m pytest tests/ -v
+	cd llm_inspector_ui && $(TEST_PYTHON) -m pytest tests/ -v
 	cd agent_lib && $(TEST_PYTHON) -m pytest tests/ -v
-	cd rag_lib && PYTHONPATH=src $(TEST_PYTHON) -m pytest tests/ -v
+	cd rag_lib && $(TEST_PYTHON) -m pytest tests/ -v
 
 .PHONY: test-agent
 test-agent:
@@ -80,7 +78,11 @@ test-agent:
 
 .PHONY: test-rag
 test-rag:
-	cd rag_lib && PYTHONPATH=src $(TEST_PYTHON) -m pytest tests/ -v
+	cd rag_lib && $(TEST_PYTHON) -m pytest tests/ -v
+
+.PHONY: test-ui
+test-ui:
+	cd llm_inspector_ui && $(TEST_PYTHON) -m pytest tests/ -v
 
 .PHONY: test-integration
 test-integration:
@@ -94,6 +96,16 @@ test-tutor:
 test-diagnostics:
 	cd examples/diagnostics_agent && $(TEST_PYTHON) -m pytest tests/ -v
 
+.PHONY: eval-fp
+eval-fp:
+	cd examples/diagnostics_agent && $(TEST_PYTHON) \
+		scripts/run_fp_eval.py --backend ollama --model qwen3.6:27b
+
+.PHONY: test-fp-gate
+test-fp-gate:
+	cd examples/diagnostics_agent && $(TEST_PYTHON) -m pytest \
+		tests/test_fp_gate.py -m ollama --gate-model qwen3.6:27b -v
+
 .PHONY: test-live
 test-live:
 	cd llm_engines && $(TEST_PYTHON) -m pytest tests/contract_tests/ \
@@ -106,11 +118,18 @@ test-live-embed:
 		--embed-model nomic-embed-text -v
 
 .PHONY: test-all
-test-all: test-core test-integration test-agent test-rag test-tutor
+test-all: test-core test-integration test-agent test-rag test-tutor test-diagnostics
 
-.PHONY: run-ui
-run-ui:
-	
+.PHONY: run-diagnostics
+# Streamlit UI for the diagnostics agent. Requires diagnostics_agent[ui].
+run-diagnostics:
+	cd examples/diagnostics_agent && $(TEST_PYTHON) -m streamlit run \
+		src/diagnostics_agent/ui/app.py
+
+.PHONY: run-inspector
+# Streamlit workbench for llm_inspector_ui.
+run-inspector:
+	$(TEST_PYTHON) -m llm_inspector_ui
 .PHONY: test-ml
 test-ml: venv
 	cd llm_engines && $(TEST_PYTHON) -m pytest tests/test_optimizations.py -v	
@@ -139,8 +158,9 @@ smoke-openai:
 
 .PHONY: lint
 lint:
-	cd llm_engines && $(TEST_PYTHON) -m mypy llm_engines/ contracts/ \
-		--ignore-missing-imports --no-error-summary 2>&1 | tail -5
+	$(TEST_PYTHON) -m mypy llm_engines/src/llm_engines/ \
+		--config-file llm_engines/pyproject.toml \
+		--ignore-missing-imports --no-error-summary
 
 # ---------------------------------------------------------------------------
 # Cleanup
@@ -170,6 +190,10 @@ check-hygiene: clean
 	$(VENV_PYTHON) scripts/check_publication_hygiene.py
 	$(VENV_PYTHON) scripts/check_teaching_artifacts.py
 
+.PHONY: check-decisions
+check-decisions:
+	$(VENV_PYTHON) scripts/validate_decision_history.py
+
 # ---------------------------------------------------------------------------
 # Help
 # ---------------------------------------------------------------------------
@@ -185,19 +209,24 @@ help:
 	@echo "  make test             Offline unit tests (no services needed)"
 	@echo "  make test-agent       Agent kernel tests"
 	@echo "  make test-rag         rag_lib unit tests"
+	@echo "  make test-ui          llm_inspector_ui tests"
 	@echo "  make test-diagnostics diagnostics_agent example tests"
+	@echo "  make eval-fp          Report diagnostics interpretation calibration"
+	@echo "  make test-fp-gate     Run live diagnostics FP/recall gate"
 	@echo "  make test-integration Cross-package integration tests"
 	@echo "  make test-live        Live Ollama conformance (ollama serve required)"
 	@echo "  make test-live-embed  Live Ollama + embedding model tests"
 	@echo "  make test-all         Offline + integration tests"
 	@echo ""
-	@echo "  make run-ui           Launch the Engram Streamlit sandbox UI"
+	@echo "  make run-diagnostics  Launch the diagnostics_agent Streamlit UI (port 8501)"
+	@echo "  make run-inspector    Launch the llm_inspector_ui Streamlit workbench (port 8501)"
 	@echo ""
 	@echo "  make smoke            Full environment smoke test"
 	@echo "  make smoke-anthropic  Smoke test + Anthropic API"
 	@echo "  make smoke-openai     Smoke test + OpenAI API"
 	@echo ""
 	@echo "  make lint             mypy type check"
+	@echo "  make check-decisions  Validate ADR decision-history metadata"
 	@echo "  make clean            Remove build artifacts"
 	@echo "  make clean-all        Remove build artifacts + IDE files"
 	@echo "  make clean-review     Remove caches, dbs, local data, and VCS residue for review bundles"

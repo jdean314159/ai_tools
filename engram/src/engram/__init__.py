@@ -26,7 +26,16 @@ With llm_engines:
     mem.add_turn("assistant", response.text, "s1")
 """
 # Core — public API
-from .contracts import AugmentRequest, AugmentResult, PromptAugmenter
+from .contracts import (
+    AugmentRequest,
+    AugmentResult,
+    MemoryLayer,
+    MemoryObservation,
+    PromptAugmenter,
+    PromptHint,
+    RecallContribution,
+    RecallQuery,
+)
 from .project_memory import ProjectMemory
 from .telemetry import Telemetry, TelemetryEvent
 from .types import ProjectType, TokenBudget
@@ -51,7 +60,12 @@ __all__ = [
     # Augmenter protocol (implement to plug in a custom memory backend)
     "AugmentRequest",
     "AugmentResult",
+    "MemoryLayer",
+    "MemoryObservation",
     "PromptAugmenter",
+    "PromptHint",
+    "RecallContribution",
+    "RecallQuery",
     # Embedding configuration
     "OllamaEmbedder",
     "EmbeddingService",

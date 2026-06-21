@@ -710,7 +710,7 @@ class ProgrammingRoleBindings:
 @dataclass(frozen=True)
 class ProgrammingRuntimeConfig:
     task: ProgrammingTask
-    memory_backend: str = "engram_lite"
+    memory_backend: str = "engram"
     project_id: str = "agent_programming_demo"
     session_id: str = "programming_demo"
     role_bindings: ProgrammingRoleBindings = field(default_factory=ProgrammingRoleBindings)
@@ -765,7 +765,7 @@ class ProgrammingRuntimeConfig:
         context_budget = ContextBudgetConfig(**cb_payload) if cb_payload else ContextBudgetConfig()
         return cls(
             task=task,
-            memory_backend=str(payload.get("memory_backend") or "engram_lite"),
+            memory_backend=str(payload.get("memory_backend") or "engram"),
             project_id=str(payload.get("project_id") or "agent_programming_demo"),
             session_id=str(payload.get("session_id") or task.session_id or "programming_demo"),
             role_bindings=ProgrammingRoleBindings.from_dict(payload.get("role_bindings")),

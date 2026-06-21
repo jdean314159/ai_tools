@@ -12,16 +12,15 @@ def test_default_benchmark_scenarios_cover_memory_and_runtime_variants() -> None
     scenarios = build_default_benchmark_scenarios()
     names = {scenario.name for scenario in scenarios}
     assert {
-        "engram_lite_minimum_reliable",
         "engram_minimum_reliable",
-        "engram_lite_isolated_workspace",
+        "engram_isolated_workspace",
     }.issubset(names)
 
 
 def test_programming_scenario_benchmark_produces_case_matrix(tmp_path: Path) -> None:
     report = run_programming_scenario_benchmark(root=tmp_path)
     payload = report.to_dict()
-    assert payload["total_scenarios"] >= 3
+    assert payload["total_scenarios"] >= 2
     assert len(payload["scenarios"]) == payload["total_scenarios"]
     assert payload["case_matrix"]
     first = payload["case_matrix"][0]

@@ -14,7 +14,7 @@ PACKAGE_EXPECTATIONS = {
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
     "engram": REPO_ROOT / "engram" / "src" / "engram",
-    "llm_engines": REPO_ROOT / "llm_engines" / "llm_engines",
+    "llm_engines": REPO_ROOT / "llm_engines" / "src" / "llm_engines",
     "examples.language_tutor": REPO_ROOT / "examples" / "language_tutor",
 }
 

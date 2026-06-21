@@ -312,10 +312,19 @@ def _find_untracked_fixture_references() -> list[str]:
 
         if not reference.fixture_path.exists():
             problems.append(f"{source_rel} references missing fixture {fixture_rel}")
-        elif reference.fixture_path.resolve() not in tracked:
+        elif not _fixture_path_is_tracked(reference.fixture_path, tracked):
             problems.append(f"{source_rel} references untracked fixture {fixture_rel}")
 
     return problems
+
+
+def _fixture_path_is_tracked(fixture_path: Path, tracked: set[Path]) -> bool:
+    resolved = fixture_path.resolve()
+    if resolved in tracked:
+        return True
+    if resolved.is_dir():
+        return any(resolved in tracked_path.parents for tracked_path in tracked)
+    return False
 
 
 def main(argv: list[str] | None = None) -> int:

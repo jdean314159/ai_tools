@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import time
 import uuid
 from dataclasses import dataclass
@@ -9,7 +10,14 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
-from .contracts import AugmentRequest, AugmentResult
+from .contracts import (
+    AugmentRequest,
+    AugmentResult,
+    MemoryLayer,
+    MemoryObservation,
+    PromptHint,
+    RecallQuery,
+)
 from .interop import describe_memory
 from .memory import (
     LightweightIngestionPolicy,
@@ -20,7 +28,7 @@ from .memory import (
     score_text,
     text_similarity,
 )
-from .prompting.builder import build_prompt_from_context
+from .prompting.builder import build_prompt_from_context, count_text_tokens
 from .telemetry import Telemetry
 from .utils.tokens import get_token_counter
 
@@ -67,6 +75,8 @@ class ProjectMemory:
         embedder: Optional[Any] = None,
         enable_embedding_cache: bool = True,
         chromadb_collection_name: Optional[str] = None,
+        enable_neural: bool = False,
+        neural_config: Optional[Any] = None,
 
         # Assistant pairing
         auto_pair_assistant: bool = True,
@@ -112,6 +122,10 @@ class ProjectMemory:
         self._sessions: dict[str, list[dict[str, str]]] = {}
         self._loaded_sessions: set[str] = set()
         self._episodes: list[dict[str, Any]] = []
+        self._episode_embeddings: dict[str, tuple[float, ...]] = {}
+        self._extension_layers: list[MemoryLayer] = []
+        self._extension_layers_closed = False
+        self.neural_layer = None
         self.helpers = None
         self._quality = LightweightIngestionPolicy.from_config(kwargs)
         self._quality_stats = {
@@ -256,6 +270,35 @@ class ProjectMemory:
         self.extractor = extractor
         self._contradiction_threshold = contradiction_threshold
 
+        if enable_neural:
+            if self.embedder is None:
+                logger.warning(
+                    "Neural memory requested without an embedder; layer disabled."
+                )
+            else:
+                try:
+                    from .neural.coordinator import NeuralMemoryLayer
+
+                    config_enabled = bool(
+                        getattr(neural_config, "enabled", True)
+                    )
+                    if config_enabled:
+                        neural_dir = (
+                            self._storage_root / "neural"
+                            if self._storage_root is not None
+                            else None
+                        )
+                        self.neural_layer = NeuralMemoryLayer(
+                            embedder=self.embedder,
+                            project_dir=neural_dir,
+                            config=neural_config,
+                            candidate_resolver=self.resolve_candidate_embedding,
+                            episode_provider=self.iter_episode_embeddings,
+                        )
+                        self.register_layer(self.neural_layer)
+                except ImportError:
+                    pass
+
         # Start session if provided
         if session_id is not None:
             self.new_session(session_id)
@@ -386,6 +429,345 @@ class ProjectMemory:
         return merged
 
     # ------------------------------------------------------------------
+    # Optional memory-layer extensions
+    # ------------------------------------------------------------------
+
+    def register_layer(self, layer: MemoryLayer) -> None:
+        """Register an optional memory layer in invocation order."""
+        self._extension_layers.append(layer)
+        self._extension_layers_closed = False
+
+    def resolve_candidate_embedding(self, candidate_id: str) -> Any:
+        """Return a stored candidate embedding, with a text-embedding fallback."""
+        candidate_id = str(candidate_id)
+        cached = self._episode_embeddings.get(candidate_id)
+        if cached is not None:
+            return cached
+        if self.chromadb is not None:
+            try:
+                result = self.chromadb.collection.get(
+                    ids=[candidate_id],
+                    include=["embeddings", "documents"],
+                )
+                embeddings = result.get("embeddings")
+                if embeddings is not None and len(embeddings):
+                    embedding = embeddings[0]
+                    if embedding is not None:
+                        cached_embedding = tuple(float(value) for value in embedding)
+                        self._episode_embeddings[candidate_id] = cached_embedding
+                        return cached_embedding
+            except Exception:
+                logger.debug(
+                    "Failed to resolve candidate embedding from ChromaDB",
+                    exc_info=True,
+                )
+
+        if self.embedder is None:
+            return None
+        for episode in reversed(self._episodes):
+            if str(episode.get("id", "")) != candidate_id:
+                continue
+            try:
+                embedding = tuple(
+                    float(value)
+                    for value in self.embedder.embed(
+                        str(episode.get("text", ""))
+                    ).embedding
+                )
+                self._episode_embeddings[candidate_id] = embedding
+                return embedding
+            except Exception:
+                logger.debug(
+                    "Failed to embed candidate text for neural recall",
+                    exc_info=True,
+                )
+                return None
+        return None
+
+    def iter_episode_embeddings(
+        self,
+        limit: int = 100,
+    ) -> list[tuple[str, Any, str]]:
+        """Return a bounded, read-only snapshot of episode embeddings."""
+        resolved_limit = max(0, int(limit))
+        if resolved_limit == 0:
+            return []
+        candidates: list[tuple[str, Any, str]] = []
+        for episode in reversed(self._episodes[-resolved_limit:]):
+            episode_id = str(episode.get("id", ""))
+            if not episode_id:
+                continue
+            embedding = self.resolve_candidate_embedding(episode_id)
+            if embedding is None:
+                continue
+            candidates.append(
+                (episode_id, embedding, str(episode.get("text", "")))
+            )
+        return candidates
+
+    def _layer_name(self, layer: MemoryLayer) -> str:
+        return str(getattr(layer, "name", type(layer).__name__))
+
+    def _observe_layers(self, observation: MemoryObservation) -> None:
+        for layer in self._extension_layers:
+            try:
+                layer.observe(observation)
+            except Exception as e:
+                logger.warning(
+                    "memory layer %s observe failed: %s",
+                    self._layer_name(layer),
+                    e,
+                )
+
+    @staticmethod
+    def _surprise_to_importance(
+        surprise: float,
+        base: float = 0.5,
+    ) -> float:
+        """Map unbounded neural surprise to bounded advisory importance."""
+        adjustment = min(max((float(surprise) - 1.0) * 0.15, -0.3), 0.3)
+        return min(max(float(base) + adjustment, 0.1), 0.9)
+
+    def _update_episode_importance(
+        self,
+        episode_id: str,
+        importance: float,
+    ) -> None:
+        """Update episode importance in memory, JSONL, and ChromaDB."""
+        updated = False
+        for episode in self._episodes:
+            if str(episode.get("id", "")) == str(episode_id):
+                episode["importance"] = float(importance)
+                updated = True
+                break
+        if not updated:
+            return
+
+        self._rewrite_jsonl(self._episodes_path, self._episodes)
+
+        if self.chromadb:
+            try:
+                self.chromadb.update_metadata(
+                    str(episode_id),
+                    {"importance": float(importance)},
+                )
+            except Exception as e:
+                logger.debug(
+                    "ChromaDB importance update failed for %s: %s",
+                    episode_id,
+                    e,
+                )
+
+    def _apply_recall_contributions(
+        self,
+        rows: list[dict[str, Any]],
+        *,
+        query: str,
+        query_embedding: Any = None,
+    ) -> list[dict[str, Any]]:
+        if not self._extension_layers:
+            return rows
+
+        base_scores = {
+            id(row): float(row.get("final_score", row.get("score", 0.0)))
+            for row in rows
+        }
+        scores = list(base_scores.values())
+        spread = (max(scores) - min(scores)) if scores else 0.0
+        candidate_ids = tuple(str(row.get("id", "")) for row in rows if row.get("id"))
+        recall_query = RecallQuery(
+            query=query,
+            session_id=self.session_id,
+            embedding=(
+                tuple(float(value) for value in query_embedding)
+                if query_embedding is not None
+                else None
+            ),
+            metadata={"candidate_ids": candidate_ids, "project_id": self.project_id},
+        )
+
+        aggregate_boosts: dict[str, float] = {}
+        for layer in self._extension_layers:
+            try:
+                contribution = layer.contribute_to_recall(recall_query)
+                if contribution is None:
+                    continue
+                boosts: dict[str, float] = {}
+                for candidate_id, raw_boost in contribution.affinity.items():
+                    boost = float(raw_boost)
+                    if not math.isfinite(boost):
+                        raise ValueError(
+                            f"affinity boost for {candidate_id!r} must be finite"
+                        )
+                    boosts[str(candidate_id)] = boost
+                for candidate_id, boost in boosts.items():
+                    aggregate_boosts[candidate_id] = (
+                        aggregate_boosts.get(candidate_id, 0.0) + boost
+                    )
+            except Exception as e:
+                logger.warning(
+                    "memory layer %s recall contribution failed: %s",
+                    self._layer_name(layer),
+                    e,
+                )
+
+        if spread >= 1e-9:
+            for row in rows:
+                candidate_id = str(row.get("id", ""))
+                if candidate_id in aggregate_boosts:
+                    row["final_score"] = (
+                        base_scores[id(row)]
+                        + (aggregate_boosts[candidate_id] * spread)
+                    )
+
+        rows.sort(
+            key=lambda row: (
+                float(row.get("final_score", row.get("score", 0.0))),
+                float(row.get("importance", 0.0)),
+                float(row.get("created_at") or 0.0),
+            ),
+            reverse=True,
+        )
+        return rows
+
+    def _collect_prompt_hints(self, query: str) -> list[PromptHint]:
+        if not self._extension_layers:
+            return []
+
+        recall_query = RecallQuery(
+            query=query,
+            session_id=self.session_id,
+            metadata={"project_id": self.project_id},
+        )
+        hints: list[PromptHint] = []
+        for layer in self._extension_layers:
+            try:
+                hint = layer.contribute_to_prompt(recall_query)
+                if hint is not None and isinstance(hint.text, str) and hint.text.strip():
+                    text = self._cap_hint_text(hint.text, max_tokens=200)
+                    if text:
+                        hints.append(PromptHint(text=text, metadata=hint.metadata))
+            except Exception as e:
+                logger.warning(
+                    "memory layer %s prompt contribution failed: %s",
+                    self._layer_name(layer),
+                    e,
+                )
+        return hints
+
+    def _cap_hint_text(self, text: str, *, max_tokens: int) -> str:
+        """Bound one advisory hint without reserving prompt budget for it."""
+        cleaned = str(text or "").strip()
+        if count_text_tokens(cleaned, token_counter=self._token_counter) <= max_tokens:
+            return cleaned
+        words = cleaned.split()
+        while words and count_text_tokens(
+            " ".join(words) + " ...",
+            token_counter=self._token_counter,
+        ) > max_tokens:
+            words.pop()
+        return (" ".join(words) + " ...").strip() if words else ""
+
+    def warm_layers_from_history(self, limit: int | None = None) -> None:
+        """Warm registered layers from persisted user-to-assistant turn pairs."""
+        if not self._extension_layers:
+            return
+
+        observations: list[MemoryObservation] = []
+        session_paths = (
+            sorted(self._sessions_dir.glob("*.jsonl"))
+            if self._sessions_dir is not None and self._sessions_dir.exists()
+            else []
+        )
+        for session_path in session_paths:
+            session_id = session_path.stem
+            turns = self._read_jsonl(session_path)
+            for index in range(len(turns) - 1):
+                user = turns[index]
+                assistant = turns[index + 1]
+                if (
+                    str(user.get("role", "")).strip().lower() == "user"
+                    and str(assistant.get("role", "")).strip().lower()
+                    == "assistant"
+                ):
+                    observations.extend(
+                        [
+                            MemoryObservation(
+                                role="user",
+                                text=str(user.get("text", "")),
+                                session_id=session_id,
+                                metadata={"source": "history_warmup"},
+                            ),
+                            MemoryObservation(
+                                role="assistant",
+                                text=str(assistant.get("text", "")),
+                                session_id=session_id,
+                                metadata={"source": "history_warmup"},
+                            ),
+                        ]
+                    )
+
+        if not observations:
+            for episode in self._episodes:
+                text = str(episode.get("text", ""))
+                session_id = str(
+                    (episode.get("metadata") or {}).get("session_id")
+                    or "history"
+                )
+                observations.extend(
+                    [
+                        MemoryObservation(
+                            role="user",
+                            text=text,
+                            session_id=session_id,
+                            metadata={"source": "episode_warmup"},
+                        ),
+                        MemoryObservation(
+                            role="assistant",
+                            text=text,
+                            session_id=session_id,
+                            metadata={"source": "episode_warmup"},
+                        ),
+                    ]
+                )
+
+        if limit is not None:
+            pair_limit = max(0, int(limit))
+            observations = observations[: pair_limit * 2]
+
+        for layer in self._extension_layers:
+            try:
+                layer.warmup(observations)
+            except Exception as e:
+                logger.warning(
+                    "memory layer %s warmup failed: %s",
+                    self._layer_name(layer),
+                    e,
+                )
+
+    def _close_extension_layers(self) -> None:
+        if self._extension_layers_closed:
+            return
+        for layer in self._extension_layers:
+            try:
+                layer.persist()
+            except Exception as e:
+                logger.warning(
+                    "memory layer %s persist failed: %s",
+                    self._layer_name(layer),
+                    e,
+                )
+            try:
+                layer.close()
+            except Exception as e:
+                logger.warning(
+                    "memory layer %s close failed: %s",
+                    self._layer_name(layer),
+                    e,
+                )
+        self._extension_layers_closed = True
+
+    # ------------------------------------------------------------------
     # Session management
     # ------------------------------------------------------------------
 
@@ -408,6 +790,14 @@ class ProjectMemory:
         entry = {"role": str(role), "text": str(text)}
         self._sessions[session_id].append(entry)
         self._append_jsonl(self._session_path(session_id), entry)
+        self._observe_layers(
+            MemoryObservation(
+                role=str(role),
+                text=str(text),
+                session_id=session_id,
+                metadata={"source": "turn"},
+            )
+        )
 
         normalized_role = str(role or "").strip().lower()
         auto_ingest_roles = {str(r).strip().lower() for r in self._quality.auto_ingest_roles}
@@ -714,9 +1104,12 @@ class ProjectMemory:
         self._quality_stats["stored"] += 1
 
         # Index in ChromaDB
+        episode_embedding = None
         if self.embedder and self.chromadb:
             try:
                 emb = self.embedder.embed(cleaned_text).embedding
+                episode_embedding = tuple(float(value) for value in emb)
+                self._episode_embeddings[episode_id] = episode_embedding
                 self.chromadb.add(
                     episode_id=episode_id,
                     text=cleaned_text,
@@ -735,6 +1128,44 @@ class ProjectMemory:
             "importance": importance,
             "has_embedding": self.embedder is not None,
         })
+        self._observe_layers(
+            MemoryObservation(
+                role=str(
+                    payload_metadata.get(
+                        "role",
+                        payload_metadata.get("source_role", "episode"),
+                    )
+                ),
+                text=episode["text"],
+                session_id=str(
+                    payload_metadata.get("session_id")
+                    or self.session_id
+                    or "default"
+                ),
+                embedding=episode_embedding,
+                metadata={
+                    **payload_metadata,
+                    "source": "episode",
+                    "episode_id": episode_id,
+                    "importance": episode["importance"],
+                },
+            )
+        )
+        for layer in self._extension_layers:
+            try:
+                surprise = getattr(layer, "last_surprise", lambda: None)()
+                if surprise is not None:
+                    adjusted = self._surprise_to_importance(
+                        float(surprise),
+                        base=importance,
+                    )
+                    self._update_episode_importance(episode_id, adjusted)
+            except Exception as e:
+                logger.warning(
+                    "memory layer %s importance update failed: %s",
+                    self._layer_name(layer),
+                    e,
+                )
 
         return episode_id
 
@@ -834,6 +1265,12 @@ class ProjectMemory:
         before_relevance_filter = len(fused)
         if relevance_threshold > 0.0:
             fused = [r for r in fused if r.get("final_score", 0.0) >= relevance_threshold]
+
+        fused = self._apply_recall_contributions(
+            fused,
+            query=query,
+            query_embedding=query_embedding,
+        )
 
         self.telemetry.emit("search_completed", {
             "query": query,
@@ -1087,6 +1524,7 @@ class ProjectMemory:
         retrieval = self._merge_working_context(
             retrieval, working_items=self._recent_working_items(), query=resolved_query,
         )
+        prompt_hints = self._collect_prompt_hints(resolved_query)
         return build_prompt_from_context(
             user_message=user_message,
             retrieval=retrieval,
@@ -1098,6 +1536,7 @@ class ProjectMemory:
             store_overflow_summary=store_overflow_summary,
             return_trace=return_trace,
             token_counter=self._token_counter,
+            advisory_hints=prompt_hints,
         )
 
     def build_prompt_trace(self, user_message: str, **kwargs):
@@ -1310,6 +1749,7 @@ class ProjectMemory:
                 "auto_pair_assistant": self._auto_pair_assistant,
                 "episode_threshold": self._quality.episode_threshold,
                 "dedup_threshold": self._quality.dedup_threshold,
+                "neural_enabled": self.neural_layer is not None,
             },
         }
         if self.embedder and hasattr(self.embedder, "hits"):
@@ -1322,6 +1762,7 @@ class ProjectMemory:
     def close(self) -> None:
         if self.semantic:
             self.semantic.save()
+        self._close_extension_layers()
         if self._writer_lock:
             self._writer_lock.release()
             self._writer_lock = None

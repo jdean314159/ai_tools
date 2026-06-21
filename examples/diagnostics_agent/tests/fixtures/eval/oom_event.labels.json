@@ -1,0 +1,15 @@
+{
+  "case": "oom_event",
+  "description": "The kernel terminated a process because memory was exhausted.",
+  "expected_overall": {
+    "security_risk": "none",
+    "operational_risk": "high"
+  },
+  "expected_concerns": [
+    {
+      "finding_ref": "oom_kill",
+      "expected_band": "high",
+      "note": "An OOM kill is a serious availability event."
+    }
+  ]
+}

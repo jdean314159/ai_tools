@@ -1,0 +1,16 @@
+{
+  "case": "drive_spinup_race",
+  "description": "A reset warning immediately followed by successful link and device configuration.",
+  "expected_overall": {
+    "security_risk": "none",
+    "operational_risk": "low"
+  },
+  "expected_concerns": [
+    {
+      "finding_ref": "disk_io_error",
+      "expected_band": "low",
+      "known_gap": true,
+      "note": "Sequence-aware triage is required to recognize this benign spin-up race."
+    }
+  ]
+}

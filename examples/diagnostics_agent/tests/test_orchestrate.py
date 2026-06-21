@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from shutil import which
 import json
 import os
 
@@ -105,19 +104,36 @@ def test_staging_dir_is_removed_after_error() -> None:
     assert not collector.staging_dir.exists()
 
 
-def test_sandbox_read_failure_aborts_before_triage() -> None:
+def test_sandbox_read_failure_aborts_before_triage(monkeypatch) -> None:
     collector = _FakeCollector(_sample_log())
     triage = _TriageShouldNotRun()
+    sandbox = _FailingSandbox(SandboxConfig())
+    created_sandboxes: list[_FailingSandbox] = []
+
+    def sandbox_factory(config: SandboxConfig) -> _FailingSandbox:
+        created = _FailingSandbox(config)
+        created_sandboxes.append(created)
+        return created
+
+    def fail_if_subprocess_runs(*args, **kwargs):
+        raise AssertionError("unit sandbox test must not invoke subprocess")
+
+    monkeypatch.setattr("diagnostics_agent.sandbox.subprocess.run", fail_if_subprocess_runs)
     orchestrator = DiagnosticsOrchestrator(
         collector=collector,
         triage=triage,  # type: ignore[arg-type]
         interpreter=LogInterpreter(_StubEngine(_valid_interpretation_json())),
-        sandbox=_FailingSandbox(),
+        sandbox=sandbox,
+        sandbox_factory=sandbox_factory,
     )
 
     with pytest.raises(CollectionReadError, match="sandbox read failed"):
         orchestrator.run()
 
+    assert sandbox.run_called is False
+    assert len(created_sandboxes) == 1
+    assert created_sandboxes[0].run_called is True
+    assert created_sandboxes[0].config.mounts
     assert triage.called is False
     assert collector.staging_dir is not None
     assert not collector.staging_dir.exists()
@@ -174,7 +190,7 @@ def test_system_fact_collection_failure_is_non_fatal(monkeypatch) -> None:
     assert result.interpretation is not None
 
 
-@pytest.mark.skipif(which("podman") is None, reason="podman is not installed")
+@pytest.mark.usefixtures("require_sandbox_runtime")
 def test_sandbox_read_path_flows_to_triage() -> None:
     collector = _FakeCollector(_sample_log())
     sandbox = ReadOnlySandbox(
@@ -200,7 +216,7 @@ def test_sandbox_read_path_flows_to_triage() -> None:
     assert "--userns=keep-id" in result.sandbox_result.argv
 
 
-@pytest.mark.skipif(which("podman") is None, reason="podman is not installed")
+@pytest.mark.usefixtures("require_sandbox_runtime")
 @pytest.mark.skipif(
     os.environ.get("DIAGNOSTICS_AGENT_LIVE_MODEL") is None,
     reason="DIAGNOSTICS_AGENT_LIVE_MODEL is not set",
@@ -292,9 +308,12 @@ class _FailingCollector:
 
 
 class _FailingSandbox:
-    config = SandboxConfig()
+    def __init__(self, config: SandboxConfig) -> None:
+        self.config = config
+        self.run_called = False
 
     def run(self, command: list[str]) -> SandboxResult:
+        self.run_called = True
         return SandboxResult(
             argv=["podman", "run", "fake"],
             inner_command=list(command),

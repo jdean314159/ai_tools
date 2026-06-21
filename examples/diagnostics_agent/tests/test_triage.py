@@ -4,6 +4,8 @@ from datetime import datetime, timezone, timedelta
 import json
 from pathlib import Path
 
+import pytest
+
 from diagnostics_agent import LogTriage, Severity, TriageConfig
 
 
@@ -335,7 +337,7 @@ def test_benign_eval_corpus_produces_zero_findings() -> None:
     summary = LogTriage().triage(source)
 
     assert summary.findings == (), (
-        f"Expected zero findings from benign corpus; got: "
+        "Expected zero findings from benign corpus; got: "
         + ", ".join(f.rule_name for f in summary.findings)
     )
 
@@ -376,3 +378,77 @@ def test_benign_suppressor_cap_does_not_affect_real_threats() -> None:
 
     rule_names = [f.rule_name for f in summary.findings]
     assert "ssh_failed_auth" in rule_names or "ssh_invalid_user" in rule_names
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        (
+            "2026-06-01T10:00:00+00:00 host cinnamon-screensaver[100]: "
+            "pam_unix(cinnamon-screensaver:auth): auth could not identify password"
+        ),
+        (
+            "2026-06-01T10:00:01+00:00 host polkitd[101]: "
+            "Registered Authentication Agent for unix-session:2"
+        ),
+        (
+            "2026-06-01T10:00:02+00:00 host gdm-password[102]: "
+            "pam_unix(gdm-password:session): session opened for user user"
+        ),
+        (
+            "2026-06-01T10:00:03+00:00 host kernel[0]: "
+            "Bluetooth: hci0: command 0x0401 tx timeout"
+        ),
+    ],
+)
+def test_desktop_session_noise_patterns_are_suppressed(line: str) -> None:
+    summary = LogTriage().triage([line])
+    unsuppressed = LogTriage(
+        TriageConfig(suppressors=(), min_cluster_severity=Severity.INFO)
+    ).triage([line])
+
+    assert summary.findings == ()
+    assert summary.top_clusters == ()
+    assert len(unsuppressed.top_clusters) == 1
+
+
+def test_bluetooth_timeout_suppresses_masked_cluster_template() -> None:
+    lines = [
+        f"2026-06-01T10:01:0{index}+00:00 host kernel[0]: "
+        f"Bluetooth: hci0: command 0x{0x400 + index:04x} tx timeout"
+        for index in range(3)
+    ]
+
+    summary = LogTriage().triage(lines)
+    unsuppressed = LogTriage(
+        TriageConfig(suppressors=(), min_cluster_severity=Severity.INFO)
+    ).triage(lines)
+
+    assert summary.findings == ()
+    assert summary.top_clusters == ()
+    assert len(unsuppressed.top_clusters) == 1
+    assert "command <HEX> tx timeout" in unsuppressed.top_clusters[0].template
+
+
+def test_desktop_noise_suppressors_do_not_swallow_real_auth() -> None:
+    lines = [
+        (
+            "2026-06-01T10:02:00+00:00 host sshd[200]: "
+            "pam_unix(sshd:auth): authentication failure"
+        ),
+        (
+            "2026-06-01T10:02:01+00:00 host sudo[201]: "
+            "authentication failure; logname=user uid=1000"
+        ),
+        (
+            "2026-06-01T10:02:02+00:00 host login[202]: "
+            "pam_unix(login:auth): authentication failure"
+        ),
+    ]
+
+    summary = LogTriage().triage(lines)
+    rule_names = {finding.rule_name for finding in summary.findings}
+
+    assert "ssh_failed_auth" in rule_names or "pam_failure" in rule_names
+    assert "sudo_failure" in rule_names
+    assert "pam_failure" in rule_names

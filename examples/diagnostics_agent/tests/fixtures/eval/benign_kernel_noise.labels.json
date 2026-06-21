@@ -1,0 +1,17 @@
+{
+  "case": "benign_kernel_noise",
+  "description": "Routine boot and firmware noise that should not reach interpretation.",
+  "expected_overall": {
+    "security_risk": "none",
+    "operational_risk": "low"
+  },
+  "expected_concerns": [
+    {"finding_ref": "acpi_ae_already_exists", "expected_band": "excluded"},
+    {"finding_ref": "ata_drm_info", "expected_band": "excluded"},
+    {"finding_ref": "i915_fifo_underrun", "expected_band": "excluded"},
+    {"finding_ref": "atkbd_setkeycodes", "expected_band": "excluded"},
+    {"finding_ref": "overlayfs_xino_fallback", "expected_band": "excluded"},
+    {"finding_ref": "ntp_time_jump", "expected_band": "excluded"},
+    {"finding_ref": "gnome_keyring_noise", "expected_band": "excluded"}
+  ]
+}

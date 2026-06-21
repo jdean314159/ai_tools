@@ -256,32 +256,31 @@ def check_ollama(args) -> None:
 
 
 def check_engram_adapter() -> None:
-    _section("4. EngramLLMAdapter")
+    _section("4. Engram semantic extraction")
 
     def _import():
-        from engram.adapters.llm_adapter import EngramLLMAdapter
+        from engram.semantic.extractor import SemanticExtractor
         return "import OK"
 
     def _extract_entities():
-        from engram.adapters.llm_adapter import EngramLLMAdapter
+        from engram.semantic.extractor import SemanticExtractor
         from llm_engines.backends.mock import MockEngine
         import json
 
-        payload = json.dumps({
-            "entities": [{"type": "Person", "name": "Alice"}],
-            "relationships": [{"subject": "Alice", "predicate": "WORKS_ON", "object": "auth"}],
-        })
+        payload = json.dumps([
+            {"type": "preference", "subject": "auth", "value": "Alice", "confidence": 0.8}
+        ])
         engine = MockEngine(response_fn=lambda r: payload)
-        adapter = EngramLLMAdapter(engine)
-        result = adapter.extract_entities("Alice works on auth")
-        assert result["entities"][0]["name"] == "Alice"
-        return "extract_entities OK"
+        extractor = SemanticExtractor(llm_engine=engine, enable_llm_extraction=True)
+        result = extractor.extract("Alice works on auth")
+        assert result.facts[0].subject == "auth"
+        return "SemanticExtractor OK"
 
-    if not _check("engram.adapters import", _import):
+    if not _check("engram.semantic import", _import):
         print(f"  {_yellow('INFO')} Install with: pip install -e ~/ai_tools/engram")
         return
 
-    _check("EngramLLMAdapter.extract_entities()", _extract_entities)
+    _check("SemanticExtractor.extract()", _extract_entities)
 
 
 def check_rag_inspector() -> None:

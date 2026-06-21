@@ -1,5 +1,5 @@
 """
-Unit tests for engram_lite.prompting.builder
+Unit tests for engram.prompting.builder.
 
 Covers:
 - safe_text / safe_score extraction from various item shapes

@@ -82,6 +82,7 @@ If they must read source to use it, the public API or quickstart is not done.
 | `agent_lib` | block | **experimental** | coordination primitives | Mark experimental loudly. Do not oversell. |
 | `language_tutor` | example (rebuild) | — | n/a | Freeze as reference source; rebuild in `examples/`. |
 | `diagnostics_agent` | example (campaign) | — | n/a | Built with the blocks; code in `examples/`, campaign docs in `docs/projects/`. |
+| `netflow_behavior_lab` | out | — | n/a | Extracted 2026-06-20 to sibling repo `../netflow_behavior_lab` because it is a deterministic network-analysis research project with zero `ai_tools` coupling. |
 | `engram_ui` | out | — | n/a | Archive (ADR-010). |
 | `course/` | out | — | n/a | Split to its own repo (last step). |
 | ASC | example (rebuild, later) | — | n/a | Built with `agent_lib`; gated on `agent_lib` reaching beta. |

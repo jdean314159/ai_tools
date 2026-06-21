@@ -20,6 +20,7 @@ from diagnostics_agent import (
 )
 from diagnostics_agent.interpret import (
     _apply_risk_coherence,
+    _apply_security_floor,
     _count_request_tokens,
     _summary_for_prompt,
 )
@@ -295,7 +296,149 @@ def test_operational_floor_does_not_clamp_auth_findings() -> None:
     result = LogInterpreter(_StubEngine(payload)).interpret(_auth_summary())
 
     assert result.operational_risk == "none"
-    assert result.prioritized_concerns[0].severity == "low"
+    assert result.prioritized_concerns[0].severity == "medium"
+
+
+def test_security_floor_clamps_low_auth_concern_to_medium() -> None:
+    payload = json.dumps(
+        {
+            "reasoning": "A failed SSH login was observed.",
+            "summary": "Single SSH authentication failure.",
+            "security_risk": "low",
+            "operational_risk": "none",
+            "prioritized_concerns": [
+                {
+                    "finding_ref": "ssh_failed_auth",
+                    "rationale": "The failed login should be reviewed.",
+                    "severity": "low",
+                }
+            ],
+            "recommended_checks": ["Review auth logs."],
+        }
+    )
+
+    result = LogInterpreter(_StubEngine(payload)).interpret(_auth_summary())
+
+    assert result.security_risk == "medium"
+    assert result.prioritized_concerns[0].severity == "medium"
+
+
+def test_security_floor_injects_omitted_auth_concern() -> None:
+    payload = json.dumps(
+        {
+            "reasoning": "No material issue was identified.",
+            "summary": "No concern.",
+            "security_risk": "none",
+            "operational_risk": "none",
+            "prioritized_concerns": [],
+            "recommended_checks": [],
+        }
+    )
+
+    result = LogInterpreter(_StubEngine(payload)).interpret(_auth_summary())
+
+    assert result.security_risk == "medium"
+    assert len(result.prioritized_concerns) == 1
+    concern = result.prioritized_concerns[0]
+    assert concern.finding_ref == "ssh_failed_auth"
+    assert concern.severity == "medium"
+    assert "auth (security) finding" in concern.rationale
+    assert "security risk is floored to medium" in concern.rationale
+
+
+def test_security_floor_preserves_high_auth_concern() -> None:
+    interpretation = Interpretation(
+        reasoning="x",
+        summary="x",
+        security_risk="high",
+        operational_risk="none",
+        prioritized_concerns=[
+            ConcernAssessment(
+                finding_ref="ssh_failed_auth",
+                rationale="Sustained probing.",
+                severity="high",
+            )
+        ],
+        recommended_checks=[],
+    )
+
+    result = _apply_security_floor(interpretation, _auth_summary())
+
+    assert result is interpretation
+    assert result.security_risk == "high"
+    assert result.prioritized_concerns[0].severity == "high"
+
+
+def test_security_floor_does_not_change_disk_finding() -> None:
+    summary = LogTriage().triage(
+        ["2026-05-29T14:03:11-07:00 host kernel: ata10: softreset failed (device not ready)"]
+    )
+    interpretation = _interpretation(
+        security_risk="none",
+        operational_risk="low",
+        concern_severity="low",
+    )
+
+    result = _apply_security_floor(interpretation, summary)
+
+    assert result is interpretation
+
+
+def test_security_floor_is_idempotent() -> None:
+    interpretation = Interpretation(
+        reasoning="x",
+        summary="x",
+        security_risk="none",
+        operational_risk="none",
+        prioritized_concerns=[],
+        recommended_checks=[],
+    )
+
+    once = _apply_security_floor(interpretation, _auth_summary())
+    twice = _apply_security_floor(once, _auth_summary())
+
+    assert twice == once
+
+
+def test_security_floor_without_auth_findings_is_unchanged() -> None:
+    interpretation = _interpretation(
+        security_risk="low",
+        operational_risk="low",
+        concern_severity="low",
+    )
+
+    result = _apply_security_floor(interpretation, LogTriage().triage([]))
+
+    assert result is interpretation
+
+
+def test_security_and_operational_floors_coexist() -> None:
+    summary = LogTriage().triage(
+        [
+            "2026-05-29T14:03:11-07:00 host sshd[1234]: "
+            "Failed password for root from 192.0.2.10 port 53001 ssh2",
+            "2026-05-29T14:04:11-07:00 host kernel: "
+            "Out of memory: Killed process 1234 (worker)",
+        ]
+    )
+    payload = json.dumps(
+        {
+            "reasoning": "The events were under-rated.",
+            "summary": "Authentication and memory events observed.",
+            "security_risk": "none",
+            "operational_risk": "none",
+            "prioritized_concerns": [],
+            "recommended_checks": [],
+        }
+    )
+
+    result = LogInterpreter(_StubEngine(payload)).interpret(summary)
+    concerns = {item.finding_ref: item for item in result.prioritized_concerns}
+
+    assert result.security_risk == "medium"
+    assert result.operational_risk == "high"
+    assert concerns["ssh_failed_auth"].severity == "medium"
+    assert concerns["oom_kill"].severity == "high"
 
 
 def test_risk_coherence_raises_higher_axis_for_auth_gap() -> None:

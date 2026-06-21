@@ -166,7 +166,7 @@ def test_execute_workspace_command_can_fallback_to_host_when_requested(tmp_path:
 
 
 def test_programming_demo_persists_task_state_and_plan(tmp_path: Path) -> None:
-    run, root = run_programming_demo(root=tmp_path, memory_backend="engram_lite")
+    run, root = run_programming_demo(root=tmp_path, memory_backend="engram")
 
     assert run.status == "completed"
     state_path = root / ".agent_state" / "fix_add_function.json"
@@ -186,7 +186,7 @@ def test_programming_demo_persists_task_state_and_plan(tmp_path: Path) -> None:
 
 
 def test_programming_trace_includes_state_summary(tmp_path: Path) -> None:
-    run, _ = run_programming_demo(root=tmp_path, memory_backend="engram_lite")
+    run, _ = run_programming_demo(root=tmp_path, memory_backend="engram")
 
     trace = run.steps[1].trace
     assert trace is not None
@@ -220,7 +220,7 @@ def test_runtime_interrupts_repeated_identical_tool_calls() -> None:
 
 def test_programming_context_budget_compacts_history_and_persists_large_output(tmp_path: Path) -> None:
     large_seed = "def add(a, b):\n    return a - b\n\n" + ("# filler line\n" * 80)
-    run, root = run_programming_demo(root=tmp_path, memory_backend="engram_lite", seed_content=large_seed)
+    run, root = run_programming_demo(root=tmp_path, memory_backend="engram", seed_content=large_seed)
 
     trace = run.steps[-1].trace
     assert trace is not None
@@ -235,7 +235,7 @@ def test_programming_context_budget_compacts_history_and_persists_large_output(t
 
 
 def test_programming_failure_policy_stops_on_empty_read_result(tmp_path: Path) -> None:
-    run, root = run_programming_demo(root=tmp_path, memory_backend="engram_lite", seed_content="", max_steps=6)
+    run, root = run_programming_demo(root=tmp_path, memory_backend="engram", seed_content="", max_steps=6)
 
     assert run.status == "stopped"
     assert run.final_output == "Stopped after empty result from read_file."
@@ -244,12 +244,12 @@ def test_programming_failure_policy_stops_on_empty_read_result(tmp_path: Path) -
 
 
 def test_programming_demo_can_resume_from_persisted_state(tmp_path: Path) -> None:
-    first_run, root = run_programming_demo(root=tmp_path, memory_backend="engram_lite", max_steps=2)
+    first_run, root = run_programming_demo(root=tmp_path, memory_backend="engram", max_steps=2)
 
     assert first_run.status == "stopped"
     assert first_run.stop_reason == "max_steps"
 
-    resumed_run, _ = resume_programming_demo(root=root, memory_backend="engram_lite", max_steps=12)
+    resumed_run, _ = resume_programming_demo(root=root, memory_backend="engram", max_steps=12)
 
     assert resumed_run.status == "completed"
     state = json.loads((root / ".agent_state" / "fix_add_function.json").read_text(encoding="utf-8"))

@@ -44,17 +44,15 @@ print(report_to_json(report))
 
 Its job is to normalize what happened across engines, memory augmentation, retrieval, and eventually agent workflows, so that humans can inspect and compare behavior.
 
-## Start here if you are learning from this repo
+## Using this with the rest of the suite
 
-This is the first inspection layer in the teaching path.
-
-- teaching path stage: Stage 2 in [`../LEARNING_PATH.md`](../LEARNING_PATH.md)
 - use it right after `llm_engines`
 - then use it to compare memory and retrieval augmentation paths
 
 ## Current support status
 
-This is a **core** package and is treated as **active and stable**.
+This is a **core** package, actively maintained. Tier: **beta** (API mostly
+settled; see the suite tier definitions in the root README).
 
 ## Responsibilities
 

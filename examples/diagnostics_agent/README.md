@@ -6,7 +6,7 @@ mounts, no network, dropped capabilities, resource limits, and guaranteed
 cleanup. It also includes deterministic log triage that reduces raw log text
 before any model sees it.
 
-**Status: active campaign, not a frozen reference.** This example is the current
+**Status: campaign complete (Phase 3 gate met — fp 0.000 / recall 1.000).** This example is the
 co-evolution driver for `ai_tools` (see `docs/projects/diagnostics_agent/`). Its
 public-facing shape may still move. Treat it as a worked, in-progress
 demonstration of composing `llm_engines` (and, in later phases, `engram` /
@@ -39,8 +39,7 @@ cd ~/ai_tools/llm_engines      && pip install -e .
 cd ~/ai_tools/examples/diagnostics_agent && pip install -e ".[ui]"
 ```
 
-A `setup.sh` at the repo root running these three installs makes fresh-machine
-setup a one-liner and documents the dependency order.
+Running `make install` from the repo root installs all packages in editable mode.
 
 ### Container runtime
 
@@ -146,8 +145,8 @@ print(interpretation.summary)
 print(interpretation.security_risk, interpretation.operational_risk)
 ```
 
-This is still not an orchestrator: callers decide how to collect logs, triage
-them, and pass the summary to the interpreter.
+`DiagnosticsOrchestrator` handles collection, triage, and interpretation in
+sequence. Callers supply configuration; the orchestrator manages execution.
 
 The current locality guard is backend-name based. A more durable follow-up is to
 inspect the resolved endpoint and treat loopback URLs or Unix sockets as local

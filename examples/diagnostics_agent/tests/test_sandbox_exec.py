@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from shutil import which
 import subprocess
 
 import pytest
@@ -9,7 +8,7 @@ import pytest
 from diagnostics_agent import ReadOnlySandbox, SandboxConfig
 
 
-pytestmark = pytest.mark.skipif(which("podman") is None, reason="podman is not installed")
+pytestmark = pytest.mark.usefixtures("require_sandbox_runtime")
 
 
 def test_run_reads_mounted_temp_file(tmp_path: Path) -> None:

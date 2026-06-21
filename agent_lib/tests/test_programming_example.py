@@ -7,7 +7,7 @@ from agent_lib import AgentTask
 
 
 def test_programming_demo_updates_file_and_records_traces(tmp_path: Path) -> None:
-    run, root = run_programming_demo(root=tmp_path, memory_backend="engram_lite")
+    run, root = run_programming_demo(root=tmp_path, memory_backend="engram")
 
     assert run.status == "completed"
     assert "returns a + b" in (run.final_output or "")
@@ -31,7 +31,7 @@ def test_programming_demo_memory_recall_surfaces_prior_steps(tmp_path: Path) -> 
     workspace.write_text("main.py", "def add(a, b):\n    return a - b\n")
     runtime = make_programming_demo_runtime(
         workspace,
-        memory_backend="engram_lite",
+        memory_backend="engram",
         memory_base_dir=tmp_path / ".agent_memory",
         session_id="agent_programming_demo",
     )
@@ -56,7 +56,7 @@ def test_programming_demo_memory_recall_surfaces_prior_steps(tmp_path: Path) -> 
 
 
 def test_programming_demo_escalates_only_after_failed_local_check(tmp_path: Path) -> None:
-    run, root = run_programming_demo(root=tmp_path, memory_backend="engram_lite")
+    run, root = run_programming_demo(root=tmp_path, memory_backend="engram")
 
     assert run.status == "completed"
     assert run.escalations == 1

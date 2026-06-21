@@ -155,7 +155,7 @@ class ProgrammingBenchmarkReport:
 class ProgrammingBenchmarkScenario:
     name: str
     description: str
-    memory_backend: str = "engram_lite"
+    memory_backend: str = "engram"
     runtime_profile: Literal["minimum_reliable", "isolated_workspace"] = "minimum_reliable"
     role_bindings: ProgrammingRoleBindings = field(default_factory=ProgrammingRoleBindings)
     notes: list[str] = field(default_factory=list)
@@ -264,7 +264,7 @@ def _replace_case_task(config: ProgrammingRuntimeConfig, **task_overrides: Any) 
     return _copy_runtime_config(config, task=new_task)
 
 
-def build_representative_programming_cases(*, memory_backend: str = "engram_lite") -> list[ProgrammingBenchmarkCase]:
+def build_representative_programming_cases(*, memory_backend: str = "engram") -> list[ProgrammingBenchmarkCase]:
     cases: list[ProgrammingBenchmarkCase] = []
 
     minimal = build_minimum_reliable_programming_config(session_id="eval_minimal", memory_backend=memory_backend)
@@ -352,21 +352,15 @@ def build_representative_programming_cases(*, memory_backend: str = "engram_lite
 def build_default_benchmark_scenarios() -> list[ProgrammingBenchmarkScenario]:
     return [
         ProgrammingBenchmarkScenario(
-            name="engram_lite_minimum_reliable",
-            description="Baseline minimum reliable programming path using engram_lite memory.",
-            memory_backend="engram_lite",
-            runtime_profile="minimum_reliable",
-        ),
-        ProgrammingBenchmarkScenario(
             name="engram_minimum_reliable",
-            description="Baseline minimum reliable programming path using full engram memory.",
+            description="Baseline minimum reliable programming path using Engram memory.",
             memory_backend="engram",
             runtime_profile="minimum_reliable",
         ),
         ProgrammingBenchmarkScenario(
-            name="engram_lite_isolated_workspace",
-            description="engram_lite baseline with isolated workspace policy applied broadly.",
-            memory_backend="engram_lite",
+            name="engram_isolated_workspace",
+            description="Engram baseline with isolated workspace policy applied broadly.",
+            memory_backend="engram",
             runtime_profile="isolated_workspace",
         ),
     ]

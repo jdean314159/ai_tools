@@ -14,7 +14,7 @@ def main() -> int:
     selected = select_memories(memories, query)
     print("Memory tutor starter")
     print(f"Selected memories for query {query!r}: {selected}")
-    print("Next step: replace this toy selector with an engram_lite or engram retrieval path.")
+    print("Next step: replace this toy selector with an engram retrieval path.")
     return 0
 
 
