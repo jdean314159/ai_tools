@@ -39,6 +39,8 @@ DEFAULT_ALLOWED_ENVIRONMENT_KEYS = [
 @dataclass(frozen=True)
 class WorkspacePolicy:
     root: str = "."
+    # None preserves the historic unrestricted behavior; [] denies every tool.
+    allowed_tools: list[str] | None = None
     writable_paths: list[str] = field(default_factory=list)
     runnable_commands: list[str] = field(default_factory=list)
     approval_mode: ApprovalMode = "auto"
@@ -408,6 +410,12 @@ class ProgrammingToolRuntime:
         )
 
     def invoke(self, call: ToolCall) -> ToolResult:
+        if self.workspace.allowed_tools is not None and call.name not in self.workspace.allowed_tools:
+            return self._deny(
+                call,
+                reason=f"Tool {call.name!r} is not granted to this agent.",
+                error="tool_not_granted",
+            )
         if call.name in {'read_file', 'replace_text', 'run_check'}:
             path = str(call.arguments.get('path') or '').strip()
             if not path:
@@ -445,6 +453,11 @@ class ProgrammingToolRuntime:
         diagnostics = dict(op.diagnostics)
         diagnostics['capability'] = describe_tool_runtime(self)
         return type(op).success(op.value, warnings=op.warnings, diagnostics=diagnostics)
+
+
+# The coordination-control-plane terminology for the existing policy gate.
+# Keep ProgrammingToolRuntime as the established public API.
+EnforcingToolRuntime = ProgrammingToolRuntime
 
 
 def execute_workspace_command(root: str | Path, command: str, workspace_policy: WorkspacePolicy | None = None) -> ToolResult:

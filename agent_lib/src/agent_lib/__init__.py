@@ -47,6 +47,9 @@ from .coordination import (
     FileReservation,
     InMemoryMailbox,
     SessionMailbox,
+    build_coordinator_tool_runtime,
+    build_session_tool_runtime,
+    route_by_capability,
 )
 
 # --- Memory adapters ---
@@ -114,6 +117,9 @@ __all__ = [
     "FileReservation",
     "InMemoryMailbox",
     "SessionMailbox",
+    "build_coordinator_tool_runtime",
+    "build_session_tool_runtime",
+    "route_by_capability",
     # Memory adapters
     "EngramMemoryAdapter",
     "NullMemoryAdapter",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Literal, Protocol, Sequence
 from uuid import uuid4
@@ -29,6 +29,7 @@ class ExternalAgentSession:
     runtime: str = "external"
     workspace: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    capabilities: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -165,6 +166,60 @@ class ExternalAgentTeam:
             sessions.append(self.critic)
         sessions.extend(self.scouts)
         return sessions
+
+
+def route_by_capability(team: ExternalAgentTeam, required_tool: str) -> ExternalAgentSession | None:
+    """Return the first team session granted *required_tool*, or None.
+
+    First-match behavior is intentional. Resolving multiple matching sessions is
+    a scheduling policy outside this deterministic control-plane primitive.
+    """
+    return next(
+        (session for session in team.all_sessions if required_tool in session.capabilities),
+        None,
+    )
+
+
+def build_session_tool_runtime(
+    session: ExternalAgentSession,
+    inner: Any,
+    workspace: Any,
+    *,
+    root: str,
+    isolation_manager: Any | None = None,
+) -> Any:
+    """Build a runtime whose tool grant exactly matches a session's capabilities."""
+    from .programming import EnforcingToolRuntime
+
+    scoped_workspace = replace(workspace, allowed_tools=list(session.capabilities))
+    return EnforcingToolRuntime(
+        inner,
+        scoped_workspace,
+        root=root,
+        owner_id=session.agent_id,
+        isolation_manager=isolation_manager,
+    )
+
+
+def build_coordinator_tool_runtime(
+    session: ExternalAgentSession,
+    inner: Any,
+    workspace: Any,
+    *,
+    root: str,
+    isolation_manager: Any | None = None,
+) -> Any:
+    """Build a coordinator runtime with an explicit deny-all tool grant."""
+    from .programming import EnforcingToolRuntime
+
+    scoped_workspace = replace(workspace, allowed_tools=[])
+    return EnforcingToolRuntime(
+        inner,
+        scoped_workspace,
+        root=root,
+        owner_id=session.agent_id,
+        isolation_manager=isolation_manager,
+    )
 
 
 class ExternalSessionCoordinator:
