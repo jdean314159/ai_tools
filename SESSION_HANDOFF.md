@@ -46,6 +46,12 @@ library and probe commits are separate. Targeted `agent_lib` tests (73) and
 branch (and, when concurrent, a separate worktree) per stream; it prevents
 staged/index overlap and preserves independently reviewable commits.
 
+**Specification process fix:** apply the `AGENTS.md` spec-and-planning policy
+(lines 22–28) before review: cite every reuse claim from its actual call path,
+separate unverified assumptions from confirmed facts, and name machinery that
+must be built because it does not exist. This turned LIVE-00 from repeated
+design corrections into clean review passes; carry it into every future spec.
+
 Two threads closed this session, both landing on "don't build the big thing."
 
 1. **Neural memory campaign is COMPLETE and the layer is PARKED.** The
