@@ -244,3 +244,70 @@ Everything in the repo-state assessment is lead-not-fact until the verification 
   proof case. Both threads converge there.
 - Recovery bundles (if needed): neural subsystem + eval harness were recovered
   from git history at `84f4f86~1`. Live repo contains the adapted versions.
+
+## Update — 2026-06-22 (cont.) — SPEC-LIVE-01 fork scoped; OPCOM sibling-system lessons captured
+
+Continues the same-day LIVE-00 update below. No `ai_tools` code changed this session; one doc added
+(`docs/internal/LESSONS_FROM_OPCOM.md` — confirm committed).
+
+**Finding 1 status (termination contract):** CONFIRMED as a *historical pre-v7* observation on `codex/live-00`
+(retrieve at step 2; `config.toml` updated at step 4 with `done_check` satisfied; coordinator then issued four
+more `replace_text` routes; run ended at `step_cap`, not `done`). Cause is code-confirmed: `termination="done"`
+is set only when the coordinator volunteers `{"done":true}` and `_done()` validates it
+(`live_probe_00.py:138–145`); a satisfied predicate alone never terminates. It remains **PENDING re-confirmation
+as a v8-conforming in-tree result** — the recorded evidence predates targeted routing / FX-CONTENTION /
+predicate D / strengthened replay, and lives on the unmerged branch, not `master`. Do NOT treat as in-tree
+confirmed until the v8 rebase re-runs it.
+
+**SPEC-LIVE-01 fork — scoped, NOT written, decision not formally ratified.** Grounded fact:
+`agent_lib/src/agent_lib/coordination.py` has NO execution loop (no `run`/`step`/`terminate`/`done`);
+`ManagedCoordination` is a dataclass container (`coordinator` + `worker_runtimes`). The probe builds the entire
+loop and owns the termination decision. Consequence: "predicate-driven termination as an `agent_lib` change" is
+incoherent in isolation — there is no in-library caller, so it would be a consumerless primitive
+(anti-probe-first). The fork:
+- **Option 1 (recommended):** fix Finding 1 PROBE-SIDE — the probe loop consults `_done()` each step and
+  terminates when satisfied; model `{"done":true}` demoted to an early-exit hint. `agent_lib` untouched; "no
+  library loop / no termination contract" recorded as a standing gap.
+- **Option 2:** move orchestration into `agent_lib` (a minimal team loop, termination as its first feature).
+  Closes Finding 1 + Observation 2 together, but is an architectural commitment for which only the termination
+  slice has been forced by a concrete run.
+
+Design conclusion (informed by the OPCOM read, NOT yet ratified — the user stepped back to review the sibling
+system before deciding): later multi-agent projects (novel tool, language tutor, computer_helper) will each need
+*a* loop but NOT the *same* loop — topologies differ (capability-routed alternation vs critique pipeline vs
+plan-then-execute). What generalizes is the **termination contract** (authoritative predicate drives the stop;
+model signal is a hint), not the loop. Extract a shared termination primitive into `agent_lib` only on the
+**second** consumer, not the first. Until then: Option 1. The new thread should ratify or revise this with the
+OPCOM evidence in hand.
+
+**OPCOM / dev-team-six sibling-system read → `docs/internal/LESSONS_FROM_OPCOM.md`.** Read (not run) a related
+multi-agent system by another author: dev-team-six (Claude Code worker framework, evolution of
+`super-claude-kit`) + OPCOM (out-of-process Postgres/MCP/WebSocket coordination backbone, successor to
+`mcp_agent_mail`) + Beads (external task authority) + capsules (TOON-format externalized memory). Its architecture
+is the opposite of `agent_lib`: thin workers, with coordination, task authority, and memory all pushed OUT of the
+agent into services. Five lessons recorded; transfer is selective (out-of-process service vs in-process library).
+The actionable one:
+- **Lesson 1 (lease lifecycle — DIRECTLY PORTABLE):** both `mcp_agent_mail` (`models.py:88`, `storage.py`) and
+  OPCOM (`reservation-service.ts`) carry `exclusive` / `expires_ts` (TTL) / `released_ts` + reclaim
+  (owner-process-death + age in the local Python version; TTL-expiry-at-query-time in the out-of-process TS
+  version). It SURVIVED a full Python→TS reimplementation = load-bearing. It is exactly the "no TTL / owner-death
+  reclaim / release-on-failure" gap LIVE-00 predicted (#2) and that `WorkspaceIsolationManager` lacks (its record
+  is `{owner_id, status, created_at, …}`, with `created_at` unconsumed). When forced in-tree: add `expires_ts` +
+  explicit release + exclusive/shared, treat expired as free; because `agent_lib` is IN-PROCESS, owner-liveness
+  reclaim is available (not TTL-only).
+Lessons 2–4 are loop-fork orientation (externalization by example; external/singular task authority as the clean
+form of Finding 1; wake-on-event vs a scheduler loop). Lesson 5: capsules ≈ `engram` (confirmation, not a borrow).
+
+**Next action (new thread / Codex):** unchanged execution path — rebase `codex/live-00` to v8 (targeted routing,
+FX-CONTENTION, full predicate-D classifier, semantic replay comparison with fresh isolated state, pinned
+workspace policy), re-run the live probe to bring Finding 1 in-tree, and land the probe commit cross-referencing
+`74bf4bc`. Probe-first sequencing for the borrow: that same v8 rebase is what forces the lease-reclaim deadlock
+in-tree (FX-CONTENTION) — once it does, open the lease-lifecycle ADR with `LESSONS_FROM_OPCOM.md` Lesson 1 as
+design input. Do NOT pre-build the lease lifecycle on the sibling-system precedent alone.
+
+**Security:** the uploaded `mcp_agent_mail` archive contained a private signing key (`signing-77c6e768.key`) and a
+`.env`. Treat both as exposed — rotate them and scrub from any future uploads.
+
+**Preserve (carry into SPEC-LIVE-01 and later):** single-source invariant discipline (each invariant stated once,
+referenced elsewhere — held v6→v8); the cross-repo reciprocal-commit-reference rule; the `AGENTS.md`
+spec-and-planning grounding policy.
