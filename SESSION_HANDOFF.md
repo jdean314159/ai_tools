@@ -8,6 +8,26 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
+## Update — 2026-06-22 (LIVE-00 planning complete; implementation pending)
+
+`SPEC-LIVE-00` v8 is canonical at `74bf4bc` (`docs: revise LIVE-00 multi-agent probe spec`). It is a
+revision-and-rebase specification: `computer_helper` branch `codex/live-00` is pre-v7 and non-conforming, so it
+must be updated rather than merged unchanged. The required implementation work is targeted worker routing,
+FX-CONTENTION, the full predicate-D deadlock classifier, semantic replay comparisons with fresh isolated state,
+and explicitly pinned workspace policy. The eventual `computer_helper` implementation commit MUST reference
+`74bf4bc`; this spec requires the reciprocal cross-reference before either change is considered complete.
+
+**Cross-repository delivery rule:** a spec in `ai_tools` and its probe in `computer_helper` cannot share an atomic
+Git commit. Land them as coordinated commits in their respective repositories, each cross-referencing the other
+commit. Do not substitute timing or a shared branch name for a commit-level link.
+
+**Specification invariant rule:** state each behavioral invariant exactly once, in its canonical section; tests,
+fixtures, assertions, and observations reference that source rather than restating it. This single-source
+discipline prevents the contradiction drift that affected early LIVE-00 revisions. Preserve it in SPEC-LIVE-01
+and later campaigns.
+
+The durable evidence/planning policy is committed in `9070a28` (`docs: add specification evidence policy`).
+
 ## Update — 2026-06-21 (COORD campaign closed; checkout workflow)
 
 **Repository state at handoff:** `ai_tools` is clean on `codex-cleanup-pass` at
