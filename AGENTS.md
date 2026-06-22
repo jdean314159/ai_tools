@@ -19,6 +19,14 @@ Do not perform broad rewrites unless explicitly requested.
 Do not move packages, rename public APIs, or change import topology without first explaining the rationale.
 Preserve compatibility with editable installs and monorepo-style local development.
 
+## Spec and planning policy
+
+Before presenting any spec or plan, ground every reuse claim.
+Every "reuse existing X" must cite the file and line proving X has the needed surface; read the call path end to end, do not infer it from symbol names.
+Put anything not read directly in an "Assumptions to verify" section; do not place it among confirmed facts.
+Include a "Must be built (does not exist yet)" section naming machinery the plan requires but the codebase lacks.
+A spec with an un-cited reuse claim is not ready for implementation.
+
 ## Testing policy
 
 Prefer targeted tests first, then broader tests.
