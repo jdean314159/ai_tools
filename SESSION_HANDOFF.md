@@ -248,9 +248,9 @@ Everything in the repo-state assessment is lead-not-fact until the verification 
 ## Update — 2026-06-22 (cont.) — SPEC-LIVE-01 fork scoped; OPCOM sibling-system lessons captured
 
 Continues the same-day LIVE-00 update below. No `ai_tools` code changed this session; one doc added
-(`docs/internal/LESSONS_FROM_OPCOM.md` — confirm committed).
+(`docs/internal/LESSONS_FROM_OPCOM.md`, committed as `597c60b`).
 
-**Finding 1 status (termination contract):** CONFIRMED as a *historical pre-v7* observation on `codex/live-00`
+**Finding 1 status (termination contract):** OBSERVED on the *historical pre-v7* `codex/live-00` branch
 (retrieve at step 2; `config.toml` updated at step 4 with `done_check` satisfied; coordinator then issued four
 more `replace_text` routes; run ended at `step_cap`, not `done`). Cause is code-confirmed: `termination="done"`
 is set only when the coordinator volunteers `{"done":true}` and `_done()` validates it

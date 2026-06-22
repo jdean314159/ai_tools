@@ -29,7 +29,7 @@ where the spec advanced while the probe sat frozen on the unmerged branch.
 Spec was sound but had drifted ahead of the only implementation (the unmerged `codex/live-00` branch, pre-v7).
 Three corrections, no mechanics change:
 1. **Finding 1 was claimed CONFIRMED on out-of-tree evidence.** Demoted to OBSERVED on `codex/live-00` (pre-v7),
-   pending re-confirmation on a v7-conforming run; the transcript/ledger live on the unmerged branch, not
+   pending re-confirmation on a v8-conforming run; the transcript/ledger live on the unmerged branch, not
    `master` (§4).
 2. **Conformance stated.** v8 SUPERSEDES `codex/live-00`, which is non-conforming; it must be updated to spec,
    not merged as-is. Revision-and-rebase from its replay harness; the updated probe and this spec land as
@@ -339,7 +339,7 @@ Recorded, ranked by named failing condition (forcing function), NOT acted on her
   stopped only at `step_cap`. `termination="done"` is set solely when the coordinator volunteers `{"done":true}`
   and `_done()` validates it (`live_probe_00.py:138–145`); no autonomous predicate-driven stop exists. This
   evidence (transcript + ledger) lives on the unmerged branch, NOT in `master`; it must be re-confirmed on a
-  v7-conforming run before being treated as in-tree. The gap is independent of the v7 changes — predicate D and
+  v8-conforming run before being treated as in-tree. The gap is independent of the v7 changes — predicate D and
   targeted routing do not affect whether the coordinator volunteers `done` — so re-confirmation is expected to
   hold, but is not yet done. The fix (predicate drives termination; model `done` is an early-exit hint) belongs
   in SPEC-LIVE-01, likely an `agent_lib` ADR. Secondary, subordinate: coordinator context omitted the config
