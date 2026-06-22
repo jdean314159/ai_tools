@@ -1,6 +1,6 @@
 # SPEC-LIVE-00 — Live Multi-Agent Run (probe-first, observe-only)
 
-**Status:** Ready to implement (v7 — fifth review: I2/I4 boundary, path normalization; mechanics settled).
+**Status:** Ready to implement as revision-and-rebase (v8 — sixth review: conformance, evidence provenance, pinned policy).
 **Covers:** First live (model-in-loop) exercise of the COORD control plane through a probe-local orchestrator.
 Opens the LIVE campaign.
 **Depends on:** SPEC-COORD-01 (ed73f04), SPEC-COORD-02 / ADR-018 (unified ownership). All four COORD gaps closed.
@@ -11,12 +11,34 @@ surfaced library gap becomes a SEPARATE, explicitly scoped `~/repos/ai_tools` ch
 `computer_helper/AGENTS.md`).
 **Governing rule:** Gate on the control plane's RESPONSE to model output, never on the model's correctness.
 Deterministic adversarial fixtures — NOT live model fallibility — provide gate coverage.
+**Conformance (revision-and-rebase, not greenfield):** v8 is canonical and SUPERSEDES the existing
+`codex/live-00` branch, which is NON-CONFORMING (four fixtures, no FX-CONTENTION; no targeted-agent route so
+`fs_b` is unreachable; deadlock weaker than predicate D; no semantic-normalization or fresh-state isolation
+tests). That branch must be UPDATED to v8, not merged as-is: start from its replay harness, add targeted routing
+(§3.1/§3.3) + FX-CONTENTION (§6), strengthen the deadlock classifier to predicate D (§3.1) and the replay tests
+to §8.2. The updated probe and this spec MUST land as coordinated commits in their respective repositories, each
+cross-referencing the other commit; neither change is complete without the other. This prevents the earlier drift,
+where the spec advanced while the probe sat frozen on the unmerged branch.
 
 ---
 
 ## 0. Revision history
 
-### v7 — fifth review (this revision)
+### v8 — sixth review (this revision)
+
+Spec was sound but had drifted ahead of the only implementation (the unmerged `codex/live-00` branch, pre-v7).
+Three corrections, no mechanics change:
+1. **Finding 1 was claimed CONFIRMED on out-of-tree evidence.** Demoted to OBSERVED on `codex/live-00` (pre-v7),
+   pending re-confirmation on a v7-conforming run; the transcript/ledger live on the unmerged branch, not
+   `master` (§4).
+2. **Conformance stated.** v8 SUPERSEDES `codex/live-00`, which is non-conforming; it must be updated to spec,
+   not merged as-is. Revision-and-rebase from its replay harness; the updated probe and this spec land as
+   coordinated, cross-referenced commits in their respective repositories (header Conformance note).
+3. **Seed policy pinned.** `enforce_patch_ownership=True`, `approval_mode="auto"`, writable `config.toml` set
+   explicitly at construction with a test asserting them, so I3/predicate D do not silently depend on library
+   defaults (§2).
+
+### v7 — fifth review
 
 Two invariant-boundary corrections; v6 mechanics (predicate D, malformed-lease, semantic replay) confirmed good.
 1. **I2/I4 overlap on unknown tools.** I2 said "any tool outside capabilities → `tool_not_granted`," but an
@@ -157,6 +179,12 @@ Requires retrieve → read → write.
 **Seed workspace** (temp dir, no real OS reach — same containment as `coord_probe_02`):
 - `config.toml` with stale `version = "0.9.0"`.
 - `canonical.md` with the true value `1.2.0`.
+
+**Required policy (pin explicitly; do NOT rely on library defaults — the lease invariant I3 depends on these):**
+the `WorkspacePolicy`/managed coordination is built with `enforce_patch_ownership=True` (else leases are advisory
+and I3/predicate D do not hold), `approval_mode="auto"` (no human-gate stall in the loop), and `config.toml`
+listed in `writable_paths` (else every write is denied for the wrong reason). A future `agent_lib` default change
+must not silently weaken these — the probe sets them at construction and a test asserts them.
 
 **Agents:** `coordinator` (`allowed_tools=[]`); `search_agent` (`["retrieve"]`); `fs_a`, `fs_b`
 (`["read_file","replace_text"]` — deliberate overlap, see §2.1).
@@ -305,13 +333,17 @@ themselves recorded in the event (§8) so replay can assert the same classificat
 
 Recorded, ranked by named failing condition (forcing function), NOT acted on here.
 
-- **Termination / budget contract (PREDICTED #3 — CONFIRMED, Finding 1).** The live `qwen3:8b` run reached the
-  mutation path; the authoritative `_done()` became satisfiable at step 4, then the coordinator issued four more
-  `replace_text` routes and the run stopped only at `step_cap`. `termination="done"` is set solely when the
-  coordinator volunteers `{"done":true}` and `_done()` validates it (`live_probe_00.py:138–145`); no autonomous
-  predicate-driven stop exists. The fix (predicate drives termination; model `done` is an early-exit hint)
-  belongs in SPEC-LIVE-01, likely an `agent_lib` ADR. Secondary, subordinate: coordinator context omitted the
-  config contents / an explicit done flag (legibility) — would reduce frequency, cannot remove the dependency.
+- **Termination / budget contract (PREDICTED #3 — OBSERVED on `codex/live-00` (pre-v7), pending re-confirmation,
+  Finding 1).** On the pre-v7 branch, a live `qwen3:8b` run reached the mutation path; the authoritative
+  `_done()` became satisfiable at step 4, then the coordinator issued four more `replace_text` routes and the run
+  stopped only at `step_cap`. `termination="done"` is set solely when the coordinator volunteers `{"done":true}`
+  and `_done()` validates it (`live_probe_00.py:138–145`); no autonomous predicate-driven stop exists. This
+  evidence (transcript + ledger) lives on the unmerged branch, NOT in `master`; it must be re-confirmed on a
+  v7-conforming run before being treated as in-tree. The gap is independent of the v7 changes — predicate D and
+  targeted routing do not affect whether the coordinator volunteers `done` — so re-confirmation is expected to
+  hold, but is not yet done. The fix (predicate drives termination; model `done` is an early-exit hint) belongs
+  in SPEC-LIVE-01, likely an `agent_lib` ADR. Secondary, subordinate: coordinator context omitted the config
+  contents / an explicit done flag (legibility) — would reduce frequency, cannot remove the dependency.
 - **Worker-addressing absent (Observation 2).** `route_by_capability` is first-match-only and the route schema
   names only a capability, so among capability-equal workers only `fs_a` is selectable. A coordinator cannot
   distribute writes across interchangeable workers; multi-worker contention cannot arise through normal
