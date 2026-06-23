@@ -108,6 +108,46 @@ calibrated thresholds). The sibling system is the shell-script-and-flat-file ver
 version. Nothing to adopt. The value is confirmation that a serious multi-agent system independently hits the
 problem `engram` was built for and must solve it somehow.
 
+## Lesson 6 — Critic context isolation: a shared window collapses critic independence (PORTABLE BEHAVIORAL FINDING)
+
+Reported by the system's author: with a single shared window showing all agents, the critic kept agreeing with
+the coder; with per-agent windows (separate contexts), the critic produced independent assessments. The window
+boundary changed the *outputs*, so this is a context finding, not a UI one.
+
+Mechanism that fits: in a shared context the critic generates its assessment with the coder's reasoning already
+present, and models are strongly pulled toward local coherence with preceding text — ratifying the in-context
+justification is the path of least resistance. Separate contexts give the critic the *artifact* without the
+producer's rationalization, so it must form a fresh judgment instead of completing an agreement that is already
+half-written. A sycophancy bias compounds it: agreement is a high-probability continuation, and when the thing to
+agree with is in-context, that pull strengthens; isolation removes the target.
+
+Why this matters for `ai_tools` specifically — it is a sharper, independently-arrived-at version of two things
+already on record:
+
+- **ASC unforced gap #4 (typed critic contract)** — this is *why* one is needed. An untyped critic sharing the
+  worker's context degrades toward agreement, so the critic's input must be a structured, isolated assessment of
+  the artifact, not a free-text reaction to the worker's turn.
+- **The novel-tool design (Brainstormer / Writer / Critic / Continuity)** depends on it directly: a Critic that
+  shares the Writer's context will rubber-stamp the prose; the role's entire value rests on the isolation that
+  per-agent windows enforced here.
+
+Fit to the existing architecture: `agent_lib` already runs each session as a separate `ExternalAgentSession` with
+its own context, so the isolation primitive exists. The lesson is a wiring constraint, not new machinery: **route
+the critic the artifact, not the producing agent's transcript.** A corollary prediction (falsifiable): if a future
+probe threads the worker's reasoning into the critic's context "to give it more information," critic independence
+should *drop*, not rise. That is directly probeable — same-context vs artifact-only, measuring agreement rate
+against a deliberately flawed input.
+
+Honest caveats, so this is not over-generalized:
+
+- It is a single operator's qualitative read of his own system. Directionally consistent with known model
+  behavior, but "performance was worse" is an impression, not a measured agreement-rate delta. Treat it as a
+  strong hypothesis to test, not an established result.
+- Isolation has a real cost: a critic seeing only the artifact loses genuinely useful context (what was tried,
+  what constraints applied). The win is not "always isolate" — it is "isolate the critic's *judgment* from the
+  producer's *advocacy* while still supplying the facts it needs." Drawing that line precisely is the actual
+  design problem, and is what a typed critic contract should encode.
+
 ## Priority
 
 If one lesson is acted on, it is **Lesson 1**: the only place where a proven, rewrite-survived design in the
