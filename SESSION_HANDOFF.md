@@ -250,14 +250,12 @@ Everything in the repo-state assessment is lead-not-fact until the verification 
 Continues the same-day LIVE-00 update below. No `ai_tools` code changed this session; one doc added
 (`docs/internal/LESSONS_FROM_OPCOM.md`, committed as `597c60b`).
 
-**Finding 1 status (termination contract):** OBSERVED on the *historical pre-v7* `codex/live-00` branch
-(retrieve at step 2; `config.toml` updated at step 4 with `done_check` satisfied; coordinator then issued four
-more `replace_text` routes; run ended at `step_cap`, not `done`). Cause is code-confirmed: `termination="done"`
-is set only when the coordinator volunteers `{"done":true}` and `_done()` validates it
-(`live_probe_00.py:138–145`); a satisfied predicate alone never terminates. It remains **PENDING re-confirmation
-as a v8-conforming in-tree result** — the recorded evidence predates targeted routing / FX-CONTENTION /
-predicate D / strengthened replay, and lives on the unmerged branch, not `master`. Do NOT treat as in-tree
-confirmed until the v8 rebase re-runs it.
+**Finding 1 status (termination contract):** **CONFIRMED** by the fresh v8 `qwen3:8b` run in `computer_helper`
+commit `7e40b36`: retrieval succeeded at step 2; `config.toml` was updated at step 4 with `done_check` satisfied;
+the coordinator then issued four more `replace_text` routes; the run reached `step_cap` at step 12 rather than
+`done`. The in-tree transcript, results, and ledger are in `runs/live_00_v8_20260624/`. Cause is code-confirmed:
+`termination="done"` is set only when the coordinator volunteers `{"done":true}` and `_done()` validates it; a
+satisfied predicate alone never terminates.
 
 **SPEC-LIVE-01 fork — scoped, NOT written, decision not formally ratified.** Grounded fact:
 `agent_lib/src/agent_lib/coordination.py` has NO execution loop (no `run`/`step`/`terminate`/`done`);

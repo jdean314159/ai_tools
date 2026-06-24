@@ -21,6 +21,9 @@ cross-referencing the other commit; neither change is complete without the other
 where the spec advanced while the probe sat frozen on the unmerged branch.
 **Implementation reference:** the v8-conforming probe is `computer_helper` commit `7cb5192`
 (`feat(probe): conform LIVE-00 harness to v8`), whose commit message references this spec commit (`74bf4bc`).
+**Live confirmation:** `computer_helper` commit `7e40b36` records a fresh `qwen3:8b` v8 run. The authoritative
+done-check became satisfied at step 4; the coordinator issued four further `replace_text` routes, and the run
+ended at `step_cap` on step 12. Finding 1 is therefore CONFIRMED in-tree.
 
 ---
 
@@ -335,17 +338,14 @@ themselves recorded in the event (§8) so replay can assert the same classificat
 
 Recorded, ranked by named failing condition (forcing function), NOT acted on here.
 
-- **Termination / budget contract (PREDICTED #3 — OBSERVED on `codex/live-00` (pre-v7), pending re-confirmation,
-  Finding 1).** On the pre-v7 branch, a live `qwen3:8b` run reached the mutation path; the authoritative
-  `_done()` became satisfiable at step 4, then the coordinator issued four more `replace_text` routes and the run
-  stopped only at `step_cap`. `termination="done"` is set solely when the coordinator volunteers `{"done":true}`
-  and `_done()` validates it (`live_probe_00.py:138–145`); no autonomous predicate-driven stop exists. This
-  evidence (transcript + ledger) lives on the unmerged branch, NOT in `master`; it must be re-confirmed on a
-  v8-conforming run before being treated as in-tree. The gap is independent of the v7 changes — predicate D and
-  targeted routing do not affect whether the coordinator volunteers `done` — so re-confirmation is expected to
-  hold, but is not yet done. The fix (predicate drives termination; model `done` is an early-exit hint) belongs
-  in SPEC-LIVE-01, likely an `agent_lib` ADR. Secondary, subordinate: coordinator context omitted the config
-  contents / an explicit done flag (legibility) — would reduce frequency, cannot remove the dependency.
+- **Termination / budget contract (PREDICTED #3 — CONFIRMED, Finding 1).** A fresh v8 `qwen3:8b` run recorded in
+  `computer_helper` commit `7e40b36` retrieved the canonical value at step 2 and made the authoritative `_done()`
+  check satisfiable at step 4. The coordinator then issued four further `replace_text` routes; the run ended only
+  at `step_cap` on step 12. `termination="done"` is set solely when the coordinator volunteers `{"done":true}`
+  and `_done()` validates it; no autonomous predicate-driven stop exists. The transcript, results, and ledger are
+  committed under `runs/live_00_v8_20260624/`. The fix (predicate drives termination; model `done` is an early-exit
+  hint) belongs in SPEC-LIVE-01, likely an `agent_lib` ADR. Secondary, subordinate: coordinator context omitted
+  the config contents / an explicit done flag (legibility) — would reduce frequency, cannot remove the dependency.
 - **Worker-addressing absent (Observation 2).** `route_by_capability` is first-match-only and the route schema
   names only a capability, so among capability-equal workers only `fs_a` is selectable. A coordinator cannot
   distribute writes across interchangeable workers; multi-worker contention cannot arise through normal
