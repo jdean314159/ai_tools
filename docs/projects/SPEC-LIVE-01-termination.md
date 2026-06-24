@@ -1,6 +1,6 @@
 # SPEC-LIVE-01 — Predicate-Driven Termination (probe-side fix)
 
-**Status:** Ready to implement. Option 1 ratified (probe-side fix; `agent_lib` untouched).
+**Status:** Implemented and live-confirmed. Option 1 ratified (probe-side fix; `agent_lib` untouched).
 **Covers:** Closing Finding 1 from SPEC-LIVE-00 — the run overran to `step_cap` after the
 authoritative done-check was already satisfied, because termination depended on the model
 volunteering `{"done": true}` rather than on the predicate.
@@ -13,6 +13,9 @@ fixtures; a live re-run confirms the model path still reaches done and now termi
 standing gap, not closed here (see "Why probe-side").
 **Implementation:** `computer_helper` commit `7c0aa60` (`feat(probe): add release lifecycle and
 predicate stop`) implements this probe-side fix and references this decision commit (`e6e6f9c`).
+**Live confirmation:** `computer_helper` commit `fb033f8` records a fresh `qwen3:8b` run that
+retrieved at step 2, satisfied the authoritative predicate at step 4, and terminated `done` at that
+same step with no trailing routes.
 **Governing rule:** Gate on the orchestrator's RESPONSE to a satisfied predicate, never on the
 model's correctness. The model emitting or omitting `{"done": true}` must not change the stop.
 
@@ -107,12 +110,13 @@ wait, independent of how the hypothesis resolves.
 - **Regression:** the existing FX-CONTENTION and predicate-D replay fixtures must remain green
   unchanged (T3).
 
-## 7. Live confirmation
+## 7. Live confirmation — complete
 
-Re-run the v8 harness live against the local qwen3:8b: the success path must now terminate `done` at
-the step the canonical write satisfies the predicate (the four trailing `replace_text` routes from
-the Finding 1 transcript must not occur). Record the new transcript/ledger as the in-tree
-confirmation that the fix closes Finding 1 on the model path.
+A fresh `qwen3:8b` run, committed in `computer_helper` as `fb033f8`, retrieved at step 2 and
+updated `config.toml` at step 4. The done-check became satisfied at that write and the run
+terminated `done` immediately; the four trailing `replace_text` routes from the Finding 1 transcript
+did not occur. The in-tree transcript, result, and ledger are under
+`runs/live_01_termination_20260624/`. This closes Finding 1 on the model path.
 
 ## 8. Cross-repo delivery
 

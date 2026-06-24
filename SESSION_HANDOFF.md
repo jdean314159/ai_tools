@@ -8,6 +8,19 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
+## Update — 2026-06-24 (LIVE-01 and ADR-019 implemented)
+
+**LIVE-01 is complete.** `computer_helper` commit `7c0aa60` makes the authoritative done-check
+the sole termination authority; model `{"done": true}` is informational only. A fresh local
+`qwen3:8b` run recorded in `fb033f8` retrieved at step 2, satisfied the predicate at step 4, and
+terminated `done` at step 4 with no trailing routes. Evidence is committed under
+`runs/live_01_termination_20260624/`.
+
+**ADR-019 v1 is implemented.** `ai_tools` commit `f809360` exposes the owned, idempotent
+`release_patch_lease` action and records `released_at`; `computer_helper` FX-RELEASE now proves
+no-op holder → explicit release → contender progress. Owner-death detection, TTL, and automatic
+reclaim remain backlog triggers, not work in progress.
+
 ## Update — 2026-06-22 (LIVE-00 planning complete; implementation pending)
 
 `SPEC-LIVE-00` v8 is canonical at `74bf4bc` (`docs: revise LIVE-00 multi-agent probe spec`). It is a
