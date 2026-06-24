@@ -19,6 +19,8 @@ tests). That branch must be UPDATED to v8, not merged as-is: start from its repl
 to §8.2. The updated probe and this spec MUST land as coordinated commits in their respective repositories, each
 cross-referencing the other commit; neither change is complete without the other. This prevents the earlier drift,
 where the spec advanced while the probe sat frozen on the unmerged branch.
+**Implementation reference:** the v8-conforming probe is `computer_helper` commit `7cb5192`
+(`feat(probe): conform LIVE-00 harness to v8`), whose commit message references this spec commit (`74bf4bc`).
 
 ---
 
