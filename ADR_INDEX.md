@@ -169,3 +169,21 @@ and gives coordinator runtimes an explicit deny-all grant.
 **Status:** Accepted; unification promoted
 **Summary:** Manager-backed sessions use one atomic, enforced lease authority; reservations
 are a derived human-readable view. The legacy mailbox fallback remains advisory-only.
+
+## ADR-019 — Lease lifecycle: minimal recovery contract
+**File:** `adr/ADR-019-lease-lifecycle-recovery-contract.md`
+**Status:** Accepted (narrow v1: release lifecycle only)
+**Summary:** ADR-018 promotion-trigger #3 fired in-tree: the FX-CONTENTION fixture
+(`computer_helper` 7cb5192) deadlocks a legitimate contender because a held lease is never released.
+v1 (Accepted) integrates explicit release into the lease lifecycle: `release_patch_lease` exists in
+the manager but is unreachable from the loop and unobligated, so v1 makes it reachable, defines when
+a no-op/failed holder releases, adds release ownership/idempotence, and stamps `released_at`. Gated
+by FX-RELEASE (the deadlock completes). Explicitly NOT built: owner-death detection, PID tracking,
+heartbeat, TTL, automatic reclaim, exclusive/shared. FX-CONTENTION had both workers live — it forced
+the consequence of an unreleased lease, not a dead-owner detector — and the lease model carries only
+a logical owner_id (no liveness signal; cross-process file-backed store), so reclaim is a
+separately-designed capability with no forcing run yet. Owner-death is a recorded backlog trigger,
+NOT an xfail test (an xfail would manufacture a speculative implementation obligation). TTL is
+explicitly not a liveness stand-in. created_at persisted/displayed but unused for lifecycle.
+Predicate D kept out of the evidence line (single-sourced from termination, Finding 1 /
+SPEC-LIVE-01). OPCOM Lesson 1 is design input for a future reclaim build, not a spec to copy.
