@@ -8,6 +8,24 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
+## Update — 2026-06-24 (LIVE campaign completion lessons)
+
+Three reusable process lessons came out of LIVE-00/LIVE-01 and ADR-019:
+
+- **Obligation vs mechanism:** ADR-019 accepted a recovery contract because FX-CONTENTION forced an
+  unreleased-holder failure, but implemented only the forced release slice. Owner-death detection
+  remains a named backlog trigger rather than an xfail obligation. Reuse this pattern whenever a
+  gap is real but only part of its possible solution space has been forced by a run.
+- **Probe pass is not ledger validity:** two green-but-false interpretations were caught by checking
+  the emitted surface signal against the actual state. Predicate D did not fire for Finding 1 because
+  its done-check was satisfied; the old COORD-00 probe could pass while emitting a ledger that claimed
+  post-COORD capabilities were absent. Validate a probe's classification/ledger separately from its
+  pass status, especially after the system it describes evolves.
+- **Drafts require code/result grounding:** the durable division of work was draft/review versus
+  implementation/verification. Substantive corrections came from reading the actual control path,
+  deterministic fixtures, and live transcript rather than accepting design assertions. Preserve that
+  loop for future specs and ADRs.
+
 ## Update — 2026-06-24 (LIVE-01 and ADR-019 implemented)
 
 **LIVE-01 is complete.** `computer_helper` commit `7c0aa60` makes the authoritative done-check
