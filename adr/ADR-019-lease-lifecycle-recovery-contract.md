@@ -8,6 +8,8 @@ fixture in `computer_helper` (`7cb5192`, run artifacts under `runs/live_00_v8_20
 **Builds on:** ADR-018 (unified path ownership). This is ADR-018 promotion-trigger #3 firing
 (lease scope requirements — recovery/TTL — growing beyond what the current flat lease expresses).
 **Design input:** `docs/internal/LESSONS_FROM_OPCOM.md` Lesson 1 (lease lifecycle, cross-system).
+**Implementation:** `ai_tools` commit `f809360` (`feat(agent-lib): expose patch lease release action`)
+implements this v1 contract and references this decision commit (`e6e6f9c`).
 **Supersedes:** nothing. **Superseded by:** nothing yet.
 
 ---

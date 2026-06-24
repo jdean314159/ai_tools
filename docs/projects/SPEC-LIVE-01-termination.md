@@ -11,6 +11,8 @@ fixtures; a live re-run confirms the model path still reaches done and now termi
 **Discipline:** Probe lands in `~/repos/computer_helper` ONLY. This change adds NOTHING to
 `agent_lib`. The library's lack of an execution loop / termination contract is recorded as a
 standing gap, not closed here (see "Why probe-side").
+**Implementation:** `computer_helper` commit `7c0aa60` (`feat(probe): add release lifecycle and
+predicate stop`) implements this probe-side fix and references this decision commit (`e6e6f9c`).
 **Governing rule:** Gate on the orchestrator's RESPONSE to a satisfied predicate, never on the
 model's correctness. The model emitting or omitting `{"done": true}` must not change the stop.
 
