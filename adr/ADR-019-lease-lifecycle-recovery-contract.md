@@ -1,6 +1,6 @@
 # ADR-019 — Lease Lifecycle: Minimal Recovery Contract
 
-**Status:** Accepted (narrow v1: release lifecycle integration only; owner-death reclaim is a
+**Status:** Implemented (narrow v1: release lifecycle integration only; owner-death reclaim is a
 recorded backlog trigger, not built and not pinned by a test).
 **Date:** 2026-06.
 **Context spec:** SPEC-LIVE-00 (v8, `74bf4bc`); in-tree forcing evidence is the FX-CONTENTION

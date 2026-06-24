@@ -172,7 +172,7 @@ are a derived human-readable view. The legacy mailbox fallback remains advisory-
 
 ## ADR-019 — Lease lifecycle: minimal recovery contract
 **File:** `adr/ADR-019-lease-lifecycle-recovery-contract.md`
-**Status:** Accepted (narrow v1: release lifecycle only)
+**Status:** Implemented (narrow v1: release lifecycle only)
 **Summary:** ADR-018 promotion-trigger #3 fired in-tree: the FX-CONTENTION fixture
 (`computer_helper` 7cb5192) deadlocks a legitimate contender because a held lease is never released.
 v1 (Accepted) integrates explicit release into the lease lifecycle: `release_patch_lease` exists in
