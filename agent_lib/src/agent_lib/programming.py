@@ -26,6 +26,7 @@ PlanStatus = Literal["pending", "in_progress", "completed", "failed"]
 ApprovalMode = Literal["auto", "proposal_only", "human_checkpoint"]
 IsolationMode = Literal["in_place", "branch", "worktree"]
 SandboxBackend = Literal["host", "auto", "docker", "podman"]
+RELEASE_PATCH_LEASE_TOOL = "release_patch_lease"
 
 
 DEFAULT_ALLOWED_ENVIRONMENT_KEYS = [
@@ -440,6 +441,7 @@ class WorkspaceIsolationManager:
                 existing = dict(leases.get(path) or {})
                 if existing.get("owner_id") == owner_id and existing.get("status") == "active":
                     existing["status"] = "released"
+                    existing["released_at"] = datetime.now(timezone.utc).isoformat()
                     leases[path] = existing
                     released_paths.append(path)
             self._save_json(self._leases_path, leases)
@@ -467,7 +469,17 @@ class ProgrammingToolRuntime:
         return describe_tool_runtime(self)
 
     def list_tools(self) -> list[ToolSpec]:
-        return self.inner.list_tools()
+        tools = self.inner.list_tools()
+        if (
+            self.isolation_manager is not None
+            and (self.workspace.allowed_tools is None or RELEASE_PATCH_LEASE_TOOL in self.workspace.allowed_tools)
+        ):
+            tools.append(ToolSpec(
+                name=RELEASE_PATCH_LEASE_TOOL,
+                description="Release this worker's active patch lease for a workspace-relative path.",
+                input_schema={"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
+            ))
+        return tools
 
     def _deny(self, call: ToolCall, *, reason: str, error: str = 'policy_violation') -> ToolResult:
         return ToolResult(name=call.name, output=reason, success=False, meta={'error': error, 'policy_reason': reason})
@@ -492,7 +504,7 @@ class ProgrammingToolRuntime:
                 reason=f"Tool {call.name!r} is not granted to this agent.",
                 error="tool_not_granted",
             )
-        if call.name in {'read_file', 'replace_text', 'run_check'}:
+        if call.name in {'read_file', 'replace_text', 'run_check', RELEASE_PATCH_LEASE_TOOL}:
             path = str(call.arguments.get('path') or '').strip()
             if not path:
                 return self._deny(call, reason=f'{call.name} requires a path argument.', error='invalid_arguments')
@@ -502,6 +514,16 @@ class ProgrammingToolRuntime:
                 return self._deny(call, reason=f'Invalid path {path!r}: {exc}', error='invalid_path')
             if self.root not in resolved.parents and resolved != self.root:
                 return self._deny(call, reason=f'Path {path!r} escapes workspace root {self.root}.', error='path_escape')
+            if call.name == RELEASE_PATCH_LEASE_TOOL:
+                if self.isolation_manager is None:
+                    return self._deny(call, reason="Patch lease release requires an isolation manager.", error="lease_unavailable")
+                release = self.isolation_manager.release_patch_lease(self.owner_id, [path])
+                return ToolResult(
+                    name=call.name,
+                    output={"released": bool(release.released_paths), "released_paths": list(release.released_paths)},
+                    success=True,
+                    meta={"lease_status": release.status},
+                )
             if call.name == 'replace_text':
                 if not _path_matches_allowlist(path, self.workspace.writable_paths):
                     return self._deny(call, reason=f'Writes to {path!r} are not allowed by workspace policy.', error='write_denied')

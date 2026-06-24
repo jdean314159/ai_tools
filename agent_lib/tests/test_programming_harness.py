@@ -380,3 +380,30 @@ def test_programming_tool_runtime_enforces_patch_ownership(tmp_path: Path) -> No
 
     third = runtime_b.invoke(ToolCall(name="replace_text", arguments={"path": "main.py", "old": "return a + b", "new": "return a * b"}))
     assert third.success is True
+
+
+def test_programming_tool_runtime_exposes_owned_idempotent_lease_release(tmp_path: Path) -> None:
+    workspace = FileWorkspace(tmp_path)
+    workspace.write_text("main.py", "before\n")
+    manager = WorkspaceIsolationManager(tmp_path / ".agent_state")
+    policy = WorkspacePolicy(
+        root=str(tmp_path),
+        writable_paths=["main.py"],
+        allowed_tools=["replace_text", "release_patch_lease"],
+        approval_mode="auto",
+    )
+    runtime_a = make_programming_tool_runtime(workspace, policy, owner_id="worker_a", isolation_manager=manager)
+    runtime_b = make_programming_tool_runtime(workspace, policy, owner_id="worker_b", isolation_manager=manager)
+
+    assert "release_patch_lease" in {tool.name for tool in runtime_a.list_tools()}
+    assert runtime_a.invoke(ToolCall("replace_text", {"path": "main.py", "old": "before", "new": "after"})).success
+    non_holder = runtime_b.invoke(ToolCall("release_patch_lease", {"path": "main.py"}))
+    assert non_holder.success and non_holder.output["released"] is False
+    assert manager.patch_lease("main.py")["status"] == "active"
+
+    release = runtime_a.invoke(ToolCall("release_patch_lease", {"path": "main.py"}))
+    assert release.success and release.output == {"released": True, "released_paths": ["main.py"]}
+    record = manager.patch_lease("main.py")
+    assert record["status"] == "released" and record["released_at"]
+    repeated = runtime_a.invoke(ToolCall("release_patch_lease", {"path": "main.py"}))
+    assert repeated.success and repeated.output["released"] is False
