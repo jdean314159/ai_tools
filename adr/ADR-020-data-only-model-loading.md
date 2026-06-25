@@ -75,9 +75,20 @@ must load a third-party pickle checkpoint), that is a new ADR with its own forci
     deserialization. A backend that loads weights into the `ai_tools` process is a deviation
     requiring its own review.
 
-## Verification still open (not blocking this ADR)
+## Agentic-execution boundary audit closure
 
-Agentic-execution boundary: confirm no `agent_lib` tool path executes model-proposed code outside a
-sandbox. Expected outcome is "no gap" given COORD-01 never-execute routing and narrow per-agent tool
-grants (ADR-017), but it has not been audited end-to-end. Recorded here as a follow-on check, not a
-control this ADR claims to have completed.
+SPEC-EXEC-00 closed the open follow-on check. The audit found the dispatcher boundary intact:
+`EnforcingToolRuntime.invoke()` denies `run_command` unless the command exactly matches the
+workspace policy's `runnable_commands` allowlist, then passes that policy into
+`execute_workspace_command`.
+
+The audit did find one fail-open convenience path: direct callers of `execute_workspace_command`
+could omit `workspace_policy`, causing the function to fabricate a policy that allowlisted the
+command it was handed. That path was reachable through `examples/programming_task.py`, whose
+`run_command` handler called `execute_workspace_command(workspace.root, command)` without the
+example's policy.
+
+Resolution: `execute_workspace_command` now fails closed with `error == "no_workspace_policy"` when
+no explicit `WorkspacePolicy` is supplied, and the example caller passes its in-scope policy. The
+regression tests lock the intended boundary: no-policy calls refuse without execution, explicit
+allowlisted commands still run, and the dispatcher continues to deny unlisted commands.

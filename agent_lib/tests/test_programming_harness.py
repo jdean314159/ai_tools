@@ -28,11 +28,24 @@ from agent_lib.examples import FileWorkspace, make_programming_tool_runtime, res
 
 
 
+def test_execute_workspace_command_refuses_without_policy(tmp_path: Path) -> None:
+    marker = tmp_path / "ran.txt"
+    command = f"{sys.executable} -c 'from pathlib import Path; Path(\"{marker}\").write_text(\"ran\", encoding=\"utf-8\")'"
+
+    result = execute_workspace_command(tmp_path, command)
+
+    assert result.success is False
+    assert result.meta.get("error") == "no_workspace_policy"
+    assert str(result.output) == "run_command requires an explicit WorkspacePolicy; refusing to execute without one."
+    assert not marker.exists()
+
+
 def test_execute_workspace_command_scrubs_environment_by_default(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("AGENT_LIB_SECRET", "super-secret")
     command = f"{sys.executable} -c 'import os; print(os.getenv(\"AGENT_LIB_SECRET\", \"missing\"))'"
+    policy = WorkspacePolicy(root=str(tmp_path), runnable_commands=[command])
 
-    result = execute_workspace_command(tmp_path, command)
+    result = execute_workspace_command(tmp_path, command, workspace_policy=policy)
 
     assert result.success is True
     assert str(result.output).strip() == "missing"

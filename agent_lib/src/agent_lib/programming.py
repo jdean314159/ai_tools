@@ -561,7 +561,18 @@ EnforcingToolRuntime = ProgrammingToolRuntime
 
 def execute_workspace_command(root: str | Path, command: str, workspace_policy: WorkspacePolicy | None = None) -> ToolResult:
     workspace = Path(root).expanduser().resolve()
-    policy = workspace_policy or WorkspacePolicy(root=str(workspace), runnable_commands=[command])
+    if workspace_policy is None:
+        return ToolResult(
+            name='run_command',
+            output='run_command requires an explicit WorkspacePolicy; refusing to execute without one.',
+            success=False,
+            meta={
+                'error': 'no_workspace_policy',
+                'command': command,
+                'cwd': str(workspace),
+            },
+        )
+    policy = workspace_policy
     env, env_keys = _build_command_environment(policy)
     timeout_seconds = max(0.1, float(policy.command_timeout_seconds))
     max_output_chars = max(256, int(policy.max_command_output_chars))

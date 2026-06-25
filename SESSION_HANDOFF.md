@@ -8,6 +8,23 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
+## Update — 2026-06-25 (SPEC-EXEC-00 command fail-closed)
+
+**SPEC-EXEC-00 is implemented.** The ADR-020 agentic-execution follow-on audit found the
+`EnforcingToolRuntime.invoke()` dispatcher boundary intact: `run_command` still requires an exact
+`runnable_commands` allowlist match and passes the real `WorkspacePolicy` into command execution.
+The one gap was the direct helper default: `execute_workspace_command(..., workspace_policy=None)`
+self-allowlisted its input. That fail-open path was reachable through
+`examples/programming_task.py`.
+
+The helper now fails closed with `error == "no_workspace_policy"` when called without an explicit
+policy, and the example passes its in-scope policy. Regression tests cover no-policy refusal,
+explicit allowlisted execution, and unchanged dispatcher denial for unlisted commands.
+
+Validation: production caller grep shows all `agent_lib/src` call sites pass `workspace_policy`;
+focused programming/interop tests passed (`30 passed`); full `agent_lib` tests passed (`75 passed`);
+`python -c "import agent_lib"` succeeded.
+
 ## Update — 2026-06-25 (ADR-020 data-only artifact loading)
 
 **Repository state at handoff:** `ai_tools` is clean on `codex-cleanup-pass` at

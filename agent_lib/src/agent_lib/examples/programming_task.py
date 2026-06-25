@@ -283,6 +283,7 @@ def make_programming_tool_runtime(
     owner_id: str = "worker",
     isolation_manager: WorkspaceIsolationManager | None = None,
 ) -> ProgrammingToolRuntime:
+    policy = workspace_policy or WorkspacePolicy(root=str(workspace.root), writable_paths=["main.py"], runnable_commands=[], approval_mode="auto")
     base_runtime = LocalToolRuntime(
         [
             LocalTool(
@@ -326,7 +327,7 @@ def make_programming_tool_runtime(
             LocalTool(
                 name="run_command",
                 description="Run an allowed verification or inspection command inside the workspace.",
-                handler=lambda command: execute_workspace_command(workspace.root, command),
+                handler=lambda command: execute_workspace_command(workspace.root, command, workspace_policy=policy),
                 input_schema={
                     "type": "object",
                     "properties": {"command": {"type": "string"}},
@@ -335,7 +336,6 @@ def make_programming_tool_runtime(
             ),
         ]
     )
-    policy = workspace_policy or WorkspacePolicy(root=str(workspace.root), writable_paths=["main.py"], runnable_commands=[], approval_mode="auto")
     return ProgrammingToolRuntime(base_runtime, policy, root=workspace.root, owner_id=owner_id, isolation_manager=isolation_manager)
 
 
