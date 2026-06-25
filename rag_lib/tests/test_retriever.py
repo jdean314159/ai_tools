@@ -1,6 +1,8 @@
 """Tests for rag_lib.retrieval.retriever."""
 from __future__ import annotations
 
+import json
+
 import pytest
 from rag_lib.retrieval.retriever import HybridRetriever
 from rag_lib.storage.base import StoredChunk
@@ -107,7 +109,7 @@ class TestBudgetEnforcement:
 
 
 class TestBM25Persistence:
-    def test_bm25_pickle_written_after_build(self, mock_embedder, tmp_dir):
+    def test_bm25_json_written_after_build(self, mock_embedder, tmp_dir):
         pytest.importorskip("rank_bm25")
         store = _make_mock_store()
         retriever = HybridRetriever(
@@ -118,8 +120,12 @@ class TestBM25Persistence:
         chunks = [_make_chunk("test content", "c1")]
         retriever.build_bm25_index(chunks, collection="mytest")
 
-        pkl = tmp_dir / "bm25" / "mytest.pkl"
-        assert pkl.exists()
+        cache = tmp_dir / "bm25" / "mytest.json"
+        assert cache.exists()
+        data = json.loads(cache.read_text(encoding="utf-8"))
+        assert data["corpus"] == ["test content"]
+        assert data["ids"] == ["c1"]
+        assert not (tmp_dir / "bm25" / "mytest.pkl").exists()
 
     def test_bm25_loads_from_disk(self, mock_embedder, tmp_dir):
         pytest.importorskip("rank_bm25")

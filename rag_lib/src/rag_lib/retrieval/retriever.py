@@ -11,8 +11,8 @@ D12: BM25 index persisted to disk; rebuilt only when ChromaDB is newer.
 """
 from __future__ import annotations
 
+import json
 import logging
-import pickle
 import time
 from pathlib import Path
 from typing import Any
@@ -247,9 +247,15 @@ class HybridRetriever:
         self._bm25_corpus[collection] = corpus
         self._bm25_ids[collection] = ids
 
-        pkl_path = self._bm25_path / f"{collection}.pkl"
-        with open(pkl_path, "wb") as f:
-            pickle.dump({"index": index, "corpus": corpus, "ids": ids, "built_at": time.time()}, f)
+        # Persist data only (no pickle): the BM25 index is a pure function of
+        # the corpus, so we cache corpus+ids as JSON and rebuild the index on
+        # load. This removes the arbitrary-code-execution surface exposed by
+        # executable deserialization if the cache file is ever attacker-writable.
+        json_path = self._bm25_path / f"{collection}.json"
+        tmp_path = json_path.with_suffix(".json.tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump({"corpus": corpus, "ids": ids, "built_at": time.time()}, f)
+        tmp_path.replace(json_path)
         logger.debug("BM25 index persisted for collection '%s' (%d docs)", collection, len(corpus))
 
     # ------------------------------------------------------------------
@@ -260,18 +266,24 @@ class HybridRetriever:
         if collection in self._bm25_indexes:
             return self._bm25_indexes[collection], self._bm25_ids.get(collection, [])
 
-        pkl_path = self._bm25_path / f"{collection}.pkl"
-        if pkl_path.exists():
+        json_path = self._bm25_path / f"{collection}.json"
+        if json_path.exists():
             try:
-                with open(pkl_path, "rb") as f:
-                    data = pickle.load(f)
-                self._bm25_indexes[collection] = data["index"]
-                self._bm25_corpus[collection] = data["corpus"]
-                self._bm25_ids[collection] = data["ids"]
-                logger.debug("BM25 index loaded from disk for '%s'", collection)
-                return data["index"], data["ids"]
+                from rank_bm25 import BM25Okapi
+
+                with open(json_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                corpus = data["corpus"]
+                ids = data["ids"]
+                tokenized = [doc.lower().split() for doc in corpus]
+                index = BM25Okapi(tokenized)
+                self._bm25_indexes[collection] = index
+                self._bm25_corpus[collection] = corpus
+                self._bm25_ids[collection] = ids
+                logger.debug("BM25 index loaded (rebuilt from JSON) for '%s'", collection)
+                return index, ids
             except Exception as exc:
-                logger.warning("BM25 pickle corrupt for '%s': %s. Rebuilding.", collection, exc)
+                logger.warning("BM25 cache unreadable for '%s': %s. Rebuilding.", collection, exc)
 
         # No index yet: build from ChromaDB on demand
         logger.info("BM25 index not found for '%s'; building from ChromaDB...", collection)

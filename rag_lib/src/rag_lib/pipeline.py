@@ -606,9 +606,12 @@ class RAGPipeline:
     def delete_collection(self, collection: str) -> None:
         """Delete a collection and its BM25 index."""
         self._store.delete_collection(collection)
-        pkl = self._bm25_path / f"{collection}.pkl"
-        if pkl.exists():
-            pkl.unlink()
+        for cache_path in (
+            self._bm25_path / f"{collection}.json",
+            self._bm25_path / f"{collection}.pkl",
+        ):
+            if cache_path.exists():
+                cache_path.unlink()
         logger.info("Deleted collection '%s'", collection)
 
     def list_collections(self) -> list[str]:

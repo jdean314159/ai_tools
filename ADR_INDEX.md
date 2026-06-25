@@ -187,3 +187,17 @@ NOT an xfail test (an xfail would manufacture a speculative implementation oblig
 explicitly not a liveness stand-in. created_at persisted/displayed but unused for lifecycle.
 Predicate D kept out of the evidence line (single-sourced from termination, Finding 1 /
 SPEC-LIVE-01). OPCOM Lesson 1 is design input for a future reclaim build, not a spec to copy.
+
+## ADR-020 — Data-only model & artifact loading
+**File:** `adr/ADR-020-data-only-model-loading.md`
+**Status:** Accepted (documents existing invariant + BM25 pickle-removal enforcement commit; no new subsystem)
+**Summary:** Records the controls ai_tools already relies on against model-supply-chain
+compromise, made explicit as invariants: (1) no in-process weight deserialization — model
+access is HTTP to a local inference server (llama.cpp/Ollama/vLLM), weights deserialized by the
+trusted engine not by ai_tools, so the process boundary is the control; (2) GGUF/safetensors
+only, no pickle-format checkpoints; (3) no trust_remote_code (grep-verified in active Python paths); (4) no
+pickle in data caches (BM25 cache converted to JSON, chroma.py dead import removed). Scopes the
+concern into three layers — load-time compromise (controlled here), poisoned behavior (process
+review loop), provenance/policy (institutional, not code). Explicitly out of scope: origin
+allowlists, weight scanning, signature verification — no forcing exposure. Open follow-on:
+agentic-execution boundary audit (expected no-gap given COORD-01 + ADR-017).

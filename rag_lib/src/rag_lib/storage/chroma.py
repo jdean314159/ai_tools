@@ -12,7 +12,6 @@ D16: threading.Lock serializes all writes.
 from __future__ import annotations
 
 import logging
-import pickle
 import threading
 import time
 from pathlib import Path
