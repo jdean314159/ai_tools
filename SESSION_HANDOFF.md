@@ -8,6 +8,26 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
+## Update — 2026-06-25 (MAIL-00 v0 implemented)
+
+**MAIL-00 v0 is implemented script-first.** The ratified spec is
+`docs/projects/mail_lib/SPEC-MAIL-00-triage.md`; it supersedes the earlier package/UI-first draft
+and follows `docs/projects/mail_lib/mail_lib_scoping_note.md` for scope and privacy. v0 contains
+only deterministic, fixture-backed code: synthetic Thunderbird/Gloda fixtures, an mbox-first
+reader, a local SQLite indexer, rules-layer triage, a CLI digest, and fixture-only tests. No model,
+network, package promotion, Streamlit UI, `engram`, or `rag_lib` path is present.
+
+Key implementation rule: the reader matches mbox messages to Gloda metadata by bracket-stripped
+`Message-ID`; it never seeks by `messageKey`. The reader iterates mbox as the spine and treats Gloda
+as lagging enrichment, yielding mbox-only messages with reduced metadata when no Gloda row exists.
+Synthetic fixtures cover contact/identity resolution, bool Gloda flags, extensionless mbox +
+`.msf` discovery, `.sbd` recursion, Gmail signal-folder dedupe, and mbox-only messages.
+
+Validation: `tests/test_mail_lib.py` passed (`7 passed`); the fixture CLI
+`python scripts/mail_triage.py --profile tests/fixtures/mail_lib --no-index` prints a fake digest;
+the no-model/no-network grep over `mail_lib/` and `scripts/mail_triage.py` returned no matches;
+root-adjacent tests passed (`17 passed` with mail_lib/import/public API tests).
+
 ## Update — 2026-06-25 (SPEC-EXEC-00 command fail-closed)
 
 **SPEC-EXEC-00 is implemented.** The ADR-020 agentic-execution follow-on audit found the

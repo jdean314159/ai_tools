@@ -14,7 +14,8 @@
 > no UI, no package promotion, privacy hard rule). Where the prose below still says "byte offset,"
 > read "bracket-stripped Message-ID match."
 
-**Status:** Scoping note, NOT a spec. No implementation authorized yet.
+**Status:** Scoping note, NOT a spec. v0 implementation is authorized and governed by
+`SPEC-MAIL-00-triage.md`.
 **Goal:** A daily-use tool that reads email, produces a prioritized morning digest,
 filters low-value mail, and feeds activity memory into `engram`. The forcing function
 for `ai_tools` improvements; the first tool built to be used rather than to demonstrate

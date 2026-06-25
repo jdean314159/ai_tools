@@ -1,6 +1,6 @@
 # SPEC-MAIL-00 — `mail_lib` v0: Thunderbird Reader + Rules-Layer Triage (Script-First)
 
-**Status:** Draft for Codex. Supersedes the earlier package/UI-first draft of this file, which
+**Status:** Implemented. Supersedes the earlier package/UI-first draft of this file, which
 contradicted `mail_lib_scoping_note.md` and is withdrawn.
 **Authority:** This spec implements `mail_lib_scoping_note.md` (the scoping note). The note is
 authoritative on **scope and intent** (script-first, fixtures-first, CLI v0, no model, no UI, no

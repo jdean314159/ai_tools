@@ -1,0 +1,12 @@
+{
+  "open": {
+    "all": [
+      "imap://account-1%40example.test@imap.example.test/[Gmail]/All%20Mail",
+      "imap://account-1%40example.test@imap.example.test/Important",
+      "imap://account-1%40example.test@imap.example.test/[Gmail]/Starred",
+      "imap://account-1%40example.test@imap.example.test/Family/Meghan",
+      "imap://account-2%40example.test@imap.example.test/INBOX",
+      "mailbox://nobody@Local%20Folders/Archive"
+    ]
+  }
+}
