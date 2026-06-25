@@ -1,5 +1,19 @@
 # mail_lib — Email Triage Tool: Scoping Note
 
+> **CORRECTION / SUPERSESSION (2026-06-25).** The `messageKey`-as-byte-offset claim in this note
+> (sections "Gloda schema" step 2, "What is new" module 1, and "Open questions") is **DISPROVEN** for
+> IMAP folders. Real `messageKey` values (115, 123, 176) matched neither `mailbox.mbox` byte offsets
+> nor key indices. The Gloda↔mbox join is **bracket-stripped `Message-ID`** (Gloda `headerMessageID`
+> without angle brackets ↔ mbox `Message-ID` header with brackets), **validated on 5,101 real
+> messages** (account2 All Mail: Gloda 5,101 ∩ mbox 5,101). Additionally: the disk directory name
+> (e.g. `imap.gmail-3.com`) ≠ the Gloda folderURI host (`imap.gmail.com`) — map by account identity,
+> not directory name; and folders/messages can exist on disk but not in Gloda (lazy indexing), so the
+> reader iterates the **mbox** as the spine and treats Gloda as lagging enrichment.
+> **`docs/projects/mail_lib/SPEC-MAIL-00-triage.md` is authoritative on these mechanism details.**
+> The note remains authoritative on scope and intent (script-first, fixtures-first, CLI v0, no model,
+> no UI, no package promotion, privacy hard rule). Where the prose below still says "byte offset,"
+> read "bracket-stripped Message-ID match."
+
 **Status:** Scoping note, NOT a spec. No implementation authorized yet.
 **Goal:** A daily-use tool that reads email, produces a prioritized morning digest,
 filters low-value mail, and feeds activity memory into `engram`. The forcing function
