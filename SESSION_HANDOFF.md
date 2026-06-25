@@ -8,6 +8,26 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
+## Update — 2026-06-25 (ADR-020 data-only artifact loading)
+
+**Repository state at handoff:** `ai_tools` is clean on `codex-cleanup-pass` at
+`5692881` (`fix(rag_lib): replace pickle BM25 cache with JSON`).
+
+**ADR-020 is accepted and enforced.** The real exposure was the `rag_lib` BM25
+cache: `pickle.load` on a cache path would become arbitrary code execution if a
+future multi-agent workflow made that path attacker-writable. Commit `5692881`
+replaces the BM25 cache with data-only JSON (`corpus` + `ids`) and rebuilds
+`BM25Okapi` on load, removes the dead `storage/chroma.py` pickle import, and
+deletes both current `.json` and legacy `.pkl` cache files on collection deletion.
+
+**Validation:** `rg "trust_remote_code|pickle\.(load|dump)|torch\.load" --glob
+'*.py' .` returned no matches. `rag_lib` tests passed: `94 passed, 4 skipped`.
+
+**Open follow-on:** ADR-020 intentionally leaves the agentic-execution boundary
+audit open: confirm no `agent_lib` tool-dispatch path executes model-proposed code
+outside the sandbox/tool boundary. This is a separate verification pass, not a
+blocker for the BM25 cache fix.
+
 ## Update — 2026-06-24 (LIVE campaign completion lessons)
 
 Three reusable process lessons came out of LIVE-00/LIVE-01 and ADR-019:

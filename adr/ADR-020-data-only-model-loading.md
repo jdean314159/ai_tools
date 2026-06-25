@@ -62,10 +62,12 @@ must load a third-party pickle checkpoint), that is a new ADR with its own forci
 
 ## Enforcement
 
-- **Commit (BM25 cache):** `rag_lib` BM25 cache converted from pickle to data-only JSON with live
-  rebuild of `BM25Okapi` on load; dead `import pickle` removed from `storage/chroma.py`; collection
-  deletion reaps both `.json` and legacy `.pkl` caches. Verified: `rg "import pickle|pickle\.(load|dump)"
-  rag_lib/src rag_lib/tests` → no matches; 94 passed / 4 skipped.
+- **Commit (BM25 cache):** `5692881` (`fix(rag_lib): replace pickle BM25 cache with JSON`)
+  converts the `rag_lib` BM25 cache from pickle to data-only JSON with live rebuild of
+  `BM25Okapi` on load; removes the dead `import pickle` from `storage/chroma.py`; and reaps
+  both `.json` and legacy `.pkl` caches on collection deletion. Verified:
+  `rg "import pickle|pickle\.(load|dump)" rag_lib/src rag_lib/tests` → no matches; 94 passed /
+  4 skipped.
 - **Standing checks (cheap, greppable):**
   - `rg "trust_remote_code" --glob '*.py' .` → expected empty.
   - `rg "pickle\.(load|dump)|torch\.load" --glob '*.py' .` → expected empty.
