@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 import sqlite3
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from mail_lib.digest import render_digest
 from mail_lib.indexer import MailIndex
 from mail_lib.thunderbird import (
     MailMessage,
+    MessageMetadata,
     discover_mbox_files,
     iter_messages,
     load_gloda_metadata,
@@ -82,7 +84,7 @@ def test_rules_layer_triage_hits_expected_fixture_branches() -> None:
     results = {result.header_message_id: result for result in triage_messages(messages)}
 
     assert results["important-1@example.test"].priority == Priority.URGENT
-    assert "signal:important-or-starred" in results["important-1@example.test"].matched_rules
+    assert "subject:calendar" in results["important-1@example.test"].matched_rules
     assert results["newsletter-1@example.test"].priority == Priority.IGNORE
     assert results["list-1@example.test"].priority in {Priority.LOW, Priority.IGNORE}
     assert results["replied-1@example.test"].priority == Priority.LOW
@@ -105,6 +107,39 @@ def test_rules_layer_demotes_unindexed_self_addressed_mail() -> None:
 
     assert result.priority == Priority.LOW
     assert "self-mail" in result.matched_rules
+
+
+def test_rules_layer_promotes_only_recent_starred_mail() -> None:
+    recent = datetime.now().isoformat()
+    old = (datetime.now() - timedelta(days=400)).isoformat()
+
+    def starred_message(date: str) -> MailMessage:
+        return MailMessage(
+            header_message_id=f"starred-{date}@example.test",
+            subject="Project note",
+            body="Fake starred project note.",
+            sender="sender@example.test",
+            recipients=("user@example.test",),
+            date=date,
+            source_folder="[Gmail]/All Mail",
+            metadata=MessageMetadata(
+                header_message_id=f"starred-{date}@example.test",
+                message_key=None,
+                folder_id=None,
+                conversation_id=None,
+                date=None,
+                sender_id=None,
+                flags={"star": True},
+            ),
+        )
+
+    recent_result = triage_message(starred_message(recent))
+    old_result = triage_message(starred_message(old))
+
+    assert recent_result.priority == Priority.URGENT
+    assert "gloda:starred-recent" in recent_result.matched_rules
+    assert old_result.priority == Priority.NORMAL
+    assert "gloda:starred-recent" not in old_result.matched_rules
 
 
 def test_indexer_records_and_skips_processed_messages(tmp_path: Path) -> None:

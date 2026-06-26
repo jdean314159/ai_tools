@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from enum import StrEnum
 import re
 from typing import Iterable
@@ -27,6 +28,24 @@ class TriageResult:
 _NEWSLETTER_RE = re.compile(r"\b(newsletter|digest|weekly update)\b", re.IGNORECASE)
 _RECEIPT_RE = re.compile(r"\b(receipt|invoice|tracking|shipped|delivery)\b", re.IGNORECASE)
 _CALENDAR_RE = re.compile(r"\b(invitation|calendar|meeting|appointment)\b", re.IGNORECASE)
+
+# A starred message older than this is not treated as urgent. Tune as needed.
+URGENT_MAX_AGE_DAYS = 183  # ~6 months
+
+
+def _is_recent(date_iso: str | None, *, max_age_days: int = URGENT_MAX_AGE_DAYS) -> bool:
+    """True if the message date parses and is within max_age_days of now.
+
+    Unknown/unparseable dates return False: do not promote what cannot be dated.
+    """
+    if not date_iso:
+        return False
+    try:
+        when = datetime.fromisoformat(date_iso)
+    except ValueError:
+        return False
+    now = datetime.now(when.tzinfo) if when.tzinfo else datetime.now()
+    return (now - when) <= timedelta(days=max_age_days)
 
 
 def _is_self_mail(message: MailMessage) -> bool:
@@ -73,11 +92,10 @@ def triage_message(message: MailMessage) -> TriageResult:
         reason = "Calendar or appointment related message."
 
     self_mail = _is_self_mail(message)
-    signal_names = {folder.lower() for folder in message.signal_folders}
-    if not self_mail and (flags.get("star") or any("important" in folder or "starred" in folder for folder in signal_names)):
-        rules.append("signal:important-or-starred")
+    if not self_mail and flags.get("star") and _is_recent(message.date):
+        rules.append("gloda:starred-recent")
         priority = Priority.URGENT
-        reason = "Message is starred or appears in an important signal folder."
+        reason = "You starred this message and it is recent."
 
     if not self_mail and flags.get("replied") and priority != Priority.IGNORE:
         rules.append("gloda:replied")
