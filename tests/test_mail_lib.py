@@ -8,13 +8,14 @@ import pytest
 from mail_lib.digest import render_digest
 from mail_lib.indexer import MailIndex
 from mail_lib.thunderbird import (
+    MailMessage,
     discover_mbox_files,
     iter_messages,
     load_gloda_metadata,
     normalize_message_id,
     open_gloda_readonly,
 )
-from mail_lib.triage import Priority, triage_messages
+from mail_lib.triage import Priority, triage_message, triage_messages
 
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "mail_lib"
@@ -85,6 +86,25 @@ def test_rules_layer_triage_hits_expected_fixture_branches() -> None:
     assert results["newsletter-1@example.test"].priority == Priority.IGNORE
     assert results["list-1@example.test"].priority in {Priority.LOW, Priority.IGNORE}
     assert results["replied-1@example.test"].priority == Priority.LOW
+
+
+def test_rules_layer_demotes_unindexed_self_addressed_mail() -> None:
+    message = MailMessage(
+        header_message_id="self-mail@example.test",
+        subject="Calendar invitation: self transfer",
+        body="Fake self-addressed platform-transfer message.",
+        sender="user@example.test",
+        recipients=("user@example.test",),
+        date=None,
+        source_folder="INBOX",
+        signal_folders=("Important",),
+        metadata=None,
+    )
+
+    result = triage_message(message)
+
+    assert result.priority == Priority.LOW
+    assert "self-mail" in result.matched_rules
 
 
 def test_indexer_records_and_skips_processed_messages(tmp_path: Path) -> None:
