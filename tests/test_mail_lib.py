@@ -83,7 +83,7 @@ def test_rules_layer_triage_hits_expected_fixture_branches() -> None:
     messages = list(iter_messages(FIXTURE_ROOT))
     results = {result.header_message_id: result for result in triage_messages(messages)}
 
-    assert results["important-1@example.test"].priority == Priority.URGENT
+    assert results["important-1@example.test"].priority == Priority.NORMAL
     assert "subject:calendar" in results["important-1@example.test"].matched_rules
     assert results["newsletter-1@example.test"].priority == Priority.IGNORE
     assert results["list-1@example.test"].priority in {Priority.LOW, Priority.IGNORE}
@@ -142,6 +142,30 @@ def test_rules_layer_promotes_only_recent_starred_mail() -> None:
     assert "gloda:starred-recent" not in old_result.matched_rules
 
 
+def test_rules_layer_promotes_only_recent_calendar_mail() -> None:
+    recent = datetime.now().isoformat()
+    old = (datetime.now() - timedelta(days=90)).isoformat()
+
+    def calendar_message(date: str) -> MailMessage:
+        return MailMessage(
+            header_message_id=f"calendar-{date}@example.test",
+            subject="Calendar invitation: project sync",
+            body="Fake calendar message.",
+            sender="sender@example.test",
+            recipients=("user@example.test",),
+            date=date,
+            source_folder="[Gmail]/All Mail",
+        )
+
+    recent_result = triage_message(calendar_message(recent))
+    old_result = triage_message(calendar_message(old))
+
+    assert recent_result.priority == Priority.URGENT
+    assert "subject:calendar" in recent_result.matched_rules
+    assert old_result.priority == Priority.NORMAL
+    assert "subject:calendar" in old_result.matched_rules
+
+
 def test_indexer_records_and_skips_processed_messages(tmp_path: Path) -> None:
     messages = list(iter_messages(FIXTURE_ROOT))
     results = triage_messages(messages)
@@ -149,7 +173,7 @@ def test_indexer_records_and_skips_processed_messages(tmp_path: Path) -> None:
         assert len(index.new_messages(messages)) == len(messages)
         index.record_results(messages, results, processed_at=123.0)
         assert index.new_messages(messages) == []
-        assert index.get_priority("important-1@example.test") == "urgent"
+        assert index.get_priority("important-1@example.test") == "normal"
 
 
 def test_digest_contains_expected_sections_and_fake_messages() -> None:

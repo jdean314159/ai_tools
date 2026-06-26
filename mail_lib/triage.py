@@ -30,7 +30,8 @@ _RECEIPT_RE = re.compile(r"\b(receipt|invoice|tracking|shipped|delivery)\b", re.
 _CALENDAR_RE = re.compile(r"\b(invitation|calendar|meeting|appointment)\b", re.IGNORECASE)
 
 # A starred message older than this is not treated as urgent. Tune as needed.
-URGENT_MAX_AGE_DAYS = 183  # ~6 months
+URGENT_MAX_AGE_DAYS = 183  # ~6 months (starred mail)
+CALENDAR_MAX_AGE_DAYS = 31  # ~1 month (calendar mail goes stale faster)
 
 
 def _is_recent(date_iso: str | None, *, max_age_days: int = URGENT_MAX_AGE_DAYS) -> bool:
@@ -88,8 +89,12 @@ def triage_message(message: MailMessage) -> TriageResult:
 
     if _CALENDAR_RE.search(subject):
         rules.append("subject:calendar")
-        priority = Priority.URGENT
-        reason = "Calendar or appointment related message."
+        if _is_recent(message.date, max_age_days=CALENDAR_MAX_AGE_DAYS):
+            priority = Priority.URGENT
+            reason = "Recent calendar or appointment message."
+        else:
+            priority = Priority.NORMAL
+            reason = "Calendar or appointment message, but not recent."
 
     self_mail = _is_self_mail(message)
     if not self_mail and flags.get("star") and _is_recent(message.date):
