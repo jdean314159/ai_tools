@@ -7,7 +7,7 @@ first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: MAIL-00 v0 COMPLETE and live-validated. MAIL-01 personal-rule planning is next.
+**Phase: MAIL-00 v0 COMPLETE and live-validated. MAIL-01 draft review is next.
 Neural memory remains parked; knowledge-curation MVP remains complete.**
 
 **mail_lib — current active project.** MAIL-00 shipped a script-first, deterministic Thunderbird
@@ -18,8 +18,10 @@ live run forced three corrections: self-mail demotion (`553c49e`), recent user-s
 (`175352e`, 183 days), and calendar recency gating (`f56e19c`, 31 days). Tests currently pass:
 `10` mail_lib tests and `20` combined mail/import/public-API tests.
 
-The next action is to draft and ratify `SPEC-MAIL-01-personal-rules.md`: a file-backed deterministic
-personal-rule layer with explicit precedence over built-in heuristics. Do not include model calls,
+`SPEC-MAIL-01-personal-rules.md` now exists as an unratified draft. It specifies a file-backed
+deterministic personal-rule layer with explicit precedence over built-in heuristics and a graduated
+built-in self-mail floor for link-bearing saved-article messages. No MAIL-01 code is authorized yet.
+The next action is to review and ratify or revise the draft. Do not include model calls,
 summarization, behavioral instrumentation, `engram`, `rag_lib`, drafting, or UI in MAIL-01. See
 `docs/projects/mail_lib/mail_lib_status_v0.1.md` and
 `docs/projects/mail_lib/mail_lib_system_parameters.md`.

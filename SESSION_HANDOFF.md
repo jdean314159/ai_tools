@@ -4,6 +4,7 @@
 **Read order for a new mail_lib thread:** this file →
 `docs/projects/mail_lib/mail_lib_status_v0.1.md` →
 `docs/projects/mail_lib/mail_lib_system_parameters.md` →
+`docs/projects/mail_lib/SPEC-MAIL-01-personal-rules.md` →
 `docs/projects/mail_lib/SPEC-MAIL-00-triage.md` →
 `docs/projects/mail_lib/mail_lib_scoping_note.md`.
 STATUS.md is the standing state; this file is "what just happened and the next action."
@@ -32,11 +33,12 @@ import-provenance, and public-API gate passes (`20 passed`); the fixture CLI sti
 no-model/no-network grep remains empty.
 
 **Forcing result:** deterministic global heuristics cannot encode personal interest. They correctly
-de-flooded urgency but also buried wanted automated/publication/event mail. The next action is
-planning, not immediate expansion: draft and ratify a thin `SPEC-MAIL-01-personal-rules.md` for a
-file-backed deterministic personal-rule layer whose rules override built-in heuristics. Keep model
-classification, summarization, behavioral instrumentation, `engram`, `rag_lib`, drafting, and UI
-out of MAIL-01.
+de-flooded urgency but also buried wanted automated/publication/event mail. A draft
+`SPEC-MAIL-01-personal-rules.md` now defines a file-backed deterministic personal-rule layer whose
+rules override built-in heuristics, plus a graduated built-in floor for link-bearing self-mail. It
+is not ratified and no MAIL-01 code has been authorized. The next action is to review and ratify or
+revise that draft. Keep model classification, summarization, behavioral instrumentation, `engram`,
+`rag_lib`, drafting, and UI out of MAIL-01.
 
 ## Update — 2026-06-25 (MAIL-00 v0 implemented)
 
