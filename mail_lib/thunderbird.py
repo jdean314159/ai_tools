@@ -275,10 +275,26 @@ def _decode_part(message: Message) -> str:
 
 
 _TAG_RE = re.compile(r"<[^>]+>")
+_HREF_RE = re.compile(r"""<a\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>""", re.IGNORECASE)
 
 
 def _html_to_text(text: str) -> str:
-    return html.unescape(_TAG_RE.sub(" ", text)).strip()
+    """Convert HTML to visible text, preserving anchor href URLs.
+
+    Tag stripping alone discards <a href="..."> targets, which silently loses
+    URLs that are only present as link destinations (common in mail shared from
+    a phone). Append each http(s) href so the URL survives in the body text.
+    """
+    hrefs = [
+        unescaped
+        for raw in _HREF_RE.findall(text)
+        if (unescaped := html.unescape(raw)).lower().startswith(("http://", "https://"))
+    ]
+    stripped = html.unescape(_TAG_RE.sub(" ", text)).strip()
+    if not hrefs:
+        return stripped
+    appended = " ".join(hrefs)
+    return f"{stripped} {appended}".strip()
 
 
 def _addresses(header_value: str | None) -> tuple[str, ...]:

@@ -13,7 +13,39 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 
 ## TL;DR
 
-## Update — 2026-06-27 (MAIL-00 live validation complete; Sprint 1 next)
+## Update — 2026-06-27 (MAIL-01 implemented + live-validated; digest traceability next)
+
+**MAIL-01 is implemented and maintainer-live-validated under revision 4 of
+`docs/projects/mail_lib/SPEC-MAIL-01-personal-rules.md`.** The live-validation follow-up sets the
+bare-link prose threshold to **40 non-whitespace characters** and leaves subject-tag promotion
+optional. Real mail, private rule values, and digest content were not recorded in the repository.
+
+The implementation adds a strict TOML personal-rule loader (`sender` or `domain`, optional
+`subject`, explicit priority), deterministic most-specific/file-order selection, XDG-aware rule
+location, `--rules` and mail-free `--validate-rules` CLI modes, and fail-closed whole-file rejection.
+Invalid configuration renders a built-in fallback digest but cannot mutate the index; an explicitly
+missing rule path exits before profile/index access. Effective personal results are created in one
+per-message loop and are shared by persistence and rendering.
+
+The built-in self-mail floor is graduated: URL-shaped self-mail surfaces at `normal`; other
+self-mail stays `low`. HTML anchor URLs survive body conversion with entity decoding. Development
+and automated validation by Codex remained synthetic-only; no real mail, private rules, or live
+digest output was provided to Codex or recorded.
+
+Validation: MAIL-00/01 tests pass (`46 passed`); the combined mail, import-provenance, and public-API
+gate passes (`56 passed`); Ruff passes; fixture validation and triage CLI runs pass; the
+no-model/no-network grep is empty.
+
+**Next queued item:** draft a thin digest-traceability follow-on before changing code. The live run
+showed that the digest needs enough deterministic provenance to distinguish why a message remained
+at `Default normal priority`—for example, whether self-mail detection did not fire (including the
+known Bcc-to-self blind spot) or a body-shape threshold did not match. Define only the smallest
+synthetic-fixture-backed output needed to expose applied built-in/personal rule tokens and relevant
+classification signals. Do not include behavioral instrumentation, models, `engram`, `rag_lib`, UI,
+or mail actions. The earlier 120-character tuning question is closed at **40**; reopen it only if a
+future private run produces a structural forcing result.
+
+## Update — 2026-06-27 (historical pre-MAIL-01 state; superseded above)
 
 **MAIL-00 v0 is complete and validated on the maintainer's real Thunderbird profile.** Real mail
 content remains private and is not recorded in this repository. The post-run status is
@@ -32,13 +64,11 @@ Current validation: `tests/test_mail_lib.py` passes (`10 passed`); the combined 
 import-provenance, and public-API gate passes (`20 passed`); the fixture CLI still runs; the
 no-model/no-network grep remains empty.
 
-**Forcing result:** deterministic global heuristics cannot encode personal interest. They correctly
-de-flooded urgency but also buried wanted automated/publication/event mail. A draft
-`SPEC-MAIL-01-personal-rules.md` now defines a file-backed deterministic personal-rule layer whose
-rules override built-in heuristics, plus a graduated built-in floor for link-bearing self-mail. It
-is not ratified and no MAIL-01 code has been authorized. The next action is to review and ratify or
-revise that draft. Keep model classification, summarization, behavioral instrumentation, `engram`,
-`rag_lib`, drafting, and UI out of MAIL-01.
+**Forcing result at that point:** deterministic global heuristics could not encode personal interest.
+They correctly de-flooded urgency but also buried wanted automated/publication/event mail. This led
+to the MAIL-01 draft, subsequently revised, ratified, and implemented as recorded in the update
+above. Model classification, summarization, behavioral instrumentation, `engram`, `rag_lib`,
+drafting, and UI remained out of MAIL-01.
 
 ## Update — 2026-06-25 (MAIL-00 v0 implemented)
 

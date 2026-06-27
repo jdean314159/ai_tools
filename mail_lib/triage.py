@@ -28,10 +28,12 @@ class TriageResult:
 _NEWSLETTER_RE = re.compile(r"\b(newsletter|digest|weekly update)\b", re.IGNORECASE)
 _RECEIPT_RE = re.compile(r"\b(receipt|invoice|tracking|shipped|delivery)\b", re.IGNORECASE)
 _CALENDAR_RE = re.compile(r"\b(invitation|calendar|meeting|appointment)\b", re.IGNORECASE)
+_URL_RE = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
 
 # A starred message older than this is not treated as urgent. Tune as needed.
 URGENT_MAX_AGE_DAYS = 183  # ~6 months (starred mail)
 CALENDAR_MAX_AGE_DAYS = 31  # ~1 month (calendar mail goes stale faster)
+SELFMAIL_LINK_MAX_PROSE_CHARS = 40
 
 
 def _is_recent(date_iso: str | None, *, max_age_days: int = URGENT_MAX_AGE_DAYS) -> bool:
@@ -62,6 +64,15 @@ def _is_self_mail(message: MailMessage) -> bool:
     if not sender:
         return False
     return sender in {(item or "").strip().lower() for item in message.recipients}
+
+
+def _is_bare_link(body: str) -> bool:
+    """Return whether a body contains URLs and at most a short amount of prose."""
+    if not _URL_RE.search(body):
+        return False
+    without_urls = _URL_RE.sub("", body)
+    prose_characters = sum(not character.isspace() for character in without_urls)
+    return prose_characters <= SELFMAIL_LINK_MAX_PROSE_CHARS
 
 
 def triage_message(message: MailMessage) -> TriageResult:
@@ -108,9 +119,14 @@ def triage_message(message: MailMessage) -> TriageResult:
         reason = "Thread already has a reply; demoted."
 
     if self_mail:
-        rules.append("self-mail")
-        priority = Priority.LOW
-        reason = "Self-addressed mail (likely platform transfer); demoted."
+        if _is_bare_link(message.body):
+            rules.append("self-mail:link")
+            priority = Priority.NORMAL
+            reason = "Self-addressed mail carrying a link (likely a saved article)."
+        else:
+            rules.append("self-mail")
+            priority = Priority.LOW
+            reason = "Self-addressed mail (likely platform transfer); demoted."
 
     return TriageResult(
         header_message_id=message.header_message_id,

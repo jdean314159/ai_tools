@@ -3,7 +3,9 @@
 **Status:** Architecture/parameters note. Captures decisions made while scoping the full system, after
 v0's live run. Not a build spec — the source of truth for *what we're building and why* before each
 sprint gets its own thin spec.
-**Current implementation state:** see `mail_lib_status_v0.1.md`.
+**Current implementation state:** MAIL-00 live-run findings are in `mail_lib_status_v0.1.md`;
+MAIL-01 deterministic personal rules are implemented and maintainer-live-validated under
+`SPEC-MAIL-01-personal-rules.md`. A thin digest-traceability follow-on is next.
 
 ---
 
@@ -94,10 +96,12 @@ filter. Build the small real thing; let daily use teach the next move.
 
 ## Immediate next step
 
-**Sprint 1 — the deterministic personal-rule engine**, built lightweight (thin scope → build against
-real mail → correct), matching weight to risk (a rule file, not a security boundary). It is both the
-usable tool that buys back the maintainer's morning and the foundation everything downstream sits on.
+**Draft a thin digest-traceability follow-on grounded in MAIL-01's private live run.** The digest
+needs deterministic provenance sufficient to distinguish an unmatched default from self-mail/body
+shape cases without exposing message content. Specify the smallest synthetic-fixture-backed output
+that surfaces applied rule tokens and relevant classification signals; do not change code first.
 
-The next thread should first draft and ratify `SPEC-MAIL-01-personal-rules.md`. Do not fold behavioral
-instrumentation, summarization, model classification, memory ingestion, retrieval, drafting, or UI
-into that spec; each requires its own forcing result and thin follow-on spec.
+Behavioral instrumentation remains the next roadmap sprint after this diagnostic usability gap is
+resolved. Summarization remains independently pullable forward, but model classification, memory
+ingestion, retrieval, drafting, UI, and mail actions are not part of MAIL-01 or its traceability
+follow-on.

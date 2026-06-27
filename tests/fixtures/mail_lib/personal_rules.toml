@@ -1,0 +1,15 @@
+# Synthetic MAIL-01 rules. Reserved fixture domains only.
+[[rule]]
+sender = "ceo@example.test"
+priority = "urgent"
+note = "Fixture preferred sender."
+
+[[rule]]
+domain = "example.test"
+subject = "weekly newsletter"
+priority = "normal"
+note = "Fixture newsletter rescue."
+
+[[rule]]
+subject = "unindexed local note"
+priority = "urgent"
