@@ -1,12 +1,42 @@
 # ai_tools — Session Handoff (for new thread / Codex)
 
-**Date:** 2026-06-15
-**Read order for a new thread:** this file → `docs/internal/STATUS.md` → `adr/ADR-016` → `docs/design/DECISION_HISTORY_SCHEMA.md`.
+**Date:** 2026-06-27
+**Read order for a new mail_lib thread:** this file →
+`docs/projects/mail_lib/mail_lib_status_v0.1.md` →
+`docs/projects/mail_lib/mail_lib_system_parameters.md` →
+`docs/projects/mail_lib/SPEC-MAIL-00-triage.md` →
+`docs/projects/mail_lib/mail_lib_scoping_note.md`.
 STATUS.md is the standing state; this file is "what just happened and the next action."
 
 ---
 
 ## TL;DR
+
+## Update — 2026-06-27 (MAIL-00 live validation complete; Sprint 1 next)
+
+**MAIL-00 v0 is complete and validated on the maintainer's real Thunderbird profile.** Real mail
+content remains private and is not recorded in this repository. The post-run status is
+`docs/projects/mail_lib/mail_lib_status_v0.1.md`; the longer-term dependency order and settled
+parameters are in `docs/projects/mail_lib/mail_lib_system_parameters.md`.
+
+Three post-run corrections landed after `8ee955b`:
+
+- `553c49e` — self-addressed mail demotes to `low`;
+- `175352e` — only the Gloda star flag, not Gmail folder membership, can promote, and only within
+  `URGENT_MAX_AGE_DAYS=183`;
+- `f56e19c` — calendar/appointment subjects promote only within
+  `CALENDAR_MAX_AGE_DAYS=31`.
+
+Current validation: `tests/test_mail_lib.py` passes (`10 passed`); the combined mail_lib,
+import-provenance, and public-API gate passes (`20 passed`); the fixture CLI still runs; the
+no-model/no-network grep remains empty.
+
+**Forcing result:** deterministic global heuristics cannot encode personal interest. They correctly
+de-flooded urgency but also buried wanted automated/publication/event mail. The next action is
+planning, not immediate expansion: draft and ratify a thin `SPEC-MAIL-01-personal-rules.md` for a
+file-backed deterministic personal-rule layer whose rules override built-in heuristics. Keep model
+classification, summarization, behavioral instrumentation, `engram`, `rag_lib`, drafting, and UI
+out of MAIL-01.
 
 ## Update — 2026-06-25 (MAIL-00 v0 implemented)
 

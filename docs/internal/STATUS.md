@@ -1,19 +1,32 @@
 # Repo Status
 
-Last updated: 2026-06-13
+Last updated: 2026-06-27
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: neural memory campaign COMPLETE (layer parked). Knowledge-curation MVP
-COMPLETE (resolved against a subsystem). No campaign mid-flight in code.**
+**Phase: MAIL-00 v0 COMPLETE and live-validated. MAIL-01 personal-rule planning is next.
+Neural memory remains parked; knowledge-curation MVP remains complete.**
 
-The two most recent threads both concluded by *declining* to build the larger
-system the investigation started toward — each on evidence, per the governing
-rule (build a capability when a concrete run fails without it, not
-speculatively).
+**mail_lib — current active project.** MAIL-00 shipped a script-first, deterministic Thunderbird
+reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
+extensionless mbox files as the source of truth, joins Gloda metadata by bracket-stripped
+`Message-ID`, treats Gloda as lagging enrichment, and remains read-only. A private maintainer-only
+live run forced three corrections: self-mail demotion (`553c49e`), recent user-star-only urgency
+(`175352e`, 183 days), and calendar recency gating (`f56e19c`, 31 days). Tests currently pass:
+`10` mail_lib tests and `20` combined mail/import/public-API tests.
+
+The next action is to draft and ratify `SPEC-MAIL-01-personal-rules.md`: a file-backed deterministic
+personal-rule layer with explicit precedence over built-in heuristics. Do not include model calls,
+summarization, behavioral instrumentation, `engram`, `rag_lib`, drafting, or UI in MAIL-01. See
+`docs/projects/mail_lib/mail_lib_status_v0.1.md` and
+`docs/projects/mail_lib/mail_lib_system_parameters.md`.
+
+Earlier neural-memory and knowledge-curation threads both concluded by *declining* to build the
+larger system their investigations started toward — each on evidence, per the governing rule
+(build a capability when a concrete run fails without it, not speculatively).
 
 **Neural memory (RTRL/TITANS) — parked, default-off.** Fully implemented behind
 the additive `MemoryLayer` seam (ADR-016 / NEURAL-01..06) and evaluated.
