@@ -36,6 +36,22 @@ F1 chat, F2 IMAP `\Seen` propagation, F3 `rag_lib`, F4 `engram`, and F5 interest
 scoring remain dormant until their named triggers in SPEC-MAIL-02 fire. Nothing
 else is queued for `mail_lib`.
 
+## Update — 2026-07-01 (NEURAL-07 complete; RTRL output isolated)
+
+Follow-up RTRL experiments are complete. Affinity is inactive because neural
+recall contribution remains disabled. A seeded, calibrated surprise-threshold
+finalist reduced neural updates but failed the full six-trial gate. Direct
+inspection found the expected episode in 0/180 prompt hints; a direct-latent
+variant still missed 76.1%. A held-out candidate-utility scorer with balanced
+hard-negative replay produced no decoy or stale improvement across three seeds.
+
+Decision: RTRL may collect telemetry when explicitly enabled, but it does not
+affect recall by default. Retrieval reranking remains absent; prompt advisory
+and surprise-based episode-importance adjustment require separate experimental
+opt-ins. The durable evidence and reactivation gate are in the NEURAL-07 report.
+Do not reconnect output without a real usefulness-feedback source available
+outside the test set.
+
 ## Update — 2026-06-27 (MAIL-01 implemented + live-validated; digest traceability next)
 
 **MAIL-01 is implemented and maintainer-live-validated under revision 4 of
@@ -226,9 +242,9 @@ library and probe commits are separate. Targeted `agent_lib` tests (73) and
 
 **Open threads (none urgent):**
 
-- Write a tracked digest for the neural-eval results if neural work resumes;
-  the `affinity_weight=2.1` recall-collapse evidence currently exists only in
-  the untracked `runs/` tree.
+- Neural evaluation now has a tracked digest in
+  `docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`; raw run artifacts
+  remain intentionally ignored.
 - The thematic curation of `3dceb3e` is intentionally deferred unless a future
   bisect or revert needs it.
 - A deterministic control plane and unified ownership now make a live
@@ -248,10 +264,12 @@ design corrections into clean review passes; carry it into every future spec.
 Two threads closed this session, both landing on "don't build the big thing."
 
 1. **Neural memory campaign is COMPLETE and the layer is PARKED.** The
-   RTRL/TITANS layer (NEURAL-01 -> 06) was fully implemented, evaluated, and
+   RTRL/TITANS layer (NEURAL-01 -> 07) was fully implemented, evaluated, and
    parked default-off as a research artifact. It did not earn core-feature
    status: re-ranking was rejected on catastrophic recall loss, and the
-   TITANS-style prompt synthesis returned a clean null in generation-mode eval.
+   TITANS-style prompt synthesis returned a clean null, and NEURAL-07 later
+   demonstrated that its episode guidance was unrelated. All recall-affecting
+   outputs are now default-off.
    ADR-016 is the decision record.
 2. **Knowledge-curation MVP resolved AGAINST a wiki/adjudicator subsystem.** A
    three-phase probe showed an LLM adjudicator is untrustworthy and the value
@@ -296,13 +314,18 @@ ADR-016. The arc:
   weight moved to config (0.15 default).
 - **NEURAL-05** — **re-ranking disabled** after two clean runs showed
   catastrophic direct-recall loss at every weight. Surprise repurposed to
-  write-side episode-importance (bounded, advisory, never suppresses).
+  write-side episode-importance (bounded, advisory, never suppresses); this
+  influence was later made default-off by NEURAL-07.
 - **NEURAL-06** — TITANS-style prompt-hint synthesis: value-projector
   pseudoinverse -> episode alignment -> template `[Neural context]` hint.
   `value_dim` 16->64 attempted but **reverted to 32 on RTRL overflow**
   (600-step stability test); `hidden_dim` stays 32 (P-matrix overflow).
   Config versioned (now v3); non-finite neural state fails closed (halts
   reads/writes/hints).
+- **NEURAL-07** — seeded affinity/threshold/advisory/utility follow-up. Affinity
+  confirmed inactive; threshold finalist failed full confirmation; 0/180 hints
+  named the expected episode; feedback-free utility scoring failed across three
+  seeds. Prompt and episode-importance outputs are now separately default-off.
 
 **NEURAL-06 generation-mode eval (2026-06-11): clean null.** qwen3:8b
 generator, qwen3.6:27b judge, 60-fact corpus, 6 trials, 1 warmup replay,
@@ -314,7 +337,7 @@ generation mode (unconstrained generator answers from parametric memory
 regardless of hints).
 
 **Decision: layer PARKED** (ADR-016 final section). Default-off behind the
-NEURAL-01 seam, not actively developed. A reframe was identified but NOT
+NEURAL-01 seam, output-isolated, and not actively developed. A reframe was identified but NOT
 pursued: the layer's distinctive output is its label-free surprise signal,
 which suits novelty/anomaly use (agent-loop derailment, memory-poisoning
 detection, surprise-based segmentation) rather than retrieval. **Reactivation
@@ -369,6 +392,8 @@ them. (VERIFY this is how the gate is scoped.)
   concrete need + predeclared gate. The promising-looking reframe
   (novelty/anomaly via surprise signal) is untested and explicitly NOT a
   mandate to build.
+- **Neural output: isolated from recall.** Reranking is absent; prompt advisory
+  and surprise-based importance adjustment are explicit experimental opt-ins.
 - **value_dim stays 32, hidden_dim stays 32.** 64 caused RTRL/P-matrix
   overflow; reverted. Documented in ADR-016 as a superseded parameter change.
 - **No LLM knowledge adjudicator.** Phase 5C proved deterministic metadata

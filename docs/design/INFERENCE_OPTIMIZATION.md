@@ -73,9 +73,9 @@ the acceptance test. Do not build speculatively.
 - A context-variable registry (keeps large data out of the LLM prompt).
 - Integration with `llm_engines.get_engine` for sub-calls (already exists).
 
-## 2. KV-cache layer — partially implemented
+## 2. KV-cache layer — contract scaffolding only
 
-### 2a. Per-response cache statistics — **implemented**
+### 2a. Per-response cache-statistics schema — **implemented; reporting deferred**
 
 `llm_engines.CacheStats` has been added to `GenerationResponse`:
 
@@ -98,18 +98,16 @@ print(response.cache_stats.prompt_cache_hit_tokens)
 - `cache_key` — key used for this entry (backend-reported, may be None)
 - `total_cached_tokens` (property) — sum of hit + miss
 
-Backends populate `cache_stats` when they expose cache information. Ollama
-exposes partial stats. vLLM exposes full prefix-cache statistics. Backends
-that do not report cache data leave `cache_stats` as zero-value (`hit_ratio`
-== 0.0, which means *unknown*, not *no hits*).
+No current backend populates `cache_stats`. Responses therefore carry the
+zero-value schema (`hit_ratio == 0.0`, meaning *unknown*, not *no hits*).
+Provider-specific extraction for Ollama, vLLM, or llama.cpp remains deferred.
 
-### 2b. Session-based prefix-cache hint — **implemented**
+### 2b. Session-based prefix-cache field — **schema implemented; backend use deferred**
 
-`GenerationRequest.session_id: str | None` has been added. Backends that
-support prefix caching (vLLM, llama.cpp with `cache_prompt=True`) use it to
-group requests sharing a common prefix (system prompt, tool spec, long
-task preamble) and serve those tokens from cache rather than recomputing
-attention.
+`GenerationRequest.session_id: str | None` has been added as a future hint for
+grouping requests that share a common prefix (system prompt, tool spec, long
+task preamble). No current backend reads the field or uses it to manage cache
+reuse.
 
 Usage:
 
@@ -121,7 +119,7 @@ request = GenerationRequest(
 )
 ```
 
-Ignored by backends that do not support prefix caching.
+Currently ignored by all backends.
 
 ### 2c. Cache observability in `llm_inspector` — deferred
 

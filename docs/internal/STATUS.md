@@ -1,45 +1,54 @@
 # Repo Status
 
-Last updated: 2026-06-27
+Last updated: 2026-07-03
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: MAIL-00 v0 COMPLETE and live-validated. MAIL-01 draft review is next.
-Neural memory remains parked; knowledge-curation MVP remains complete.**
+**Phase: MAIL-02 MVP COMPLETE; private live validation and a two-week adoption
+run are next. Neural memory remains parked and output-isolated; NAV-TEST-00 is
+available; knowledge-curation MVP remains complete.**
 
 **mail_lib — current active project.** MAIL-00 shipped a script-first, deterministic Thunderbird
 reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
 extensionless mbox files as the source of truth, joins Gloda metadata by bracket-stripped
 `Message-ID`, treats Gloda as lagging enrichment, and remains read-only. A private maintainer-only
 live run forced three corrections: self-mail demotion (`553c49e`), recent user-star-only urgency
-(`175352e`, 183 days), and calendar recency gating (`f56e19c`, 31 days). Tests currently pass:
-`10` mail_lib tests and `20` combined mail/import/public-API tests.
+(`175352e`, 183 days), and calendar recency gating (`f56e19c`, 31 days).
 
-`SPEC-MAIL-01-personal-rules.md` now exists as an unratified draft. It specifies a file-backed
-deterministic personal-rule layer with explicit precedence over built-in heuristics and a graduated
-built-in self-mail floor for link-bearing saved-article messages. No MAIL-01 code is authorized yet.
-The next action is to review and ratify or revise the draft. Do not include model calls,
-summarization, behavioral instrumentation, `engram`, `rag_lib`, drafting, or UI in MAIL-01. See
-`docs/projects/mail_lib/mail_lib_status_v0.1.md` and
-`docs/projects/mail_lib/mail_lib_system_parameters.md`.
+MAIL-01 then shipped deterministic file-backed personal rules at `72bea66`. It adds strict TOML
+validation, most-specific/file-order rule selection, explicit precedence over built-in heuristics,
+`--rules` and mail-free `--validate-rules` CLI modes, and a graduated built-in self-mail floor for
+link-bearing saved-article messages.
+
+MAIL-02 shipped the ratified localhost mail-assistant MVP at `cb4f11e`: prioritized unread/all
+views, app-owned read and summary state, bounded local-model section summaries, and reviewed,
+conflict-detecting personal-rule commits that preserve the hand-authored TOML prefix. The combined
+mail/app/import/public-API gate passes (`75 passed`). No `mail_lib` implementation is queued. The
+next gate is private validation against the real profile and qwen3:8b, followed by two weeks of
+app-before-Thunderbird use. F1–F5 remain dormant until their triggers in
+`docs/projects/mail_lib/SPEC-MAIL-02-assistant-app.md` fire. See the newest update in
+`SESSION_HANDOFF.md`.
 
 Earlier neural-memory and knowledge-curation threads both concluded by *declining* to build the
 larger system their investigations started toward — each on evidence, per the governing rule
 (build a capability when a concrete run fails without it, not speculatively).
 
-**Neural memory (RTRL/TITANS) — parked, default-off.** Fully implemented behind
-the additive `MemoryLayer` seam (ADR-016 / NEURAL-01..06) and evaluated.
+**Neural memory (RTRL/TITANS) — parked, output-isolated, default-off.** Fully implemented behind
+the additive `MemoryLayer` seam (ADR-016 / NEURAL-01..07) and evaluated.
 Retrieval re-ranking was rejected (catastrophic recall loss, two clean 27b
-runs). TITANS-style prompt synthesis works end-to-end but returned a clean null
-in generation-mode evaluation (2026-06-11). The layer is kept in-tree as a
-default-off research artifact; the base package imports neither `engram.neural`
-nor torch unless explicitly enabled. Reactivation requires a concrete
-safety/observability need plus a predeclared, falsifiable gate. Do not re-run
-retrieval evals without a new mandate. `value_dim` and `hidden_dim` both stay at
-32 (64 caused RTRL/P-matrix overflow).
+runs). TITANS-style prompt synthesis first returned a clean null, then NEURAL-07
+content inspection found 0/180 expected episodes in emitted hints. A calibrated
+surprise-threshold finalist reduced neural updates but regressed decoy recall;
+a held-out utility scorer produced no improvement across three seeds. Neural
+reranking remains absent, while prompt and episode-importance outputs are now
+separately default-off. The layer is retained for explicitly enabled telemetry
+and research; the base package imports neither `engram.neural` nor torch unless
+enabled. Reactivation requires a real usefulness-feedback source plus the
+predeclared gate in the NEURAL-07 report. `value_dim` and `hidden_dim` remain 32
+(64 caused RTRL/P-matrix overflow).
 
 **Decision-history metadata — shipped.** A knowledge-curation MVP investigation
 (could conversation history become an evidence-linked memory?) resolved against
@@ -57,11 +66,15 @@ Engram exposes the additive `MemoryLayer` extension seam from NEURAL-01; the
 four core layers (working/SQLite, episodic/ChromaDB, semantic/SQLite,
 cold/FTS5) remain authoritative and untouched.
 
-Next project: see Decision rules / backlog. Standing backlog (none
-gate-blocking): course-repo extraction, TOPOLOGY-01 conversion (ADR-015), and
-neural reactivation only under a new mandate.
+NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `c95b8ab` as a
+confined, read-only Qwen3.6 repository-navigation evaluation with external
+ground truth and result storage.
 
-## Neural memory — parked (2026-06-11)
+Next project: complete MAIL-02 private live validation and adoption observation.
+Standing backlog (none gate-blocking): course-repo extraction, TOPOLOGY-01
+conversion (ADR-015), and neural reactivation only under a new mandate.
+
+## Neural memory — parked and output-isolated (2026-07-01)
 
 NEURAL-06 added a TITANS-style prompt-synthesis path; the generation-mode
 decision eval (qwen3:8b generator, qwen3.6:27b judge, 60 facts, six trials)
@@ -78,6 +91,14 @@ novelty/anomaly use (agent derailment, memory-poisoning detection, chunk
 segmentation). Reactivation needs a concrete safety/observability need plus a
 predeclared decision gate. Do not re-run retrieval evals without a new mandate.
 ADR-016 holds the full rationale.
+
+NEURAL-07 follow-up closed the remaining output paths. Affinity is inactive;
+the full surprise-threshold finalist failed; all 180 inspected prompt hints
+missed the expected episode; a direct-latent variant still missed 76.1%; and a
+feedback-free candidate-utility scorer failed across three seeds. Prompt hints
+and surprise-based importance adjustment now require separate explicit opt-ins,
+so an enabled RTRL layer can collect telemetry without affecting recall. See
+`docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`.
 
 ---
 

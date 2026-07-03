@@ -1,11 +1,16 @@
-# Next Thread Handoff — ai_tools
+# Superseded Thread Handoff — ai_tools
 
 Last updated: 2026-05-27
+
+> **Superseded on 2026-06-27.** This file preserves the historical handoff that
+> initiated the project-campaign phase. It is not current work direction. Read
+> `STATUS.md` and the newest `SESSION_HANDOFF.md` update for current state and
+> next actions.
 
 ## Read these first
 
 1. `docs/internal/STATUS.md` — current repo state (single source of truth).
-2. This file — what to do next and why.
+2. `../../SESSION_HANDOFF.md` — the current session handoff and next action.
 
 ## Where we are
 
@@ -21,7 +26,7 @@ away from the sustained, multi-session integration that would most validate the
 toolkit. The agreed corrective: **drive real, demanding projects through
 ai_tools and let the friction reshape the libraries.**
 
-## Immediate objective: start the first project campaign
+## Historical immediate objective: start the first project campaign
 
 Pick one real project and build it *through* ai_tools as a demanding external
 consumer. Recommended first: **NetFlow analysis** (quadratic-complexity security

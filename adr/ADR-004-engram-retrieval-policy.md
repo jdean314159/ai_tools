@@ -94,13 +94,15 @@ class RetrievalPolicy(BaseModel):
     max_total_results: int = 10
 ```
 
-### 5. Neural surprise score influences consolidation, not retrieval
+### 5. Neural output does not influence retrieval by default
 
-The neural layer (RTRL) produces a surprise score per stored item. This score
-triggers consolidation (episodic → semantic extraction) when it exceeds a
-threshold. It does **not** filter or re-rank retrieval results. Retrieval
-affinity bias was removed in v0.1.19 for this reason: familiar episodes must
-remain retrievable regardless of their surprise score.
+This section is superseded by ADR-016 / NEURAL-07. The optional RTRL layer can
+produce prediction-error telemetry, but it does not filter or re-rank retrieval,
+trigger consolidation, change episode importance, or emit prompt guidance by
+default. Prompt and importance outputs survive only as explicit experimental
+opt-ins. See
+`docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md` for the evidence and
+reactivation gate.
 
 ---
 

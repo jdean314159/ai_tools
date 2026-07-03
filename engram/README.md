@@ -125,12 +125,21 @@ memory = ProjectMemory(
 )
 ```
 
-Neural memory is default-off pending corpus evaluation. It learns paired
-user-to-assistant embedding associations, applies bounded surprise-based
-importance adjustments to newly stored episodes, and emits budgeted familiarity
-or novelty context hints after warmup. The hints reconstruct the learned value
-vector into approximate embedding space and cite a bounded set of aligned
-episode snippets. Neural retrieval re-ranking is disabled.
+Neural memory is parked, default-off, and output-isolated after corpus
+evaluation. It can learn paired user-to-assistant embedding associations and
+report surprise telemetry, but its output does not affect retrieval order,
+episode importance, or prompts by default. Neural retrieval re-ranking is
+disabled. Surprise-based importance adjustment and reconstructed episode-list
+prompt hints remain available only as explicit research controls through
+`NeuralMemoryConfig(importance_advisory_enabled=True)` and
+`NeuralMemoryConfig(prompt_advisory_enabled=True)`.
+
+NEURAL-07 found that calibrated surprise thresholds reduced neural updates
+without improving full-run quality, inspected hints missed the expected episode
+on all 180 queries, and a feedback-free candidate-utility scorer did not improve
+held-out ranking across three seeds. See
+`docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md` for the complete
+record and reactivation gate.
 Perplexity/logprob-based surprise filtering remains separate and is not wired
 into `ProjectMemory`.
 
@@ -196,12 +205,10 @@ is outside engram's lightweight design constraints.
 ### No procedural memory
 `engram` stores episodic and semantic memory but has no synthesis
 layer. It cannot extract generalizable rules from past sessions ("when X,
-do Y") or surface procedural patterns in prompts. This capability exists
-in full `engram` via `synthesize_now()` and the `## Procedural Rules`
-prompt block.
+do Y") or surface procedural patterns in prompts. There is currently no
+`synthesize_now()` API or `## Procedural Rules` prompt block in this package.
 
 ### No memory audit
 `engram` has no `audit_memory()` facility. Orphaned records,
-contradicting facts, and stale data accumulate silently. Full `engram`
-provides `pm.audit_memory()` with six diagnostic checks and a remediation
-API.
+contradicting facts, and stale data accumulate silently. An audit and
+remediation API remains future work.

@@ -15,25 +15,20 @@ Does not run inference.
 from rag_lib import RAGPipeline
 
 pipeline = RAGPipeline()                    # uses default config
-pipeline.ingest("./docs")                   # index a directory
+pipeline.ingest_directory("./docs")         # index a directory
 results = pipeline.retrieve("What is RAG?") # retrieve relevant chunks
-prompt = pipeline.assemble_prompt("What is RAG?")
+prompt = pipeline.assemble_prompt("What is RAG?", results)
 print(prompt)
 ```
 
-With evaluation:
+`RAGPipeline.ingest()` ingests one file; use `ingest_directory()` for a tree.
+`assemble_prompt()` requires the chunks returned by `retrieve()`.
 
-```python
-from rag_lib import RAGPipeline
-
-pipeline = RAGPipeline(config="rag_config.yaml")
-pipeline.ingest("./docs")
-report = pipeline.evaluate(
-    queries=["What is RAG?", "How does chunking work?"],
-    ground_truth="ground_truth.json",
-)
-print(report)
-```
+The `evaluate()` API and ground-truth loader reserve the intended RAGAS
+integration surface, but external-judge execution is not implemented yet and
+currently raises `NotImplementedError`. Use the deterministic evaluation labs
+under `rag_lib.eval` for current offline comparisons; do not build production
+evaluation code on `RAGPipeline.evaluate()` yet.
 
 
 

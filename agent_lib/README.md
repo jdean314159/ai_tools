@@ -233,6 +233,33 @@ This mode models:
 
 This path is intentionally small. It is meant to support mailbox/session-based orchestration systems without forcing them into the native runtime loop.
 
+---
+
+## Qwen repository-navigation evaluation
+
+`agent_lib.eval.repo_navigation` implements the read-only NAV-TEST-00 harness. It composes the
+existing `AgentRuntime` and `LocalToolRuntime` with confined `read_file`, `grep`, and `list_files`
+tools, a no-write bounded context builder, cumulative token accounting, tool telemetry, environment
+manifests, and region-based scoring.
+
+The live runner requires a pinned Qwen3.6 deployment served by `llama-server` and a ground-truth JSON
+file outside the confined root. It uses the server's native `/apply-template`, `/tokenize`, and
+`/completion` endpoints so prompt fitting and usage are measured with the deployed model itself:
+
+```bash
+python agent_lib/examples/repo_navigation_eval.py \
+  --root /path/to/ai_tools \
+  --answer-key /outside/eval/answer-key.json \
+  --base-url http://127.0.0.1:8081 \
+  --output-dir /outside/eval/run-00
+```
+
+Each answer-key region must provide `id`, `path`, `start_line`, `end_line`, `classification`, and a
+non-empty `required_answer_terms` array. The runner refuses answer keys and result directories inside
+the navigation root. It verifies the server's context window and chat template before running,
+sends `cache_prompt=false` on every native completion, rejects any response reporting cached prompt
+tokens or truncation, and writes all artifacts only to the external result directory.
+
 See:
 
 - `agent_lib.coordination`

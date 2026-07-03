@@ -156,7 +156,9 @@ at Engram's observe, recall, prompt, and teardown seams. Existing memory layers
 remain authoritative and unchanged; extension failures cannot break core flows.
 NEURAL-02b records the default-off RTRL/TITANS adapter as the first
 implementation, using intrinsic prediction error and a generic candidate
-embedding resolver.
+embedding resolver. NEURAL-07 records the failed output-path experiments and
+isolates neural reranking, prompt guidance, and episode-importance influence
+from default recall behavior.
 
 ## ADR-017 — Coordination permission model
 **File:** `adr/ADR-017-coordination-permission-model.md`

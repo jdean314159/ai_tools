@@ -21,7 +21,7 @@ hypotheses:
 
   - id: surprise-weighting
     application_scope: write-side-episode-importance
-    resolution_status: qualified
+    resolution_status: resolved_against
     mechanism_status: operational
     mechanism_evidence:
       - adr/ADR-016-memory-layer-extension-seam.md#neural-05-write-side-role
@@ -33,14 +33,15 @@ hypotheses:
         - adr/ADR-016-memory-layer-extension-seam.md#neural-05-write-side-role
     resolution_evidence:
       - adr/ADR-016-memory-layer-extension-seam.md#decision-park-the-neural-layer-default-off-research-artifact
+      - docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md#experiment-2-surprise-threshold
     superseded_by: ADR-016
     current_guidance: >-
-      The advisory write-side mechanism remains implemented in the parked,
-      default-off layer, but product benefit is unproven.
+      Surprise remains available as telemetry, but episode-importance influence
+      is default-off and requires explicit experimental opt-in.
 
   - id: titans-context-synthesis
     application_scope: prompt-side-context
-    resolution_status: unresolved
+    resolution_status: resolved_against
     mechanism_status: operational
     mechanism_evidence:
       - adr/ADR-016-memory-layer-extension-seam.md#neural-06-generation-mode-result-and-stability-correction
@@ -52,11 +53,11 @@ hypotheses:
         - adr/ADR-016-memory-layer-extension-seam.md#neural-06-titans-style-context-synthesis
     resolution_evidence:
       - adr/ADR-016-memory-layer-extension-seam.md#neural-06-generation-mode-result-and-stability-correction
+      - docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md#experiment-3-prompt-advisory-content
     superseded_by: ADR-016
     current_guidance: >-
-      The mechanism worked end-to-end, but the evaluated configuration produced
-      no measurable benefit. The implementation is parked and broader benefit
-      remains unestablished.
+      The mechanism worked end-to-end but emitted unrelated episode guidance in
+      direct inspection. Prompt advisory is default-off.
 
   - id: surprise-signal
     application_scope: novelty-anomaly-detection
@@ -82,7 +83,8 @@ hypotheses:
 **Status:** Accepted
 **Deciders:** Jeff Dean
 **Related:** ADR-004 (Engram retrieval policy), ADR-005 (persistence and
-migration), ADR-009 (supported Engram implementation), NEURAL-01
+migration), ADR-009 (supported Engram implementation), NEURAL-01 through
+NEURAL-07
 
 ## Context
 
@@ -182,11 +184,12 @@ The neural re-ranking role is disabled after two clean evaluation runs showed
 catastrophic direct-recall loss at every tested affinity weight. The neural
 layer now returns no recall contribution.
 
-Its active role is write-side and advisory: paired-turn prediction error
-adjusts newly stored episode importance within bounded limits, while
-familiarity and novelty prompt hints remain available. Episodes are never
-suppressed by this mechanism. Re-ranking remains architecturally possible but
-must stay disabled unless future training volume demonstrates reliable gains.
+NEURAL-07 later resolved the remaining write-side and prompt roles against
+default activation. Paired-turn prediction error remains observable, but it
+does not adjust episode importance unless explicitly enabled for an experiment;
+prompt hints are likewise opt-in. Re-ranking remains architecturally possible
+but must stay disabled unless a future feedback-driven experiment passes the
+reactivation gate.
 
 ## NEURAL-06 TITANS-Style Context Synthesis
 
@@ -251,3 +254,21 @@ surprise-based chunk segmentation) rather than retrieval. Reactivation requires
 a concrete safety/observability need plus a predeclared, falsifiable decision
 gate. Until then the layer stays parked; do not re-run retrieval evals without a
 new mandate.
+
+## NEURAL-07 Output Evaluation and Isolation
+
+**Dates:** 2026-06-30 through 2026-07-01
+
+Follow-up experiments tested the inactive affinity control, calibrated surprise
+thresholds, inspected emitted advisory content, and trained a held-out
+candidate-utility scorer with balanced hard-negative replay. None earned a
+recall role. The full threshold finalist reduced RTRL updates but regressed
+decoy performance; direct hint inspection found no expected episode in any of
+180 queries; and the utility scorer produced no stale or decoy improvement
+across three seeds.
+
+The layer's outputs are consequently isolated from recall by default:
+`contribute_to_recall()` remains empty, prompt advisory is opt-in, and
+surprise-based importance adjustment is opt-in. The complete methods, results,
+qualifications, and reactivation gate are recorded in
+`docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`.
