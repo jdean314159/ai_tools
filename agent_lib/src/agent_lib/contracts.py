@@ -7,7 +7,7 @@ from typing import Any, Literal, Protocol, Sequence
 from llm_inspector import EvidenceItem, Trace
 
 ActionKind = Literal["tool", "final", "message"]
-StopReason = Literal["completed", "max_steps", "planner_stop", "error", "critic_completed"]
+StopReason = Literal["completed", "max_steps", "planner_stop", "error", "critic_completed", "token_budget", "context_limit"]
 
 
 @dataclass(frozen=True)
