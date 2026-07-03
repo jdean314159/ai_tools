@@ -7,11 +7,14 @@ import pytest
 
 from mail_lib.indexer import MailIndex
 from mail_lib.personal_rules import (
+    RuleAction,
     PersonalRule,
     apply_to_message,
+    classify_message,
     format_validation_report,
     load_personal_rules,
     match_rule,
+    select_personal_rule,
 )
 from mail_lib.thunderbird import MailMessage, _html_to_text, iter_messages
 from mail_lib.triage import (
@@ -69,6 +72,40 @@ def test_rule_fixture_loads_and_uses_one_based_indices() -> None:
     assert loaded.rules[0].specificity == (1, 3)
     assert loaded.rules[1].specificity == (2, 3)
     assert not loaded.errors
+    assert all(rule.action == RuleAction.NONE for rule in loaded.rules)
+
+
+def test_action_is_validated_and_propagated_without_a_second_matcher(tmp_path: Path) -> None:
+    loaded = load_personal_rules(
+        _write_rules(
+            tmp_path / "actions.toml",
+            "[[rule]]\nsender = 'sender@example.test'\npriority = 'low'\n"
+            "action = 'summarize'\n",
+        )
+    )
+    message = _message()
+
+    assert loaded.ok
+    assert select_personal_rule(message, loaded.rules) is loaded.rules[0]
+    classified = classify_message(message, loaded.rules)
+    assert classified.action == RuleAction.SUMMARIZE
+    assert classified.triage.priority == Priority.LOW
+    assert classified.matched_personal_rule_index == 1
+
+
+@pytest.mark.parametrize("value", ["hide", 7])
+def test_invalid_action_rejects_entire_file(tmp_path: Path, value: object) -> None:
+    rendered = repr(value).lower() if isinstance(value, str) else str(value)
+    loaded = load_personal_rules(
+        _write_rules(
+            tmp_path / "bad-action.toml",
+            "[[rule]]\nsender = 'sender@example.test'\npriority = 'low'\n"
+            f"action = {rendered}\n",
+        )
+    )
+
+    assert not loaded.ok
+    assert "action must" in " ".join(loaded.errors)
 
 
 def test_sender_domain_subject_matching_and_specificity() -> None:

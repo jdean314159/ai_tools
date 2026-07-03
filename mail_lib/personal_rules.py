@@ -2,17 +2,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 import tomllib
 from typing import Sequence
 
 from .thunderbird import MailMessage
-from .triage import Priority, TriageResult
+from .triage import Priority, TriageResult, triage_message
 
 
 _PREDICATE_KEYS = ("sender", "domain", "subject")
-_RULE_KEYS = frozenset((*_PREDICATE_KEYS, "priority", "note"))
+_RULE_KEYS = frozenset((*_PREDICATE_KEYS, "priority", "note", "action"))
 _PREDICATE_WEIGHTS = {"sender": 3, "domain": 2, "subject": 1}
+
+
+class RuleAction(StrEnum):
+    NONE = "none"
+    SUMMARIZE = "summarize"
+    IGNORE = "ignore"
 
 
 @dataclass(frozen=True)
@@ -24,6 +31,15 @@ class PersonalRule:
     priority: Priority
     note: str | None
     specificity: tuple[int, int]
+    action: RuleAction = RuleAction.NONE
+
+
+@dataclass(frozen=True)
+class ClassifiedMessage:
+    message: MailMessage
+    triage: TriageResult
+    action: RuleAction
+    matched_personal_rule_index: int | None
 
 
 @dataclass(frozen=True)
@@ -109,11 +125,23 @@ def load_personal_rules(path: Path) -> RuleLoadResult:
         else:
             note = raw_note.strip() or None
 
+        raw_action = raw_rule.get("action", RuleAction.NONE.value)
+        action: RuleAction | None = None
+        if not isinstance(raw_action, str):
+            rule_errors.append("action must be a string")
+        else:
+            try:
+                action = RuleAction(raw_action)
+            except ValueError:
+                allowed = ", ".join(item.value for item in RuleAction)
+                rule_errors.append(f"action must be one of: {allowed}")
+
         if rule_errors:
             errors.extend(f"Rule #{index}: {error}" for error in rule_errors)
             continue
 
         assert priority is not None
+        assert action is not None
         predicate_names = tuple(
             key for key, value in (("sender", sender), ("domain", domain), ("subject", subject))
             if value is not None
@@ -131,6 +159,7 @@ def load_personal_rules(path: Path) -> RuleLoadResult:
                 priority=priority,
                 note=note,
                 specificity=specificity,
+                action=action,
             )
         )
 
@@ -193,15 +222,39 @@ def apply_to_message(
     """Apply the most-specific matching personal rule to one message result."""
     if result.header_message_id != message.header_message_id:
         raise ValueError("message and triage result header_message_id values do not match")
-    matches = [rule for rule in rules if match_rule(rule, message)]
-    if not matches:
+    selected = select_personal_rule(message, rules)
+    if selected is None:
         return result
-    selected = max(matches, key=lambda rule: rule.specificity)
     return TriageResult(
         header_message_id=result.header_message_id,
         priority=selected.priority,
         reason=selected.note or f"Matched personal rule #{selected.index}.",
         matched_rules=(*result.matched_rules, f"personal:{selected.index}"),
+    )
+
+
+def select_personal_rule(
+    message: MailMessage,
+    rules: Sequence[PersonalRule],
+) -> PersonalRule | None:
+    """Return the existing most-specific, file-order-selected matching rule."""
+    matches = [rule for rule in rules if match_rule(rule, message)]
+    return max(matches, key=lambda rule: rule.specificity) if matches else None
+
+
+def classify_message(
+    message: MailMessage,
+    rules: Sequence[PersonalRule],
+) -> ClassifiedMessage:
+    """Run built-in triage and preserve the selected rule's presentation action."""
+    built_in = triage_message(message)
+    selected = select_personal_rule(message, rules)
+    triage = apply_to_message(built_in, message, (selected,) if selected else ())
+    return ClassifiedMessage(
+        message=message,
+        triage=triage,
+        action=selected.action if selected else RuleAction.NONE,
+        matched_personal_rule_index=selected.index if selected else None,
     )
 
 
@@ -222,7 +275,7 @@ def format_validation_report(result: RuleLoadResult) -> str:
             )
             lines.append(
                 f"Rule #{rule.index}: {predicates}; priority={rule.priority.value}; "
-                f"specificity={rule.specificity}"
+                f"action={rule.action.value}; specificity={rule.specificity}"
             )
     else:
         lines.append("Status: invalid")

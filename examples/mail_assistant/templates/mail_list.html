@@ -1,0 +1,18 @@
+{% for priority in priorities %}
+{% set messages = groups[priority] %}
+<section>
+  <h2>{{ priority.value }} ({{ messages|length }})</h2>
+  {% if messages %}
+  <form hx-post="/summarize/{{ priority.value }}" hx-target="#summary-{{ priority.value }}" hx-swap="innerHTML" method="post" action="/summarize/{{ priority.value }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="view" value="{{ view }}">
+    <button type="submit">Summarize section</button>
+  </form>
+  <div id="summary-{{ priority.value }}"></div>
+  {% set ignored = messages|selectattr('action.value', 'equalto', 'ignore')|list %}
+  {% if ignored %}<details><summary>{{ ignored|length }} collapsed by personal rule</summary>
+  {% for item in ignored %}{% include "message.html" %}{% endfor %}</details>{% endif %}
+  {% for item in messages if item.action.value != 'ignore' %}{% include "message.html" %}{% endfor %}
+  {% endif %}
+</section>
+{% endfor %}

@@ -1,0 +1,8 @@
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+body { margin: 0 auto; max-width: 72rem; padding: 1rem; }
+header { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+section, article, aside { border: 1px solid #8886; border-radius: .4rem; margin: 1rem 0; padding: 1rem; }
+article h3 { margin-top: 0; }
+form { display: inline-block; margin: .25rem .5rem .25rem 0; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.notice, .action { font-weight: 600; }

@@ -1,0 +1,10 @@
+<aside class="proposal">
+  <h3>Review proposed rule</h3>
+  <pre>{{ proposal.diff }}</pre>
+  <p>Candidate SHA-256: {{ proposal.candidate_sha256 }}</p>
+  <form method="post" action="/rules/commit">
+    <input type="hidden" name="proposal_token" value="{{ proposal.token }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit">Approve and commit</button>
+  </form>
+</aside>

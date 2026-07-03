@@ -1,0 +1,5 @@
+Artifact: htmx.min.js
+Version: 2.0.4
+Upstream project: https://github.com/bigskysoftware/htmx
+Source: https://raw.githubusercontent.com/bigskysoftware/htmx/v2.0.4/dist/htmx.min.js
+SHA-256: e209dda5c8235479f3166defc7750e1dbcd5a5c1808b7792fc2e6733768fb447

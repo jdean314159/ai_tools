@@ -1,0 +1,21 @@
+<article class="message">
+  <h3>{{ item.message.subject }}</h3>
+  <p><strong>From:</strong> {{ item.message.sender }} <strong>Reason:</strong> {{ item.triage.reason }}</p>
+  <p>{{ item.message.body[:500] }}</p>
+  {% if item.action.value == 'summarize' %}<p class="action">Personal rule requests summarization.</p>{% endif %}
+  <form hx-post="/read" hx-target="#mail-list" hx-swap="innerHTML" method="post" action="/read">
+    <input type="hidden" name="message_id" value="{{ item.message.header_message_id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="view" value="{{ view }}">
+    <button type="submit">Mark locally read</button>
+  </form>
+  <form hx-post="/rules/propose" hx-target="#proposal" hx-swap="innerHTML" method="post" action="/rules/propose">
+    <input type="hidden" name="message_id" value="{{ item.message.header_message_id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Match <select name="field"><option>sender</option><option>domain</option><option>subject</option></select></label>
+    <label>Priority <select name="priority"><option>urgent</option><option>normal</option><option>low</option><option>ignore</option></select></label>
+    <label>Action <select name="action"><option>none</option><option>summarize</option><option>ignore</option></select></label>
+    <button type="submit">Propose rule</button>
+  </form>
+</article>
+<div id="proposal"></div>

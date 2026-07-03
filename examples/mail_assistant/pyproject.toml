@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-tools-mail-assistant-example"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "jinja2>=3.1",
+  "python-multipart>=0.0.20",
+  "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.27",
+  "pytest>=8",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+mail-assistant = "examples.mail_assistant.web_app:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["examples.mail_assistant"]
+
+[tool.setuptools.package-dir]
+"examples.mail_assistant" = "."
+
+[tool.setuptools.package-data]
+"examples.mail_assistant" = ["templates/*.html", "static/*"]

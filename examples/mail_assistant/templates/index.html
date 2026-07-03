@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local Mail Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  <script src="{{ url_for('static', path='/htmx.min.js') }}" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Local Mail Assistant</h1>
+    <nav><a href="/?view=unread">Unread</a> <a href="/?view=all">All</a></nav>
+    <form method="post" action="/refresh">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="view" value="{{ view }}">
+      <button type="submit">Refresh snapshot</button>
+    </form>
+  </header>
+  {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+  <main id="mail-list">{% include "mail_list.html" %}</main>
+</body>
+</html>

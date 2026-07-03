@@ -1,9 +1,12 @@
 # ai_tools — Session Handoff (for new thread / Codex)
 
-**Date:** 2026-06-27
-**Read order for a new mail_lib thread:** this file →
+**Date:** 2026-07-03
+**Read order for any new thread:** `docs/internal/STATUS.md` first, then this
+file. For a neural-memory thread also read ADR-016 and
+`docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`. For mail_lib: this file →
 `docs/projects/mail_lib/mail_lib_status_v0.1.md` →
 `docs/projects/mail_lib/mail_lib_system_parameters.md` →
+`docs/projects/mail_lib/SPEC-MAIL-02-assistant-app.md` →
 `docs/projects/mail_lib/SPEC-MAIL-01-personal-rules.md` →
 `docs/projects/mail_lib/SPEC-MAIL-00-triage.md` →
 `docs/projects/mail_lib/mail_lib_scoping_note.md`.
@@ -12,6 +15,26 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 ---
 
 ## TL;DR
+
+## Update — 2026-07-03 (MAIL-02 MVP complete; live validation pending)
+
+**MAIL-02 is ratified and implemented.** The localhost FastAPI/Jinja/HTMX app,
+app-owned read and summary state, deterministic action-aware classification,
+bounded local-model section summaries, and reviewed atomic personal-rule commits
+are complete. Automated gates use synthetic mail and a mock model; the focused
+MAIL-02 suite passes (`16 passed`). Existing hand-authored TOML bytes are
+preserved when a validated rule block is appended.
+
+**Next action is private live validation, not more implementation:** run the first
+refresh against the real Thunderbird profile and record only size/latency; assess
+the first real section summary with qwen3:8b and the 12k input budget; and commit
+the first rule against the hand-edited personal-rules file. Do not commit real
+mail, rule values, or model output. Then use the app before Thunderbird for two
+weeks. Failures observed during that period define the next specification.
+
+F1 chat, F2 IMAP `\Seen` propagation, F3 `rag_lib`, F4 `engram`, and F5 interest
+scoring remain dormant until their named triggers in SPEC-MAIL-02 fire. Nothing
+else is queued for `mail_lib`.
 
 ## Update — 2026-06-27 (MAIL-01 implemented + live-validated; digest traceability next)
 
