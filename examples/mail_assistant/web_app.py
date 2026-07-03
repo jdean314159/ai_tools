@@ -168,13 +168,17 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             raise HTTPException(status_code=403, detail="Invalid CSRF token")
         origin = request.headers.get("origin")
         referer = request.headers.get("referer")
+        fetch_site = request.headers.get("sec-fetch-site")
         expected = str(request.base_url).rstrip("/")
         if origin:
             valid = origin.rstrip("/") == expected
         elif referer:
             valid = referer == expected or referer.startswith(expected + "/")
         else:
-            valid = False
+            # Referrer-Policy is deliberately no-referrer, and browsers may omit
+            # Origin for an ordinary same-origin form POST. Fetch Metadata still
+            # distinguishes that browser request from a cross-site submission.
+            valid = fetch_site == "same-origin"
         if not valid:
             raise HTTPException(status_code=403, detail="Same-origin request required")
 
