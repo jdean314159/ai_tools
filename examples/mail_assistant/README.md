@@ -3,10 +3,12 @@
 Fixture-first FastAPI/Jinja/HTMX consumer specified by
 `docs/projects/mail_lib/SPEC-MAIL-02-assistant-app.md`.
 
-Set `MAIL_ASSISTANT_PROFILE` to a Thunderbird profile and optionally configure
-`MAIL_ASSISTANT_RULES`, `MAIL_ASSISTANT_DB`, `MAIL_ASSISTANT_BACKEND`, and
-`MAIL_ASSISTANT_MODEL`. From the repository root, install or refresh the editable
-workspace packages after cloning or moving the checkout:
+By default, the app reads the profile marked `Default=1` in
+`~/.thunderbird/profiles.ini`. Set `MAIL_ASSISTANT_PROFILE` to override it, and
+optionally configure `MAIL_ASSISTANT_RULES`, `MAIL_ASSISTANT_DB`,
+`MAIL_ASSISTANT_BACKEND`, and `MAIL_ASSISTANT_MODEL`. From the repository root,
+install or refresh the editable workspace packages after cloning or moving the
+checkout:
 
 ```bash
 make install

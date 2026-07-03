@@ -86,7 +86,10 @@ def normalize_message_id(value: str | None) -> str:
 def open_gloda_readonly(path: str | Path) -> sqlite3.Connection:
     """Open a Gloda fixture/database read-only with busy timeout."""
     db_path = Path(path)
-    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    # Thunderbird may leave Gloda in exclusive locking mode even when it is not
+    # running. Immutable mode bypasses those locks and guarantees this reader
+    # cannot write to the profile; Gloda remains optional, lagging enrichment.
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro&immutable=1", uri=True)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout=3000")
     return conn

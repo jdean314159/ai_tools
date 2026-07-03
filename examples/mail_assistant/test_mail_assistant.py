@@ -24,7 +24,7 @@ from .rules import RuleTransactionService
 from .services import MailAssistantService
 from .store import AssistantStore
 from .summarizer import PROMPT_VERSION, SectionSummarizer, section_key
-from .web_app import AppConfig, create_app
+from .web_app import AppConfig, _discover_thunderbird_profile, create_app
 from .web_app import _run_blocking
 
 
@@ -305,6 +305,24 @@ def test_app_lifespan_loads_initial_snapshot(tmp_path: Path) -> None:
             assert len(app.state.mail.state.messages) == 1
 
     asyncio.run(exercise())
+
+
+def test_default_thunderbird_profile_discovery(tmp_path: Path) -> None:
+    selected = tmp_path / "chosen.default"
+    selected.mkdir()
+    (tmp_path / "other.default").mkdir()
+    (tmp_path / "profiles.ini").write_text(
+        "[Profile1]\nName=other\nIsRelative=1\nPath=other.default\n\n"
+        "[Profile0]\nName=chosen\nIsRelative=1\nPath=chosen.default\nDefault=1\n",
+        encoding="utf-8",
+    )
+
+    assert _discover_thunderbird_profile(tmp_path) == selected
+
+
+def test_default_thunderbird_profile_discovery_fails_closed(tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError, match="set MAIL_ASSISTANT_PROFILE"):
+        _discover_thunderbird_profile(tmp_path)
 
 
 def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:

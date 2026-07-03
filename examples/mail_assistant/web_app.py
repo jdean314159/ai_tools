@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from contextlib import asynccontextmanager
+import configparser
 import os
 import asyncio
 import threading
@@ -77,10 +78,46 @@ class AppConfig:
     model_timeout: float = 120.0
 
 
+def _discover_thunderbird_profile(thunderbird_root: Path | None = None) -> Path:
+    root = thunderbird_root or Path.home() / ".thunderbird"
+    parser = configparser.ConfigParser()
+    profiles_path = root / "profiles.ini"
+    if not parser.read(profiles_path, encoding="utf-8"):
+        raise RuntimeError(
+            "Thunderbird profile was not configured and profiles.ini was not found; "
+            "set MAIL_ASSISTANT_PROFILE"
+        )
+    candidates: list[Path] = []
+    for section in parser.sections():
+        if not section.startswith("Profile") or not parser.getboolean(
+            section, "Default", fallback=False
+        ):
+            continue
+        configured = Path(parser.get(section, "Path", fallback=""))
+        if not configured.parts:
+            continue
+        candidates.append(
+            root / configured
+            if parser.getboolean(section, "IsRelative", fallback=True)
+            else configured
+        )
+    existing = [candidate for candidate in candidates if candidate.is_dir()]
+    if len(existing) != 1:
+        raise RuntimeError(
+            "Could not identify one default Thunderbird profile; set MAIL_ASSISTANT_PROFILE"
+        )
+    return existing[0]
+
+
 def _default_config() -> AppConfig:
     config_home = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
+    configured_profile = os.getenv("MAIL_ASSISTANT_PROFILE")
     return AppConfig(
-        profile=Path(os.getenv("MAIL_ASSISTANT_PROFILE", ".")),
+        profile=(
+            Path(configured_profile)
+            if configured_profile
+            else _discover_thunderbird_profile()
+        ),
         rules_path=Path(
             os.getenv("MAIL_ASSISTANT_RULES", config_home / "mail_lib" / "personal_rules.toml")
         ),
