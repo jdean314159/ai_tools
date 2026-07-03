@@ -57,6 +57,7 @@ def _config(*, affinity_weight: float = 0.15) -> NeuralMemoryConfig:
         grad_clip_norm=1.0,
         surprise_threshold=0.0,
         affinity_weight=affinity_weight,
+        prompt_advisory_enabled=True,
         device="cpu",
     )
 
@@ -231,6 +232,9 @@ def test_surprise_adjusts_episode_importance_in_memory_and_jsonl(tmp_path):
         def last_surprise(self):
             return 3.0
 
+        def importance_adjustment_enabled(self):
+            return True
+
         def contribute_to_recall(self, query):
             del query
             return None
@@ -273,5 +277,56 @@ def test_surprise_adjusts_episode_importance_in_memory_and_jsonl(tmp_path):
         )
         assert episode["importance"] == 0.8
         assert persisted_episode["importance"] == 0.8
+    finally:
+        memory.close()
+
+
+def test_surprise_does_not_adjust_importance_without_explicit_opt_in(tmp_path):
+    class TelemetryOnlyLayer:
+        name = "telemetry-only"
+
+        def observe(self, observation):
+            del observation
+
+        def last_surprise(self):
+            return 3.0
+
+        def contribute_to_recall(self, query):
+            del query
+            return None
+
+        def contribute_to_prompt(self, query):
+            del query
+            return None
+
+        def warmup(self, history):
+            del history
+
+        def persist(self):
+            return None
+
+        def close(self):
+            return None
+
+    memory = ProjectMemory(
+        base_dir=tmp_path,
+        project_id="p",
+        enable_semantic_graph=False,
+        auto_ingest_turns=False,
+        auto_pair_assistant=False,
+    )
+    memory.register_layer(TelemetryOnlyLayer())
+
+    try:
+        episode_id = memory.store_episode(
+            "A sufficiently detailed novel episode for deterministic storage.",
+            importance=0.5,
+            bypass_filter=True,
+        )
+        episode = next(
+            item for item in memory._episodes if item["id"] == episode_id
+        )
+
+        assert episode["importance"] == 0.5
     finally:
         memory.close()

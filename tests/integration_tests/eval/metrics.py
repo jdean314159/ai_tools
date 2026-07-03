@@ -31,6 +31,36 @@ def compute_trial_metrics(trial: dict) -> dict:
         ),
         "elapsed_sec": float(trial.get("elapsed_sec", 0.0)),
     }
+    neural_observations = [
+        item
+        for item in trial.get("injection_results", [])
+        if item.get("novelty_score") is not None
+    ]
+    metrics["n_neural_observations"] = len(neural_observations)
+    metrics["n_neural_writes"] = sum(
+        item.get("neural_written") is True for item in neural_observations
+    )
+    metrics["n_neural_skips"] = sum(
+        item.get("neural_written") is False for item in neural_observations
+    )
+    metrics["mean_surprise"] = _mean(
+        [float(item["novelty_score"]) for item in neural_observations]
+    )
+    hint_judgments = [
+        item for item in all_judgments if item.get("neural_hint_present")
+    ]
+    metrics["neural_hint_expected_rate"] = (
+        sum(item.get("neural_hint_expected_present") is True for item in hint_judgments)
+        / len(hint_judgments)
+        if hint_judgments
+        else None
+    )
+    metrics["neural_hint_stale_rate"] = (
+        sum(item.get("neural_hint_stale_present") is True for item in hint_judgments)
+        / len(hint_judgments)
+        if hint_judgments
+        else None
+    )
     for query_type in ("direct", "paraphrase", "decoy"):
         subset = [
             item for item in judgments if item["query_type"] == query_type

@@ -152,7 +152,11 @@ class TrialRunner:
         if self.config.mode == "generation":
             probe_results = await asyncio.gather(
                 *[
-                    self.probe.answer_query(fact, query_type)
+                    self.probe.answer_query(
+                        fact,
+                        query_type,
+                        expect_contradiction=fact.id in self._contradicted_ids,
+                    )
                     for fact in self.corpus.facts
                     for query_type in query_types
                 ]
@@ -195,6 +199,18 @@ class TrialRunner:
                         probe_result,
                         "neural_hint_present",
                         False,
+                    ),
+                    "neural_hint_text": getattr(
+                        probe_result, "neural_hint_text", None
+                    ),
+                    "neural_hint_episodes": getattr(
+                        probe_result, "neural_hint_episodes", None
+                    ),
+                    "neural_hint_expected_present": getattr(
+                        probe_result, "neural_hint_expected_present", None
+                    ),
+                    "neural_hint_stale_present": getattr(
+                        probe_result, "neural_hint_stale_present", None
                     ),
                     "query": probe_result.query,
                     "probe_error": probe_result.error,

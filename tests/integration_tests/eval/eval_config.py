@@ -36,6 +36,10 @@ class EvalConfig:
     embed_model: str = "nomic-embed-text"
     embed_base_url: str = "http://localhost:11434"
     affinity_weight: float = 0.15
+    surprise_threshold: float = 0.001
+    neural_initialization_seed: int = 42
+    neural_prompt_advisory_enabled: bool = False
+    neural_importance_advisory_enabled: bool = False
     project_id: str = "neural_ab_eval"
     output_root: Path = field(
         default_factory=lambda: Path(__file__).resolve().parent / "runs"

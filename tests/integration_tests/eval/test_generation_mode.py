@@ -13,12 +13,28 @@ from integration_tests.eval.ollama_judge import OllamaJudge
 
 
 class _PromptMemory:
+    neural_layer = None
+    session_id = "test-session"
+
     def __init__(self) -> None:
         self.queries: list[str] = []
 
     def build_prompt(self, query: str) -> dict:
         self.queries.append(query)
         return {"prompt": "## Memory Layer Hints\n[Neural context]\nKnown pattern"}
+
+
+class _StatsLayer:
+    def get_stats(self):
+        return {
+            "last_surprise": 3.5,
+            "surprise_ema": 2.5,
+            "write_ratio": 0.75,
+        }
+
+
+class _StatsMemory:
+    neural_layer = _StatsLayer()
 
 
 def _fact() -> Fact:
@@ -58,6 +74,46 @@ def test_answer_query_builds_full_prompt_and_returns_generated_answer(tmp_path):
 def test_metrics_record_generation_mode():
     metrics = compute_metrics([], "baseline", mode="generation")
     assert metrics["mode"] == "generation"
+
+
+def test_metrics_score_hint_target_and_stale_rates():
+    trial = {
+        "trial_index": 0,
+        "label": "baseline",
+        "subset_name": "all",
+        "judgment_results": [
+            {
+                "query_type": "direct",
+                "correct": True,
+                "relevance": 5,
+                "contaminated": False,
+                "neural_hint_present": True,
+                "neural_hint_expected_present": True,
+                "neural_hint_stale_present": False,
+            },
+            {
+                "query_type": "decoy",
+                "correct": True,
+                "relevance": 1,
+                "contaminated": False,
+                "neural_hint_present": True,
+                "neural_hint_expected_present": False,
+                "neural_hint_stale_present": True,
+            },
+        ],
+    }
+
+    row = compute_metrics([trial], "neural_on", mode="generation")["per_trial"][0]
+
+    assert row["neural_hint_expected_rate"] == 0.5
+    assert row["neural_hint_stale_rate"] == 0.5
+
+
+def test_probe_reads_neural_telemetry_through_public_stats(tmp_path):
+    probe = EngramProbe(EvalConfig(), "neural_on", tmp_path)
+    probe._memory = _StatsMemory()
+
+    assert probe._read_novelty() == (3.5, 2.5, 0.75)
 
 
 def test_generation_judge_grades_answer_text(tmp_path):

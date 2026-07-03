@@ -33,10 +33,7 @@ from .telemetry import Telemetry
 from .utils.tokens import get_token_counter
 
 if TYPE_CHECKING:
-    from .embeddings.base import Embedder
-    from .semantic.graph import SemanticGraph
-    from .semantic.extractor import SemanticExtractor
-    from .semantic.forgetting import ForgettingPolicy, ForgettingConfig
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -1153,6 +1150,13 @@ class ProjectMemory:
         )
         for layer in self._extension_layers:
             try:
+                adjustment_enabled = getattr(
+                    layer,
+                    "importance_adjustment_enabled",
+                    lambda: False,
+                )
+                if not bool(adjustment_enabled()):
+                    continue
                 surprise = getattr(layer, "last_surprise", lambda: None)()
                 if surprise is not None:
                     adjusted = self._surprise_to_importance(

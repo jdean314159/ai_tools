@@ -33,9 +33,9 @@ Author: Jeffrey Dean
 import logging
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -103,10 +103,13 @@ class NeuralMemoryConfig:
     value_dim: int = 32         # Stable resolution for embedding reconstruction
     hidden_dim: int = 32        # RTRL hidden neurons (do not increase above 32)
     min_warmup_steps: int = 50  # Paired observations required for prompt hints
+    prompt_advisory_enabled: bool = False  # Experimental; content quality unproven
+    importance_advisory_enabled: bool = False  # Never alter recall by default
 
     # Embedding projection (text embedder → RTRL dimensions)
     embedding_dim: int = 384    # all-MiniLM-L6-v2 output dimension
     projection_seed: int = 42   # Deterministic projection per project
+    initialization_seed: int = 42  # Deterministic fresh RTRL weights
 
     # Learning — optimal from sweep
     lr: float = 0.003           # 0.001 is stable alternative for very long sessions
@@ -114,7 +117,8 @@ class NeuralMemoryConfig:
     weight_decay: float = 1e-5
     surprise_threshold: float = 0.001
     surprise_modulated_lr: bool = True
-    affinity_weight: float = 0.15  # Fraction of candidate score spread.
+    # Compatibility-only: neural recall contribution is disabled by NEURAL-07.
+    affinity_weight: float = 0.15
 
     # Architecture (do not change without re-sweeping)
     gated: bool = True          # GRU gating — non-optional
@@ -246,7 +250,14 @@ class NeuralMemory:
             dtype=self.config.dtype,
             verbose=self.config.verbose,
         )
-        self._memory = TITANSMemory(tcfg)
+        # The recovered NumPy RTRL backend initializes from NumPy's global RNG.
+        # Preserve caller state while making fresh evaluation runs comparable.
+        numpy_state = np.random.get_state()
+        try:
+            np.random.seed(int(self.config.initialization_seed))
+            self._memory = TITANSMemory(tcfg)
+        finally:
+            np.random.set_state(numpy_state)
         logger.info("Created fresh neural memory: %d params",
                      self._param_count())
 
@@ -465,8 +476,6 @@ class NeuralMemory:
             return {"enabled": False}
 
         mem_stats = self._memory.stats.copy()
-        total = mem_stats['total_writes'] + mem_stats['total_skipped']
-
         return {
             "enabled": self.config.enabled,
             "healthy": self._healthy,

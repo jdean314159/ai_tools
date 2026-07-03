@@ -42,6 +42,7 @@ def _config(**overrides) -> NeuralMemoryConfig:
         "hidden_dim": 8,
         "embedding_dim": 8,
         "min_warmup_steps": 2,
+        "prompt_advisory_enabled": True,
         "surprise_threshold": 0.0,
         "device": "cpu",
     }
@@ -121,6 +122,17 @@ def test_context_hint_is_template_only_and_bounded_to_three_episodes():
     assert _build_context_hint([], None, None, None) is None
 
 
+def test_prompt_advisory_is_default_off():
+    layer = NeuralMemoryLayer(
+        ContextEmbedder(),
+        None,
+        _config(prompt_advisory_enabled=False, min_warmup_steps=0),
+    )
+
+    assert layer.contribute_to_prompt(RecallQuery(query="question")) is None
+    assert layer.importance_adjustment_enabled() is False
+
+
 def test_project_memory_prompt_contains_synthesized_context(tmp_path):
     memory = ProjectMemory(
         base_dir=tmp_path,
@@ -144,9 +156,17 @@ def test_project_memory_prompt_contains_synthesized_context(tmp_path):
             memory.add_turn("assistant", f"answer {index}", "s1")
 
         result = memory.build_prompt("Which deployment region is used?")
+        hint = memory.neural_layer.contribute_to_prompt(
+            RecallQuery(query="Which deployment region is used?")
+        )
 
         assert "[Neural context]" in result["prompt"]
         assert "Network predicts relevance to:" in result["prompt"]
+        assert hint is not None
+        assert hint.metadata["aligned_episodes"]
+        assert hint.metadata["aligned_episodes"][0]["text"] == (
+            "The deployment region is west."
+        )
     finally:
         memory.close()
 

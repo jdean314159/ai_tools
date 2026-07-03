@@ -23,6 +23,7 @@ python integration_tests/eval/run_eval.py \
   --backend neural_on --trials baseline --limit 3 \
   --mode generation --warmup-replays 1 \
   --neural-min-warmup-steps 3 \
+  --neural-prompt-advisory \
   --judge ollama --model qwen3:8b \
   --run-name neural06-smoke-neural --fresh
 ```
@@ -52,14 +53,34 @@ The judge defaults to `qwen3:8b`, four concurrent requests, deterministic
 temperature, persistent model residency, and a disk-backed judgment cache.
 For local Ollama, set `OLLAMA_NUM_PARALLEL=4` when the host has enough memory.
 
-Run the fast affinity sweep with:
+The historical affinity sweep is disabled because neural recall re-ranking is
+inactive. `affinity_weight` cannot change current retrieval results.
+
+Neural episode-list prompt advisory is also default-off. Inspection of the
+full evaluation state found that its selected episodes were unrelated for all
+180 queries. Explicit advisory experiments must pass
+`--neural-prompt-advisory`; ordinary neural runs do not emit these hints.
+Surprise-based episode-importance adjustment is likewise default-off because
+it changes retrieval indirectly without a usefulness label. Experiments must
+opt in with `--neural-importance-advisory`.
+
+Calibrate and evaluate the active RTRL/TITANS write gate with:
 
 ```bash
-python integration_tests/eval/sweep.py \
-  --trials baseline contradict --limit 30 \
-  --affinity-weight-list 0.05,0.1,0.15,0.2,0.3,0.5
+python integration_tests/eval/surprise_threshold_sweep.py \
+  --trials baseline contradict --limit 30 --mode generation \
+  --percentiles 25,50,75
 ```
 
-The sweep captures baseline once and reports the direct/paraphrase recall,
-decoy rejection, and contradiction-bleed tradeoff for each weight. A passing
-weight is only a finalist; it still requires the full six-trial confirmation.
+The sweep first runs an ungated calibration, derives thresholds from measured
+surprise percentiles, and reports write ratio alongside direct/paraphrase
+recall, decoy rejection, and contradiction bleed. Fresh RTRL initialization is
+seeded so candidates begin from identical weights. A passing threshold is only
+a finalist; it still requires the full six-trial confirmation. “Write ratio”
+means RTRL parameter updates, not Engram episode admission.
+
+Advisory inspection and candidate-utility experiments are implemented in
+`inspect_advisory.py` and `candidate_utility_eval.py`. Their completed NEURAL-07
+results are summarized in
+`docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`; neither experiment
+earned a production output path.

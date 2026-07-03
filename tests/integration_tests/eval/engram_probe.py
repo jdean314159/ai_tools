@@ -12,7 +12,7 @@ from pathlib import Path
 
 import aiohttp
 
-from engram import ProjectMemory, ProjectType
+from engram import ProjectMemory, ProjectType, RecallQuery
 from engram.embeddings.ollama import OllamaEmbedder
 
 try:
@@ -34,6 +34,7 @@ class InjectionResult:
     novelty_ratio: float | None
     episode_id: str | None
     success: bool
+    neural_written: bool | None = None
     error: str | None = None
 
 
@@ -59,6 +60,10 @@ class GenerationResult:
     elapsed_ms: float
     success: bool
     neural_hint_present: bool
+    neural_hint_text: str | None = None
+    neural_hint_episodes: list[dict] | None = None
+    neural_hint_expected_present: bool | None = None
+    neural_hint_stale_present: bool | None = None
     error: str | None = None
 
 
@@ -103,6 +108,14 @@ class EngramProbe:
             neural_config = NeuralMemoryConfig(
                 affinity_weight=self.config.affinity_weight,
                 min_warmup_steps=self.config.neural_min_warmup_steps,
+                surprise_threshold=self.config.surprise_threshold,
+                initialization_seed=self.config.neural_initialization_seed,
+                prompt_advisory_enabled=(
+                    self.config.neural_prompt_advisory_enabled
+                ),
+                importance_advisory_enabled=(
+                    self.config.neural_importance_advisory_enabled
+                ),
             )
             print(
                 "[probe] neural affinity weight="
@@ -151,9 +164,20 @@ class EngramProbe:
             raise RuntimeError("EngramProbe.start() must be called first")
         return self._memory
 
-    def _read_novelty(self) -> tuple[None, None, None]:
-        # Novelty is diagnostic and intentionally not read from layer internals.
-        return None, None, None
+    def _read_novelty(self) -> tuple[float | None, float | None, float | None]:
+        memory = self._require_memory()
+        layer = memory.neural_layer
+        if layer is None:
+            return None, None, None
+        stats = layer.get_stats()
+        surprise = stats.get("last_surprise")
+        surprise_ema = stats.get("surprise_ema")
+        write_ratio = stats.get("write_ratio")
+        return (
+            float(surprise) if surprise is not None else None,
+            float(surprise_ema) if surprise_ema is not None else None,
+            float(write_ratio) if write_ratio is not None else None,
+        )
 
     async def inject_fact(
         self,
@@ -208,6 +232,11 @@ class EngramProbe:
         memory = self._require_memory()
         started = time.perf_counter()
         try:
+            before_writes = None
+            if memory.neural_layer is not None:
+                before_writes = int(
+                    memory.neural_layer.get_stats().get("total_writes", 0)
+                )
             session_id = f"eval_session_{self._session_counter}"
             memory.add_turn("user", text, session_id=session_id)
             memory.add_turn(
@@ -216,6 +245,12 @@ class EngramProbe:
                 session_id=session_id,
             )
             novelty_score, novelty_ema, novelty_ratio = self._read_novelty()
+            neural_written = None
+            if memory.neural_layer is not None and before_writes is not None:
+                after_writes = int(
+                    memory.neural_layer.get_stats().get("total_writes", 0)
+                )
+                neural_written = after_writes > before_writes
             episode_id = memory.store_episode(
                 text,
                 metadata=metadata,
@@ -233,6 +268,7 @@ class EngramProbe:
                 novelty_ratio=novelty_ratio,
                 episode_id=episode_id,
                 success=bool(episode_id),
+                neural_written=neural_written,
             )
         except Exception as exc:
             return InjectionResult(
@@ -245,6 +281,7 @@ class EngramProbe:
                 novelty_ratio=None,
                 episode_id=None,
                 success=False,
+                neural_written=None,
                 error=str(exc),
             )
 
@@ -292,6 +329,7 @@ class EngramProbe:
         fact: Fact,
         query_type: str,
         top_k: int | None = None,
+        expect_contradiction: bool = False,
     ) -> GenerationResult:
         query = {
             "direct": fact.direct_query,
@@ -301,7 +339,28 @@ class EngramProbe:
         resolved_top_k = top_k or self.config.retrieve_top_k
         started = time.perf_counter()
         try:
-            built = self._require_memory().build_prompt(query)
+            memory = self._require_memory()
+            hint_text = None
+            hint_episodes: list[dict] = []
+            if memory.neural_layer is not None:
+                hint = memory.neural_layer.contribute_to_prompt(
+                    RecallQuery(query=query, session_id=memory.session_id)
+                )
+                if hint is not None:
+                    hint_text = hint.text
+                    hint_episodes = list(
+                        hint.metadata.get("aligned_episodes", [])
+                    )
+            expected_text = (
+                fact.contradiction if expect_contradiction else fact.canonical
+            )
+            stale_text = (
+                fact.canonical if expect_contradiction else fact.contradiction
+            )
+            aligned_texts = {
+                str(item.get("text", "")) for item in hint_episodes
+            }
+            built = memory.build_prompt(query)
             prompt = str(built["prompt"])
             hint_present = "[Neural context]" in prompt
             answer = await self._generate(prompt, query)
@@ -314,6 +373,10 @@ class EngramProbe:
                 elapsed_ms=(time.perf_counter() - started) * 1000,
                 success=True,
                 neural_hint_present=hint_present,
+                neural_hint_text=hint_text,
+                neural_hint_episodes=hint_episodes,
+                neural_hint_expected_present=expected_text in aligned_texts,
+                neural_hint_stale_present=stale_text in aligned_texts,
             )
         except Exception as exc:
             return GenerationResult(
@@ -325,6 +388,10 @@ class EngramProbe:
                 elapsed_ms=(time.perf_counter() - started) * 1000,
                 success=False,
                 neural_hint_present=False,
+                neural_hint_text=None,
+                neural_hint_episodes=[],
+                neural_hint_expected_present=None,
+                neural_hint_stale_present=None,
                 error=str(exc),
             )
 

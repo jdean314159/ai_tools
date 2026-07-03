@@ -5,6 +5,26 @@ import numpy as np
 from engram.neural.neural_memory import NeuralMemory, NeuralMemoryConfig
 
 
+def test_fresh_initialization_is_seeded_without_mutating_global_rng():
+    np.random.seed(7)
+    expected_next = np.random.random()
+    np.random.seed(7)
+
+    first = NeuralMemory(
+        config=NeuralMemoryConfig(initialization_seed=123, verbose=False)
+    )
+    observed_next = np.random.random()
+    second = NeuralMemory(
+        config=NeuralMemoryConfig(initialization_seed=123, verbose=False)
+    )
+
+    assert observed_next == expected_next
+    np.testing.assert_array_equal(
+        first._memory.net.weights,
+        second._memory.net.weights,
+    )
+
+
 def test_neural_memory_step_and_read_use_stable_numpy_defaults():
     np.random.seed(42)
     memory = NeuralMemory(

@@ -1,9 +1,8 @@
-"""Run a fast affinity-weight sweep against one fresh baseline."""
+"""Historical affinity scorer; recall affinity is inactive in current Engram."""
 
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
 from argparse import Namespace
 from pathlib import Path
@@ -125,6 +124,10 @@ def _run_args(
     embed_model: str,
     affinity_weight: float,
     judge_cache: Path,
+    mode: str,
+    answer_model: str | None,
+    warmup_replays: int,
+    neural_min_warmup_steps: int,
 ) -> Namespace:
     return Namespace(
         backend=backend,
@@ -137,7 +140,15 @@ def _run_args(
         output_root=str(output_root),
         run_name=run_name,
         affinity_weight=affinity_weight,
+        surprise_threshold=0.001,
+        neural_initialization_seed=42,
+        neural_prompt_advisory=False,
+        neural_importance_advisory=False,
         judge_cache=str(judge_cache),
+        mode=mode,
+        answer_model=answer_model,
+        warmup_replays=warmup_replays,
+        neural_min_warmup_steps=neural_min_warmup_steps,
         fresh=True,
         no_resume=False,
     )
@@ -161,6 +172,10 @@ async def run_sweep(args: argparse.Namespace) -> dict:
             embed_model=args.embed_model,
             affinity_weight=0.0,
             judge_cache=judge_cache,
+            mode=args.mode,
+            answer_model=args.answer_model,
+            warmup_replays=args.warmup_replays,
+            neural_min_warmup_steps=args.neural_min_warmup_steps,
         )
     )
 
@@ -179,6 +194,10 @@ async def run_sweep(args: argparse.Namespace) -> dict:
                 embed_model=args.embed_model,
                 affinity_weight=weight,
                 judge_cache=judge_cache,
+                mode=args.mode,
+                answer_model=args.answer_model,
+                warmup_replays=args.warmup_replays,
+                neural_min_warmup_steps=args.neural_min_warmup_steps,
             )
         )
         rows.append(evaluate_candidate(baseline, neural, weight))
@@ -213,6 +232,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--limit", type=int, default=30)
     parser.add_argument("--model", default="qwen3:8b")
+    parser.add_argument(
+        "--mode",
+        choices=("retrieval", "generation"),
+        default="retrieval",
+    )
+    parser.add_argument("--answer-model", default=None)
+    parser.add_argument("--warmup-replays", type=int, default=1)
+    parser.add_argument("--neural-min-warmup-steps", type=int, default=50)
     parser.add_argument("--ollama-url", default="http://localhost:11434")
     parser.add_argument("--embed-model", default="nomic-embed-text")
     parser.add_argument(
@@ -223,7 +250,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    asyncio.run(run_sweep(parse_args()))
+    raise SystemExit(
+        "affinity_weight is inactive because the neural layer contributes no "
+        "retrieval score. Use surprise_threshold_sweep.py to evaluate the "
+        "active RTRL/TITANS write gate."
+    )
 
 
 if __name__ == "__main__":

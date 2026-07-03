@@ -55,6 +55,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-root", default=None)
     parser.add_argument("--run-name", default=None)
     parser.add_argument("--affinity-weight", type=float, default=0.15)
+    parser.add_argument("--surprise-threshold", type=float, default=0.001)
+    parser.add_argument("--neural-initialization-seed", type=int, default=42)
+    parser.add_argument("--neural-prompt-advisory", action="store_true")
+    parser.add_argument("--neural-importance-advisory", action="store_true")
     parser.add_argument("--judge-cache", default=None)
     parser.add_argument(
         "--fresh",
@@ -76,6 +80,10 @@ async def run(args: argparse.Namespace) -> dict:
         embed_model=args.embed_model,
         embed_base_url=args.ollama_url,
         affinity_weight=args.affinity_weight,
+        surprise_threshold=args.surprise_threshold,
+        neural_initialization_seed=args.neural_initialization_seed,
+        neural_prompt_advisory_enabled=args.neural_prompt_advisory,
+        neural_importance_advisory_enabled=args.neural_importance_advisory,
         mode=args.mode,
         answer_model=args.answer_model or args.model,
         warmup_replays=args.warmup_replays,

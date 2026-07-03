@@ -81,7 +81,7 @@ class NeuralMemoryLayer:
         if not math.isfinite(self._affinity_weight):
             raise ValueError("config.affinity_weight must be finite")
         logger.info(
-            "Neural memory affinity weight: %.3f of candidate score spread",
+            "Inactive neural affinity compatibility value: %.3f",
             self._affinity_weight,
         )
 
@@ -262,6 +262,8 @@ class NeuralMemoryLayer:
         return None
 
     def contribute_to_prompt(self, query: RecallQuery) -> PromptHint | None:
+        if not self.config.prompt_advisory_enabled:
+            return None
         query_embedding = self._query_embedding(query)
         if query_embedding is None:
             return None
@@ -271,6 +273,7 @@ class NeuralMemoryLayer:
 
         context = self._neural_context(query_embedding)
         top_episodes = self._find_aligned_episodes(approx_embedding)
+        context["aligned_episodes"] = top_episodes
         text = _build_context_hint(
             top_episodes,
             self._last_surprise,
@@ -296,6 +299,10 @@ class NeuralMemoryLayer:
     def last_surprise(self) -> float | None:
         """Return surprise from the most recent completed observation pair."""
         return self.get_last_surprise()
+
+    def importance_adjustment_enabled(self) -> bool:
+        """Whether surprise may influence stored episode importance."""
+        return bool(self.config.importance_advisory_enabled)
 
     def close(self) -> None:
         if self._closed:
