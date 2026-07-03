@@ -5,10 +5,17 @@ Fixture-first FastAPI/Jinja/HTMX consumer specified by
 
 Set `MAIL_ASSISTANT_PROFILE` to a Thunderbird profile and optionally configure
 `MAIL_ASSISTANT_RULES`, `MAIL_ASSISTANT_DB`, `MAIL_ASSISTANT_BACKEND`, and
-`MAIL_ASSISTANT_MODEL`. Start with:
+`MAIL_ASSISTANT_MODEL`. From the repository root, install or refresh the editable
+workspace packages after cloning or moving the checkout:
 
 ```bash
-python -m examples.mail_assistant.web_app
+make install
+```
+
+Then start with:
+
+```bash
+.venv/bin/python -m examples.mail_assistant.web_app
 ```
 
 The example expects the repository's `mail_lib`, `llm_engines`, and

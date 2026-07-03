@@ -43,6 +43,7 @@ install: venv
 	$(PIP) install -e './llm_inspector_ui[dev]'
 	$(PIP) install -e './examples/language_tutor[dev]'   
 	$(PIP) install -e './examples/diagnostics_agent[dev]'
+	$(PIP) install -e './examples/mail_assistant[dev]'
 	$(PIP) install -e './agent_lib[dev]'
 	@echo ""
 	@echo "Core packages installed in dependency order. Run 'make test-core', 'make test-agent', 'make test-rag', 'make test-integration', 'make test-tutor', or 'make test-diagnostics' to verify."

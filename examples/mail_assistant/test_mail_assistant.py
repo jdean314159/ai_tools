@@ -1,4 +1,5 @@
 from __future__ import annotations
+# ruff: noqa: E402 -- exercise repository bootstrap before sibling-package imports
 
 from pathlib import Path
 import sqlite3
@@ -8,6 +9,10 @@ import time
 
 import httpx
 import pytest
+
+from ._bootstrap import install_repo_source_paths
+
+install_repo_source_paths()
 
 from llm_engines import ChatMessage, GenerationResponse
 

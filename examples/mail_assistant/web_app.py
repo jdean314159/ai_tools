@@ -1,4 +1,5 @@
 """Secured localhost FastAPI surface for the mail assistant."""
+# ruff: noqa: E402 -- repository bootstrap must run before sibling-package imports
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,6 +17,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+from ._bootstrap import install_repo_source_paths
+
+install_repo_source_paths()
 
 from llm_engines import get_engine
 
