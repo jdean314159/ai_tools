@@ -280,6 +280,20 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             )
         return Response(status_code=204, headers={"HX-Refresh": "true"})
 
+    @app.get("/message", response_class=HTMLResponse)
+    async def message_detail(request: Request, message_id: str):
+        message = next(
+            (item for item in mail.state.messages if item.header_message_id == message_id),
+            None,
+        )
+        if message is None:
+            raise HTTPException(status_code=404, detail="Unknown message ID")
+        return templates.TemplateResponse(
+            request,
+            "message_detail.html",
+            {"request": request, "message": message},
+        )
+
     @app.post("/read", response_class=HTMLResponse)
     async def mark_read(
         request: Request,

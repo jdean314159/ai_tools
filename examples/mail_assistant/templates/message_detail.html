@@ -1,0 +1,7 @@
+<article class="message-detail">
+  <h2>{{ message.subject }}</h2>
+  <p><strong>From:</strong> {{ message.sender }}</p>
+  <p><strong>To:</strong> {{ message.recipients|join(', ') }}</p>
+  {% if message.date %}<p><strong>Date:</strong> {{ message.date }}</p>{% endif %}
+  <pre>{{ message.body }}</pre>
+</article>

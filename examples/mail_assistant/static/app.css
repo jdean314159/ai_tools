@@ -1,8 +1,15 @@
 :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-body { margin: 0 auto; max-width: 72rem; padding: 1rem; }
+body { margin: 0 auto; max-width: 100rem; padding: 1rem; }
 header { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
 section, article, aside { border: 1px solid #8886; border-radius: .4rem; margin: 1rem 0; padding: 1rem; }
 article h3 { margin-top: 0; }
 form { display: inline-block; margin: .25rem .5rem .25rem 0; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .notice, .action { font-weight: 600; }
+.workspace { display: grid; grid-template-columns: minmax(0, 3fr) minmax(20rem, 2fr); gap: 1rem; align-items: start; }
+.message-panel { position: sticky; top: 1rem; max-height: calc(100vh - 4rem); overflow: auto; }
+.message-detail { border: 0; margin: 0; padding: 0; }
+@media (max-width: 60rem) {
+  .workspace { grid-template-columns: 1fr; }
+  .message-panel { position: static; max-height: none; }
+}

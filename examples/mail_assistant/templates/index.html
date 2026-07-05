@@ -27,6 +27,12 @@
   </header>
   {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
   {% if refresh_running %}<div id="refresh-status" class="notice" hx-get="/refresh-status" hx-trigger="load delay:2s" hx-swap="outerHTML">Loading mail snapshot in the background…</div>{% endif %}
-  <main id="mail-list">{% include "mail_list.html" %}</main>
+  <div class="workspace">
+    <main id="mail-list">{% include "mail_list.html" %}</main>
+    <aside id="message-panel" class="message-panel" aria-live="polite">
+      <h2>Message</h2>
+      <p>Select <strong>Open</strong> on an email to read it here.</p>
+    </aside>
+  </div>
 </body>
 </html>

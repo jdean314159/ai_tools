@@ -512,6 +512,17 @@ def test_web_escapes_mail_and_model_output(tmp_path: Path) -> None:
             page = await client.get("/")
             assert "<script>alert(1)</script>" not in page.text
             assert "&lt;script&gt;alert(1)&lt;/script&gt;" in page.text
+            detail = await client.get(
+                "/message", params={"message_id": malicious.header_message_id}
+            )
+            assert detail.status_code == 200
+            assert "<script>alert(1)</script>" not in detail.text
+            assert "&lt;script&gt;alert(1)&lt;/script&gt;" in detail.text
+            assert "<img src=x onerror=alert(2)>" not in detail.text
+            assert "&lt;img src=x onerror=alert(2)&gt;" in detail.text
+            assert (
+                await client.get("/message", params={"message_id": "missing"})
+            ).status_code == 404
             response = await client.post(
                 "/summarize/normal",
                 data={"csrf_token": app.state.csrf_token, "view": "unread"},
