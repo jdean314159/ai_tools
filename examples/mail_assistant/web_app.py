@@ -170,16 +170,13 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         referer = request.headers.get("referer")
         fetch_site = request.headers.get("sec-fetch-site")
         expected = str(request.base_url).rstrip("/")
-        if origin:
-            valid = origin.rstrip("/") == expected
-        elif referer:
-            valid = referer == expected or referer.startswith(expected + "/")
-        else:
-            # Referrer-Policy is deliberately no-referrer, and browsers may omit
-            # Origin for an ordinary same-origin form POST. Fetch Metadata still
-            # distinguishes that browser request from a cross-site submission.
-            valid = fetch_site == "same-origin"
-        if not valid:
+        origin_mismatch = bool(origin and origin.rstrip("/") != expected)
+        referer_mismatch = bool(
+            referer
+            and referer != expected
+            and not referer.startswith(expected + "/")
+        )
+        if origin_mismatch or referer_mismatch or fetch_site == "cross-site":
             raise HTTPException(status_code=403, detail="Same-origin request required")
 
     def current_rules() -> RuleLoadResult:

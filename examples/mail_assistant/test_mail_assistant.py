@@ -287,10 +287,13 @@ def test_web_security_headers_host_csrf_and_origin(tmp_path: Path) -> None:
             form = {"message_id": "one@example.test", "csrf_token": "wrong", "view": "unread"}
             assert (await client.post("/read", data=form, headers={"origin": "http://testserver"})).status_code == 403
             form["csrf_token"] = app.state.csrf_token
-            assert (await client.post("/read", data=form)).status_code == 403
+            assert (await client.post("/read", data=form)).status_code == 200
             assert (await client.post(
                 "/read", data=form, headers={"origin": "http://testserver"}
             )).status_code == 200
+            assert (await client.post(
+                "/read", data=form, headers={"origin": "http://attacker.test"}
+            )).status_code == 403
             assert (await client.post(
                 "/read", data=form, headers={"sec-fetch-site": "same-origin"}
             )).status_code == 200
@@ -349,7 +352,6 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
             response = await client.post(
                 "/refresh",
                 data={"csrf_token": app.state.csrf_token, "view": "unread"},
-                headers={"sec-fetch-site": "same-origin"},
             )
         assert response.status_code == 200
         assert worker_threads and worker_threads[0] != event_loop_thread
