@@ -6,6 +6,7 @@ import difflib
 import hashlib
 import os
 from pathlib import Path
+import re
 import secrets
 import tempfile
 import threading
@@ -53,6 +54,55 @@ def _append_rule(current: bytes, rule: dict[str, str]) -> bytes:
     return current + separator + ("\n".join(lines) + "\n").encode("utf-8")
 
 
+def _comment_suffix(value: str) -> str:
+    quote: str | None = None
+    escaped = False
+    for index, character in enumerate(value):
+        if escaped:
+            escaped = False
+            continue
+        if character == "\\" and quote == '"':
+            escaped = True
+        elif character in {"'", '"'}:
+            quote = None if quote == character else character if quote is None else quote
+        elif character == "#" and quote is None:
+            return value[index:]
+    return ""
+
+
+def _replace_assignment(block: str, key: str, value: str) -> tuple[str, bool]:
+    pattern = re.compile(rf"(?m)^([ \t]*{re.escape(key)}[ \t]*=[ \t]*)(.*?)(\r?)$")
+    match = pattern.search(block)
+    if match is None:
+        return block, False
+    suffix = _comment_suffix(match.group(2))
+    replacement = f"{match.group(1)}{_quoted(value)}"
+    if suffix:
+        replacement += " " + suffix.lstrip()
+    replacement += match.group(3)
+    return block[:match.start()] + replacement + block[match.end():], True
+
+
+def _update_rule(current: bytes, rule_index: int, *, priority: str, action: str) -> bytes:
+    text = current.decode("utf-8")
+    markers = list(re.finditer(r"(?m)^[ \t]*\[\[rule\]\][^\r\n]*(?:\r?\n|$)", text))
+    if not 1 <= rule_index <= len(markers):
+        raise ValueError("Existing rule index could not be located")
+    start = markers[rule_index - 1].start()
+    end = markers[rule_index].start() if rule_index < len(markers) else len(text)
+    block = text[start:end]
+    block, priority_found = _replace_assignment(block, "priority", priority)
+    if not priority_found:
+        raise ValueError("Existing rule has no priority assignment")
+    block, action_found = _replace_assignment(block, "action", action)
+    if not action_found:
+        newline = "\r\n" if "\r\n" in block else "\n"
+        if not block.endswith(("\n", "\r")):
+            block += newline
+        block += f"action = {_quoted(action)}{newline}"
+    return (text[:start] + block + text[end:]).encode("utf-8")
+
+
 class RuleTransactionService:
     def __init__(self, rules_path: str | Path, *, ttl_seconds: float = 600.0) -> None:
         self.rules_path = Path(rules_path)
@@ -91,14 +141,29 @@ class RuleTransactionService:
             raise ValueError(f"Selected message has no {field} value")
 
         current = self._read_current()
+        current_validation: RuleLoadResult | None = None
         if current:
             current_validation = self._validate_bytes(current)
             if not current_validation.ok:
                 raise ValueError("Existing personal rules are invalid; refusing to rewrite them")
-        candidate = _append_rule(
-            current,
-            {field: value, "priority": priority.value, "action": action.value},
-        )
+        matching = [] if current_validation is None else [
+            rule
+            for rule in current_validation.rules
+            if getattr(rule, field) == value
+            and all(getattr(rule, other) is None for other in {"sender", "domain", "subject"} - {field})
+        ]
+        if matching:
+            candidate = _update_rule(
+                current,
+                max(rule.index for rule in matching),
+                priority=priority.value,
+                action=action.value,
+            )
+        else:
+            candidate = _append_rule(
+                current,
+                {field: value, "priority": priority.value, "action": action.value},
+            )
         validation = self._validate_bytes(candidate)
         if not validation.ok:
             raise ValueError("Generated candidate did not pass personal-rule validation")

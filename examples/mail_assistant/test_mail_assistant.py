@@ -236,9 +236,9 @@ def test_rule_commit_preserves_existing_comments_and_formatting(tmp_path: Path) 
     original = (
         b"# Hand-maintained rules\n"
         b"[[rule]] # keep this inline comment\n"
-        b"priority='low'\n"
+        b"priority='low' # keep priority comment\n"
         b"sender = 'sender@example.test'\n"
-        b"action = 'none'\n"
+        b"action = 'none' # keep action comment\n"
     )
     rules_path.write_bytes(original)
     service = RuleTransactionService(rules_path)
@@ -247,16 +247,15 @@ def test_rule_commit_preserves_existing_comments_and_formatting(tmp_path: Path) 
         _message(), field="sender", priority=Priority.URGENT, action=RuleAction.SUMMARIZE
     )
     assert proposal.validation.ok
-    assert proposal.validation.warnings == (
-        "Rules #1 and #2 have identical predicates; rule #2 wins as the later file entry.",
-    )
+    assert proposal.validation.warnings == ()
     service.commit(proposal.token)
 
     committed = rules_path.read_bytes()
-    assert committed.startswith(original)
+    assert committed.count(b"[[rule]]") == 1
     assert committed.count(b"# Hand-maintained rules") == 1
-    assert b'sender = "sender@example.test"' in committed
-    assert b"priority='low'" in committed
+    assert b"sender = 'sender@example.test'" in committed
+    assert b'priority="urgent" # keep priority comment' in committed
+    assert b'action = "summarize" # keep action comment' in committed
 
 
 def test_rule_append_separates_file_without_trailing_newline(tmp_path: Path) -> None:
@@ -276,6 +275,24 @@ def test_rule_append_separates_file_without_trailing_newline(tmp_path: Path) -> 
     service.commit(proposal.token)
 
     assert rules_path.read_bytes().startswith(original + b"\n\n[[rule]]\n")
+
+
+def test_rule_upsert_adds_missing_action_without_appending_duplicate(tmp_path: Path) -> None:
+    rules_path = tmp_path / "personal_rules.toml"
+    rules_path.write_bytes(
+        b"[[rule]]\nsender = 'sender@example.test'\npriority = 'urgent'"
+    )
+    service = RuleTransactionService(rules_path)
+
+    proposal = service.propose(
+        _message(), field="sender", priority=Priority.LOW, action=RuleAction.IGNORE
+    )
+    service.commit(proposal.token)
+
+    committed = rules_path.read_bytes()
+    assert committed.count(b"[[rule]]") == 1
+    assert b'priority = "low"' in committed
+    assert b'action = "ignore"' in committed
 
 
 def test_rule_commit_rejects_external_change_and_symlink(tmp_path: Path) -> None:

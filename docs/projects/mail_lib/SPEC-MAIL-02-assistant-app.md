@@ -234,7 +234,9 @@ The proposal service:
    required even for a single-user process because the configured file remains
    externally editable between proposal and commit (for example through an editor,
    CLI, or another browser tab).
-2. Constructs a canonical candidate document with defined append/order semantics.
+2. Constructs a candidate document that surgically updates the latest exact
+   predicate match (preserving comments and unrelated bytes), or appends a new
+   block when the predicate is new.
 3. Serializes the exact candidate bytes.
 4. Validates those exact bytes using the normal personal-rule validator through a
    safe temporary file or a new byte-oriented validator sharing the same parser.
