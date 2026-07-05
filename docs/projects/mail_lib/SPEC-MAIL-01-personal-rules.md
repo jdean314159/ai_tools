@@ -1,6 +1,6 @@
 # SPEC-MAIL-01 — `mail_lib`: Deterministic Personal-Rule Layer (Script-First)
 
-**Status:** Implemented and maintainer-live-validated, **revision 4**. The live-validation follow-up
+**Status:** Implemented and maintainer-live-validated, **revision 5**. The live-validation follow-up
 sets `SELFMAIL_LINK_MAX_PROSE_CHARS = 40`, with no required subject-tag convention. Validation:
 `46 passed` for the MAIL-00/01 suite; `56 passed` for the combined
 mail/import-provenance/public-API gate; Ruff and the fixture CLI checks pass; the
@@ -150,7 +150,7 @@ note = "fixture: rescue a newsletter the built-in IGNORE rule would bury"
 
 ---
 
-## 3. Precedence (decision: most-specific wins, file-order breaks ties)
+## 3. Precedence (decision: most-specific wins, later file entry breaks ties)
 
 ### 3.1 Where the layer runs
 
@@ -188,8 +188,9 @@ Among all rules that match a message:
 3. If exactly one rule holds the maximum, it is selected.
 4. If two or more rules **tie** at the maximum specificity (possible only with same predicate count
    **and** same type-weight — e.g. two different `subject` substrings both matching, or two
-   different `sender` rules, which should not co-match but is defended anyway), the **earliest in
-   file order** is selected. File order is the sole, deterministic tiebreaker.
+   different `sender` rules, which should not co-match but is defended anyway), the **latest in
+   file order** is selected. This permits the append-only MAIL-02 editor to override an earlier
+   rule without rewriting hand-authored TOML. File order is the sole, deterministic tiebreaker.
 
 The persisted/displayed token is `personal:<idx>` where `<idx>` is the rule's **one-based** position
 in file order (matching the `note` default and validator output).
@@ -382,7 +383,7 @@ in a new module `mail_lib/personal_rules.py` plus edits to two existing files.
 - `apply_to_message(result: TriageResult, message: MailMessage, rules: Sequence[PersonalRule]) -> TriageResult`
   — **the sole application primitive**: takes one message and the result produced for it, first
   verifies `result.header_message_id == message.header_message_id`, and raises `ValueError` on a
-  mismatch. It then runs §3.3 selection (most-specific, file-order tiebreak) over `rules` and returns
+  mismatch. It then runs §3.3 selection (most-specific, latest-file-entry tiebreak) over `rules` and returns
   a new `TriageResult` with replaced `priority`, `personal:<idx>` appended to `matched_rules`, and
   `reason` set to the rule `note` or generated default. If no rule matches, it returns `result`
   unchanged. Pure; no I/O. There is **no batch wrapper accepting parallel sequences or pre-paired
@@ -438,7 +439,7 @@ All against synthetic fixtures and synthetic rule files. Required cases:
    and `{domain, subject}`, each matching only when both predicates hold.
 7. **Specificity ordering** — a message matching both `{subject}` and `{domain, subject}` resolves to
    the latter; matching `{sender}` and `{domain}` resolves to `{sender}`.
-8. **File-order tiebreak** — two same-signature rules both matching → earliest (lower one-based
+8. **File-order tiebreak** — two same-signature rules both matching → latest (higher one-based
    index) wins.
 9. **Default `note`** — a matching rule with no `note` yields reason `"Matched personal rule #<n>."`.
 

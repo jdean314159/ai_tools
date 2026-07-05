@@ -181,7 +181,7 @@ def _collision_warnings(rules: Sequence[PersonalRule]) -> tuple[str, ...]:
             if _predicate_values(left) == _predicate_values(right):
                 warnings.append(
                     f"Rules #{left.index} and #{right.index} have identical predicates; "
-                    f"rule #{left.index} wins by file order."
+                    f"rule #{right.index} wins as the later file entry."
                 )
                 continue
             if (
@@ -195,7 +195,7 @@ def _collision_warnings(rules: Sequence[PersonalRule]) -> tuple[str, ...]:
             ):
                 warnings.append(
                     f"Rules #{left.index} and #{right.index} have nested subject substrings; "
-                    "file order decides when both match."
+                    "the later file entry wins when both match."
                 )
     return tuple(warnings)
 
@@ -237,9 +237,9 @@ def select_personal_rule(
     message: MailMessage,
     rules: Sequence[PersonalRule],
 ) -> PersonalRule | None:
-    """Return the existing most-specific, file-order-selected matching rule."""
+    """Return the most-specific match, preferring the latest rule on ties."""
     matches = [rule for rule in rules if match_rule(rule, message)]
-    return max(matches, key=lambda rule: rule.specificity) if matches else None
+    return max(matches, key=lambda rule: (rule.specificity, rule.index)) if matches else None
 
 
 def classify_message(

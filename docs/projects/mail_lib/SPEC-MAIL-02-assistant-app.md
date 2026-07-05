@@ -115,7 +115,7 @@ ClassifiedMessage(message, triage, action, matched_personal_rule_index)
 
 The exact name may change, but the contract must preserve the final triage result
 and the action from the same selected personal rule. The function must use the
-existing most-specific/file-order selection behavior rather than implementing a
+existing most-specific/latest-file-entry selection behavior rather than implementing a
 second matcher in the app.
 
 The current `apply_to_message` contract cannot supply this result because it

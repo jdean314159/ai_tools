@@ -166,7 +166,7 @@ def test_apply_to_message_rejects_mismatched_ids() -> None:
         apply_to_message(wrong_result, message, ())
 
 
-def test_file_order_breaks_equal_specificity_ties(tmp_path: Path) -> None:
+def test_later_file_entry_breaks_equal_specificity_ties(tmp_path: Path) -> None:
     rules_path = _write_rules(
         tmp_path / "ties.toml",
         """
@@ -184,8 +184,8 @@ priority = "urgent"
 
     applied = apply_to_message(_result(message), message, loaded.rules)
 
-    assert applied.priority == Priority.LOW
-    assert applied.matched_rules[-1] == "personal:1"
+    assert applied.priority == Priority.URGENT
+    assert applied.matched_rules[-1] == "personal:2"
     assert any("nested subject" in warning for warning in loaded.warnings)
 
 

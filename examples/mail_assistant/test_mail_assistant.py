@@ -248,7 +248,7 @@ def test_rule_commit_preserves_existing_comments_and_formatting(tmp_path: Path) 
     )
     assert proposal.validation.ok
     assert proposal.validation.warnings == (
-        "Rules #1 and #2 have identical predicates; rule #1 wins by file order.",
+        "Rules #1 and #2 have identical predicates; rule #2 wins as the later file entry.",
     )
     service.commit(proposal.token)
 
