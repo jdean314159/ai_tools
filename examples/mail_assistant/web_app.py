@@ -12,9 +12,10 @@ import time
 from pathlib import Path
 import secrets
 from typing import Any
+from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -237,6 +238,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "notice": notice,
             "window_value": window_value,
             "window_unit": window_unit,
+            "refresh_running": bool(task is not None and not task.done()),
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -261,22 +263,22 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
-        started = start_background_refresh()
-        return templates.TemplateResponse(
-            request,
-            "index.html",
-            context(
-                request,
-                view=view,
-                window_value=window_value,
-                window_unit=window_unit,
-                notice=(
-                    "Snapshot refresh started in the background. Reload to see completed changes."
-                    if started
-                    else "Snapshot refresh is already running."
-                ),
-            ),
+        start_background_refresh()
+        query = urlencode(
+            {"view": view, "window_value": window_value, "window_unit": window_unit}
         )
+        return RedirectResponse(url=f"/?{query}", status_code=303)
+
+    @app.get("/refresh-status")
+    async def refresh_status() -> Response:
+        task = app.state.refresh_task
+        if task is not None and not task.done():
+            return HTMLResponse(
+                '<div id="refresh-status" hx-get="/refresh-status" '
+                'hx-trigger="load delay:2s" hx-swap="outerHTML">'
+                "Loading mail snapshot in the background…</div>"
+            )
+        return Response(status_code=204, headers={"HX-Refresh": "true"})
 
     @app.post("/read", response_class=HTMLResponse)
     async def mark_read(

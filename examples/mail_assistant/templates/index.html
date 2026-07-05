@@ -26,6 +26,7 @@
     </form>
   </header>
   {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+  {% if refresh_running %}<div id="refresh-status" class="notice" hx-get="/refresh-status" hx-trigger="load delay:2s" hx-swap="outerHTML">Loading mail snapshot in the background…</div>{% endif %}
   <main id="mail-list">{% include "mail_list.html" %}</main>
 </body>
 </html>

@@ -404,7 +404,11 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
                 data={"csrf_token": app.state.csrf_token, "view": "unread"},
             )
             await app.state.refresh_task
-        assert response.status_code == 200
+            completed = await client.get("/refresh-status")
+        assert response.status_code == 303
+        assert response.headers["location"] == "/?view=unread&window_value=1&window_unit=weeks"
+        assert completed.status_code == 204
+        assert completed.headers["hx-refresh"] == "true"
         assert worker_threads and worker_threads[0] != event_loop_thread
 
     asyncio.run(exercise())
