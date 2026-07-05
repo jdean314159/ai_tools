@@ -442,6 +442,43 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
     asyncio.run(exercise())
 
 
+def test_rule_preview_targets_selected_message_row(tmp_path: Path) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    first = _message("first", subject="First unique subject", date=now)
+    second = _message("second", subject="Second unique subject", date=now)
+    app = _web_app(tmp_path)
+    app.state.mail._reader = lambda _path: [first, second]
+    app.state.mail.refresh()
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            page = await client.get("/?view=all")
+            assert page.text.count('id="proposal-normal-visible-') == 2
+            assert 'hx-target="#proposal-normal-visible-1"' in page.text
+            assert 'hx-target="#proposal-normal-visible-2"' in page.text
+
+            preview = await client.post(
+                "/rules/propose",
+                data={
+                    "message_id": "second",
+                    "field": "subject",
+                    "priority": "low",
+                    "action": "none",
+                    "csrf_token": app.state.csrf_token,
+                    "view": "all",
+                    "window_value": 1,
+                    "window_unit": "weeks",
+                },
+            )
+            assert preview.status_code == 200
+            assert "second unique subject" in preview.text
+            assert "first unique subject" not in preview.text
+            assert "This rule has not been applied yet." in preview.text
+
+    asyncio.run(exercise())
+
+
 def test_web_escapes_mail_and_model_output(tmp_path: Path) -> None:
     malicious = _message(
         subject="<script>alert(1)</script>",

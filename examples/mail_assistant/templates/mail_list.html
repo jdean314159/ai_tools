@@ -13,8 +13,8 @@
   <div id="summary-{{ priority.value }}"></div>
   {% set ignored = messages|selectattr('action.value', 'equalto', 'ignore')|list %}
   {% if ignored %}<details><summary>{{ ignored|length }} collapsed by personal rule</summary>
-  {% for item in ignored %}{% include "message.html" %}{% endfor %}</details>{% endif %}
-  {% for item in messages if item.action.value != 'ignore' %}{% include "message.html" %}{% endfor %}
+  {% for item in ignored %}{% set proposal_id = 'proposal-' ~ priority.value ~ '-ignored-' ~ loop.index %}{% include "message.html" %}{% endfor %}</details>{% endif %}
+  {% for item in messages if item.action.value != 'ignore' %}{% set proposal_id = 'proposal-' ~ priority.value ~ '-visible-' ~ loop.index %}{% include "message.html" %}{% endfor %}
   {% endif %}
 </section>
 {% endfor %}

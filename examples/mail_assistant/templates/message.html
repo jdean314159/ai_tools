@@ -11,7 +11,7 @@
     <input type="hidden" name="window_unit" value="{{ window_unit }}">
     <button type="submit">Mark locally read</button>
   </form>
-  <form hx-post="/rules/propose" hx-target="#proposal" hx-swap="innerHTML" method="post" action="/rules/propose">
+  <form hx-post="/rules/propose" hx-target="#{{ proposal_id }}" hx-swap="innerHTML" method="post" action="/rules/propose">
     <input type="hidden" name="message_id" value="{{ item.message.header_message_id }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="view" value="{{ view }}">
@@ -20,7 +20,7 @@
     <label>Match <select name="field"><option>sender</option><option>domain</option><option>subject</option></select></label>
     <label>Priority <select name="priority"><option>urgent</option><option>normal</option><option>low</option><option>ignore</option></select></label>
     <label>Action <select name="action"><option>none</option><option>summarize</option><option>ignore</option></select></label>
-    <button type="submit">Propose rule</button>
+    <button type="submit">Preview rule (not saved)</button>
   </form>
 </article>
-<div id="proposal"></div>
+<div id="{{ proposal_id }}"></div>
