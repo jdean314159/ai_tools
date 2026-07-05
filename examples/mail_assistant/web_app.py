@@ -137,10 +137,23 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     rule_transactions = RuleTransactionService(config.rules_path)
     summary_service: SectionSummarizer | None = None
 
+    async def refresh_in_background(target_app: FastAPI) -> None:
+        target_app.state.refresh_error = None
+        try:
+            await _run_blocking(mail.refresh)
+        except Exception as exc:
+            target_app.state.refresh_error = str(exc)
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
-        await _run_blocking(mail.refresh)
-        yield
+        mail.load_cached()
+        _app.state.refresh_task = asyncio.create_task(refresh_in_background(_app))
+        try:
+            yield
+        finally:
+            task = _app.state.refresh_task
+            if task and not task.done():
+                task.cancel()
 
     app = FastAPI(title="Local Mail Assistant", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
@@ -152,6 +165,15 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     app.state.mail = mail
     app.state.store = store
     app.state.csrf_token = csrf_token
+    app.state.refresh_task = None
+    app.state.refresh_error = None
+
+    def start_background_refresh() -> bool:
+        task = app.state.refresh_task
+        if task is not None and not task.done():
+            return False
+        app.state.refresh_task = asyncio.create_task(refresh_in_background(app))
+        return True
 
     @app.middleware("http")
     async def response_security(request: Request, call_next):
@@ -193,6 +215,11 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         notice: str | None = None,
     ) -> dict[str, Any]:
         rules = current_rules()
+        task = app.state.refresh_task
+        if notice is None and task is not None and not task.done():
+            notice = "Snapshot refresh is running in the background."
+        if notice is None and app.state.refresh_error:
+            notice = f"Snapshot refresh failed: {app.state.refresh_error}"
         try:
             groups = mail.visible(
                 rules.rules,
@@ -234,10 +261,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
-        try:
-            await _run_blocking(mail.refresh)
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Refresh failed: {exc}") from exc
+        started = start_background_refresh()
         return templates.TemplateResponse(
             request,
             "index.html",
@@ -246,7 +270,11 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 view=view,
                 window_value=window_value,
                 window_unit=window_unit,
-                notice="Snapshot refreshed.",
+                notice=(
+                    "Snapshot refresh started in the background. Reload to see completed changes."
+                    if started
+                    else "Snapshot refresh is already running."
+                ),
             ),
         )
 

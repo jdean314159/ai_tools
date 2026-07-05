@@ -4,11 +4,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import json
 import threading
 from typing import Callable, Iterable
 
 from mail_lib.personal_rules import ClassifiedMessage, PersonalRule, classify_message
-from mail_lib.thunderbird import MailMessage, iter_messages
+from mail_lib.thunderbird import Identity, MailMessage, MessageMetadata, iter_messages
 from mail_lib.triage import Priority
 
 from .store import AssistantStore
@@ -62,6 +63,16 @@ class MailAssistantService:
 
     def refresh(self) -> SnapshotState:
         loaded = tuple(self._reader(self.profile))
+        self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(loaded))
+        with self._lock:
+            self._state = SnapshotState(loaded, self._state.revision + 1)
+            return self._state
+
+    def load_cached(self) -> SnapshotState:
+        payload = self.store.get_mail_snapshot(str(self.profile.resolve()))
+        if payload is None:
+            return self.state
+        loaded = _decode_snapshot(payload)
         with self._lock:
             self._state = SnapshotState(loaded, self._state.revision + 1)
             return self._state
@@ -107,3 +118,80 @@ class MailAssistantService:
         if header_message_id not in {item.header_message_id for item in self.state.messages}:
             raise KeyError(header_message_id)
         self.store.mark_read(header_message_id)
+
+
+def _encode_snapshot(messages: tuple[MailMessage, ...]) -> str:
+    encoded = []
+    for message in messages:
+        metadata = message.metadata
+        encoded.append(
+            {
+                "header_message_id": message.header_message_id,
+                "subject": message.subject,
+                "body": message.body,
+                "sender": message.sender,
+                "recipients": message.recipients,
+                "date": message.date,
+                "source_folder": message.source_folder,
+                "signal_folders": message.signal_folders,
+                "mbox_path": str(message.mbox_path) if message.mbox_path else None,
+                "metadata": None if metadata is None else {
+                    "header_message_id": metadata.header_message_id,
+                    "message_key": metadata.message_key,
+                    "folder_id": metadata.folder_id,
+                    "conversation_id": metadata.conversation_id,
+                    "date": metadata.date,
+                    "sender_id": metadata.sender_id,
+                    "recipient_ids": metadata.recipient_ids,
+                    "sender": None if metadata.sender is None else {
+                        "contact_id": metadata.sender.contact_id,
+                        "name": metadata.sender.name,
+                        "address": metadata.sender.address,
+                    },
+                    "recipients": [
+                        {"contact_id": item.contact_id, "name": item.name, "address": item.address}
+                        for item in metadata.recipients
+                    ],
+                    "flags": metadata.flags,
+                    "folder_uri": metadata.folder_uri,
+                    "folder_name": metadata.folder_name,
+                },
+            }
+        )
+    return json.dumps(encoded, ensure_ascii=False, separators=(",", ":"))
+
+
+def _decode_snapshot(payload: str) -> tuple[MailMessage, ...]:
+    messages = []
+    for raw in json.loads(payload):
+        raw_metadata = raw["metadata"]
+        metadata = None
+        if raw_metadata is not None:
+            sender = raw_metadata["sender"]
+            metadata = MessageMetadata(
+                header_message_id=raw_metadata["header_message_id"],
+                message_key=raw_metadata["message_key"],
+                folder_id=raw_metadata["folder_id"],
+                conversation_id=raw_metadata["conversation_id"],
+                date=raw_metadata["date"],
+                sender_id=raw_metadata["sender_id"],
+                recipient_ids=tuple(raw_metadata["recipient_ids"]),
+                sender=Identity(**sender) if sender else None,
+                recipients=tuple(Identity(**item) for item in raw_metadata["recipients"]),
+                flags=dict(raw_metadata["flags"]),
+                folder_uri=raw_metadata["folder_uri"],
+                folder_name=raw_metadata["folder_name"],
+            )
+        messages.append(MailMessage(
+            header_message_id=raw["header_message_id"],
+            subject=raw["subject"],
+            body=raw["body"],
+            sender=raw["sender"],
+            recipients=tuple(raw["recipients"]),
+            date=raw["date"],
+            source_folder=raw["source_folder"],
+            signal_folders=tuple(raw["signal_folders"]),
+            metadata=metadata,
+            mbox_path=Path(raw["mbox_path"]) if raw["mbox_path"] else None,
+        ))
+    return tuple(messages)

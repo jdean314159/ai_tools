@@ -120,6 +120,18 @@ def test_failed_refresh_preserves_previous_snapshot(tmp_path: Path) -> None:
     assert service.state == first
 
 
+def test_snapshot_cache_round_trips_messages_and_metadata(tmp_path: Path) -> None:
+    store = AssistantStore(tmp_path / "a.db")
+    original = _message("cached", date="2026-07-05T12:00:00+00:00")
+    writer = MailAssistantService(tmp_path, store, reader=lambda _path: [original])
+    writer.refresh()
+    reader = MailAssistantService(tmp_path, store, reader=lambda _path: [])
+
+    loaded = reader.load_cached()
+
+    assert loaded.messages == (original,)
+
+
 def test_messages_are_newest_first_and_filtered_by_age(tmp_path: Path) -> None:
     now = datetime(2026, 7, 5, 12, tzinfo=timezone.utc)
     messages = (
@@ -347,6 +359,7 @@ def test_app_lifespan_loads_initial_snapshot(tmp_path: Path) -> None:
     async def exercise() -> None:
         assert app.state.mail.state.revision == 0
         async with app.router.lifespan_context(app):
+            await app.state.refresh_task
             assert app.state.mail.state.revision == 1
             assert len(app.state.mail.state.messages) == 1
 
@@ -390,6 +403,7 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
                 "/refresh",
                 data={"csrf_token": app.state.csrf_token, "view": "unread"},
             )
+            await app.state.refresh_task
         assert response.status_code == 200
         assert worker_threads and worker_threads[0] != event_loop_thread
 

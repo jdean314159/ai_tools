@@ -28,6 +28,13 @@ does not try to resolve unpublished sibling packages from PyPI.
 The server rejects non-loopback bind hosts. Real mail remains local and must not
 be added to fixtures or sent to remote development or evaluation services.
 
+After the first complete scan, the app stores a local JSON snapshot in its own
+SQLite database. Later startups render that cached snapshot immediately while a
+fresh scan runs in the background. **Refresh snapshot** is also non-blocking;
+reload the page after the background refresh completes. The first run after
+installing this version still requires one complete profile scan to seed the
+cache.
+
 Section summarization is explicit and deterministic at the prompt boundary. The
 app adds whole messages in snapshot order until the configured input-token budget
 would be exceeded; it rejects a section when even its first message cannot fit.

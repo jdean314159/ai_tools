@@ -40,7 +40,28 @@ class AssistantStore:
                     created_at REAL NOT NULL,
                     PRIMARY KEY (section_key, model, prompt_version)
                 );
+                CREATE TABLE IF NOT EXISTS mail_snapshot_cache (
+                    profile TEXT PRIMARY KEY,
+                    payload TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
                 """
+            )
+            connection.commit()
+
+    def get_mail_snapshot(self, profile: str) -> str | None:
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT payload FROM mail_snapshot_cache WHERE profile = ?", (profile,)
+            ).fetchone()
+        return str(row["payload"]) if row else None
+
+    def put_mail_snapshot(self, profile: str, payload: str) -> None:
+        with closing(self._connect()) as connection:
+            connection.execute(
+                "INSERT OR REPLACE INTO mail_snapshot_cache (profile, payload, created_at) "
+                "VALUES (?, ?, ?)",
+                (profile, payload, time.time()),
             )
             connection.commit()
 
