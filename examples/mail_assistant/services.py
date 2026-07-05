@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import threading
 from typing import Callable, Iterable
@@ -18,6 +19,18 @@ PRIORITY_ORDER = (Priority.URGENT, Priority.NORMAL, Priority.LOW, Priority.IGNOR
 
 def thunderbird_read(message: MailMessage) -> bool:
     return bool(message.metadata and message.metadata.flags.get("read", False))
+
+
+def message_datetime(message: MailMessage) -> datetime | None:
+    if not message.date:
+        return None
+    try:
+        parsed = datetime.fromisoformat(message.date)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 @dataclass(frozen=True)
@@ -61,17 +74,33 @@ class MailAssistantService:
         rules: tuple[PersonalRule, ...],
         *,
         view: str = "unread",
+        max_age_days: int | None = None,
+        now: datetime | None = None,
     ) -> dict[Priority, tuple[ClassifiedMessage, ...]]:
         if view not in {"unread", "all"}:
             raise ValueError("view must be 'unread' or 'all'")
         app_read = self.store.read_ids()
+        cutoff = None
+        if max_age_days is not None:
+            current = now or datetime.now(timezone.utc)
+            if current.tzinfo is None:
+                current = current.replace(tzinfo=timezone.utc)
+            cutoff = current.astimezone(timezone.utc) - timedelta(days=max_age_days)
         grouped: dict[Priority, list[ClassifiedMessage]] = {item: [] for item in PRIORITY_ORDER}
         for classified in self.classify(rules):
             message = classified.message
+            message_date = message_datetime(message)
+            if cutoff is not None and (message_date is None or message_date < cutoff):
+                continue
             is_read = thunderbird_read(message) or message.header_message_id in app_read
             if view == "unread" and is_read:
                 continue
             grouped[classified.triage.priority].append(classified)
+        for messages in grouped.values():
+            messages.sort(
+                key=lambda item: message_datetime(item.message) or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True,
+            )
         return {priority: tuple(grouped[priority]) for priority in PRIORITY_ORDER}
 
     def mark_read(self, header_message_id: str) -> None:

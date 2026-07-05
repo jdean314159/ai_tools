@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 import asyncio
+from datetime import datetime, timedelta, timezone
 import threading
 import time
 
@@ -21,7 +22,7 @@ from mail_lib.thunderbird import MailMessage, MessageMetadata
 from mail_lib.triage import Priority
 
 from .rules import RuleTransactionService
-from .services import MailAssistantService
+from .services import MailAssistantService, message_datetime
 from .store import AssistantStore
 from .summarizer import PROMPT_VERSION, SectionSummarizer, section_key
 from .web_app import AppConfig, _discover_thunderbird_profile, create_app
@@ -34,6 +35,7 @@ def _message(
     subject: str = "Fixture note",
     body: str = "Synthetic body",
     read: bool = False,
+    date: str | None = None,
 ) -> MailMessage:
     metadata = MessageMetadata(
         header_message_id=message_id,
@@ -50,7 +52,7 @@ def _message(
         body=body,
         sender="sender@example.test",
         recipients=("user@example.test",),
-        date=None,
+        date=date,
         source_folder="INBOX",
         metadata=metadata,
     )
@@ -116,6 +118,39 @@ def test_failed_refresh_preserves_previous_snapshot(tmp_path: Path) -> None:
     with pytest.raises(OSError):
         service.refresh()
     assert service.state == first
+
+
+def test_messages_are_newest_first_and_filtered_by_age(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 5, 12, tzinfo=timezone.utc)
+    messages = (
+        _message("old", date=(now - timedelta(days=40)).isoformat()),
+        _message("newest", date=(now - timedelta(hours=1)).isoformat()),
+        _message("middle", date=(now - timedelta(days=5)).isoformat()),
+        _message("undated"),
+    )
+    service = MailAssistantService(
+        tmp_path,
+        AssistantStore(tmp_path / "a.db"),
+        reader=lambda _path: messages,
+    )
+    service.refresh()
+
+    all_groups = service.visible((), view="all", now=now)
+    windowed_groups = service.visible((), view="all", max_age_days=14, now=now)
+    all_ids = {item.message.header_message_id for group in all_groups.values() for item in group}
+    windowed_ids = [
+        item.message.header_message_id for group in windowed_groups.values() for item in group
+    ]
+
+    assert all_ids == {"newest", "middle", "old", "undated"}
+    assert set(windowed_ids) == {"newest", "middle"}
+    for group in all_groups.values():
+        dated = [message_datetime(item.message) for item in group]
+        assert dated == sorted(
+            dated,
+            key=lambda value: value or datetime.min.replace(tzinfo=timezone.utc),
+            reverse=True,
+        )
 
 
 def test_summary_cache_varies_with_exact_content_model_and_prompt(tmp_path: Path) -> None:
@@ -360,7 +395,11 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
 
 
 def test_web_escapes_mail_and_model_output(tmp_path: Path) -> None:
-    malicious = _message(subject="<script>alert(1)</script>", body="<img src=x onerror=alert(2)>")
+    malicious = _message(
+        subject="<script>alert(1)</script>",
+        body="<img src=x onerror=alert(2)>",
+        date=datetime.now(timezone.utc).isoformat(),
+    )
     app = _web_app(tmp_path, malicious)
     app.state.mail.refresh()
     headers = {"origin": "http://testserver"}

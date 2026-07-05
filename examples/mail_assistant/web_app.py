@@ -175,10 +175,28 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             raise HTTPException(status_code=500, detail="Personal rules are invalid")
         return result
 
-    def context(request: Request, *, view: str, notice: str | None = None) -> dict[str, Any]:
+    def window_days(value: int, unit: str) -> int:
+        if unit not in {"days", "weeks"}:
+            raise HTTPException(status_code=400, detail="Window unit must be days or weeks")
+        if not 1 <= value <= 3650:
+            raise HTTPException(status_code=400, detail="Window value must be between 1 and 3650")
+        return value * (7 if unit == "weeks" else 1)
+
+    def context(
+        request: Request,
+        *,
+        view: str,
+        window_value: int,
+        window_unit: str,
+        notice: str | None = None,
+    ) -> dict[str, Any]:
         rules = current_rules()
         try:
-            groups = mail.visible(rules.rules, view=view)
+            groups = mail.visible(
+                rules.rules,
+                view=view,
+                max_age_days=window_days(window_value, window_unit),
+            )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {
@@ -188,21 +206,46 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "priorities": PRIORITY_ORDER,
             "csrf_token": csrf_token,
             "notice": notice,
+            "window_value": window_value,
+            "window_unit": window_unit,
         }
 
     @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request, view: str = "unread"):
-        return templates.TemplateResponse(request, "index.html", context(request, view=view))
+    async def index(
+        request: Request,
+        view: str = "unread",
+        window_value: int = 30,
+        window_unit: str = "days",
+    ):
+        return templates.TemplateResponse(
+            request,
+            "index.html",
+            context(request, view=view, window_value=window_value, window_unit=window_unit),
+        )
 
     @app.post("/refresh", response_class=HTMLResponse)
-    async def refresh(request: Request, csrf_token: str = Form(...), view: str = Form("unread")):
+    async def refresh(
+        request: Request,
+        csrf_token: str = Form(...),
+        view: str = Form("unread"),
+        window_value: int = Form(30),
+        window_unit: str = Form("days"),
+    ):
         require_csrf(request, csrf_token)
         try:
             await _run_blocking(mail.refresh)
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Refresh failed: {exc}") from exc
         return templates.TemplateResponse(
-            request, "index.html", context(request, view=view, notice="Snapshot refreshed.")
+            request,
+            "index.html",
+            context(
+                request,
+                view=view,
+                window_value=window_value,
+                window_unit=window_unit,
+                notice="Snapshot refreshed.",
+            ),
         )
 
     @app.post("/read", response_class=HTMLResponse)
@@ -211,13 +254,19 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         message_id: str = Form(...),
         csrf_token: str = Form(...),
         view: str = Form("unread"),
+        window_value: int = Form(30),
+        window_unit: str = Form("days"),
     ):
         require_csrf(request, csrf_token)
         try:
             mail.mark_read(message_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="Unknown message ID") from exc
-        return templates.TemplateResponse(request, "mail_list.html", context(request, view=view))
+        return templates.TemplateResponse(
+            request,
+            "mail_list.html",
+            context(request, view=view, window_value=window_value, window_unit=window_unit),
+        )
 
     @app.post("/summarize/{section}", response_class=HTMLResponse)
     async def summarize(
@@ -225,10 +274,16 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         request: Request,
         csrf_token: str = Form(...),
         view: str = Form("unread"),
+        window_value: int = Form(30),
+        window_unit: str = Form("days"),
     ):
         nonlocal summary_service
         require_csrf(request, csrf_token)
-        messages = mail.visible(current_rules().rules, view=view)[section]
+        messages = mail.visible(
+            current_rules().rules,
+            view=view,
+            max_age_days=window_days(window_value, window_unit),
+        )[section]
         if not messages:
             raise HTTPException(status_code=404, detail="Section is empty")
         if summary_service is None:
@@ -264,6 +319,9 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         priority: Priority = Form(...),
         action: RuleAction = Form(...),
         csrf_token: str = Form(...),
+        view: str = Form("unread"),
+        window_value: int = Form(30),
+        window_unit: str = Form("days"),
     ):
         require_csrf(request, csrf_token)
         messages = {item.header_message_id: item for item in mail.state.messages}
@@ -279,7 +337,14 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         return templates.TemplateResponse(
             request,
             "rule_proposal.html",
-            {"request": request, "proposal": proposal, "csrf_token": csrf_token},
+            {
+                "request": request,
+                "proposal": proposal,
+                "csrf_token": csrf_token,
+                "view": view,
+                "window_value": window_value,
+                "window_unit": window_unit,
+            },
         )
 
     @app.post("/rules/commit", response_class=HTMLResponse)
@@ -288,6 +353,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         proposal_token: str = Form(...),
         csrf_token: str = Form(...),
         view: str = Form("unread"),
+        window_value: int = Form(30),
+        window_unit: str = Form("days"),
     ):
         require_csrf(request, csrf_token)
         try:
@@ -297,7 +364,15 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return templates.TemplateResponse(
-            request, "index.html", context(request, view=view, notice="Rule committed.")
+            request,
+            "index.html",
+            context(
+                request,
+                view=view,
+                window_value=window_value,
+                window_unit=window_unit,
+                notice="Rule committed.",
+            ),
         )
 
     return app

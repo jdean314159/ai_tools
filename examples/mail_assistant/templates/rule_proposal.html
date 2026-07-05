@@ -5,6 +5,9 @@
   <form method="post" action="/rules/commit">
     <input type="hidden" name="proposal_token" value="{{ proposal.token }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="view" value="{{ view }}">
+    <input type="hidden" name="window_value" value="{{ window_value }}">
+    <input type="hidden" name="window_unit" value="{{ window_unit }}">
     <button type="submit">Approve and commit</button>
   </form>
 </aside>
