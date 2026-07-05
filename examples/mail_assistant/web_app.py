@@ -35,6 +35,8 @@ from .summarizer import SectionSummarizer
 
 
 APP_DIR = Path(__file__).resolve().parent
+DEFAULT_WINDOW_VALUE = 1
+DEFAULT_WINDOW_UNIT = "weeks"
 
 
 async def _run_blocking(function, *args, timeout: float | None = None):
@@ -214,8 +216,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     async def index(
         request: Request,
         view: str = "unread",
-        window_value: int = 30,
-        window_unit: str = "days",
+        window_value: int = DEFAULT_WINDOW_VALUE,
+        window_unit: str = DEFAULT_WINDOW_UNIT,
     ):
         return templates.TemplateResponse(
             request,
@@ -228,8 +230,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         request: Request,
         csrf_token: str = Form(...),
         view: str = Form("unread"),
-        window_value: int = Form(30),
-        window_unit: str = Form("days"),
+        window_value: int = Form(DEFAULT_WINDOW_VALUE),
+        window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
         try:
@@ -254,8 +256,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         message_id: str = Form(...),
         csrf_token: str = Form(...),
         view: str = Form("unread"),
-        window_value: int = Form(30),
-        window_unit: str = Form("days"),
+        window_value: int = Form(DEFAULT_WINDOW_VALUE),
+        window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
         try:
@@ -274,8 +276,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         request: Request,
         csrf_token: str = Form(...),
         view: str = Form("unread"),
-        window_value: int = Form(30),
-        window_unit: str = Form("days"),
+        window_value: int = Form(DEFAULT_WINDOW_VALUE),
+        window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         nonlocal summary_service
         require_csrf(request, csrf_token)
@@ -320,8 +322,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         action: RuleAction = Form(...),
         csrf_token: str = Form(...),
         view: str = Form("unread"),
-        window_value: int = Form(30),
-        window_unit: str = Form("days"),
+        window_value: int = Form(DEFAULT_WINDOW_VALUE),
+        window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
         messages = {item.header_message_id: item for item in mail.state.messages}
@@ -353,8 +355,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         proposal_token: str = Form(...),
         csrf_token: str = Form(...),
         view: str = Form("unread"),
-        window_value: int = Form(30),
-        window_unit: str = Form("days"),
+        window_value: int = Form(DEFAULT_WINDOW_VALUE),
+        window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
         try:

@@ -317,6 +317,8 @@ def test_web_security_headers_host_and_csrf_token(tmp_path: Path) -> None:
             response = await client.get("/")
             assert response.status_code == 200
             assert "default-src 'self'" in response.headers["content-security-policy"]
+            assert 'name="window_value" min="1" max="3650" value="1"' in response.text
+            assert '<option value="weeks" selected>weeks</option>' in response.text
             assert (await client.get("/", headers={"host": "attacker.test"})).status_code == 400
 
             form = {"message_id": "one@example.test", "csrf_token": "wrong", "view": "unread"}
