@@ -42,3 +42,26 @@ The model call runs off the event loop and has a configurable soft timeout.
 
 `static/htmx.min.js` is the pinned HTMX 2.0.4 browser distribution from the
 official `bigskysoftware/htmx` release. See `static/HTMX-PROVENANCE.txt`.
+
+## Move to Trash
+
+Server-side trashing is disabled until an IMAP account file exists at
+`~/.config/mail_assistant/imap_accounts.toml` (override with
+`MAIL_ASSISTANT_IMAP_ACCOUNTS`). Passwords are never stored in that file; each
+account names an environment variable containing its password or app password:
+
+```toml
+[[account]]
+host = "imap.example.com"
+username = "user@example.com"
+password_env = "MAIL_ASSISTANT_IMAP_PASSWORD_1"
+trash_folder = "Trash"
+port = 993
+```
+
+Export the named variable before starting the app. Add one table per account.
+The host and username must match Thunderbird's folder URI; Gmail commonly uses
+`trash_folder = "[Gmail]/Trash"`. The app requires IMAP `MOVE`, searches the
+selected source folder for exactly one matching `Message-ID`, and presents a
+second confirmation before mutation. It does not fall back to copy/delete or
+write Thunderbird mbox files.

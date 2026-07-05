@@ -1,0 +1,13 @@
+<aside class="proposal">
+  <h3>Confirm Move to Trash</h3>
+  <p><strong>{{ message.subject }}</strong></p>
+  <p>This will move the server message on {{ host }} from {{ folder }} to {{ trash_folder }}.</p>
+  <form method="post" action="/trash/commit">
+    <input type="hidden" name="trash_token" value="{{ token }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="view" value="{{ view }}">
+    <input type="hidden" name="window_value" value="{{ window_value }}">
+    <input type="hidden" name="window_unit" value="{{ window_unit }}">
+    <button type="submit">Confirm move to Trash</button>
+  </form>
+</aside>

@@ -38,8 +38,10 @@ memory, IMAP writes, or model-based priority scoring.
 
 - **F1 — Chat over currently listed mail.** Trigger: the MVP review workflow is
   useful and a concrete question requires synthesis beyond section summaries.
-- **F2 — IMAP `\Seen` propagation.** Trigger: app-local read state must sync back
-  to Thunderbird. Implement as an isolated networked app-layer capability.
+- **F2 — IMAP actions.** Triggered during live validation when app-only review
+  still required returning to Thunderbird for deletion. The implemented narrow
+  action is explicit, confirmed server-side `MOVE` to a configured Trash folder;
+  read-state propagation remains deferred.
 - **F3 — Mail-wide retrieval.** Trigger: a query needs messages outside the
   current snapshot or the selected set exceeds the model context.
 - **F4 — Cross-session or adaptive memory.** Trigger: deterministic rules prove

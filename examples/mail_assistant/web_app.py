@@ -33,6 +33,7 @@ from .rules import RuleTransactionService
 from .services import MailAssistantService, PRIORITY_ORDER
 from .store import AssistantStore, DEFAULT_STORE_PATH
 from .summarizer import SectionSummarizer
+from .imap_trash import account_for_message, load_imap_accounts, move_message_to_trash
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -79,6 +80,7 @@ class AppConfig:
     input_budget: int = 12_000
     output_tokens: int = 800
     model_timeout: float = 120.0
+    imap_accounts_path: Path | None = None
 
 
 def _discover_thunderbird_profile(thunderbird_root: Path | None = None) -> Path:
@@ -127,6 +129,12 @@ def _default_config() -> AppConfig:
         database_path=Path(os.getenv("MAIL_ASSISTANT_DB", DEFAULT_STORE_PATH)),
         backend=os.getenv("MAIL_ASSISTANT_BACKEND", "ollama"),
         model=os.getenv("MAIL_ASSISTANT_MODEL", "qwen3:8b"),
+        imap_accounts_path=Path(
+            os.getenv(
+                "MAIL_ASSISTANT_IMAP_ACCOUNTS",
+                config_home / "mail_assistant" / "imap_accounts.toml",
+            )
+        ),
     )
 
 
@@ -136,6 +144,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     store = AssistantStore(config.database_path)
     mail = MailAssistantService(config.profile, store)
     rule_transactions = RuleTransactionService(config.rules_path)
+    imap_accounts = load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
+    pending_trash: dict[str, tuple[str, float]] = {}
     summary_service: SectionSummarizer | None = None
 
     async def refresh_in_background(target_app: FastAPI) -> None:
@@ -239,6 +249,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "window_value": window_value,
             "window_unit": window_unit,
             "refresh_running": bool(task is not None and not task.done()),
+            "trash_enabled": bool(imap_accounts),
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -312,6 +323,82 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             request,
             "mail_list.html",
             context(request, view=view, window_value=window_value, window_unit=window_unit),
+        )
+
+    @app.post("/trash/propose", response_class=HTMLResponse)
+    async def propose_trash(
+        request: Request,
+        message_id: str = Form(...),
+        csrf_token: str = Form(...),
+        view: str = Form("unread"),
+        window_value: int = Form(DEFAULT_WINDOW_VALUE),
+        window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+    ):
+        require_csrf(request, csrf_token)
+        message = next(
+            (item for item in mail.state.messages if item.header_message_id == message_id),
+            None,
+        )
+        if message is None:
+            raise HTTPException(status_code=404, detail="Unknown message ID")
+        try:
+            account, folder = account_for_message(message, imap_accounts)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        token = secrets.token_urlsafe(32)
+        pending_trash[token] = (message_id, time.time() + 600)
+        return templates.TemplateResponse(
+            request,
+            "trash_proposal.html",
+            {
+                "request": request,
+                "message": message,
+                "host": account.host,
+                "folder": folder,
+                "trash_folder": account.trash_folder,
+                "token": token,
+                "csrf_token": csrf_token,
+                "view": view,
+                "window_value": window_value,
+                "window_unit": window_unit,
+            },
+        )
+
+    @app.post("/trash/commit", response_class=HTMLResponse)
+    async def commit_trash(
+        request: Request,
+        trash_token: str = Form(...),
+        csrf_token: str = Form(...),
+        view: str = Form("unread"),
+        window_value: int = Form(DEFAULT_WINDOW_VALUE),
+        window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+    ):
+        require_csrf(request, csrf_token)
+        pending = pending_trash.pop(trash_token, None)
+        if pending is None or pending[1] < time.time():
+            raise HTTPException(status_code=400, detail="Unknown or expired trash token")
+        message_id = pending[0]
+        message = next(
+            (item for item in mail.state.messages if item.header_message_id == message_id),
+            None,
+        )
+        if message is None:
+            raise HTTPException(status_code=404, detail="Unknown message ID")
+        try:
+            await _run_blocking(move_message_to_trash, message, imap_accounts, timeout=45)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Move to Trash failed: {exc}") from exc
+        mail.remove_message(message_id)
+        return templates.TemplateResponse(
+            request,
+            "index.html",
+            context(
+                request,
+                view=view,
+                window_value=window_value,
+                window_unit=window_unit,
+                notice="Message moved to Trash.",
+            ),
         )
 
     @app.post("/summarize/{section}", response_class=HTMLResponse)

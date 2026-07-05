@@ -2,6 +2,7 @@ from __future__ import annotations
 # ruff: noqa: E402 -- exercise repository bootstrap before sibling-package imports
 
 from pathlib import Path
+import re
 import sqlite3
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -36,6 +37,7 @@ def _message(
     body: str = "Synthetic body",
     read: bool = False,
     date: str | None = None,
+    folder_uri: str | None = None,
 ) -> MailMessage:
     metadata = MessageMetadata(
         header_message_id=message_id,
@@ -45,6 +47,7 @@ def _message(
         date=None,
         sender_id=None,
         flags={"read": read},
+        folder_uri=folder_uri,
     )
     return MailMessage(
         header_message_id=message_id,
@@ -352,12 +355,18 @@ def test_blocking_runner_enforces_timeout() -> None:
     asyncio.run(exercise())
 
 
-def _web_app(tmp_path: Path, message: MailMessage | None = None):
+def _web_app(
+    tmp_path: Path,
+    message: MailMessage | None = None,
+    *,
+    imap_accounts_path: Path | None = None,
+):
     config = AppConfig(
         profile=tmp_path,
         rules_path=tmp_path / "rules.toml",
         database_path=tmp_path / "web.db",
         model="fixture",
+        imap_accounts_path=imap_accounts_path,
     )
     app = create_app(config, engine=FakeEngine())
     app.state.mail._reader = lambda _path: [message or _message()]
@@ -492,6 +501,57 @@ def test_rule_preview_targets_selected_message_row(tmp_path: Path) -> None:
             assert "second unique subject" in preview.text
             assert "first unique subject" not in preview.text
             assert "This rule has not been applied yet." in preview.text
+
+    asyncio.run(exercise())
+
+
+def test_trash_requires_preview_then_removes_only_after_move(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "imap.toml"
+    config_path.write_text(
+        "[[account]]\nhost='imap.example.test'\nusername='user@example.test'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='Trash'\n",
+        encoding="utf-8",
+    )
+    message = _message(
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    app = _web_app(tmp_path, message, imap_accounts_path=config_path)
+    app.state.mail.refresh()
+    moved = []
+    monkeypatch.setattr(
+        "examples.mail_assistant.web_app.move_message_to_trash",
+        lambda selected, _accounts: moved.append(selected.header_message_id),
+    )
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            page = await client.get("/")
+            assert "Move to Trash…" in page.text
+            preview = await client.post(
+                "/trash/propose",
+                data={
+                    "message_id": message.header_message_id,
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert preview.status_code == 200
+            assert moved == []
+            token = re.search(r'name="trash_token" value="([^"]+)"', preview.text)
+            assert token is not None
+            committed = await client.post(
+                "/trash/commit",
+                data={
+                    "trash_token": token.group(1),
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert committed.status_code == 200
+            assert moved == [message.header_message_id]
+            assert app.state.mail.state.messages == ()
 
     asyncio.run(exercise())
 

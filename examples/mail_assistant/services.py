@@ -119,6 +119,16 @@ class MailAssistantService:
             raise KeyError(header_message_id)
         self.store.mark_read(header_message_id)
 
+    def remove_message(self, header_message_id: str) -> None:
+        with self._lock:
+            remaining = tuple(
+                item for item in self._state.messages if item.header_message_id != header_message_id
+            )
+            if len(remaining) == len(self._state.messages):
+                raise KeyError(header_message_id)
+            self._state = SnapshotState(remaining, self._state.revision + 1)
+        self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(remaining))
+
 
 def _encode_snapshot(messages: tuple[MailMessage, ...]) -> str:
     encoded = []

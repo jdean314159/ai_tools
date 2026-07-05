@@ -26,5 +26,13 @@
     <label>Action <select name="action"><option>none</option><option>summarize</option><option>ignore</option></select></label>
     <button type="submit">Preview rule (not saved)</button>
   </form>
+  {% if trash_enabled %}<form hx-post="/trash/propose" hx-target="#{{ proposal_id }}" hx-swap="innerHTML" method="post" action="/trash/propose">
+    <input type="hidden" name="message_id" value="{{ item.message.header_message_id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="view" value="{{ view }}">
+    <input type="hidden" name="window_value" value="{{ window_value }}">
+    <input type="hidden" name="window_unit" value="{{ window_unit }}">
+    <button type="submit">Move to Trash…</button>
+  </form>{% endif %}
 </article>
 <div id="{{ proposal_id }}"></div>
