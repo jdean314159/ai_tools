@@ -340,7 +340,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         return templates.TemplateResponse(
             request,
             "summary.html",
-            {"request": request, "summary": summary, "section": section.value},
+            {
+                "request": request,
+                "summary": summary,
+                "section": section.value,
+                "message_count": len(messages),
+            },
         )
 
     @app.post("/rules/propose", response_class=HTMLResponse)

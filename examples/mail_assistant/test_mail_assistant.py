@@ -61,9 +61,11 @@ def _message(
 class FakeEngine:
     def __init__(self) -> None:
         self.calls = 0
+        self.requests = []
 
     def generate(self, request):
         self.calls += 1
+        self.requests.append(request)
         assert "untrusted data" in request.messages[0].content
         return GenerationResponse(
             message=ChatMessage(role="assistant", content="<script>summary</script>"),
@@ -182,8 +184,34 @@ def test_summary_cache_varies_with_exact_content_model_and_prompt(tmp_path: Path
 
 def test_summarizer_rejects_one_oversized_message(tmp_path: Path) -> None:
     summarizer = SectionSummarizer(FakeEngine(), AssistantStore(tmp_path / "a.db"), model="m", input_budget=1)
-    with pytest.raises(ValueError, match="single message"):
+    with pytest.raises(ValueError, match="headers exceed"):
         summarizer.summarize([classify_message(_message(body="too long"), ())])
+
+
+def test_summarizer_allocates_budget_across_every_message(tmp_path: Path) -> None:
+    class CharacterCountingEngine(FakeEngine):
+        @staticmethod
+        def count_tokens(text: str) -> int:
+            return len(text)
+
+    engine = CharacterCountingEngine()
+    messages = [
+        classify_message(_message(f"message-{index}", body=str(index) * 1_000), ())
+        for index in range(3)
+    ]
+    summarizer = SectionSummarizer(
+        engine,
+        AssistantStore(tmp_path / "a.db"),
+        model="m",
+        input_budget=1_000,
+    )
+
+    summarizer.summarize(messages)
+
+    prompt = engine.requests[0].messages[1].content
+    assert all(f"message-{index}" in prompt for index in range(3))
+    assert prompt.count('"body_truncated": true') == 3
+    assert "Summarize all 3 messages" in prompt
 
 
 def test_rule_propose_commit_is_derived_atomic_and_one_shot(tmp_path: Path) -> None:

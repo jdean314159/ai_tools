@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Protocol, Sequence
+from typing import Any, Protocol, Sequence
 
 from llm_engines import ChatMessage, GenerationRequest, count_tokens
 
@@ -12,7 +12,7 @@ from mail_lib.personal_rules import ClassifiedMessage
 from .store import AssistantStore
 
 
-PROMPT_VERSION = "mail-section-v1"
+PROMPT_VERSION = "mail-section-v2"
 
 
 class Engine(Protocol):
@@ -80,15 +80,37 @@ class SectionSummarizer:
         return summary
 
     def _bounded_prompt(self, records: list[dict[str, str]]) -> str:
-        kept: list[dict[str, str]] = []
-        for record in records:
-            candidate = json.dumps([*kept, record], ensure_ascii=False, sort_keys=True)
-            counter = getattr(self.engine, "count_tokens", count_tokens)
-            if counter(candidate) > self.input_budget:
-                break
-            kept.append(record)
-        if not kept and records:
-            raise ValueError("A single message exceeds the summarization input budget")
-        return "Summarize these messages, highlighting requested actions and deadlines:\n" + json.dumps(
-            kept, ensure_ascii=False, sort_keys=True
-        )
+        counter = getattr(self.engine, "count_tokens", count_tokens)
+
+        def render(body_limit: int) -> str:
+            bounded: list[dict[str, Any]] = []
+            for record in records:
+                body = record["body"]
+                bounded.append(
+                    {
+                        **record,
+                        "body": body[:body_limit],
+                        "body_truncated": len(body) > body_limit,
+                    }
+                )
+            return (
+                f"Summarize all {len(records)} messages below. Give every message its own "
+                "bullet with sender, subject, key point, requested action, and deadline; say "
+                "none when no action or deadline is present. Message bodies may be truncated.\n"
+                + json.dumps(bounded, ensure_ascii=False, sort_keys=True)
+            )
+
+        header_only = render(0)
+        if counter(header_only) > self.input_budget:
+            raise ValueError(
+                "Section message headers exceed the summarization input budget; use a smaller window"
+            )
+        maximum = max((len(record["body"]) for record in records), default=0)
+        low, high = 0, maximum
+        while low < high:
+            middle = (low + high + 1) // 2
+            if counter(render(middle)) <= self.input_budget:
+                low = middle
+            else:
+                high = middle - 1
+        return render(low)
