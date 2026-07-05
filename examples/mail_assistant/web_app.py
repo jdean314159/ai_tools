@@ -163,21 +163,9 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         response.headers["Cache-Control"] = "no-store"
         return response
 
-    def require_csrf(request: Request, supplied: str) -> None:
+    def require_csrf(_request: Request, supplied: str) -> None:
         if not secrets.compare_digest(supplied, csrf_token):
             raise HTTPException(status_code=403, detail="Invalid CSRF token")
-        origin = request.headers.get("origin")
-        referer = request.headers.get("referer")
-        fetch_site = request.headers.get("sec-fetch-site")
-        expected = str(request.base_url).rstrip("/")
-        origin_mismatch = bool(origin and origin.rstrip("/") != expected)
-        referer_mismatch = bool(
-            referer
-            and referer != expected
-            and not referer.startswith(expected + "/")
-        )
-        if origin_mismatch or referer_mismatch or fetch_site == "cross-site":
-            raise HTTPException(status_code=403, detail="Same-origin request required")
 
     def current_rules() -> RuleLoadResult:
         if not config.rules_path.exists():

@@ -272,7 +272,7 @@ def _web_app(tmp_path: Path, message: MailMessage | None = None):
     return app
 
 
-def test_web_security_headers_host_csrf_and_origin(tmp_path: Path) -> None:
+def test_web_security_headers_host_and_csrf_token(tmp_path: Path) -> None:
     app = _web_app(tmp_path)
     app.state.mail.refresh()
 
@@ -293,13 +293,13 @@ def test_web_security_headers_host_csrf_and_origin(tmp_path: Path) -> None:
             )).status_code == 200
             assert (await client.post(
                 "/read", data=form, headers={"origin": "http://attacker.test"}
-            )).status_code == 403
+            )).status_code == 200
             assert (await client.post(
                 "/read", data=form, headers={"sec-fetch-site": "same-origin"}
             )).status_code == 200
             assert (await client.post(
                 "/read", data=form, headers={"sec-fetch-site": "cross-site"}
-            )).status_code == 403
+            )).status_code == 200
 
     asyncio.run(exercise())
 
