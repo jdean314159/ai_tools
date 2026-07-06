@@ -656,6 +656,63 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
     asyncio.run(exercise())
 
 
+def test_batch_trash_commit_skips_message_that_left_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "imap.toml"
+    config_path.write_text(
+        "[[account]]\nhost='imap.example.test'\nusername='user@example.test'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='Trash'\n",
+        encoding="utf-8",
+    )
+    messages = [
+        _message(
+            f"skip-{index}@example.test",
+            subject=f"Skip fixture {index}",
+            folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+        )
+        for index in range(2)
+    ]
+    app = _web_app(tmp_path, messages[0], imap_accounts_path=config_path)
+    app.state.mail._reader = lambda _path: messages
+    app.state.mail.refresh()
+    moved = []
+    monkeypatch.setattr(
+        "examples.mail_assistant.web_app.move_message_to_trash",
+        lambda message, _accounts: moved.append(message.header_message_id),
+    )
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            preview = await client.post(
+                "/trash/propose",
+                data={
+                    "message_ids": [item.header_message_id for item in messages],
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert preview.status_code == 200
+            token = re.search(r'name="trash_token" value="([^"]+)"', preview.text)
+            assert token is not None
+
+            app.state.mail.remove_message(messages[1].header_message_id)
+            committed = await client.post(
+                "/trash/commit",
+                data={
+                    "trash_token": token.group(1),
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+
+            assert committed.status_code == 200
+            assert "1 moved, 0 failed, 1 skipped" in committed.text
+            assert "Message left the snapshot before confirmation." in committed.text
+            assert moved == [messages[0].header_message_id]
+
+    asyncio.run(exercise())
+
+
 def test_web_escapes_mail_and_model_output(tmp_path: Path) -> None:
     malicious = _message(
         subject="<script>alert(1)</script>",
