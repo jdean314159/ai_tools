@@ -225,6 +225,11 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail="Window value must be between 1 and 3650")
         return value * (7 if unit == "weeks" else 1)
 
+    def display_limit(value: int) -> int:
+        if not 1 <= value <= 500:
+            raise HTTPException(status_code=400, detail="Display limit must be between 1 and 500")
+        return value
+
     def context(
         request: Request,
         *,
@@ -234,6 +239,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         notice: str | None = None,
         sender_filter: str | None = None,
         domain_filter: str | None = None,
+        limit: int = 50,
     ) -> dict[str, Any]:
         rules = current_rules()
         task = app.state.refresh_task
@@ -264,6 +270,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "trash_enabled": bool(imap_accounts),
             "sender_filter": sender_filter or "",
             "domain_filter": domain_filter or "",
+            "display_limit": display_limit(limit),
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -274,6 +281,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = DEFAULT_WINDOW_UNIT,
         sender: str | None = None,
         domain: str | None = None,
+        limit: int = 50,
     ):
         return templates.TemplateResponse(
             request,
@@ -285,6 +293,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 window_unit=window_unit,
                 sender_filter=sender,
                 domain_filter=domain,
+                limit=limit,
             ),
         )
 

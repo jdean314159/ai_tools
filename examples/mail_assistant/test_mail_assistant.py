@@ -539,6 +539,25 @@ def test_stats_route_and_exact_sender_filter(tmp_path: Path) -> None:
     asyncio.run(exercise())
 
 
+def test_list_render_limit_caps_cards_without_changing_section_count(tmp_path: Path) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    messages = [_message(f"limit-{index}", date=now) for index in range(60)]
+    app = _web_app(tmp_path)
+    app.state.mail._reader = lambda _path: messages
+    app.state.mail.refresh()
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            page = await client.get("/", params={"view": "all", "limit": 10})
+            assert page.status_code == 200
+            assert "normal (60)" in page.text
+            assert "Showing the newest 10 of 60" in page.text
+            assert page.text.count('<article class="message">') == 10
+
+    asyncio.run(exercise())
+
+
 def test_app_lifespan_loads_initial_snapshot(tmp_path: Path) -> None:
     app = _web_app(tmp_path)
 

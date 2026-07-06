@@ -11,11 +11,12 @@
 <body>
   <header>
     <h1>Local Mail Assistant</h1>
-    <nav><a href="/?view=unread&window_value={{ window_value }}&window_unit={{ window_unit }}">Unread</a> <a href="/?view=all&window_value={{ window_value }}&window_unit={{ window_unit }}">All</a> <a href="/stats?window_value={{ window_value }}&window_unit={{ window_unit }}">Stats</a></nav>
+    <nav><a href="/?view=unread&window_value={{ window_value }}&window_unit={{ window_unit }}&limit={{ display_limit }}">Unread</a> <a href="/?view=all&window_value={{ window_value }}&window_unit={{ window_unit }}&limit={{ display_limit }}">All</a> <a href="/stats?window_value={{ window_value }}&window_unit={{ window_unit }}">Stats</a></nav>
     <form method="get" action="/">
       <input type="hidden" name="view" value="{{ view }}">
       <label>Show last <input type="number" name="window_value" min="1" max="3650" value="{{ window_value }}" required></label>
       <select name="window_unit"><option value="days"{% if window_unit == 'days' %} selected{% endif %}>days</option><option value="weeks"{% if window_unit == 'weeks' %} selected{% endif %}>weeks</option></select>
+      <label>Messages/category <input type="number" name="limit" min="1" max="500" value="{{ display_limit }}" required></label>
       <button type="submit">Apply window</button>
     </form>
     <form method="post" action="/refresh">

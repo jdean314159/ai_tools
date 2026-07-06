@@ -1,7 +1,9 @@
 {% for priority in priorities %}
 {% set messages = groups[priority] %}
+{% set displayed_messages = messages[:display_limit] %}
 <section>
   <h2>{{ priority.value }} ({{ messages|length }})</h2>
+  {% if messages|length > displayed_messages|length %}<p>Showing the newest {{ displayed_messages|length }} of {{ messages|length }}. Increase Messages/category to show more.</p>{% endif %}
   {% if messages %}
   <form hx-post="/summarize/{{ priority.value }}" hx-target="#summary-{{ priority.value }}" hx-swap="innerHTML" method="post" action="/summarize/{{ priority.value }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -13,11 +15,11 @@
     <button type="submit">Summarize section</button>
   </form>
   <div id="summary-{{ priority.value }}"></div>
-  {% set ignored = messages|selectattr('action.value', 'equalto', 'ignore')|list %}
+  {% set ignored = displayed_messages|selectattr('action.value', 'equalto', 'ignore')|list %}
   {% if ignored %}<details><summary>{{ ignored|length }} collapsed by personal rule</summary>
   {% if trash_enabled %}<button type="button" class="select-trash-group" data-trash-group="{{ priority.value }}-ignored">Select all in this group</button>{% endif %}
   {% for item in ignored %}{% set proposal_id = 'proposal-' ~ priority.value ~ '-ignored-' ~ loop.index %}{% set trash_group = priority.value ~ '-ignored' %}{% include "message.html" %}{% endfor %}</details>{% endif %}
-  {% for item in messages if item.action.value != 'ignore' %}{% set proposal_id = 'proposal-' ~ priority.value ~ '-visible-' ~ loop.index %}{% set trash_group = priority.value ~ '-visible' %}{% include "message.html" %}{% endfor %}
+  {% for item in displayed_messages if item.action.value != 'ignore' %}{% set proposal_id = 'proposal-' ~ priority.value ~ '-visible-' ~ loop.index %}{% set trash_group = priority.value ~ '-visible' %}{% include "message.html" %}{% endfor %}
   {% endif %}
 </section>
 {% endfor %}
