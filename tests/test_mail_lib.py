@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 import sqlite3
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from mail_lib.indexer import MailIndex
 from mail_lib.thunderbird import (
     MailMessage,
     MessageMetadata,
+    _message_from_mbox,
     discover_mbox_files,
     iter_messages,
     load_gloda_metadata,
@@ -21,6 +23,26 @@ from mail_lib.triage import Priority, triage_message, triage_messages
 
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "mail_lib"
+
+
+def test_mozilla_status_supplies_local_read_state_without_gloda(tmp_path: Path) -> None:
+    raw = EmailMessage()
+    raw["Message-ID"] = "<read-locally@example.test>"
+    raw["From"] = "sender@example.test"
+    raw["To"] = "user@example.test"
+    raw["X-Mozilla-Status"] = "0001"
+    raw.set_content("body")
+
+    message = _message_from_mbox(
+        raw,
+        mbox_path=tmp_path / "Inbox",
+        folder_label="Inbox",
+        metadata=None,
+    )
+
+    assert message is not None
+    assert message.local_read is True
+    assert message.metadata is None
 
 
 def test_fixtures_use_only_reserved_example_data() -> None:

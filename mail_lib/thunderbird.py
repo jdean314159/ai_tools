@@ -70,6 +70,7 @@ class MailMessage:
     signal_folders: tuple[str, ...] = ()
     metadata: MessageMetadata | None = None
     mbox_path: Path | None = None
+    local_read: bool = False
 
     @property
     def has_gloda_metadata(self) -> bool:
@@ -314,6 +315,14 @@ def _message_date(message: Message) -> str | None:
         return raw
 
 
+def _mozilla_read(message: Message) -> bool:
+    raw = str(message.get("X-Mozilla-Status") or "").strip()
+    try:
+        return bool(int(raw, 16) & 0x0001)
+    except ValueError:
+        return False
+
+
 def _folder_label(path: Path) -> str:
     parts: list[str] = []
     current = path
@@ -352,6 +361,7 @@ def _message_from_mbox(
         signal_folders=() if _is_source_folder(folder_label) else (folder_label,),
         metadata=metadata,
         mbox_path=mbox_path,
+        local_read=_mozilla_read(message),
     )
 
 
@@ -371,6 +381,7 @@ def _merge_messages(existing: MailMessage, new: MailMessage) -> MailMessage:
         signal_folders=signals,
         metadata=metadata,
         mbox_path=body_source.mbox_path,
+        local_read=existing.local_read or new.local_read,
     )
 
 

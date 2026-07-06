@@ -39,6 +39,7 @@ def _message(
     date: str | None = None,
     folder_uri: str | None = None,
     sender: str = "sender@example.test",
+    local_read: bool = False,
 ) -> MailMessage:
     metadata = MessageMetadata(
         header_message_id=message_id,
@@ -59,6 +60,7 @@ def _message(
         date=date,
         source_folder="INBOX",
         metadata=metadata,
+        local_read=local_read,
     )
 
 
@@ -96,7 +98,12 @@ def test_store_is_app_owned_and_idempotent(tmp_path: Path) -> None:
 
 
 def test_unread_state_merges_thunderbird_and_local_ledger(tmp_path: Path) -> None:
-    messages = (_message("one"), _message("two", read=True), _message("three"))
+    messages = (
+        _message("one"),
+        _message("two", read=True),
+        _message("three"),
+        _message("four", local_read=True),
+    )
     store = AssistantStore(tmp_path / "assistant.db")
     service = MailAssistantService(tmp_path, store, reader=lambda _path: messages)
     service.refresh()
@@ -106,7 +113,7 @@ def test_unread_state_merges_thunderbird_and_local_ledger(tmp_path: Path) -> Non
     all_messages = service.visible((), view="all")
 
     assert [item.message.header_message_id for values in unread.values() for item in values] == ["one"]
-    assert sum(map(len, all_messages.values())) == 3
+    assert sum(map(len, all_messages.values())) == 4
     with pytest.raises(KeyError):
         service.mark_read("unknown")
 
@@ -130,7 +137,9 @@ def test_failed_refresh_preserves_previous_snapshot(tmp_path: Path) -> None:
 
 def test_snapshot_cache_round_trips_messages_and_metadata(tmp_path: Path) -> None:
     store = AssistantStore(tmp_path / "a.db")
-    original = _message("cached", date="2026-07-05T12:00:00+00:00")
+    original = _message(
+        "cached", date="2026-07-05T12:00:00+00:00", local_read=True
+    )
     writer = MailAssistantService(tmp_path, store, reader=lambda _path: [original])
     writer.refresh()
     reader = MailAssistantService(tmp_path, store, reader=lambda _path: [])
@@ -729,6 +738,8 @@ def test_trash_requires_preview_then_removes_only_after_move(
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             page = await client.get("/")
             assert "Review selected for Trash…" in page.text
+            assert 'data-trash-prefix="normal-"' in page.text
+            assert "Select all 2 shown in normal" in page.text
             preview = await client.post(
                 "/trash/propose",
                 data={

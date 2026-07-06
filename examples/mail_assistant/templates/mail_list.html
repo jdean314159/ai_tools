@@ -5,6 +5,7 @@
   <h2>{{ priority.value }} ({{ messages|length }})</h2>
   {% if messages|length > displayed_messages|length %}<p>Showing the newest {{ displayed_messages|length }} of {{ messages|length }}. Increase Messages/category to show more.</p>{% endif %}
   {% if messages %}
+  {% if trash_enabled %}<button type="button" class="select-trash-group" data-trash-prefix="{{ priority.value }}-">Select all {{ displayed_messages|length }} shown in {{ priority.value }}</button>{% endif %}
   <form hx-post="/summarize/{{ priority.value }}" hx-target="#summary-{{ priority.value }}" hx-swap="innerHTML" method="post" action="/summarize/{{ priority.value }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="view" value="{{ view }}">
