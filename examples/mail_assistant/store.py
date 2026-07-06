@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import closing
+import os
 from pathlib import Path
 import sqlite3
 import time
@@ -16,7 +17,9 @@ class AssistantStore:
     def __init__(self, path: str | Path = DEFAULT_STORE_PATH) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        os.chmod(self.path.parent, 0o700)
         self._setup()
+        os.chmod(self.path, 0o600)
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=3.0)

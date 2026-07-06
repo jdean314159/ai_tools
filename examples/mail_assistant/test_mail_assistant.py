@@ -90,6 +90,8 @@ def test_store_is_app_owned_and_idempotent(tmp_path: Path) -> None:
         tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master")}
     assert {"read_state", "section_summary_cache"} <= tables
     assert "processed_messages" not in tables
+    assert path.stat().st_mode & 0o777 == 0o600
+    assert tmp_path.stat().st_mode & 0o777 == 0o700
 
 
 def test_unread_state_merges_thunderbird_and_local_ledger(tmp_path: Path) -> None:

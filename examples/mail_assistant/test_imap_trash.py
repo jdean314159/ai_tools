@@ -94,3 +94,58 @@ def test_move_to_trash_fails_closed_without_mapping_or_password(monkeypatch) -> 
     monkeypatch.delenv("MISSING_PASSWORD", raising=False)
     with pytest.raises(RuntimeError, match="environment variable is unset"):
         move_message_to_trash(_message(), (matching,), connector=FakeImap)
+
+
+@pytest.mark.parametrize(
+    "hostile_message_id",
+    [
+        "safe@example.test\r\nEXPUNGE",
+        'safe@example.test" OR ALL',
+        "safe(comment)@example.test",
+        "safe[box]@example.test",
+    ],
+)
+def test_hostile_message_id_is_rejected_before_socket_use(
+    monkeypatch, hostile_message_id: str
+) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connection_attempted = False
+
+    def connect(*_args, **_kwargs):
+        nonlocal connection_attempted
+        connection_attempted = True
+        raise AssertionError("connector must not be called")
+
+    with pytest.raises(ValueError, match="unsafe for IMAP"):
+        move_message_to_trash(
+            replace(_message(), header_message_id=hostile_message_id),
+            (account,),
+            connector=connect,
+        )
+    assert connection_attempted is False
+
+
+@pytest.mark.parametrize("trash_folder", ["Trash\rEXPUNGE", "Trash\nEXPUNGE"])
+def test_hostile_mailbox_is_rejected_before_socket_use(
+    monkeypatch, trash_folder: str
+) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder=trash_folder,
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+
+    with pytest.raises(ValueError, match="must not contain CR or LF"):
+        move_message_to_trash(
+            _message(),
+            (account,),
+            connector=lambda *_args, **_kwargs: pytest.fail("connector called"),
+        )

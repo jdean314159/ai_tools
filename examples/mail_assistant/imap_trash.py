@@ -5,11 +5,17 @@ from dataclasses import dataclass
 import imaplib
 import os
 from pathlib import Path
+import re
 import ssl
 import tomllib
 from typing import Callable
 
 from mail_lib.thunderbird import MailMessage, parse_folder_uri
+
+
+_MESSAGE_ID_RE = re.compile(
+    r"^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]+@[A-Za-z0-9.-]+$"
+)
 
 
 @dataclass(frozen=True)
@@ -22,7 +28,16 @@ class ImapAccount:
 
 
 def _quoted_mailbox(value: str) -> str:
+    if "\r" in value or "\n" in value:
+        raise ValueError("IMAP mailbox names must not contain CR or LF")
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _validated_message_id(value: str) -> str:
+    normalized = value.strip()
+    if not _MESSAGE_ID_RE.fullmatch(normalized) or normalized.count("@") != 1:
+        raise ValueError("Message-ID contains characters unsafe for IMAP search")
+    return normalized
 
 
 def load_imap_accounts(path: Path) -> tuple[ImapAccount, ...]:
@@ -76,6 +91,9 @@ def move_message_to_trash(
     connector: Callable[..., imaplib.IMAP4_SSL] = imaplib.IMAP4_SSL,
 ) -> None:
     account, folder = account_for_message(message, accounts)
+    message_id = _validated_message_id(message.header_message_id)
+    selected_folder = _quoted_mailbox(folder)
+    trash_folder = _quoted_mailbox(account.trash_folder)
     password = os.getenv(account.password_env)
     if not password:
         raise RuntimeError(f"Required password environment variable is unset: {account.password_env}")
@@ -95,15 +113,14 @@ def move_message_to_trash(
         }
         if "MOVE" not in capabilities:
             raise RuntimeError("IMAP server does not support atomic MOVE")
-        status, _ = connection.select(_quoted_mailbox(folder), readonly=False)
+        status, _ = connection.select(selected_folder, readonly=False)
         if status != "OK":
             raise RuntimeError("Could not select the message folder")
-        message_id = message.header_message_id.strip().strip("<>")
         status, data = connection.uid("SEARCH", None, "HEADER", "Message-ID", f"<{message_id}>")
         uids = data[0].split() if status == "OK" and data else []
         if len(uids) != 1:
             raise RuntimeError(f"Expected one IMAP message match, found {len(uids)}")
-        status, _ = connection.uid("MOVE", uids[0], _quoted_mailbox(account.trash_folder))
+        status, _ = connection.uid("MOVE", uids[0], trash_folder)
         if status != "OK":
             raise RuntimeError("IMAP MOVE failed")
     finally:

@@ -354,7 +354,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         token = secrets.token_urlsafe(32)
-        pending_trash[token] = (message_id, time.time() + 600)
+        now = time.time()
+        for expired_token in [
+            key for key, value in pending_trash.items() if value[1] < now
+        ]:
+            pending_trash.pop(expired_token, None)
+        pending_trash[token] = (message_id, now + 600)
         return templates.TemplateResponse(
             request,
             "trash_proposal.html",
