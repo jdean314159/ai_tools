@@ -68,15 +68,40 @@ def account_for_message(
     message: MailMessage, accounts: tuple[ImapAccount, ...]
 ) -> tuple[ImapAccount, str]:
     folder_uri = message.metadata.folder_uri if message.metadata else None
-    if not folder_uri:
-        raise ValueError("Message has no IMAP folder metadata")
-    username, host, folder = parse_folder_uri(folder_uri)
-    matches = [
-        account
-        for account in accounts
-        if account.host.casefold() == host.casefold()
-        and account.username.casefold() == username.casefold()
-    ]
+    if folder_uri:
+        username, host, folder = parse_folder_uri(folder_uri)
+        matches = [
+            account
+            for account in accounts
+            if account.host.casefold() == host.casefold()
+            and account.username.casefold() == username.casefold()
+        ]
+    else:
+        # Gloda does not index every locally stored message. Fall back to the
+        # Thunderbird ImapMail account directory, but only when its host maps
+        # to exactly one configured account.
+        account_directory = next(
+            (
+                parent.name
+                for parent in (message.mbox_path.parents if message.mbox_path else ())
+                if parent.parent.name == "ImapMail"
+            ),
+            None,
+        )
+        matches = [
+            account
+            for account in accounts
+            if account_directory
+            and (
+                account_directory.casefold() == account.host.casefold()
+                or re.fullmatch(
+                    rf"{re.escape(account.host)}-\d+",
+                    account_directory,
+                    flags=re.IGNORECASE,
+                )
+            )
+        ]
+        folder = message.source_folder or ""
     if len(matches) != 1:
         raise ValueError("No unique configured IMAP account matches this message")
     if not folder:

@@ -412,7 +412,16 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                     }
                 )
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return templates.TemplateResponse(
+                request,
+                "trash_error.html",
+                {
+                    "request": request,
+                    "message": message,
+                    "error": str(exc),
+                },
+                status_code=400,
+            )
         token = secrets.token_urlsafe(32)
         now = time.time()
         for expired_token in [

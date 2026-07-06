@@ -842,6 +842,8 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
                     },
                 )
                 assert response.status_code == 400
+                assert response.headers["content-type"].startswith("text/html")
+                assert "No messages were moved." in response.text
 
     asyncio.run(exercise())
 

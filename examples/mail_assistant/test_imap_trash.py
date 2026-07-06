@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -94,6 +95,45 @@ def test_move_to_trash_fails_closed_without_mapping_or_password(monkeypatch) -> 
     monkeypatch.delenv("MISSING_PASSWORD", raising=False)
     with pytest.raises(RuntimeError, match="environment variable is unset"):
         move_message_to_trash(_message(), (matching,), connector=FakeImap)
+
+
+def test_account_resolution_falls_back_to_unique_imap_mbox_directory() -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    message = replace(
+        _message(),
+        metadata=None,
+        mbox_path=Path("/profile/ImapMail/imap.example.test/INBOX"),
+    )
+
+    resolved, folder = account_for_message(message, (account,))
+
+    assert resolved == account
+    assert folder == "INBOX"
+
+
+def test_mbox_fallback_rejects_ambiguous_accounts() -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="first@example.test",
+        password_env="FIRST_PASSWORD",
+        trash_folder="Trash",
+    )
+    message = replace(
+        _message(),
+        metadata=None,
+        mbox_path=Path("/profile/ImapMail/imap.example.test/INBOX"),
+    )
+
+    with pytest.raises(ValueError, match="No unique configured"):
+        account_for_message(
+            message,
+            (account, replace(account, username="second@example.test")),
+        )
 
 
 @pytest.mark.parametrize(
