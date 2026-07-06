@@ -239,6 +239,7 @@ def test_summarizer_allocates_budget_across_every_message(tmp_path: Path) -> Non
         AssistantStore(tmp_path / "a.db"),
         model="m",
         input_budget=1_000,
+        output_tokens=100,
     )
 
     summarizer.summarize(messages)
@@ -247,6 +248,7 @@ def test_summarizer_allocates_budget_across_every_message(tmp_path: Path) -> Non
     assert all(f"message-{index}" in prompt for index in range(3))
     assert prompt.count('"body_truncated": true') == 3
     assert "Summarize all 3 messages" in prompt
+    assert engine.requests[0].max_tokens == 360
 
 
 def test_rule_propose_commit_is_derived_atomic_and_one_shot(tmp_path: Path) -> None:
@@ -419,7 +421,9 @@ def _web_app(
         model="fixture",
         imap_accounts_path=imap_accounts_path,
     )
-    app = create_app(config, engine=FakeEngine())
+    test_engine = FakeEngine()
+    app = create_app(config, engine=test_engine)
+    app.state.test_engine = test_engine
     app.state.mail._reader = lambda _path: [message or _message()]
     return app
 
@@ -484,6 +488,21 @@ def test_stats_route_and_exact_sender_filter(tmp_path: Path) -> None:
             )
             assert "From A" in filtered.text
             assert "From B" not in filtered.text
+            summary = await client.post(
+                "/summarize/normal",
+                data={
+                    "csrf_token": app.state.csrf_token,
+                    "view": "all",
+                    "window_value": 1,
+                    "window_unit": "weeks",
+                    "sender_filter": "a@example.test",
+                    "domain_filter": "",
+                },
+            )
+            assert summary.status_code == 200
+            prompt = app.state.test_engine.requests[-1].messages[1].content
+            assert "a@example.test" in prompt
+            assert "b@example.test" not in prompt
 
     asyncio.run(exercise())
 

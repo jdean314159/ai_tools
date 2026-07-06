@@ -12,7 +12,7 @@ from mail_lib.personal_rules import ClassifiedMessage
 from .store import AssistantStore
 
 
-PROMPT_VERSION = "mail-section-v2"
+PROMPT_VERSION = "mail-section-v3"
 
 
 class Engine(Protocol):
@@ -60,6 +60,7 @@ class SectionSummarizer:
             return cached
         records = _records(messages)
         prompt = self._bounded_prompt(records)
+        output_tokens = min(6_000, max(self.output_tokens, len(records) * 120))
         request = GenerationRequest(
                 messages=[
                     ChatMessage(
@@ -71,7 +72,7 @@ class SectionSummarizer:
                     ),
                     ChatMessage(role="user", content=prompt),
                 ],
-                max_tokens=self.output_tokens,
+                max_tokens=output_tokens,
                 temperature=0.0,
             )
         response = self.engine.generate(request)

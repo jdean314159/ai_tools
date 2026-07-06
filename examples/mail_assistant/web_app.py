@@ -316,6 +316,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+        sender_filter: str | None = Form(None),
+        domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
         start_background_refresh()
@@ -357,6 +359,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+        sender_filter: str | None = Form(None),
+        domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
         try:
@@ -473,6 +477,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+        sender_filter: str | None = Form(None),
+        domain_filter: str | None = Form(None),
     ):
         nonlocal summary_service
         require_csrf(request, csrf_token)
@@ -480,6 +486,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             current_rules().rules,
             view=view,
             max_age_days=window_days(window_value, window_unit),
+            sender_filter=sender_filter,
+            domain_filter=domain_filter,
         )[section]
         if not messages:
             raise HTTPException(status_code=404, detail="Section is empty")
