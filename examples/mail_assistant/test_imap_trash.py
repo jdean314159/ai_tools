@@ -136,6 +136,34 @@ def test_mbox_fallback_rejects_ambiguous_accounts() -> None:
         )
 
 
+def test_mbox_fallback_uses_thunderbird_prefs_for_shared_host(tmp_path: Path) -> None:
+    first = ImapAccount(
+        host="imap.gmail.com",
+        username="first@example.test",
+        password_env="FIRST_PASSWORD",
+        trash_folder="[Gmail]/Trash",
+    )
+    second = replace(first, username="second@example.test")
+    (tmp_path / "ImapMail" / "imap.gmail-2.com").mkdir(parents=True)
+    (tmp_path / "prefs.js").write_text(
+        'user_pref("mail.server.server4.directory-rel", '
+        '"[ProfD]ImapMail/imap.gmail-2.com");\n'
+        'user_pref("mail.server.server4.hostname", "imap.gmail.com");\n'
+        'user_pref("mail.server.server4.userName", "second@example.test");\n',
+        encoding="utf-8",
+    )
+    message = replace(
+        _message(),
+        metadata=None,
+        mbox_path=tmp_path / "ImapMail" / "imap.gmail-2.com" / "INBOX",
+    )
+
+    resolved, folder = account_for_message(message, (first, second))
+
+    assert resolved == second
+    assert folder == "INBOX"
+
+
 @pytest.mark.parametrize(
     "hostile_message_id",
     [

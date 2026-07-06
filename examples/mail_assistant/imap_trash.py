@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import imaplib
+import json
 import os
 from pathlib import Path
 import re
@@ -15,6 +16,9 @@ from mail_lib.thunderbird import MailMessage, parse_folder_uri
 
 _MESSAGE_ID_RE = re.compile(
     r"^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]+@[A-Za-z0-9.-]+$"
+)
+_SERVER_PREF_RE = re.compile(
+    r'^user_pref\("mail\.server\.(server\d+)\.(directory-rel|hostname|userName)",\s*(.+)\);$'
 )
 
 
@@ -64,6 +68,38 @@ def load_imap_accounts(path: Path) -> tuple[ImapAccount, ...]:
     return tuple(accounts)
 
 
+def _account_identity_from_prefs(
+    profile: Path, account_directory: str
+) -> tuple[str, str] | None:
+    prefs_path = profile / "prefs.js"
+    try:
+        lines = prefs_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    servers: dict[str, dict[str, str]] = {}
+    for line in lines:
+        match = _SERVER_PREF_RE.match(line)
+        if not match:
+            continue
+        server, field, encoded_value = match.groups()
+        try:
+            value = json.loads(encoded_value)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, str):
+            servers.setdefault(server, {})[field] = value
+    identities = []
+    for values in servers.values():
+        directory = values.get("directory-rel", "").replace("\\", "/")
+        if directory.rsplit("/", 1)[-1] != account_directory:
+            continue
+        host = values.get("hostname")
+        username = values.get("userName")
+        if host and username:
+            identities.append((host, username))
+    return identities[0] if len(identities) == 1 else None
+
+
 def account_for_message(
     message: MailMessage, accounts: tuple[ImapAccount, ...]
 ) -> tuple[ImapAccount, str]:
@@ -80,27 +116,42 @@ def account_for_message(
         # Gloda does not index every locally stored message. Fall back to the
         # Thunderbird ImapMail account directory, but only when its host maps
         # to exactly one configured account.
-        account_directory = next(
+        account_location = next(
             (
-                parent.name
+                (parent.name, parent.parent.parent)
                 for parent in (message.mbox_path.parents if message.mbox_path else ())
                 if parent.parent.name == "ImapMail"
             ),
             None,
         )
-        matches = [
-            account
-            for account in accounts
-            if account_directory
-            and (
-                account_directory.casefold() == account.host.casefold()
-                or re.fullmatch(
-                    rf"{re.escape(account.host)}-\d+",
-                    account_directory,
-                    flags=re.IGNORECASE,
+        account_directory, profile = account_location or (None, None)
+        identity = (
+            _account_identity_from_prefs(profile, account_directory)
+            if profile and account_directory
+            else None
+        )
+        if identity:
+            host, username = identity
+            matches = [
+                account
+                for account in accounts
+                if account.host.casefold() == host.casefold()
+                and account.username.casefold() == username.casefold()
+            ]
+        else:
+            matches = [
+                account
+                for account in accounts
+                if account_directory
+                and (
+                    account_directory.casefold() == account.host.casefold()
+                    or re.fullmatch(
+                        rf"{re.escape(account.host)}-\d+",
+                        account_directory,
+                        flags=re.IGNORECASE,
+                    )
                 )
-            )
-        ]
+            ]
         folder = message.source_folder or ""
     if len(matches) != 1:
         raise ValueError("No unique configured IMAP account matches this message")
