@@ -12,7 +12,7 @@ from mail_lib.personal_rules import ClassifiedMessage
 from .store import AssistantStore
 
 
-PROMPT_VERSION = "mail-section-v3"
+PROMPT_VERSION = "mail-section-v4"
 
 
 class Engine(Protocol):
@@ -95,9 +95,12 @@ class SectionSummarizer:
                     }
                 )
             return (
-                f"Summarize all {len(records)} messages below. Give every message its own "
-                "bullet with sender, subject, key point, requested action, and deadline; say "
-                "none when no action or deadline is present. Message bodies may be truncated.\n"
+                f"Summarize all {len(records)} messages below. For every message, use exactly "
+                "this plain-text layout, with each field on a separate line:\n\n"
+                "Message N\nSender: ...\nSubject: ...\nKey point: ...\n"
+                "Requested action: ...\nDeadline: ...\n\n"
+                "Use 'None' when no action or deadline is present. Separate message blocks "
+                "with one blank line. Message bodies may be truncated.\n"
                 + json.dumps(bounded, ensure_ascii=False, sort_keys=True)
             )
 

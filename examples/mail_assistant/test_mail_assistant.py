@@ -248,6 +248,7 @@ def test_summarizer_allocates_budget_across_every_message(tmp_path: Path) -> Non
     assert all(f"message-{index}" in prompt for index in range(3))
     assert prompt.count('"body_truncated": true') == 3
     assert "Summarize all 3 messages" in prompt
+    assert "Sender: ...\nSubject: ...\nKey point: ...\nRequested action: ...\nDeadline: ..." in prompt
     assert engine.requests[0].max_tokens == 360
 
 
