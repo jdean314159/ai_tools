@@ -38,6 +38,7 @@ def _message(
     read: bool = False,
     date: str | None = None,
     folder_uri: str | None = None,
+    sender: str = "sender@example.test",
 ) -> MailMessage:
     metadata = MessageMetadata(
         header_message_id=message_id,
@@ -53,7 +54,7 @@ def _message(
         header_message_id=message_id,
         subject=subject,
         body=body,
-        sender="sender@example.test",
+        sender=sender,
         recipients=("user@example.test",),
         date=date,
         source_folder="INBOX",
@@ -172,6 +173,35 @@ def test_messages_are_newest_first_and_filtered_by_age(tmp_path: Path) -> None:
         )
 
 
+def test_sender_and_domain_volume_stats_share_window_and_unread_state(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 6, 12, tzinfo=timezone.utc)
+    messages = (
+        _message("a1", sender="A@example.test", date=(now - timedelta(days=1)).isoformat()),
+        _message("a2", sender="a@example.test", date=(now - timedelta(days=2)).isoformat()),
+        _message("b1", sender="b@example.test", date=(now - timedelta(days=3)).isoformat(), read=True),
+        _message("old", sender="a@example.test", date=(now - timedelta(days=20)).isoformat()),
+        _message("undated", sender="c@other.test"),
+    )
+    store = AssistantStore(tmp_path / "stats.db")
+    store.mark_read("a2")
+    service = MailAssistantService(tmp_path, store, reader=lambda _path: messages)
+    service.refresh()
+
+    senders, domains = service.volume_stats(max_age_days=7, now=now)
+
+    assert [(row.value, row.count, row.unread_count) for row in senders] == [
+        ("a@example.test", 2, 1),
+        ("b@example.test", 1, 0),
+    ]
+    assert senders[0].share == pytest.approx(2 / 3)
+    assert senders[0].most_recent == now - timedelta(days=1)
+    assert [(row.value, row.count, row.unread_count) for row in domains] == [
+        ("example.test", 3, 1)
+    ]
+    empty_senders, empty_domains = service.volume_stats(max_age_days=1, now=now + timedelta(days=30))
+    assert empty_senders == () and empty_domains == ()
+
+
 def test_summary_cache_varies_with_exact_content_model_and_prompt(tmp_path: Path) -> None:
     store = AssistantStore(tmp_path / "a.db")
     engine = FakeEngine()
@@ -234,6 +264,25 @@ def test_rule_propose_commit_is_derived_atomic_and_one_shot(tmp_path: Path) -> N
     assert rules_path.stat().st_mode & 0o777 == 0o600
     with pytest.raises(ValueError, match="already-used"):
         service.commit(proposal.token)
+
+
+def test_stats_match_value_produces_same_rule_proposal_as_message(tmp_path: Path) -> None:
+    service = RuleTransactionService(tmp_path / "rules.toml")
+    message = _message(sender="volume@example.test")
+
+    from_message = service.propose(
+        message, field="sender", priority=Priority.LOW, action=RuleAction.NONE
+    )
+    from_stats = service.propose(
+        None,
+        field="sender",
+        match_value="volume@example.test",
+        priority=Priority.LOW,
+        action=RuleAction.NONE,
+    )
+
+    assert from_stats.diff == from_message.diff
+    assert from_stats.candidate_sha256 == from_message.candidate_sha256
 
 
 def test_rule_commit_preserves_existing_comments_and_formatting(tmp_path: Path) -> None:
@@ -408,6 +457,33 @@ def test_web_security_headers_host_and_csrf_token(tmp_path: Path) -> None:
             assert (await client.post(
                 "/read", data=form, headers={"sec-fetch-site": "cross-site"}
             )).status_code == 200
+
+    asyncio.run(exercise())
+
+
+def test_stats_route_and_exact_sender_filter(tmp_path: Path) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    messages = [
+        _message("stats-a@example.test", subject="From A", sender="a@example.test", date=now),
+        _message("stats-b@example.test", subject="From B", sender="b@example.test", date=now),
+    ]
+    app = _web_app(tmp_path)
+    app.state.mail._reader = lambda _path: messages
+    app.state.mail.refresh()
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            stats = await client.get("/stats")
+            assert stats.status_code == 200
+            assert "a@example.test" in stats.text
+            assert "b@example.test" in stats.text
+            filtered = await client.get(
+                "/",
+                params={"view": "all", "sender": "a@example.test"},
+            )
+            assert "From A" in filtered.text
+            assert "From B" not in filtered.text
 
     asyncio.run(exercise())
 

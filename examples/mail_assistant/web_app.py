@@ -232,6 +232,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_value: int,
         window_unit: str,
         notice: str | None = None,
+        sender_filter: str | None = None,
+        domain_filter: str | None = None,
     ) -> dict[str, Any]:
         rules = current_rules()
         task = app.state.refresh_task
@@ -244,6 +246,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 rules.rules,
                 view=view,
                 max_age_days=window_days(window_value, window_unit),
+                sender_filter=sender_filter,
+                domain_filter=domain_filter,
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -258,6 +262,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "window_unit": window_unit,
             "refresh_running": bool(task is not None and not task.done()),
             "trash_enabled": bool(imap_accounts),
+            "sender_filter": sender_filter or "",
+            "domain_filter": domain_filter or "",
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -266,11 +272,41 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = "unread",
         window_value: int = DEFAULT_WINDOW_VALUE,
         window_unit: str = DEFAULT_WINDOW_UNIT,
+        sender: str | None = None,
+        domain: str | None = None,
     ):
         return templates.TemplateResponse(
             request,
             "index.html",
-            context(request, view=view, window_value=window_value, window_unit=window_unit),
+            context(
+                request,
+                view=view,
+                window_value=window_value,
+                window_unit=window_unit,
+                sender_filter=sender,
+                domain_filter=domain,
+            ),
+        )
+
+    @app.get("/stats", response_class=HTMLResponse)
+    async def stats(
+        request: Request,
+        window_value: int = DEFAULT_WINDOW_VALUE,
+        window_unit: str = DEFAULT_WINDOW_UNIT,
+    ):
+        days = window_days(window_value, window_unit)
+        sender_stats, domain_stats = mail.volume_stats(max_age_days=days)
+        return templates.TemplateResponse(
+            request,
+            "stats.html",
+            {
+                "request": request,
+                "sender_stats": sender_stats,
+                "domain_stats": domain_stats,
+                "window_value": window_value,
+                "window_unit": window_unit,
+                "csrf_token": csrf_token,
+            },
         )
 
     @app.post("/refresh", response_class=HTMLResponse)
@@ -480,7 +516,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     @app.post("/rules/propose", response_class=HTMLResponse)
     async def propose_rule(
         request: Request,
-        message_id: str = Form(...),
+        message_id: str | None = Form(None),
+        match_value: str | None = Form(None),
         field: str = Form(...),
         priority: Priority = Form(...),
         action: RuleAction = Form(...),
@@ -491,12 +528,16 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     ):
         require_csrf(request, csrf_token)
         messages = {item.header_message_id: item for item in mail.state.messages}
-        message = messages.get(message_id)
-        if message is None:
+        message = messages.get(message_id) if message_id else None
+        if message_id and message is None:
             raise HTTPException(status_code=404, detail="Unknown message ID")
         try:
             proposal = rule_transactions.propose(
-                message, field=field, priority=priority, action=action
+                message,
+                field=field,
+                priority=priority,
+                action=action,
+                match_value=match_value,
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -120,13 +120,18 @@ class RuleTransactionService:
 
     def propose(
         self,
-        message: MailMessage,
+        message: MailMessage | None,
         *,
         field: str,
         priority: Priority,
         action: RuleAction,
+        match_value: str | None = None,
     ) -> RuleProposal:
-        if field == "sender":
+        if match_value is not None:
+            value = match_value.strip().lower()
+        elif message is None:
+            raise ValueError("A message or match value is required")
+        elif field == "sender":
             value = message.sender.strip().lower()
         elif field == "domain":
             sender = message.sender.strip().lower()
@@ -137,6 +142,10 @@ class RuleTransactionService:
             value = message.subject.strip().lower()
         else:
             raise ValueError("field must be sender, domain, or subject")
+        if field not in {"sender", "domain", "subject"}:
+            raise ValueError("field must be sender, domain, or subject")
+        if field == "domain" and "@" in value:
+            raise ValueError("domain must not contain '@'")
         if not value:
             raise ValueError(f"Selected message has no {field} value")
 

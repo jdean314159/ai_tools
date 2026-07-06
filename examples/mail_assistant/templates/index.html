@@ -11,7 +11,7 @@
 <body>
   <header>
     <h1>Local Mail Assistant</h1>
-    <nav><a href="/?view=unread&window_value={{ window_value }}&window_unit={{ window_unit }}">Unread</a> <a href="/?view=all&window_value={{ window_value }}&window_unit={{ window_unit }}">All</a></nav>
+    <nav><a href="/?view=unread&window_value={{ window_value }}&window_unit={{ window_unit }}">Unread</a> <a href="/?view=all&window_value={{ window_value }}&window_unit={{ window_unit }}">All</a> <a href="/stats?window_value={{ window_value }}&window_unit={{ window_unit }}">Stats</a></nav>
     <form method="get" action="/">
       <input type="hidden" name="view" value="{{ view }}">
       <label>Show last <input type="number" name="window_value" min="1" max="3650" value="{{ window_value }}" required></label>
@@ -34,6 +34,7 @@
     </form>{% endif %}
   </header>
   {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+  {% if sender_filter or domain_filter %}<p class="notice">Filtered by {% if sender_filter %}sender: {{ sender_filter }}{% else %}domain: {{ domain_filter }}{% endif %}. <a href="/?view={{ view }}&window_value={{ window_value }}&window_unit={{ window_unit }}">Clear filter</a></p>{% endif %}
   {% if refresh_running %}<div id="refresh-status" class="notice" hx-get="/refresh-status" hx-trigger="load delay:2s" hx-swap="outerHTML">Loading mail snapshot in the background…</div>{% endif %}
   <div class="workspace">
     <main id="mail-list">{% include "mail_list.html" %}</main>

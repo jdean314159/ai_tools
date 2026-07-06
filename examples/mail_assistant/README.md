@@ -36,9 +36,15 @@ installing this version still requires one complete profile scan to seed the
 cache.
 
 Section summarization is explicit and deterministic at the prompt boundary. The
-app adds whole messages in snapshot order until the configured input-token budget
-would be exceeded; it rejects a section when even its first message cannot fit.
-The model call runs off the event loop and has a configurable soft timeout.
+app allocates the configured input-token budget across every message in the
+section and rejects a section when even its headers cannot fit. The model call
+runs off the event loop and has a configurable soft timeout.
+
+The **Stats** view computes sender and domain volume directly from the current
+snapshot for the selected days/weeks window. It reports total and unread counts,
+share of window mail, and most recent date. Rows link to exact sender/domain
+list filters and can preview an ordinary reviewed personal-rule proposal. Stats
+use no model, network call, or persistent historical table.
 
 `static/htmx.min.js` is the pinned HTMX 2.0.4 browser distribution from the
 official `bigskysoftware/htmx` release. See `static/HTMX-PROVENANCE.txt`.

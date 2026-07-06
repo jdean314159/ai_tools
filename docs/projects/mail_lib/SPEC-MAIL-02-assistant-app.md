@@ -410,3 +410,15 @@ do not suppress later attempts; disappeared snapshot messages are skipped; only
 successful moves are removed from app state. Any unsafe Message-ID, mailbox, or
 unresolved account rejects the whole proposal before socket creation. Rules and
 model output cannot authorize or execute trash actions.
+
+## 18. Sender/domain volume statistics amendment (2026-07-06)
+
+Live rule authoring exposed an anecdotal-selection gap. `/stats` now computes a
+read-only aggregation from the current in-memory snapshot using the same bounded
+date window and parser as the list view. Sender and domain rows report count,
+unread count, share of all dated messages in the window, and most recent date,
+sorted by descending count.
+
+Each row links to an exact deterministic sender/domain list filter and can feed
+that value into the unchanged reviewed rule proposal/commit transaction. Stats
+do not persist history, invoke a model, access the network, or authorize actions.

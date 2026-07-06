@@ -40,6 +40,15 @@ class SnapshotState:
     revision: int
 
 
+@dataclass(frozen=True)
+class VolumeStat:
+    value: str
+    count: int
+    unread_count: int
+    share: float
+    most_recent: datetime | None
+
+
 class MailAssistantService:
     """Own an atomically replaceable in-memory mail snapshot."""
 
@@ -87,6 +96,8 @@ class MailAssistantService:
         view: str = "unread",
         max_age_days: int | None = None,
         now: datetime | None = None,
+        sender_filter: str | None = None,
+        domain_filter: str | None = None,
     ) -> dict[Priority, tuple[ClassifiedMessage, ...]]:
         if view not in {"unread", "all"}:
             raise ValueError("view must be 'unread' or 'all'")
@@ -100,6 +111,12 @@ class MailAssistantService:
         grouped: dict[Priority, list[ClassifiedMessage]] = {item: [] for item in PRIORITY_ORDER}
         for classified in self.classify(rules):
             message = classified.message
+            sender = (message.sender or "").strip().lower()
+            domain = sender.rsplit("@", 1)[1] if "@" in sender else ""
+            if sender_filter and sender != sender_filter.strip().lower():
+                continue
+            if domain_filter and domain != domain_filter.strip().lower():
+                continue
             message_date = message_datetime(message)
             if cutoff is not None and (message_date is None or message_date < cutoff):
                 continue
@@ -113,6 +130,48 @@ class MailAssistantService:
                 reverse=True,
             )
         return {priority: tuple(grouped[priority]) for priority in PRIORITY_ORDER}
+
+    def volume_stats(
+        self,
+        *,
+        max_age_days: int,
+        now: datetime | None = None,
+    ) -> tuple[tuple[VolumeStat, ...], tuple[VolumeStat, ...]]:
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        cutoff = current.astimezone(timezone.utc) - timedelta(days=max_age_days)
+        app_read = self.store.read_ids()
+        rows = []
+        for message in self.state.messages:
+            date = message_datetime(message)
+            if date is None or date < cutoff:
+                continue
+            sender = (message.sender or "").strip().lower() or "(unknown)"
+            domain = sender.rsplit("@", 1)[1] if "@" in sender else "(no domain)"
+            unread = not (
+                thunderbird_read(message) or message.header_message_id in app_read
+            )
+            rows.append((sender, domain, unread, date))
+        total = len(rows)
+
+        def aggregate(position: int) -> tuple[VolumeStat, ...]:
+            grouped: dict[str, list[tuple[bool, datetime]]] = {}
+            for row in rows:
+                grouped.setdefault(row[position], []).append((row[2], row[3]))
+            stats = [
+                VolumeStat(
+                    value=value,
+                    count=len(items),
+                    unread_count=sum(unread for unread, _date in items),
+                    share=len(items) / total if total else 0.0,
+                    most_recent=max(date for _unread, date in items),
+                )
+                for value, items in grouped.items()
+            ]
+            return tuple(sorted(stats, key=lambda item: (-item.count, item.value)))
+
+        return aggregate(0), aggregate(1)
 
     def mark_read(self, header_message_id: str) -> None:
         if header_message_id not in {item.header_message_id for item in self.state.messages}:
