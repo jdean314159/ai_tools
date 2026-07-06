@@ -202,6 +202,37 @@ def test_sender_and_domain_volume_stats_share_window_and_unread_state(tmp_path: 
     assert empty_senders == () and empty_domains == ()
 
 
+def test_visible_filters_before_classification(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from . import services as services_module
+
+    now = datetime(2026, 7, 6, 12, tzinfo=timezone.utc)
+    messages = (
+        _message("old", date=(now - timedelta(days=30)).isoformat()),
+        _message("read", date=now.isoformat(), read=True),
+        _message("visible", date=now.isoformat()),
+    )
+    service = MailAssistantService(
+        tmp_path,
+        AssistantStore(tmp_path / "filter.db"),
+        reader=lambda _path: messages,
+    )
+    service.refresh()
+    classified_ids = []
+    original = services_module.classify_message
+
+    def tracked(message, rules):
+        classified_ids.append(message.header_message_id)
+        return original(message, rules)
+
+    monkeypatch.setattr(services_module, "classify_message", tracked)
+
+    service.visible((), view="unread", max_age_days=7, now=now)
+
+    assert classified_ids == ["visible"]
+
+
 def test_summary_cache_varies_with_exact_content_model_and_prompt(tmp_path: Path) -> None:
     store = AssistantStore(tmp_path / "a.db")
     engine = FakeEngine()

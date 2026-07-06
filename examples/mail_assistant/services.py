@@ -109,8 +109,7 @@ class MailAssistantService:
                 current = current.replace(tzinfo=timezone.utc)
             cutoff = current.astimezone(timezone.utc) - timedelta(days=max_age_days)
         grouped: dict[Priority, list[ClassifiedMessage]] = {item: [] for item in PRIORITY_ORDER}
-        for classified in self.classify(rules):
-            message = classified.message
+        for message in self.state.messages:
             sender = (message.sender or "").strip().lower()
             domain = sender.rsplit("@", 1)[1] if "@" in sender else ""
             if sender_filter and sender != sender_filter.strip().lower():
@@ -123,6 +122,7 @@ class MailAssistantService:
             is_read = thunderbird_read(message) or message.header_message_id in app_read
             if view == "unread" and is_read:
                 continue
+            classified = classify_message(message, rules)
             grouped[classified.triage.priority].append(classified)
         for messages in grouped.values():
             messages.sort(
