@@ -120,12 +120,16 @@ class MailAssistantService:
         self.store.mark_read(header_message_id)
 
     def remove_message(self, header_message_id: str) -> None:
+        self.remove_messages((header_message_id,))
+
+    def remove_messages(self, header_message_ids: Iterable[str]) -> None:
+        selected = set(header_message_ids)
         with self._lock:
             remaining = tuple(
-                item for item in self._state.messages if item.header_message_id != header_message_id
+                item for item in self._state.messages if item.header_message_id not in selected
             )
             if len(remaining) == len(self._state.messages):
-                raise KeyError(header_message_id)
+                raise KeyError(next(iter(selected), ""))
             self._state = SnapshotState(remaining, self._state.revision + 1)
         self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(remaining))
 

@@ -1,13 +1,15 @@
 <aside class="proposal">
   <h3>Confirm Move to Trash</h3>
-  <p><strong>{{ message.subject }}</strong></p>
-  <p>This will move the server message on {{ host }} from {{ folder }} to {{ trash_folder }}.</p>
+  <p>No messages move until you confirm this exact batch.</p>
+  <table><thead><tr><th>Sender</th><th>Subject</th><th>Account</th><th>Source</th><th>Destination</th></tr></thead><tbody>
+  {% for row in rows %}<tr><td>{{ row.message.sender }}</td><td>{{ row.message.subject }}</td><td>{{ row.host }}</td><td>{{ row.folder }}</td><td>{{ row.trash_folder }}</td></tr>{% endfor %}
+  </tbody></table>
   <form method="post" action="/trash/commit">
     <input type="hidden" name="trash_token" value="{{ token }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="view" value="{{ view }}">
     <input type="hidden" name="window_value" value="{{ window_value }}">
     <input type="hidden" name="window_unit" value="{{ window_unit }}">
-    <button type="submit">Confirm move to Trash</button>
+    <button type="submit">Confirm move of {{ rows|length }} messages to Trash</button>
   </form>
 </aside>

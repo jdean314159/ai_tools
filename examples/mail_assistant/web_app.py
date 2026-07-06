@@ -33,7 +33,7 @@ from .rules import RuleTransactionService
 from .services import MailAssistantService, PRIORITY_ORDER
 from .store import AssistantStore, DEFAULT_STORE_PATH
 from .summarizer import SectionSummarizer
-from .imap_trash import account_for_message, load_imap_accounts, move_message_to_trash
+from .imap_trash import load_imap_accounts, move_message_to_trash, validate_move_candidate
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -145,7 +145,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     mail = MailAssistantService(config.profile, store)
     rule_transactions = RuleTransactionService(config.rules_path)
     imap_accounts = load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
-    pending_trash: dict[str, tuple[str, float]] = {}
+    pending_trash: dict[str, tuple[tuple[str, ...], float]] = {}
     summary_service: SectionSummarizer | None = None
 
     async def refresh_in_background(target_app: FastAPI) -> None:
@@ -336,21 +336,32 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     @app.post("/trash/propose", response_class=HTMLResponse)
     async def propose_trash(
         request: Request,
-        message_id: str = Form(...),
+        message_ids: list[str] = Form(...),
         csrf_token: str = Form(...),
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
-        message = next(
-            (item for item in mail.state.messages if item.header_message_id == message_id),
-            None,
-        )
-        if message is None:
-            raise HTTPException(status_code=404, detail="Unknown message ID")
+        selected_ids = tuple(dict.fromkeys(message_ids))
+        if not selected_ids:
+            raise HTTPException(status_code=400, detail="Select at least one message")
+        by_id = {item.header_message_id: item for item in mail.state.messages}
+        if any(message_id not in by_id for message_id in selected_ids):
+            raise HTTPException(status_code=404, detail="Unknown message ID in selection")
+        rows = []
         try:
-            account, folder = account_for_message(message, imap_accounts)
+            for message_id in selected_ids:
+                message = by_id[message_id]
+                account, folder = validate_move_candidate(message, imap_accounts)
+                rows.append(
+                    {
+                        "message": message,
+                        "host": account.host,
+                        "folder": folder,
+                        "trash_folder": account.trash_folder,
+                    }
+                )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         token = secrets.token_urlsafe(32)
@@ -359,16 +370,13 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             key for key, value in pending_trash.items() if value[1] < now
         ]:
             pending_trash.pop(expired_token, None)
-        pending_trash[token] = (message_id, now + 600)
+        pending_trash[token] = (selected_ids, now + 600)
         return templates.TemplateResponse(
             request,
             "trash_proposal.html",
             {
                 "request": request,
-                "message": message,
-                "host": account.host,
-                "folder": folder,
-                "trash_folder": account.trash_folder,
+                "rows": rows,
                 "token": token,
                 "csrf_token": csrf_token,
                 "view": view,
@@ -390,28 +398,35 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         pending = pending_trash.pop(trash_token, None)
         if pending is None or pending[1] < time.time():
             raise HTTPException(status_code=400, detail="Unknown or expired trash token")
-        message_id = pending[0]
-        message = next(
-            (item for item in mail.state.messages if item.header_message_id == message_id),
-            None,
-        )
-        if message is None:
-            raise HTTPException(status_code=404, detail="Unknown message ID")
-        try:
-            await _run_blocking(move_message_to_trash, message, imap_accounts, timeout=45)
-        except Exception as exc:
-            raise HTTPException(status_code=502, detail=f"Move to Trash failed: {exc}") from exc
-        mail.remove_message(message_id)
+        selected_ids = pending[0]
+        by_id = {item.header_message_id: item for item in mail.state.messages}
+        outcomes = []
+        moved_ids = []
+        for message_id in selected_ids:
+            message = by_id.get(message_id)
+            if message is None:
+                outcomes.append({"message_id": message_id, "subject": "", "status": "skipped", "detail": "Message left the snapshot before confirmation."})
+                continue
+            try:
+                await _run_blocking(move_message_to_trash, message, imap_accounts, timeout=45)
+            except Exception as exc:
+                outcomes.append({"message_id": message_id, "subject": message.subject, "status": "failed", "detail": str(exc)})
+            else:
+                moved_ids.append(message_id)
+                outcomes.append({"message_id": message_id, "subject": message.subject, "status": "moved", "detail": "Moved to Trash."})
+        if moved_ids:
+            mail.remove_messages(moved_ids)
         return templates.TemplateResponse(
             request,
-            "index.html",
-            context(
-                request,
-                view=view,
-                window_value=window_value,
-                window_unit=window_unit,
-                notice="Message moved to Trash.",
-            ),
+            "trash_outcomes.html",
+            {
+                "request": request,
+                "outcomes": outcomes,
+                "moved_count": len(moved_ids),
+                "failed_count": sum(item["status"] == "failed" for item in outcomes),
+                "skipped_count": sum(item["status"] == "skipped" for item in outcomes),
+                "return_url": f"/?{urlencode({'view': view, 'window_value': window_value, 'window_unit': window_unit})}",
+            },
         )
 
     @app.post("/summarize/{section}", response_class=HTMLResponse)

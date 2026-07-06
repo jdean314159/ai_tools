@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Trash outcomes</title><link rel="stylesheet" href="/static/app.css"></head><body>
+<h1>Move-to-Trash outcomes</h1>
+<p>{{ moved_count }} moved, {{ failed_count }} failed, {{ skipped_count }} skipped.</p>
+<table><thead><tr><th>Subject</th><th>Status</th><th>Detail</th></tr></thead><tbody>
+{% for outcome in outcomes %}<tr><td>{{ outcome.subject or outcome.message_id }}</td><td>{{ outcome.status }}</td><td>{{ outcome.detail }}</td></tr>{% endfor %}
+</tbody></table><p><a href="{{ return_url }}">Return to mail</a></p></body></html>

@@ -519,31 +519,48 @@ def test_trash_requires_preview_then_removes_only_after_move(
         "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='Trash'\n",
         encoding="utf-8",
     )
-    message = _message(
+    first = _message(
+        "first-trash@example.test",
+        subject="First trash subject",
         date=datetime.now(timezone.utc).isoformat(),
         folder_uri="imap://user%40example.test@imap.example.test/INBOX",
     )
-    app = _web_app(tmp_path, message, imap_accounts_path=config_path)
+    second = _message(
+        "second-trash@example.test",
+        subject="Second trash subject",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    app = _web_app(tmp_path, first, imap_accounts_path=config_path)
+    app.state.mail._reader = lambda _path: [first, second]
     app.state.mail.refresh()
     moved = []
+
+    def move(selected, _accounts):
+        if selected.header_message_id == second.header_message_id:
+            raise RuntimeError("injected failure")
+        moved.append(selected.header_message_id)
+
     monkeypatch.setattr(
         "examples.mail_assistant.web_app.move_message_to_trash",
-        lambda selected, _accounts: moved.append(selected.header_message_id),
+        move,
     )
 
     async def exercise() -> None:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             page = await client.get("/")
-            assert "Move to Trash…" in page.text
+            assert "Review selected for Trash…" in page.text
             preview = await client.post(
                 "/trash/propose",
                 data={
-                    "message_id": message.header_message_id,
+                    "message_ids": [first.header_message_id, second.header_message_id],
                     "csrf_token": app.state.csrf_token,
                 },
             )
             assert preview.status_code == 200
+            assert "First trash subject" in preview.text
+            assert "Second trash subject" in preview.text
             assert moved == []
             token = re.search(r'name="trash_token" value="([^"]+)"', preview.text)
             assert token is not None
@@ -555,8 +572,86 @@ def test_trash_requires_preview_then_removes_only_after_move(
                 },
             )
             assert committed.status_code == 200
-            assert moved == [message.header_message_id]
-            assert app.state.mail.state.messages == ()
+            assert "1 moved, 1 failed, 0 skipped" in committed.text
+            assert "injected failure" in committed.text
+            assert moved == [first.header_message_id]
+            assert [item.header_message_id for item in app.state.mail.state.messages] == [
+                second.header_message_id
+            ]
+            replay = await client.post(
+                "/trash/commit",
+                data={
+                    "trash_token": token.group(1),
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert replay.status_code == 400
+            monkeypatch.setattr(
+                "examples.mail_assistant.web_app.time.time", lambda: 1_000.0
+            )
+            expiring = await client.post(
+                "/trash/propose",
+                data={
+                    "message_ids": second.header_message_id,
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            expiring_token = re.search(
+                r'name="trash_token" value="([^"]+)"', expiring.text
+            )
+            assert expiring_token is not None
+            monkeypatch.setattr(
+                "examples.mail_assistant.web_app.time.time", lambda: 2_000.0
+            )
+            expired = await client.post(
+                "/trash/commit",
+                data={
+                    "trash_token": expiring_token.group(1),
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert expired.status_code == 400
+
+    asyncio.run(exercise())
+
+
+def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "imap.toml"
+    config_path.write_text(
+        "[[account]]\nhost='imap.example.test'\nusername='user@example.test'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='Trash'\n",
+        encoding="utf-8",
+    )
+    good = _message(
+        "good@example.test",
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    hostile = _message(
+        "hostile@example.test\r\nEXPUNGE",
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    unmapped = _message(
+        "unmapped@example.test",
+        folder_uri="imap://user%40example.test@other.example.test/INBOX",
+    )
+    app = _web_app(tmp_path, good, imap_accounts_path=config_path)
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            for rejected in (hostile, unmapped):
+                app.state.mail._reader = lambda _path, item=rejected: [good, item]
+                app.state.mail.refresh()
+                response = await client.post(
+                    "/trash/propose",
+                    data={
+                        "message_ids": [good.header_message_id, rejected.header_message_id],
+                        "csrf_token": app.state.csrf_token,
+                    },
+                )
+                assert response.status_code == 400
 
     asyncio.run(exercise())
 

@@ -9,6 +9,8 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .workspace { display: grid; grid-template-columns: minmax(0, 3fr) minmax(20rem, 2fr); gap: 1rem; align-items: start; }
 .message-panel { position: sticky; top: 1rem; max-height: calc(100vh - 4rem); overflow: auto; }
 .message-detail { border: 0; margin: 0; padding: 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #8886; padding: .5rem; text-align: left; vertical-align: top; }
 @media (max-width: 60rem) {
   .workspace { grid-template-columns: 1fr; }
   .message-panel { position: static; max-height: none; }

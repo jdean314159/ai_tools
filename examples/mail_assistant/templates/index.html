@@ -6,6 +6,7 @@
   <title>Local Mail Assistant</title>
   <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
   <script src="{{ url_for('static', path='/htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', path='/app.js') }}" defer></script>
 </head>
 <body>
   <header>
@@ -24,6 +25,13 @@
       <input type="hidden" name="window_unit" value="{{ window_unit }}">
       <button type="submit">Refresh snapshot</button>
     </form>
+    {% if trash_enabled %}<form id="batch-trash-form" method="post" action="/trash/propose">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="view" value="{{ view }}">
+      <input type="hidden" name="window_value" value="{{ window_value }}">
+      <input type="hidden" name="window_unit" value="{{ window_unit }}">
+      <button type="submit">Review selected for Trash…</button>
+    </form>{% endif %}
   </header>
   {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
   {% if refresh_running %}<div id="refresh-status" class="notice" hx-get="/refresh-status" hx-trigger="load delay:2s" hx-swap="outerHTML">Loading mail snapshot in the background…</div>{% endif %}

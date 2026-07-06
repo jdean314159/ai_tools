@@ -84,13 +84,24 @@ def account_for_message(
     return matches[0], folder
 
 
+def validate_move_candidate(
+    message: MailMessage, accounts: tuple[ImapAccount, ...]
+) -> tuple[ImapAccount, str]:
+    """Resolve and validate every attacker-controlled IMAP command argument."""
+    account, folder = account_for_message(message, accounts)
+    _validated_message_id(message.header_message_id)
+    _quoted_mailbox(folder)
+    _quoted_mailbox(account.trash_folder)
+    return account, folder
+
+
 def move_message_to_trash(
     message: MailMessage,
     accounts: tuple[ImapAccount, ...],
     *,
     connector: Callable[..., imaplib.IMAP4_SSL] = imaplib.IMAP4_SSL,
 ) -> None:
-    account, folder = account_for_message(message, accounts)
+    account, folder = validate_move_candidate(message, accounts)
     message_id = _validated_message_id(message.header_message_id)
     selected_folder = _quoted_mailbox(folder)
     trash_folder = _quoted_mailbox(account.trash_folder)

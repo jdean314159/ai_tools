@@ -65,3 +65,11 @@ The host and username must match Thunderbird's folder URI; Gmail commonly uses
 selected source folder for exactly one matching `Message-ID`, and presents a
 second confirmation before mutation. It does not fall back to copy/delete or
 write Thunderbird mbox files.
+
+Select one or more message-row checkboxes, then choose **Review selected for
+Trash…**. The proposal lists every selected sender, subject, account, source,
+and destination. Confirmation is bound to that exact selection. Moves execute
+sequentially; the outcome page reports each success, failure, or message skipped
+because it left the snapshot. Only successful moves disappear locally. Collapsed
+ignore groups provide a client-side select-all control; selection alone never
+authorizes a move.

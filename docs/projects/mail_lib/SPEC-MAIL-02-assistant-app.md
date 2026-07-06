@@ -395,3 +395,18 @@ Normal tests use a mock engine and synthetic mail only. A private live run again
 a real Thunderbird profile and configured local model remains an explicit manual
 validation step; its data and output must not be committed or sent to remote
 services.
+
+## 17. F2b batch Move-to-Trash amendment (2026-07-06)
+
+Live cleanup sessions forced batch granularity after the confirmed single-message
+flow proved too slow. Each message row may be selected client-side, but selection
+is not authorization. The server validates the complete batch, renders every
+sender, subject, account host, source folder, and destination folder, then binds
+that exact ordered ID set to a one-shot expiring confirmation token.
+
+Commit reuses the hardened `move_message_to_trash` path sequentially. IMAP moves
+cannot be rolled back as one transaction: failures are recorded per message and
+do not suppress later attempts; disappeared snapshot messages are skipped; only
+successful moves are removed from app state. Any unsafe Message-ID, mailbox, or
+unresolved account rejects the whole proposal before socket creation. Rules and
+model output cannot authorize or execute trash actions.
