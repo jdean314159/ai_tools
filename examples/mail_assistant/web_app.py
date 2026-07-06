@@ -488,6 +488,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        summary_limit: int = Form(50),
     ):
         nonlocal summary_service
         require_csrf(request, csrf_token)
@@ -497,7 +498,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             max_age_days=window_days(window_value, window_unit),
             sender_filter=sender_filter,
             domain_filter=domain_filter,
-        )[section]
+        )[section][:display_limit(summary_limit)]
         if not messages:
             raise HTTPException(status_code=404, detail="Section is empty")
         if summary_service is None:
@@ -515,10 +516,18 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 messages,
                 timeout=config.model_timeout,
             )
-        except TimeoutError as exc:
-            raise HTTPException(status_code=504, detail="Summary timed out") from exc
+        except TimeoutError:
+            return templates.TemplateResponse(
+                request,
+                "summary_error.html",
+                {"request": request, "detail": "Summary timed out. Try a smaller display limit."},
+            )
         except Exception as exc:
-            raise HTTPException(status_code=502, detail=f"Summary failed: {exc}") from exc
+            return templates.TemplateResponse(
+                request,
+                "summary_error.html",
+                {"request": request, "detail": f"Summary failed: {exc}"},
+            )
         return templates.TemplateResponse(
             request,
             "summary.html",

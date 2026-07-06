@@ -6,6 +6,7 @@ article h3 { margin-top: 0; }
 form { display: inline-block; margin: .25rem .5rem .25rem 0; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .notice, .action { font-weight: 600; }
+.error { border-color: #b33; }
 .workspace { display: grid; grid-template-columns: minmax(0, 3fr) minmax(20rem, 2fr); gap: 1rem; align-items: start; }
 .message-panel { position: sticky; top: 1rem; max-height: calc(100vh - 4rem); overflow: auto; }
 .message-detail { border: 0; margin: 0; padding: 0; }
