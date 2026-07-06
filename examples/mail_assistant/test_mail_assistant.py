@@ -396,6 +396,9 @@ def test_web_security_headers_host_and_csrf_token(tmp_path: Path) -> None:
             )).status_code == 200
             assert (await client.post(
                 "/read", data=form, headers={"origin": "http://attacker.test"}
+            )).status_code == 403
+            assert (await client.post(
+                "/read", data=form, headers={"origin": "null"}
             )).status_code == 200
             assert (await client.post(
                 "/read", data=form, headers={"sec-fetch-site": "same-origin"}

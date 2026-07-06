@@ -198,9 +198,17 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         response.headers["Cache-Control"] = "no-store"
         return response
 
-    def require_csrf(_request: Request, supplied: str) -> None:
+    def require_csrf(request: Request, supplied: str) -> None:
         if not secrets.compare_digest(supplied, csrf_token):
             raise HTTPException(status_code=403, detail="Invalid CSRF token")
+        # Firefox suppresses both Origin and Referer under our no-referrer
+        # policy on same-origin POSTs, so absent headers must pass; the token
+        # is the primary gate. A *present* mismatched Origin is still rejected.
+        origin = request.headers.get("origin")
+        if origin and origin != "null":
+            expected = str(request.base_url).rstrip("/")
+            if origin.rstrip("/") != expected:
+                raise HTTPException(status_code=403, detail="Cross-origin request rejected")
 
     def current_rules() -> RuleLoadResult:
         if not config.rules_path.exists():
