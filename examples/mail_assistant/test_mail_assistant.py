@@ -738,8 +738,9 @@ def test_trash_requires_preview_then_removes_only_after_move(
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             page = await client.get("/")
             assert "Review selected for Trash…" in page.text
-            assert 'data-trash-prefix="normal-"' in page.text
-            assert "Select all 2 shown in normal" in page.text
+            assert 'class="select-trash-visible"' in page.text
+            assert 'data-trash-group="normal-visible"' in page.text
+            assert "Select all 2 visible in normal for Trash" in page.text
             preview = await client.post(
                 "/trash/propose",
                 data={
