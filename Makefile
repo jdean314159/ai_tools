@@ -87,7 +87,14 @@ test-ui:
 
 .PHONY: test-integration
 test-integration:
-	$(TEST_PYTHON) -m pytest integration_tests/ -v
+	$(TEST_PYTHON) -m pytest tests/integration_tests/ -v
+
+.PHONY: test-mail
+test-mail:
+	$(TEST_PYTHON) -m pytest tests/test_mail_lib.py \
+		examples/mail_assistant/test_mail_assistant.py \
+		examples/mail_assistant/test_imap_trash.py \
+		tests/test_public_api.py -v
 
 .PHONY: test-tutor
 test-tutor:
@@ -119,7 +126,7 @@ test-live-embed:
 		--embed-model nomic-embed-text -v
 
 .PHONY: test-all
-test-all: test-core test-integration test-agent test-rag test-tutor test-diagnostics
+test-all: test-core test-integration test-agent test-rag test-tutor test-diagnostics test-mail
 
 .PHONY: run-diagnostics
 # Streamlit UI for the diagnostics agent. Requires diagnostics_agent[ui].
@@ -212,6 +219,7 @@ help:
 	@echo "  make test-rag         rag_lib unit tests"
 	@echo "  make test-ui          llm_inspector_ui tests"
 	@echo "  make test-diagnostics diagnostics_agent example tests"
+	@echo "  make test-mail        mail_lib and mail_assistant tests"
 	@echo "  make eval-fp          Report diagnostics interpretation calibration"
 	@echo "  make test-fp-gate     Run live diagnostics FP/recall gate"
 	@echo "  make test-integration Cross-package integration tests"

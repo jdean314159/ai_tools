@@ -44,6 +44,12 @@ expecting stability.
 | [llm_inspector_ui](./llm_inspector_ui/README.md) | beta | Interactive workbench to inspect engines, memory, and RAG behavior | run as a tool |
 | [agent_lib](./agent_lib/README.md) | **experimental** | Planner/executor/tool runtime with policy and sandbox boundaries | coordination primitives |
 
+Application modules and worked examples also live in this repository. The
+currently active application is the local-first
+[`mail_assistant`](./examples/mail_assistant/README.md), built on the
+deterministic `mail_lib` module. See the [examples index](./examples/README.md)
+for the complete list.
+
 `agent_lib` is experimental — its API will move. Build on it only for
 exploration, not for anything you need to stay stable.
 
@@ -66,9 +72,9 @@ are understood.
 
 Worked applications built on the suite live in [`examples/`](./examples/). They
 are built against the public APIs above — they show the supported way to use the
-libraries, not internal shortcuts. The flagship example is a language tutor
-(spaced repetition, vocabulary import, voice I/O) composed from `llm_engines`
-and `engram`.
+libraries, not internal shortcuts. `language_tutor` is the reference example
+for composing `llm_engines` and `engram`; `mail_assistant` is the active
+local-first application.
 
 ## What the suite makes visible
 

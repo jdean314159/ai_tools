@@ -207,7 +207,7 @@ Teach learners to compare baseline, memory-augmented, retrieval-augmented, and a
 - `llm_harness_core/EVALUATION_WALKTHROUGH.md`
 - `course/notebooks/09_evaluating_llm_applications.ipynb`
 - `course/starter_projects/source_grounded_qa/eval.py`
-- `integration_tests/memory_eval.py`
+- `tests/integration_tests/memory_eval.py`
 
 ### Questions to answer
 - What is the baseline answer?

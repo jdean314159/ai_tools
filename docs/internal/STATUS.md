@@ -1,20 +1,21 @@
 # Repo Status
 
-Last updated: 2026-07-03
+Last updated: 2026-07-07
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: MAIL-02 MVP COMPLETE; private live validation and a two-week adoption
-run are next. Neural memory remains parked and output-isolated; NAV-TEST-00 is
-available; knowledge-curation MVP remains complete.**
+**Phase: MAIL-02 MVP COMPLETE; post-MVP mail-assistant hardening and adoption
+observation are active. Neural memory remains parked and output-isolated;
+NAV-TEST-00 is available; knowledge-curation MVP remains complete.**
 
 **mail_lib — current active project.** MAIL-00 shipped a script-first, deterministic Thunderbird
 reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
 extensionless mbox files as the source of truth, joins Gloda metadata by bracket-stripped
-`Message-ID`, treats Gloda as lagging enrichment, and remains read-only. A private maintainer-only
+`Message-ID`, treats Gloda as lagging enrichment, and remains read-only against the Thunderbird
+profile. A private maintainer-only
 live run forced three corrections: self-mail demotion (`553c49e`), recent user-star-only urgency
 (`175352e`, 183 days), and calendar recency gating (`f56e19c`, 31 days).
 
@@ -26,9 +27,16 @@ link-bearing saved-article messages.
 MAIL-02 shipped the ratified localhost mail-assistant MVP at `cb4f11e`: prioritized unread/all
 views, app-owned read and summary state, bounded local-model section summaries, and reviewed,
 conflict-detecting personal-rule commits that preserve the hand-authored TOML prefix. The combined
-mail/app/import/public-API gate passes (`75 passed`). No `mail_lib` implementation is queued. The
-next gate is private validation against the real profile and qwen3:8b, followed by two weeks of
-app-before-Thunderbird use. F1–F5 remain dormant until their triggers in
+mail/app/import/public-API gate passed at the MVP checkpoint (`75 passed`). Post-MVP work through
+2026-07-06 added age-filtered views, cached background refresh, sender/domain statistics,
+selection controls, and an explicitly configured, preview-and-confirm IMAP Move-to-Trash path
+for individual messages and batches. Thunderbird mbox and Gloda access remains read-only; only
+the separately configured IMAP action mutates server state. The action fails closed on missing or
+ambiguous account mapping, requires IMAP `MOVE`, and does not fall back to copy/delete.
+
+The current gate is continued private adoption observation. No outcome for the planned two-week
+run is recorded yet. F1 chat, F2 IMAP `\Seen` propagation, F3 `rag_lib`, F4 `engram`, and F5
+interest scoring remain dormant until their triggers in
 `docs/projects/mail_lib/SPEC-MAIL-02-assistant-app.md` fire. See the newest update in
 `SESSION_HANDOFF.md`.
 
@@ -70,7 +78,7 @@ NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `c95b8ab` as a
 confined, read-only Qwen3.6 repository-navigation evaluation with external
 ground truth and result storage.
 
-Next project: complete MAIL-02 private live validation and adoption observation.
+Next project: complete MAIL-02 adoption observation and specify only failures forced by that run.
 Standing backlog (none gate-blocking): course-repo extraction, TOPOLOGY-01
 conversion (ADR-015), and neural reactivation only under a new mandate.
 
@@ -118,11 +126,8 @@ The staged hygiene campaign through `SPEC-HYGIENE-13` is complete:
 
 Known repository-wide collection limitations outside the core package gates:
 
-- `asc/mcp_agent_mail` requires optional dependencies such as `fastmcp` before
-  its tests can collect;
-- collecting ASC and all spine tests in one pytest invocation can still create
-  a `tests.conftest` namespace collision. Package-scoped test commands remain
-  the supported gate.
+- package-scoped test commands remain the supported gate; the integration suite
+  lives under `tests/integration_tests/`.
 
 The collection-time live Ollama call in `course/test_loop.py` was fixed on
 2026-06-09 by moving executable work behind `main()`.

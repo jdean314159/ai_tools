@@ -38,14 +38,14 @@ jobs:
           python -m pip install -e ./llm_engines[dev]
       - name: Compile all tracked Python packages
         run: |
-          python -m compileall -q agent_lib engram examples/diagnostics_agent examples/language_tutor integration_tests llm_engines llm_harness_core llm_inspector llm_inspector_ui rag_lib
+          python -m compileall -q agent_lib engram examples/diagnostics_agent examples/language_tutor examples/mail_assistant mail_lib tests/integration_tests llm_engines llm_harness_core llm_inspector llm_inspector_ui rag_lib
       - name: Lint (mypy)
         run: |
           python -m mypy llm_engines/src/llm_engines/ \
             --config-file llm_engines/pyproject.toml \
             --ignore-missing-imports --no-error-summary
       - name: Build wheels for all packages
-        # examples/ (diagnostics_agent, language_tutor) are integration vehicles, not published packages.
+        # examples/ applications are integration vehicles, not published packages.
         # Wheel builds for examples are intentionally omitted.
         run: |
           for pkg in llm_harness_core llm_engines engram rag_lib llm_inspector llm_inspector_ui agent_lib; do
@@ -103,8 +103,10 @@ jobs:
           python -m pip install -e ./llm_engines[dev]
           python -m pip install -e ./engram
           python -m pip install -e ./llm_inspector[dev]
+          python -m pip install -e ./rag_lib[dev]
+          python -m pip install -e ./llm_inspector_ui[dev]
       - name: Run integration tests
-        run: python -m pytest -q integration_tests
+        run: python -m pytest -q tests/integration_tests
 
   agent:
     name: Agent kernel
@@ -200,3 +202,25 @@ jobs:
           python -m pip install -e ./llm_inspector_ui[dev]
       - name: Run UI tests
         run: cd llm_inspector_ui && python -m pytest -q tests
+
+  mail:
+    name: Mail application
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install editable packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./llm_harness_core[dev]
+          python -m pip install -e ./llm_engines[dev]
+          python -m pip install -e './examples/mail_assistant[dev]'
+      - name: Run mail tests
+        run: |
+          python -m pytest -q tests/test_mail_lib.py \
+            examples/mail_assistant/test_mail_assistant.py \
+            examples/mail_assistant/test_imap_trash.py \
+            tests/test_public_api.py

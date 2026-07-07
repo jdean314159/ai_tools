@@ -1,6 +1,6 @@
 # ai_tools — Session Handoff (for new thread / Codex)
 
-**Date:** 2026-07-03
+**Date:** 2026-07-07
 **Read order for any new thread:** `docs/internal/STATUS.md` first, then this
 file. For a neural-memory thread also read ADR-016 and
 `docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`. For mail_lib: this file →
@@ -15,6 +15,22 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 ---
 
 ## TL;DR
+
+## Update — 2026-07-07 (MAIL-02 post-MVP hardening)
+
+MAIL-02 remains the active application. Work after the original MVP added
+age-filtered views, cached background refresh, sender/domain statistics,
+bounded rendering and summaries, selectable message groups, and confirmed
+single/batch IMAP Move-to-Trash. IMAP mutation is opt-in through a separate
+account mapping and password environment variables; it fails closed on unsafe,
+missing, or ambiguous mappings and requires server-side `MOVE`. Thunderbird
+mbox and Gloda access remains read-only.
+
+The next action is continued private adoption observation and recording of
+structural failures without committing real mail, private rules, credentials,
+or model output. No result for the planned two-week adoption run is recorded in
+the repository. F1 chat, F2 `\Seen` propagation, F3 `rag_lib`, F4 `engram`, and
+F5 interest scoring remain dormant.
 
 ## Update — 2026-07-03 (MAIL-02 MVP complete; live validation pending)
 
