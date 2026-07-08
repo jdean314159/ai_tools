@@ -1,6 +1,7 @@
 from __future__ import annotations
 # ruff: noqa: E402 -- exercise repository bootstrap before sibling-package imports
 
+from dataclasses import replace
 from pathlib import Path
 import re
 import sqlite3
@@ -732,6 +733,10 @@ def test_trash_requires_preview_then_removes_only_after_move(
         "examples.mail_assistant.web_app.move_message_to_trash",
         move,
     )
+    monkeypatch.setattr(
+        "examples.mail_assistant.web_app.verify_message_available_for_move",
+        lambda _message, _accounts: None,
+    )
 
     async def exercise() -> None:
         transport = httpx.ASGITransport(app=app)
@@ -740,7 +745,7 @@ def test_trash_requires_preview_then_removes_only_after_move(
             assert "Review selected for Trash…" in page.text
             assert 'class="select-trash-visible"' in page.text
             assert 'data-trash-group="normal-visible"' in page.text
-            assert "Select all 2 visible in normal for Trash" in page.text
+            assert "Select all 2 eligible visible in normal for Trash" in page.text
             preview = await client.post(
                 "/trash/propose",
                 data={
@@ -805,8 +810,49 @@ def test_trash_requires_preview_then_removes_only_after_move(
     asyncio.run(exercise())
 
 
-def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
+def test_configured_trash_messages_are_excluded_from_refresh_and_cache(
     tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "imap.toml"
+    config_path.write_text(
+        "[[account]]\nhost='imap.example.test'\nusername='user@example.test'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='[Gmail]/Trash'\n",
+        encoding="utf-8",
+    )
+    inbox = _message(
+        "inbox@example.test",
+        subject="Visible inbox message",
+        sender="visible@example.test",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    trashed = _message(
+        "trashed@example.test",
+        subject="Ignored trash message",
+        sender="ignored@example.test",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    trashed = replace(trashed, signal_folders=("[Gmail]/Trash",))
+    app = _web_app(tmp_path, inbox, imap_accounts_path=config_path)
+    app.state.mail._reader = lambda _path: [inbox, trashed]
+    app.state.mail.refresh()
+
+    assert [item.header_message_id for item in app.state.mail.state.messages] == [
+        inbox.header_message_id
+    ]
+    senders, _domains = app.state.mail.volume_stats(max_age_days=7)
+    assert [item.value for item in senders] == ["visible@example.test"]
+
+    cached_app = _web_app(tmp_path, inbox, imap_accounts_path=config_path)
+    cached_app.state.mail.load_cached()
+    assert [
+        item.header_message_id for item in cached_app.state.mail.state.messages
+    ] == [inbox.header_message_id]
+
+
+def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = tmp_path / "imap.toml"
     config_path.write_text(
@@ -814,19 +860,27 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
         "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='Trash'\n",
         encoding="utf-8",
     )
+    now = datetime.now(timezone.utc).isoformat()
     good = _message(
         "good@example.test",
+        date=now,
         folder_uri="imap://user%40example.test@imap.example.test/INBOX",
     )
     hostile = _message(
         "hostile@example.test\r\nEXPUNGE",
+        date=now,
         folder_uri="imap://user%40example.test@imap.example.test/INBOX",
     )
     unmapped = _message(
         "unmapped@example.test",
+        date=now,
         folder_uri="imap://user%40example.test@other.example.test/INBOX",
     )
     app = _web_app(tmp_path, good, imap_accounts_path=config_path)
+    monkeypatch.setattr(
+        "examples.mail_assistant.web_app.verify_message_available_for_move",
+        lambda _message, _accounts: None,
+    )
 
     async def exercise() -> None:
         transport = httpx.ASGITransport(app=app)
@@ -834,6 +888,9 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
             for rejected in (hostile, unmapped):
                 app.state.mail._reader = lambda _path, item=rejected: [good, item]
                 app.state.mail.refresh()
+                page = await client.get("/?view=all")
+                assert page.status_code == 200
+                assert page.text.count('name="message_ids"') == 1
                 response = await client.post(
                     "/trash/propose",
                     data={
@@ -844,6 +901,52 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
                 assert response.status_code == 400
                 assert response.headers["content-type"].startswith("text/html")
                 assert "No messages were moved." in response.text
+
+    asyncio.run(exercise())
+
+
+def test_batch_trash_proposal_rejects_message_missing_from_imap_server(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "imap.toml"
+    config_path.write_text(
+        "[[account]]\nhost='imap.example.test'\nusername='user@example.test'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='Trash'\n",
+        encoding="utf-8",
+    )
+    stale = _message(
+        "stale@example.test",
+        subject="Stale local cache row",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    app = _web_app(tmp_path, stale, imap_accounts_path=config_path)
+    app.state.mail.refresh()
+
+    def missing_from_server(_message, _accounts):
+        raise RuntimeError("Message was not found on the IMAP server")
+
+    monkeypatch.setattr(
+        "examples.mail_assistant.web_app.verify_message_available_for_move",
+        missing_from_server,
+    )
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            response = await client.post(
+                "/trash/propose",
+                data={
+                    "message_ids": [stale.header_message_id],
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert response.status_code == 400
+            assert "No messages were moved." in response.text
+            assert "Message was not found on the IMAP server" in response.text
+            assert "trash_token" not in response.text
 
     asyncio.run(exercise())
 
@@ -872,6 +975,10 @@ def test_batch_trash_commit_skips_message_that_left_snapshot(
     monkeypatch.setattr(
         "examples.mail_assistant.web_app.move_message_to_trash",
         lambda message, _accounts: moved.append(message.header_message_id),
+    )
+    monkeypatch.setattr(
+        "examples.mail_assistant.web_app.verify_message_available_for_move",
+        lambda _message, _accounts: None,
     )
 
     async def exercise() -> None:

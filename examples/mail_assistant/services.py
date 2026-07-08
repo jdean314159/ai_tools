@@ -60,10 +60,12 @@ class MailAssistantService:
         store: AssistantStore,
         *,
         reader: Callable[[str | Path], Iterable[MailMessage]] = iter_messages,
+        include_message: Callable[[MailMessage], bool] | None = None,
     ) -> None:
         self.profile = Path(profile)
         self.store = store
         self._reader = reader
+        self._include_message = include_message or (lambda _message: True)
         self._lock = threading.RLock()
         self._state = SnapshotState((), 0)
 
@@ -73,7 +75,11 @@ class MailAssistantService:
             return self._state
 
     def refresh(self) -> SnapshotState:
-        loaded = tuple(self._reader(self.profile))
+        loaded = tuple(
+            message
+            for message in self._reader(self.profile)
+            if self._include_message(message)
+        )
         self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(loaded))
         with self._lock:
             self._state = SnapshotState(loaded, self._state.revision + 1)
@@ -83,7 +89,11 @@ class MailAssistantService:
         payload = self.store.get_mail_snapshot(str(self.profile.resolve()))
         if payload is None:
             return self.state
-        loaded = _decode_snapshot(payload)
+        loaded = tuple(
+            message
+            for message in _decode_snapshot(payload)
+            if self._include_message(message)
+        )
         with self._lock:
             self._state = SnapshotState(loaded, self._state.revision + 1)
             return self._state

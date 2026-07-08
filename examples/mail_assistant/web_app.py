@@ -27,13 +27,20 @@ install_repo_source_paths()
 from llm_engines import get_engine
 
 from mail_lib.personal_rules import RuleAction, RuleLoadResult, empty_rule_result, load_personal_rules
+from mail_lib.thunderbird import MailMessage
 from mail_lib.triage import Priority
 
 from .rules import RuleTransactionService
 from .services import MailAssistantService, PRIORITY_ORDER
 from .store import AssistantStore, DEFAULT_STORE_PATH
 from .summarizer import SectionSummarizer
-from .imap_trash import load_imap_accounts, move_message_to_trash, validate_move_candidate
+from .imap_trash import (
+    account_for_message,
+    load_imap_accounts,
+    move_message_to_trash,
+    validate_move_candidate,
+    verify_message_available_for_move,
+)
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -142,9 +149,28 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     templates = Jinja2Templates(directory=APP_DIR / "templates")
     csrf_token = secrets.token_urlsafe(32)
     store = AssistantStore(config.database_path)
-    mail = MailAssistantService(config.profile, store)
-    rule_transactions = RuleTransactionService(config.rules_path)
     imap_accounts = load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
+
+    def include_message(message: MailMessage) -> bool:
+        if not imap_accounts:
+            return True
+        try:
+            account, folder = account_for_message(message, imap_accounts)
+        except ValueError:
+            return True
+        observed_folders = (folder, *message.signal_folders)
+        return all(
+            observed.casefold().strip("/")
+            != account.trash_folder.casefold().strip("/")
+            for observed in observed_folders
+        )
+
+    mail = MailAssistantService(
+        config.profile,
+        store,
+        include_message=include_message,
+    )
+    rule_transactions = RuleTransactionService(config.rules_path)
     pending_trash: dict[str, tuple[tuple[str, ...], float]] = {}
     summary_service: SectionSummarizer | None = None
 
@@ -257,6 +283,15 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        trash_eligible_ids: set[str] = set()
+        if imap_accounts:
+            for messages in groups.values():
+                for item in messages:
+                    try:
+                        validate_move_candidate(item.message, imap_accounts)
+                    except ValueError:
+                        continue
+                    trash_eligible_ids.add(item.message.header_message_id)
         return {
             "request": request,
             "view": view,
@@ -268,6 +303,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "window_unit": window_unit,
             "refresh_running": bool(task is not None and not task.done()),
             "trash_enabled": bool(imap_accounts),
+            "trash_eligible_ids": trash_eligible_ids,
             "sender_filter": sender_filter or "",
             "domain_filter": domain_filter or "",
             "display_limit": display_limit(limit),
@@ -403,6 +439,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             for message_id in selected_ids:
                 message = by_id[message_id]
                 account, folder = validate_move_candidate(message, imap_accounts)
+                await _run_blocking(
+                    verify_message_available_for_move,
+                    message,
+                    imap_accounts,
+                    timeout=45,
+                )
                 rows.append(
                     {
                         "message": message,
@@ -411,7 +453,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                         "trash_folder": account.trash_folder,
                     }
                 )
-        except ValueError as exc:
+        except Exception as exc:
             return templates.TemplateResponse(
                 request,
                 "trash_error.html",

@@ -7,7 +7,13 @@ import pytest
 
 from mail_lib.thunderbird import MailMessage, MessageMetadata
 
-from .imap_trash import ImapAccount, account_for_message, move_message_to_trash
+from .imap_trash import (
+    ImapAccount,
+    account_for_message,
+    move_message_to_trash,
+    validate_move_candidate,
+    verify_message_available_for_move,
+)
 
 
 def _message() -> MailMessage:
@@ -33,7 +39,9 @@ def _message() -> MailMessage:
 
 
 class FakeImap:
-    capabilities = (b"IMAP4rev1", b"MOVE")
+    # Model Gmail's greeting: MOVE is absent before authentication and appears
+    # only in an explicit post-login CAPABILITY response.
+    capabilities = (b"IMAP4rev1", b"AUTH=PLAIN")
 
     def __init__(self, *args, **kwargs) -> None:
         self.calls = [("connect", args, kwargs)]
@@ -41,6 +49,10 @@ class FakeImap:
     def login(self, username, password):
         self.calls.append(("login", username, password))
         return "OK", []
+
+    def capability(self):
+        self.calls.append(("capability",))
+        return "OK", [b"IMAP4rev1 UIDPLUS MOVE"]
 
     def select(self, folder, readonly=False):
         self.calls.append(("select", folder, readonly))
@@ -76,9 +88,238 @@ def test_move_to_trash_matches_account_and_uses_atomic_move(monkeypatch) -> None
 
     calls = connections[0].calls
     assert ("select", '"INBOX"', False) in calls
-    assert ("uid", "SEARCH", (None, "HEADER", "Message-ID", "<one@example.test>")) in calls
+    assert (
+        "uid",
+        "SEARCH",
+        (None, "HEADER", "Message-ID", '"<one@example.test>"'),
+    ) in calls
     assert ("uid", "MOVE", (b"42", '"Trash"')) in calls
     assert calls[-1] == ("logout",)
+
+
+def test_move_to_trash_uses_post_login_string_capabilities(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+
+    class StringCapabilityImap(FakeImap):
+        capabilities = ("IMAP4REV1", "AUTH=PLAIN")
+
+        def capability(self):
+            self.calls.append(("capability",))
+            return "OK", ["IMAP4REV1 UIDPLUS MOVE"]
+
+    move_message_to_trash(_message(), (account,), connector=StringCapabilityImap)
+
+
+def test_verify_message_available_for_move_is_read_only(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    def connect(*args, **kwargs):
+        connection = FakeImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    verify_message_available_for_move(_message(), (account,), connector=connect)
+
+    calls = connections[0].calls
+    assert ("select", '"INBOX"', True) in calls
+    assert ("uid", "MOVE", (b"42", '"Trash"')) not in calls
+
+
+def test_zero_uid_match_reports_stale_local_snapshot(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+
+    class MissingMessageImap(FakeImap):
+        def uid(self, command, *args):
+            self.calls.append(("uid", command, args))
+            if command == "SEARCH":
+                return "OK", [b""]
+            return "OK", []
+
+    with pytest.raises(RuntimeError, match="local Thunderbird snapshot is likely stale"):
+        move_message_to_trash(_message(), (account,), connector=MissingMessageImap)
+
+
+def test_gmail_uses_raw_message_id_search(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    class GmailImap(FakeImap):
+        def capability(self):
+            self.calls.append(("capability",))
+            return "OK", [b"IMAP4rev1 UIDPLUS MOVE X-GM-EXT-1"]
+
+    def connect(*args, **kwargs):
+        connection = GmailImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    move_message_to_trash(_message(), (account,), connector=connect)
+
+    assert (
+        "uid",
+        "SEARCH",
+        ("X-GM-RAW", '"rfc822msgid:one@example.test"'),
+    ) in connections[0].calls
+    assert not any(
+        call[:2] == ("uid", "SEARCH") and "HEADER" in call[2]
+        for call in connections[0].calls
+    )
+
+
+def test_gmail_retries_in_special_use_all_mailbox(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="[Google Mail]/Papierkorb",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    class GmailDriftImap(FakeImap):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.selected = None
+
+        def capability(self):
+            self.calls.append(("capability",))
+            return "OK", [b"IMAP4rev1 UIDPLUS MOVE X-GM-EXT-1"]
+
+        def select(self, folder, readonly=False):
+            self.selected = folder
+            return super().select(folder, readonly)
+
+        def list(self, reference='""', pattern="*"):
+            self.calls.append(("list", reference, pattern))
+            return "OK", [
+                b'(\\HasNoChildren \\Trash) "/" "[Google Mail]/Papierkorb"',
+                b'(\\HasNoChildren \\All) "/" "[Google Mail]/Alle Nachrichten"',
+            ]
+
+        def uid(self, command, *args):
+            self.calls.append(("uid", command, args))
+            if command == "SEARCH":
+                if self.selected == '"[Google Mail]/Alle Nachrichten"':
+                    return "OK", [b"84"]
+                return "OK", [b""]
+            return "OK", []
+
+    def connect(*args, **kwargs):
+        connection = GmailDriftImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    move_message_to_trash(_message(), (account,), connector=connect)
+
+    calls = connections[0].calls
+    assert ("list", '""', "*") in calls
+    assert (
+        "select",
+        '"[Google Mail]/Alle Nachrichten"',
+        False,
+    ) in calls
+    assert ("uid", "MOVE", (b"84", '"[Google Mail]/Papierkorb"')) in calls
+
+
+def test_gmail_retries_raw_search_with_rfc_angle_brackets(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    class GmailBracketImap(FakeImap):
+        def capability(self):
+            self.calls.append(("capability",))
+            return "OK", [b"IMAP4rev1 UIDPLUS MOVE X-GM-EXT-1"]
+
+        def uid(self, command, *args):
+            self.calls.append(("uid", command, args))
+            if command == "SEARCH":
+                if args[-1] == '"rfc822msgid:<one@example.test>"':
+                    return "OK", [b"91"]
+                return "OK", [b""]
+            return "OK", []
+
+    def connect(*args, **kwargs):
+        connection = GmailBracketImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    move_message_to_trash(_message(), (account,), connector=connect)
+
+    searches = [
+        call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")
+    ]
+    assert searches == [
+        (
+            "uid",
+            "SEARCH",
+            ("X-GM-RAW", '"rfc822msgid:one@example.test"'),
+        ),
+        (
+            "uid",
+            "SEARCH",
+            ("X-GM-RAW", '"rfc822msgid:<one@example.test>"'),
+        ),
+    ]
+    assert ("uid", "MOVE", (b"91", '"Trash"')) in connections[0].calls
+
+
+def test_message_id_search_quotes_valid_imap_special_characters(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    def connect(*args, **kwargs):
+        connection = FakeImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    move_message_to_trash(
+        replace(_message(), header_message_id="safe%tag@example.test"),
+        (account,),
+        connector=connect,
+    )
+
+    assert (
+        "uid",
+        "SEARCH",
+        (None, "HEADER", "Message-ID", '"<safe%tag@example.test>"'),
+    ) in connections[0].calls
 
 
 def test_move_to_trash_fails_closed_without_mapping_or_password(monkeypatch) -> None:
@@ -95,6 +336,25 @@ def test_move_to_trash_fails_closed_without_mapping_or_password(monkeypatch) -> 
     monkeypatch.delenv("MISSING_PASSWORD", raising=False)
     with pytest.raises(RuntimeError, match="environment variable is unset"):
         move_message_to_trash(_message(), (matching,), connector=FakeImap)
+
+
+def test_move_candidate_rejects_message_already_in_trash() -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    message = replace(
+        _message(),
+        metadata=replace(
+            _message().metadata,
+            folder_uri="imap://user%40example.test@imap.example.test/Trash",
+        ),
+    )
+
+    with pytest.raises(ValueError, match="already in the configured Trash"):
+        validate_move_candidate(message, (account,))
 
 
 def test_account_resolution_falls_back_to_unique_imap_mbox_directory() -> None:
