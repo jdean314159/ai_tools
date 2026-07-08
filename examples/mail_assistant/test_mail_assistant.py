@@ -735,11 +735,11 @@ def test_trash_requires_preview_then_removes_only_after_move(
         return result
 
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.move_messages_to_trash",
+        "examples.mail_assistant.trash_workflow.move_messages_to_trash",
         move,
     )
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_messages_available_for_move",
+        "examples.mail_assistant.trash_workflow.verify_messages_available_for_move",
         lambda _messages, _accounts, *, prefs_cache=None: None,
     )
 
@@ -788,7 +788,7 @@ def test_trash_requires_preview_then_removes_only_after_move(
             )
             assert replay.status_code == 400
             monkeypatch.setattr(
-                "examples.mail_assistant.web_app.time.time", lambda: 1_000.0
+                "examples.mail_assistant.trash_workflow.time.time", lambda: 1_000.0
             )
             expiring = await client.post(
                 "/trash/propose",
@@ -802,7 +802,7 @@ def test_trash_requires_preview_then_removes_only_after_move(
             )
             assert expiring_token is not None
             monkeypatch.setattr(
-                "examples.mail_assistant.web_app.time.time", lambda: 2_000.0
+                "examples.mail_assistant.trash_workflow.time.time", lambda: 2_000.0
             )
             expired = await client.post(
                 "/trash/commit",
@@ -884,7 +884,7 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
     )
     app = _web_app(tmp_path, good, imap_accounts_path=config_path)
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_messages_available_for_move",
+        "examples.mail_assistant.trash_workflow.verify_messages_available_for_move",
         lambda _messages, _accounts, *, prefs_cache=None: None,
     )
 
@@ -934,7 +934,7 @@ def test_batch_trash_proposal_rejects_message_missing_from_imap_server(
         raise RuntimeError("Message was not found on the IMAP server")
 
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_messages_available_for_move",
+        "examples.mail_assistant.trash_workflow.verify_messages_available_for_move",
         missing_from_server,
     )
 
@@ -980,7 +980,7 @@ def test_batch_trash_commit_skips_message_that_left_snapshot(
     app.state.mail.refresh()
     moved = []
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.move_messages_to_trash",
+        "examples.mail_assistant.trash_workflow.move_messages_to_trash",
         lambda messages, _accounts, *, prefs_cache=None: {
             message.header_message_id: (
                 moved.append(message.header_message_id) and None
@@ -989,7 +989,7 @@ def test_batch_trash_commit_skips_message_that_left_snapshot(
         },
     )
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_messages_available_for_move",
+        "examples.mail_assistant.trash_workflow.verify_messages_available_for_move",
         lambda _messages, _accounts, *, prefs_cache=None: None,
     )
 

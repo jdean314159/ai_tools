@@ -9,7 +9,8 @@
 #
 # Usage:
 #   make install          Install all packages in editable mode
-#   make test             Run all offline unit tests
+#   make test             Run library unit tests
+#   make test-libraries   Run library unit tests
 #   make test-ui          Run llm_inspector_ui tests
 #   make test-diagnostics Run diagnostics_agent example tests
 #   make test-integration Run cross-package integration tests
@@ -60,10 +61,13 @@ install-gpu: install
 # ---------------------------------------------------------------------------
 
 .PHONY: test
-test: test-core
+test: test-libraries
 
 .PHONY: test-core
-test-core:
+test-core: test-libraries
+
+.PHONY: test-libraries
+test-libraries:
 	cd llm_harness_core && $(TEST_PYTHON) -m pytest tests/ -v
 	cd llm_engines && $(TEST_PYTHON) -m pytest tests/ \
 		-m "not ollama and not anthropic and not openai and not vllm and not slow" \
@@ -215,7 +219,8 @@ help:
 	@echo "  make install          Install all packages (editable)"
 	@echo "  make install-gpu      Install + GPU extras (llama.cpp CUDA, torch)"
 	@echo ""
-	@echo "  make test             Offline unit tests (no services needed)"
+	@echo "  make test             Library unit tests (no services needed)"
+	@echo "  make test-libraries   Library unit tests (explicit target)"
 	@echo "  make test-agent       Agent kernel tests"
 	@echo "  make test-rag         rag_lib unit tests"
 	@echo "  make test-ui          llm_inspector_ui tests"

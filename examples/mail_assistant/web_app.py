@@ -37,10 +37,8 @@ from .summarizer import SectionSummarizer
 from .imap_trash import (
     account_for_message,
     load_imap_accounts,
-    move_messages_to_trash,
-    validate_move_candidate,
-    verify_messages_available_for_move,
 )
+from .trash_workflow import TrashOutcome, TrashWorkflow
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -151,6 +149,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     store = AssistantStore(config.database_path)
     imap_accounts = load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
     prefs_cache = {}
+    trash_workflow = TrashWorkflow(imap_accounts, prefs_cache=prefs_cache)
 
     def include_message(message: MailMessage) -> bool:
         if not imap_accounts:
@@ -176,7 +175,6 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         include_message=include_message,
     )
     rule_transactions = RuleTransactionService(config.rules_path)
-    pending_trash: dict[str, tuple[tuple[str, ...], float]] = {}
     summary_service: SectionSummarizer | None = None
 
     async def refresh_in_background(target_app: FastAPI) -> None:
@@ -294,20 +292,11 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             for messages in groups.values():
                 for item in messages:
                     message_id = item.message.header_message_id
-                    try:
-                        account, folder = validate_move_candidate(
-                            item.message,
-                            imap_accounts,
-                            prefs_cache=prefs_cache,
-                        )
-                    except ValueError as exc:
-                        trash_status_by_id[message_id] = str(exc)
+                    eligible, status = trash_workflow.status_for(item.message)
+                    trash_status_by_id[message_id] = status
+                    if not eligible:
                         continue
                     trash_eligible_ids.add(message_id)
-                    trash_status_by_id[message_id] = (
-                        f"Trash target: {account.username} {folder} → "
-                        f"{account.trash_folder}"
-                    )
         return {
             "request": request,
             "view": view,
@@ -451,50 +440,24 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         by_id = {item.header_message_id: item for item in mail.state.messages}
         if any(message_id not in by_id for message_id in selected_ids):
             raise HTTPException(status_code=404, detail="Unknown message ID in selection")
-        rows = []
         selected_messages = tuple(by_id[message_id] for message_id in selected_ids)
+        error_message = selected_messages[0]
         try:
-            for message in selected_messages:
-                account, folder = validate_move_candidate(
-                    message,
-                    imap_accounts,
-                    prefs_cache=prefs_cache,
-                )
-                rows.append(
-                    {
-                        "message": message,
-                        "host": account.host,
-                        "folder": folder,
-                        "trash_folder": account.trash_folder,
-                    }
-                )
+            def propose_selected_messages():
+                return trash_workflow.propose(selected_messages)
 
-            def preflight_selected_messages() -> None:
-                verify_messages_available_for_move(
-                    selected_messages,
-                    imap_accounts,
-                    prefs_cache=prefs_cache,
-                )
-
-            await _run_blocking(preflight_selected_messages, timeout=120)
+            token, rows = await _run_blocking(propose_selected_messages, timeout=120)
         except Exception as exc:
             return templates.TemplateResponse(
                 request,
                 "trash_error.html",
                 {
                     "request": request,
-                    "message": message,
+                    "message": error_message,
                     "error": str(exc),
                 },
                 status_code=400,
             )
-        token = secrets.token_urlsafe(32)
-        now = time.time()
-        for expired_token in [
-            key for key, value in pending_trash.items() if value[1] < now
-        ]:
-            pending_trash.pop(expired_token, None)
-        pending_trash[token] = (selected_ids, now + 600)
         return templates.TemplateResponse(
             request,
             "trash_proposal.html",
@@ -519,39 +482,34 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
     ):
         require_csrf(request, csrf_token)
-        pending = pending_trash.pop(trash_token, None)
-        if pending is None or pending[1] < time.time():
+        selected_ids = trash_workflow.pop_pending(trash_token)
+        if selected_ids is None:
             raise HTTPException(status_code=400, detail="Unknown or expired trash token")
-        selected_ids = pending[0]
         by_id = {item.header_message_id: item for item in mail.state.messages}
-        outcomes = []
+        outcomes: list[TrashOutcome] = []
         messages_to_move = []
         for message_id in selected_ids:
             message = by_id.get(message_id)
             if message is None:
-                outcomes.append({"message_id": message_id, "subject": "", "status": "skipped", "detail": "Message left the snapshot before confirmation."})
+                outcomes.append(
+                    TrashOutcome(
+                        message_id=message_id,
+                        subject="",
+                        status="skipped",
+                        detail="Message left the snapshot before confirmation.",
+                    )
+                )
                 continue
             messages_to_move.append(message)
-        if messages_to_move:
 
-            def move_selected_messages() -> dict[str, str | None]:
-                return move_messages_to_trash(
-                    tuple(messages_to_move),
-                    imap_accounts,
-                    prefs_cache=prefs_cache,
-                )
+        def move_selected_messages() -> tuple[TrashOutcome, ...]:
+            return trash_workflow.commit(tuple(messages_to_move))
 
-            move_results = await _run_blocking(move_selected_messages, timeout=120)
-        else:
-            move_results = {}
+        outcomes.extend(await _run_blocking(move_selected_messages, timeout=120))
         moved_ids = []
-        for message in messages_to_move:
-            detail = move_results.get(message.header_message_id)
-            if detail is None:
-                moved_ids.append(message.header_message_id)
-                outcomes.append({"message_id": message.header_message_id, "subject": message.subject, "status": "moved", "detail": "Moved to Trash."})
-            else:
-                outcomes.append({"message_id": message.header_message_id, "subject": message.subject, "status": "failed", "detail": detail})
+        for outcome in outcomes:
+            if outcome.status == "moved":
+                moved_ids.append(outcome.message_id)
         if moved_ids:
             mail.remove_messages(moved_ids)
         return templates.TemplateResponse(
@@ -561,8 +519,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 "request": request,
                 "outcomes": outcomes,
                 "moved_count": len(moved_ids),
-                "failed_count": sum(item["status"] == "failed" for item in outcomes),
-                "skipped_count": sum(item["status"] == "skipped" for item in outcomes),
+                "failed_count": sum(item.status == "failed" for item in outcomes),
+                "skipped_count": sum(item.status == "skipped" for item in outcomes),
                 "return_url": f"/?{urlencode({'view': view, 'window_value': window_value, 'window_unit': window_unit})}",
             },
         )
