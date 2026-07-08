@@ -103,7 +103,8 @@ def test_unread_state_merges_thunderbird_and_local_ledger(tmp_path: Path) -> Non
         _message("one"),
         _message("two", read=True),
         _message("three"),
-        _message("four", local_read=True),
+        replace(_message("four", local_read=True), metadata=None),
+        _message("five", read=False, local_read=True),
     )
     store = AssistantStore(tmp_path / "assistant.db")
     service = MailAssistantService(tmp_path, store, reader=lambda _path: messages)
@@ -113,8 +114,10 @@ def test_unread_state_merges_thunderbird_and_local_ledger(tmp_path: Path) -> Non
     unread = service.visible((), view="unread")
     all_messages = service.visible((), view="all")
 
-    assert [item.message.header_message_id for values in unread.values() for item in values] == ["one"]
-    assert sum(map(len, all_messages.values())) == 4
+    assert [
+        item.message.header_message_id for values in unread.values() for item in values
+    ] == ["one", "five"]
+    assert sum(map(len, all_messages.values())) == 5
     with pytest.raises(KeyError):
         service.mark_read("unknown")
 

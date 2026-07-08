@@ -19,9 +19,9 @@ PRIORITY_ORDER = (Priority.URGENT, Priority.NORMAL, Priority.LOW, Priority.IGNOR
 
 
 def thunderbird_read(message: MailMessage) -> bool:
-    return message.local_read or bool(
-        message.metadata and message.metadata.flags.get("read", False)
-    )
+    if message.metadata and "read" in message.metadata.flags:
+        return bool(message.metadata.flags["read"])
+    return message.local_read
 
 
 def message_datetime(message: MailMessage) -> datetime | None:
