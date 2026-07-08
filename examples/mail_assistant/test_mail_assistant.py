@@ -41,6 +41,7 @@ def _message(
     folder_uri: str | None = None,
     sender: str = "sender@example.test",
     local_read: bool = False,
+    read_state_source: str = "mbox",
 ) -> MailMessage:
     metadata = MessageMetadata(
         header_message_id=message_id,
@@ -62,6 +63,7 @@ def _message(
         source_folder="INBOX",
         metadata=metadata,
         local_read=local_read,
+        read_state_source=read_state_source,
     )
 
 
@@ -120,6 +122,34 @@ def test_unread_state_merges_thunderbird_and_local_ledger(tmp_path: Path) -> Non
     assert sum(map(len, all_messages.values())) == 5
     with pytest.raises(KeyError):
         service.mark_read("unknown")
+
+
+def test_msf_read_state_takes_precedence_over_gloda_and_cache(tmp_path: Path) -> None:
+    messages = (
+        _message(
+            "one",
+            read=True,
+            local_read=False,
+            read_state_source="msf",
+        ),
+        _message(
+            "two",
+            read=False,
+            local_read=True,
+            read_state_source="mbox",
+        ),
+    )
+    store = AssistantStore(tmp_path / "assistant.db")
+    service = MailAssistantService(tmp_path, store, reader=lambda _path: messages)
+    service.refresh()
+    reloaded = MailAssistantService(tmp_path, store, reader=lambda _path: ())
+    reloaded.load_cached()
+
+    unread = reloaded.visible((), view="unread")
+
+    assert [
+        item.message.header_message_id for values in unread.values() for item in values
+    ] == ["one", "two"]
 
 
 def test_failed_refresh_preserves_previous_snapshot(tmp_path: Path) -> None:

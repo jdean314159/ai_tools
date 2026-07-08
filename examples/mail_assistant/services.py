@@ -19,6 +19,8 @@ PRIORITY_ORDER = (Priority.URGENT, Priority.NORMAL, Priority.LOW, Priority.IGNOR
 
 
 def thunderbird_read(message: MailMessage) -> bool:
+    if message.read_state_source == "msf":
+        return message.local_read
     if message.metadata and "read" in message.metadata.flags:
         return bool(message.metadata.flags["read"])
     return message.local_read
@@ -221,6 +223,7 @@ def _encode_snapshot(messages: tuple[MailMessage, ...]) -> str:
                 "signal_folders": message.signal_folders,
                 "mbox_path": str(message.mbox_path) if message.mbox_path else None,
                 "local_read": message.local_read,
+                "read_state_source": message.read_state_source,
                 "metadata": None if metadata is None else {
                     "header_message_id": metadata.header_message_id,
                     "message_key": metadata.message_key,
@@ -280,5 +283,6 @@ def _decode_snapshot(payload: str) -> tuple[MailMessage, ...]:
             metadata=metadata,
             mbox_path=Path(raw["mbox_path"]) if raw["mbox_path"] else None,
             local_read=bool(raw.get("local_read", False)),
+            read_state_source=str(raw.get("read_state_source", "mbox")),
         ))
     return tuple(messages)

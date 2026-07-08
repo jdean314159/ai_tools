@@ -71,6 +71,7 @@ class MailMessage:
     metadata: MessageMetadata | None = None
     mbox_path: Path | None = None
     local_read: bool = False
+    read_state_source: str = "mbox"
 
     @property
     def has_gloda_metadata(self) -> bool:
@@ -323,6 +324,57 @@ def _mozilla_read(message: Message) -> bool:
         return False
 
 
+_MORK_ALIAS_RE = re.compile(r"\(([0-9A-F]+)\s*=([^)]*)\)", re.DOTALL)
+_MORK_CELL_RE = re.compile(r"\(\^?([0-9A-F]+)(?:=([^)]*)|\^([0-9A-F]+))\)")
+_MORK_ROW_RE = re.compile(r"\[-?[0-9A-F]+(?::(?:\^80|m))?(.*?)\]", re.DOTALL)
+_MORK_MESSAGE_ID_FIELD = "83"
+_MORK_FLAGS_FIELD = "88"
+_THUNDERBIRD_READ_FLAG = 0x0001
+
+
+def _decode_mork_value(value: str) -> str:
+    return value.replace("\\\n", "").replace("\\)", ")").replace("\\\\", "\\")
+
+
+def load_msf_read_states(msf_path: str | Path) -> dict[str, bool]:
+    """Load Thunderbird .msf read flags keyed by normalized Message-ID.
+
+    Thunderbird's Gloda database can lag behind the UI, and the mbox
+    ``X-Mozilla-Status`` header can also be stale for IMAP folders. The sibling
+    ``.msf`` summary is the source Thunderbird updates while displaying folder
+    state. This intentionally parses only the small Mork subset needed for
+    message rows: ``message-id`` and ``flags``.
+    """
+    path = Path(msf_path)
+    if not path.exists():
+        return {}
+    text = path.read_text(errors="replace").replace("\\\n", "")
+    aliases = {
+        key.upper(): _decode_mork_value(value)
+        for key, value in _MORK_ALIAS_RE.findall(text)
+    }
+    read_by_id: dict[str, bool] = {}
+    for row in _MORK_ROW_RE.finditer(text):
+        row_block = row.group(1)
+        cells: dict[str, str] = {}
+        for key, raw_value, alias_key in _MORK_CELL_RE.findall(row_block):
+            key = key.upper()
+            if alias_key:
+                value = aliases.get(alias_key.upper(), alias_key)
+            else:
+                value = raw_value
+            cells[key] = _decode_mork_value(value)
+        message_id = normalize_message_id(cells.get(_MORK_MESSAGE_ID_FIELD))
+        flags = cells.get(_MORK_FLAGS_FIELD)
+        if not message_id or flags is None:
+            continue
+        try:
+            read_by_id[message_id] = bool(int(flags, 16) & _THUNDERBIRD_READ_FLAG)
+        except ValueError:
+            continue
+    return read_by_id
+
+
 def _folder_label(path: Path) -> str:
     parts: list[str] = []
     current = path
@@ -344,12 +396,14 @@ def _message_from_mbox(
     mbox_path: Path,
     folder_label: str,
     metadata: MessageMetadata | None,
+    msf_read: bool | None = None,
 ) -> MailMessage | None:
     header_id = normalize_message_id(message.get("Message-ID"))
     if not header_id:
         return None
     sender = metadata.sender.address if metadata and metadata.sender else (_addresses(message.get("From")) or ("",))[0]
     recipients = tuple(item.address for item in metadata.recipients) if metadata and metadata.recipients else _addresses(message.get("To"))
+    local_read = _mozilla_read(message) if msf_read is None else msf_read
     return MailMessage(
         header_message_id=header_id,
         subject=str(message.get("Subject") or ""),
@@ -361,7 +415,8 @@ def _message_from_mbox(
         signal_folders=() if _is_source_folder(folder_label) else (folder_label,),
         metadata=metadata,
         mbox_path=mbox_path,
-        local_read=_mozilla_read(message),
+        local_read=local_read,
+        read_state_source="mbox" if msf_read is None else "msf",
     )
 
 
@@ -381,7 +436,8 @@ def _merge_messages(existing: MailMessage, new: MailMessage) -> MailMessage:
         signal_folders=signals,
         metadata=metadata,
         mbox_path=body_source.mbox_path,
-        local_read=existing.local_read or new.local_read,
+        local_read=existing.local_read and new.local_read,
+        read_state_source="msf" if "msf" in {existing.read_state_source, new.read_state_source} else existing.read_state_source,
     )
 
 
@@ -392,6 +448,7 @@ def iter_messages(profile_root: str | Path) -> Iterable[MailMessage]:
     messages: dict[str, MailMessage] = {}
     for mbox_path in discover_mbox_files(root):
         folder_label = _folder_label(mbox_path)
+        msf_read_by_id = load_msf_read_states(mbox_path.with_name(mbox_path.name + ".msf"))
         box = mailbox.mbox(mbox_path, create=False)
         try:
             for message in box:
@@ -402,6 +459,7 @@ def iter_messages(profile_root: str | Path) -> Iterable[MailMessage]:
                     mbox_path=mbox_path,
                     folder_label=folder_label,
                     metadata=metadata,
+                    msf_read=msf_read_by_id.get(header_id),
                 )
                 if mail_message is None:
                     continue

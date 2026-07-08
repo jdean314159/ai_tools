@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from email.message import EmailMessage
+import mailbox
 import sqlite3
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from mail_lib.thunderbird import (
     _message_from_mbox,
     discover_mbox_files,
     iter_messages,
+    load_msf_read_states,
     load_gloda_metadata,
     normalize_message_id,
     open_gloda_readonly,
@@ -43,6 +45,59 @@ def test_mozilla_status_supplies_local_read_state_without_gloda(tmp_path: Path) 
     assert message is not None
     assert message.local_read is True
     assert message.metadata is None
+
+
+def test_msf_read_state_overrides_stale_mbox_header(tmp_path: Path) -> None:
+    msf = tmp_path / "INBOX.msf"
+    msf.write_text(
+        """
+// <!-- <mdb:mork:z v="1.4"/> -->
+< <(80=ns:msg:db:row:scope:msgs:all)(83=message-id)(88=flags)> >
+<(90
+    =stale-local@example.test)>
+[-1(^83^90)(^88=80)]
+""",
+        encoding="utf-8",
+    )
+
+    states = load_msf_read_states(msf)
+
+    assert states == {"stale-local@example.test": False}
+
+
+def test_iter_messages_uses_msf_state_when_mbox_status_is_stale(tmp_path: Path) -> None:
+    folder = tmp_path / "ImapMail" / "imap.example.test"
+    folder.mkdir(parents=True)
+    inbox = folder / "INBOX"
+    message = EmailMessage()
+    message["Message-ID"] = "<stale-local@example.test>"
+    message["From"] = "sender@example.test"
+    message["To"] = "user@example.test"
+    message["Subject"] = "Unread in Thunderbird"
+    message["X-Mozilla-Status"] = "0001"
+    message.set_content("body")
+    box = mailbox.mbox(inbox)
+    try:
+        box.add(message)
+        box.flush()
+    finally:
+        box.close()
+    inbox.with_name("INBOX.msf").write_text(
+        """
+// <!-- <mdb:mork:z v="1.4"/> -->
+< <(80=ns:msg:db:row:scope:msgs:all)(83=message-id)(88=flags)> >
+<(90
+    =stale-local@example.test)>
+[-1(^83^90)(^88=80)]
+""",
+        encoding="utf-8",
+    )
+
+    [loaded] = list(iter_messages(tmp_path))
+
+    assert loaded.header_message_id == "stale-local@example.test"
+    assert loaded.local_read is False
+    assert loaded.read_state_source == "msf"
 
 
 def test_fixtures_use_only_reserved_example_data() -> None:
