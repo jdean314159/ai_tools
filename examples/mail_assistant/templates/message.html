@@ -1,5 +1,5 @@
 <article class="message">
-  {% if trash_enabled and item.message.header_message_id in trash_eligible_ids %}<label><input type="checkbox" name="message_ids" value="{{ item.message.header_message_id }}" form="batch-trash-form" data-trash-group="{{ trash_group }}"> Select for Trash</label>{% endif %}
+  {% if trash_enabled and item.message.header_message_id in trash_eligible_ids %}<label><input type="checkbox" name="message_ids" value="{{ item.message.header_message_id }}" form="batch-trash-form" data-trash-group="{{ trash_group }}"> Select for Trash</label> <small>{{ trash_status_by_id.get(item.message.header_message_id, "") }}</small>{% elif trash_enabled %}<p><small>Trash unavailable: {{ trash_status_by_id.get(item.message.header_message_id, "message is not eligible for IMAP Trash") }}</small></p>{% endif %}
   <h3>{{ item.message.subject }}</h3>
   <p><strong>From:</strong> {{ item.message.sender }}{% if item.message.date %} <strong>Date:</strong> {{ item.message.date }}{% endif %} <strong>Reason:</strong> {{ item.triage.reason }}</p>
   <p>{{ item.message.body[:500] }}</p>

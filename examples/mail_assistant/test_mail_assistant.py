@@ -746,6 +746,7 @@ def test_trash_requires_preview_then_removes_only_after_move(
             assert 'class="select-trash-visible"' in page.text
             assert 'data-trash-group="normal-visible"' in page.text
             assert "Select all 2 eligible visible in normal for Trash" in page.text
+            assert "Trash target: user@example.test INBOX → Trash" in page.text
             preview = await client.post(
                 "/trash/propose",
                 data={
@@ -891,6 +892,7 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
                 page = await client.get("/?view=all")
                 assert page.status_code == 200
                 assert page.text.count('name="message_ids"') == 1
+                assert "Trash unavailable:" in page.text
                 response = await client.post(
                     "/trash/propose",
                     data={

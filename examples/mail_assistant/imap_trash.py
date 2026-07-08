@@ -18,7 +18,7 @@ _MESSAGE_ID_RE = re.compile(
     r"^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]+@[A-Za-z0-9.-]+$"
 )
 _SERVER_PREF_RE = re.compile(
-    r'^user_pref\("mail\.server\.(server\d+)\.(directory-rel|hostname|userName)",\s*(.+)\);$'
+    r'^user_pref\("mail\.server\.(server\d+)\.(directory|directory-rel|hostname|realhostname|userName)",\s*(.+)\);$'
 )
 _LIST_RESPONSE_RE = re.compile(
     r'^\((?P<flags>[^)]*)\)\s+(?:NIL|"(?:\\.|[^"\\])*")\s+(?P<mailbox>.+)$'
@@ -71,8 +71,23 @@ def load_imap_accounts(path: Path) -> tuple[ImapAccount, ...]:
     return tuple(accounts)
 
 
+def _path_contains(parent: Path, child: Path) -> bool:
+    try:
+        child.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def _server_directory_from_pref(profile: Path, value: str) -> Path:
+    normalized = value.replace("\\", "/")
+    if normalized.startswith("[ProfD]"):
+        return profile / normalized.removeprefix("[ProfD]").lstrip("/")
+    return Path(normalized)
+
+
 def _account_identity_from_prefs(
-    profile: Path, account_directory: str
+    profile: Path, account_directory: str, mbox_path: Path | None
 ) -> tuple[str, str] | None:
     prefs_path = profile / "prefs.js"
     try:
@@ -93,10 +108,18 @@ def _account_identity_from_prefs(
             servers.setdefault(server, {})[field] = value
     identities = []
     for values in servers.values():
-        directory = values.get("directory-rel", "").replace("\\", "/")
-        if directory.rsplit("/", 1)[-1] != account_directory:
+        directories = [
+            _server_directory_from_pref(profile, values[field])
+            for field in ("directory-rel", "directory")
+            if field in values
+        ]
+        if not any(
+            directory.name == account_directory
+            or (mbox_path is not None and _path_contains(directory, mbox_path))
+            for directory in directories
+        ):
             continue
-        host = values.get("hostname")
+        host = values.get("hostname") or values.get("realhostname")
         username = values.get("userName")
         if host and username:
             identities.append((host, username))
@@ -107,6 +130,8 @@ def account_for_message(
     message: MailMessage, accounts: tuple[ImapAccount, ...]
 ) -> tuple[ImapAccount, str]:
     folder_uri = message.metadata.folder_uri if message.metadata else None
+    account_directory = None
+    identity = None
     if folder_uri:
         username, host, folder = parse_folder_uri(folder_uri)
         matches = [
@@ -129,7 +154,7 @@ def account_for_message(
         )
         account_directory, profile = account_location or (None, None)
         identity = (
-            _account_identity_from_prefs(profile, account_directory)
+            _account_identity_from_prefs(profile, account_directory, message.mbox_path)
             if profile and account_directory
             else None
         )
@@ -157,7 +182,17 @@ def account_for_message(
             ]
         folder = message.source_folder or ""
     if len(matches) != 1:
-        raise ValueError("No unique configured IMAP account matches this message")
+        detail = ""
+        if folder_uri:
+            detail = f" for folder URI {folder_uri!r}"
+        elif account_directory:
+            detail = f" for Thunderbird account directory {account_directory!r}"
+            if identity:
+                host, username = identity
+                detail += f" mapped by prefs.js to {username}@{host}"
+        raise ValueError(
+            f"No unique configured IMAP account matches this message{detail}"
+        )
     if not folder:
         raise ValueError("Message has no source IMAP folder")
     return matches[0], folder

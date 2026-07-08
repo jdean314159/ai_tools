@@ -424,6 +424,37 @@ def test_mbox_fallback_uses_thunderbird_prefs_for_shared_host(tmp_path: Path) ->
     assert folder == "INBOX"
 
 
+def test_mbox_fallback_uses_absolute_thunderbird_prefs_directory(
+    tmp_path: Path,
+) -> None:
+    first = ImapAccount(
+        host="imap.gmail.com",
+        username="first@example.test",
+        password_env="FIRST_PASSWORD",
+        trash_folder="[Gmail]/Trash",
+    )
+    second = replace(first, username="second@example.test")
+    account_directory = tmp_path / "ImapMail" / "imap.gmail-2.com"
+    account_directory.mkdir(parents=True)
+    (tmp_path / "prefs.js").write_text(
+        'user_pref("mail.server.server4.directory", '
+        f'"{account_directory.as_posix()}");\n'
+        + 'user_pref("mail.server.server4.hostname", "imap.gmail.com");\n'
+        + 'user_pref("mail.server.server4.userName", "second@example.test");\n',
+        encoding="utf-8",
+    )
+    message = replace(
+        _message(),
+        metadata=None,
+        mbox_path=account_directory / "INBOX",
+    )
+
+    resolved, folder = account_for_message(message, (first, second))
+
+    assert resolved == second
+    assert folder == "INBOX"
+
+
 @pytest.mark.parametrize(
     "hostile_message_id",
     [

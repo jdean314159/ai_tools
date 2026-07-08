@@ -284,14 +284,23 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         trash_eligible_ids: set[str] = set()
+        trash_status_by_id: dict[str, str] = {}
         if imap_accounts:
             for messages in groups.values():
                 for item in messages:
+                    message_id = item.message.header_message_id
                     try:
-                        validate_move_candidate(item.message, imap_accounts)
-                    except ValueError:
+                        account, folder = validate_move_candidate(
+                            item.message, imap_accounts
+                        )
+                    except ValueError as exc:
+                        trash_status_by_id[message_id] = str(exc)
                         continue
-                    trash_eligible_ids.add(item.message.header_message_id)
+                    trash_eligible_ids.add(message_id)
+                    trash_status_by_id[message_id] = (
+                        f"Trash target: {account.username} {folder} → "
+                        f"{account.trash_folder}"
+                    )
         return {
             "request": request,
             "view": view,
@@ -304,6 +313,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "refresh_running": bool(task is not None and not task.done()),
             "trash_enabled": bool(imap_accounts),
             "trash_eligible_ids": trash_eligible_ids,
+            "trash_status_by_id": trash_status_by_id,
             "sender_filter": sender_filter or "",
             "domain_filter": domain_filter or "",
             "display_limit": display_limit(limit),
