@@ -10,8 +10,10 @@ from mail_lib.thunderbird import MailMessage, MessageMetadata
 from .imap_trash import (
     ImapAccount,
     account_for_message,
+    move_messages_to_trash,
     move_message_to_trash,
     validate_move_candidate,
+    verify_messages_available_for_move,
     verify_message_available_for_move,
 )
 
@@ -136,6 +138,72 @@ def test_verify_message_available_for_move_is_read_only(monkeypatch) -> None:
     calls = connections[0].calls
     assert ("select", '"INBOX"', True) in calls
     assert ("uid", "MOVE", (b"42", '"Trash"')) not in calls
+
+
+def test_batch_preflight_reuses_one_login_per_account(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    def connect(*args, **kwargs):
+        connection = FakeImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    verify_messages_available_for_move(
+        (
+            _message(),
+            replace(_message(), header_message_id="two@example.test"),
+        ),
+        (account,),
+        connector=connect,
+    )
+
+    assert len(connections) == 1
+    calls = connections[0].calls
+    assert [call for call in calls if call[0] == "login"] == [
+        ("login", "user@example.test", "secret")
+    ]
+    assert calls.count(("select", '"INBOX"', True)) == 2
+    assert calls[-1] == ("logout",)
+
+
+def test_batch_move_reuses_one_login_per_account(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    def connect(*args, **kwargs):
+        connection = FakeImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    outcomes = move_messages_to_trash(
+        (
+            _message(),
+            replace(_message(), header_message_id="two@example.test"),
+        ),
+        (account,),
+        connector=connect,
+    )
+
+    assert outcomes == {"one@example.test": None, "two@example.test": None}
+    assert len(connections) == 1
+    calls = connections[0].calls
+    assert [call for call in calls if call[0] == "login"] == [
+        ("login", "user@example.test", "secret")
+    ]
+    assert calls.count(("uid", "MOVE", (b"42", '"Trash"'))) == 2
 
 
 def test_zero_uid_match_reports_stale_local_snapshot(monkeypatch) -> None:
@@ -453,6 +521,53 @@ def test_mbox_fallback_uses_absolute_thunderbird_prefs_directory(
 
     assert resolved == second
     assert folder == "INBOX"
+
+
+def test_mbox_fallback_can_reuse_cached_thunderbird_prefs(tmp_path: Path) -> None:
+    first = ImapAccount(
+        host="imap.gmail.com",
+        username="first@example.test",
+        password_env="FIRST_PASSWORD",
+        trash_folder="[Gmail]/Trash",
+    )
+    second = replace(first, username="second@example.test")
+    account_directory = tmp_path / "ImapMail" / "imap.gmail-2.com"
+    account_directory.mkdir(parents=True)
+    prefs_path = tmp_path / "prefs.js"
+    prefs_path.write_text(
+        'user_pref("mail.server.server4.directory-rel", '
+        '"[ProfD]ImapMail/imap.gmail-2.com");\n'
+        'user_pref("mail.server.server4.hostname", "imap.gmail.com");\n'
+        'user_pref("mail.server.server4.userName", "second@example.test");\n',
+        encoding="utf-8",
+    )
+    message = replace(
+        _message(),
+        metadata=None,
+        mbox_path=account_directory / "INBOX",
+    )
+    prefs_cache = {}
+
+    resolved, _folder = account_for_message(
+        message,
+        (first, second),
+        prefs_cache=prefs_cache,
+    )
+    prefs_path.write_text(
+        'user_pref("mail.server.server4.directory-rel", '
+        '"[ProfD]ImapMail/imap.gmail-2.com");\n'
+        'user_pref("mail.server.server4.hostname", "imap.gmail.com");\n'
+        'user_pref("mail.server.server4.userName", "first@example.test");\n',
+        encoding="utf-8",
+    )
+    cached_resolved, _folder = account_for_message(
+        message,
+        (first, second),
+        prefs_cache=prefs_cache,
+    )
+
+    assert resolved == second
+    assert cached_resolved == second
 
 
 @pytest.mark.parametrize(

@@ -724,18 +724,23 @@ def test_trash_requires_preview_then_removes_only_after_move(
     app.state.mail.refresh()
     moved = []
 
-    def move(selected, _accounts):
-        if selected.header_message_id == second.header_message_id:
-            raise RuntimeError("injected failure")
-        moved.append(selected.header_message_id)
+    def move(selected_messages, _accounts, *, prefs_cache=None):
+        result = {}
+        for selected in selected_messages:
+            if selected.header_message_id == second.header_message_id:
+                result[selected.header_message_id] = "injected failure"
+                continue
+            moved.append(selected.header_message_id)
+            result[selected.header_message_id] = None
+        return result
 
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.move_message_to_trash",
+        "examples.mail_assistant.web_app.move_messages_to_trash",
         move,
     )
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_message_available_for_move",
-        lambda _message, _accounts: None,
+        "examples.mail_assistant.web_app.verify_messages_available_for_move",
+        lambda _messages, _accounts, *, prefs_cache=None: None,
     )
 
     async def exercise() -> None:
@@ -879,8 +884,8 @@ def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
     )
     app = _web_app(tmp_path, good, imap_accounts_path=config_path)
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_message_available_for_move",
-        lambda _message, _accounts: None,
+        "examples.mail_assistant.web_app.verify_messages_available_for_move",
+        lambda _messages, _accounts, *, prefs_cache=None: None,
     )
 
     async def exercise() -> None:
@@ -925,11 +930,11 @@ def test_batch_trash_proposal_rejects_message_missing_from_imap_server(
     app = _web_app(tmp_path, stale, imap_accounts_path=config_path)
     app.state.mail.refresh()
 
-    def missing_from_server(_message, _accounts):
+    def missing_from_server(_messages, _accounts, *, prefs_cache=None):
         raise RuntimeError("Message was not found on the IMAP server")
 
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_message_available_for_move",
+        "examples.mail_assistant.web_app.verify_messages_available_for_move",
         missing_from_server,
     )
 
@@ -975,12 +980,17 @@ def test_batch_trash_commit_skips_message_that_left_snapshot(
     app.state.mail.refresh()
     moved = []
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.move_message_to_trash",
-        lambda message, _accounts: moved.append(message.header_message_id),
+        "examples.mail_assistant.web_app.move_messages_to_trash",
+        lambda messages, _accounts, *, prefs_cache=None: {
+            message.header_message_id: (
+                moved.append(message.header_message_id) and None
+            )
+            for message in messages
+        },
     )
     monkeypatch.setattr(
-        "examples.mail_assistant.web_app.verify_message_available_for_move",
-        lambda _message, _accounts: None,
+        "examples.mail_assistant.web_app.verify_messages_available_for_move",
+        lambda _messages, _accounts, *, prefs_cache=None: None,
     )
 
     async def exercise() -> None:

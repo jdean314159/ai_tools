@@ -34,6 +34,18 @@ class ImapAccount:
     port: int = 993
 
 
+@dataclass(frozen=True)
+class _MoveCandidate:
+    message: MailMessage
+    account: ImapAccount
+    folder: str
+    message_id: str
+
+
+_PrefsServerMap = dict[str, dict[str, str]]
+_PrefsCache = dict[Path, _PrefsServerMap | None]
+
+
 def _quoted_mailbox(value: str) -> str:
     if "\r" in value or "\n" in value:
         raise ValueError("IMAP mailbox names must not contain CR or LF")
@@ -86,13 +98,17 @@ def _server_directory_from_pref(profile: Path, value: str) -> Path:
     return Path(normalized)
 
 
-def _account_identity_from_prefs(
-    profile: Path, account_directory: str, mbox_path: Path | None
-) -> tuple[str, str] | None:
+def _server_prefs(
+    profile: Path, cache: _PrefsCache | None = None
+) -> _PrefsServerMap | None:
     prefs_path = profile / "prefs.js"
+    if cache is not None and prefs_path in cache:
+        return cache[prefs_path]
     try:
         lines = prefs_path.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
+        if cache is not None:
+            cache[prefs_path] = None
         return None
     servers: dict[str, dict[str, str]] = {}
     for line in lines:
@@ -106,6 +122,20 @@ def _account_identity_from_prefs(
             continue
         if isinstance(value, str):
             servers.setdefault(server, {})[field] = value
+    if cache is not None:
+        cache[prefs_path] = servers
+    return servers
+
+
+def _account_identity_from_prefs(
+    profile: Path,
+    account_directory: str,
+    mbox_path: Path | None,
+    cache: _PrefsCache | None = None,
+) -> tuple[str, str] | None:
+    servers = _server_prefs(profile, cache)
+    if servers is None:
+        return None
     identities = []
     for values in servers.values():
         directories = [
@@ -126,8 +156,27 @@ def _account_identity_from_prefs(
     return identities[0] if len(identities) == 1 else None
 
 
+def _account_directory_matches_host(account_directory: str, host: str) -> bool:
+    if account_directory.casefold() == host.casefold():
+        return True
+    escaped = re.escape(host)
+    if re.fullmatch(rf"{escaped}-\d+", account_directory, flags=re.IGNORECASE):
+        return True
+    prefix, separator, suffix = host.rpartition(".")
+    if separator and re.fullmatch(
+        rf"{re.escape(prefix)}-\d+\.{re.escape(suffix)}",
+        account_directory,
+        flags=re.IGNORECASE,
+    ):
+        return True
+    return False
+
+
 def account_for_message(
-    message: MailMessage, accounts: tuple[ImapAccount, ...]
+    message: MailMessage,
+    accounts: tuple[ImapAccount, ...],
+    *,
+    prefs_cache: _PrefsCache | None = None,
 ) -> tuple[ImapAccount, str]:
     folder_uri = message.metadata.folder_uri if message.metadata else None
     account_directory = None
@@ -154,7 +203,12 @@ def account_for_message(
         )
         account_directory, profile = account_location or (None, None)
         identity = (
-            _account_identity_from_prefs(profile, account_directory, message.mbox_path)
+            _account_identity_from_prefs(
+                profile,
+                account_directory,
+                message.mbox_path,
+                prefs_cache,
+            )
             if profile and account_directory
             else None
         )
@@ -171,14 +225,7 @@ def account_for_message(
                 account
                 for account in accounts
                 if account_directory
-                and (
-                    account_directory.casefold() == account.host.casefold()
-                    or re.fullmatch(
-                        rf"{re.escape(account.host)}-\d+",
-                        account_directory,
-                        flags=re.IGNORECASE,
-                    )
-                )
+                and _account_directory_matches_host(account_directory, account.host)
             ]
         folder = message.source_folder or ""
     if len(matches) != 1:
@@ -199,16 +246,38 @@ def account_for_message(
 
 
 def validate_move_candidate(
-    message: MailMessage, accounts: tuple[ImapAccount, ...]
+    message: MailMessage,
+    accounts: tuple[ImapAccount, ...],
+    *,
+    prefs_cache: _PrefsCache | None = None,
 ) -> tuple[ImapAccount, str]:
     """Resolve and validate every attacker-controlled IMAP command argument."""
-    account, folder = account_for_message(message, accounts)
+    account, folder = account_for_message(message, accounts, prefs_cache=prefs_cache)
     if folder.casefold() == account.trash_folder.casefold():
         raise ValueError("Message is already in the configured Trash folder")
     _validated_message_id(message.header_message_id)
     _quoted_mailbox(folder)
     _quoted_mailbox(account.trash_folder)
     return account, folder
+
+
+def _move_candidate(
+    message: MailMessage,
+    accounts: tuple[ImapAccount, ...],
+    *,
+    prefs_cache: _PrefsCache | None = None,
+) -> _MoveCandidate:
+    account, folder = validate_move_candidate(
+        message,
+        accounts,
+        prefs_cache=prefs_cache,
+    )
+    return _MoveCandidate(
+        message=message,
+        account=account,
+        folder=folder,
+        message_id=_validated_message_id(message.header_message_id),
+    )
 
 
 def _search_message_uids(
@@ -324,6 +393,145 @@ def _unexpected_match_count_message(count: int) -> str:
     return f"Expected one IMAP message match, found {count}"
 
 
+class _ImapTrashSession:
+    def __init__(
+        self,
+        account: ImapAccount,
+        *,
+        connector: Callable[..., imaplib.IMAP4_SSL],
+    ) -> None:
+        self.account = account
+        self.connector = connector
+        self.connection: imaplib.IMAP4_SSL | None = None
+        self.gmail_extensions = False
+
+    def __enter__(self) -> "_ImapTrashSession":
+        password = os.getenv(self.account.password_env)
+        if not password:
+            raise RuntimeError(
+                "Required password environment variable is unset: "
+                f"{self.account.password_env}"
+            )
+        connection = self.connector(
+            self.account.host,
+            self.account.port,
+            ssl_context=ssl.create_default_context(),
+            timeout=30,
+        )
+        self.connection = connection
+        status, _ = connection.login(self.account.username, password)
+        if status != "OK":
+            raise RuntimeError("IMAP login failed")
+        capabilities = _post_login_capabilities(connection)
+        if "MOVE" not in capabilities:
+            raise RuntimeError("IMAP server does not support atomic MOVE")
+        self.gmail_extensions = "X-GM-EXT-1" in capabilities
+        return self
+
+    def __exit__(self, *_exc_info) -> None:
+        if self.connection is None:
+            return
+        try:
+            self.connection.logout()
+        except Exception:
+            pass
+
+    def _uids(self, candidate: _MoveCandidate, *, readonly: bool) -> list[bytes]:
+        if self.connection is None:
+            raise RuntimeError("IMAP session is not open")
+        _, uids = _locate_message_uids(
+            self.connection,
+            candidate.folder,
+            candidate.message_id,
+            gmail_extensions=self.gmail_extensions,
+            readonly=readonly,
+        )
+        if len(uids) != 1:
+            raise RuntimeError(_unexpected_match_count_message(len(uids)))
+        return uids
+
+    def verify(self, candidate: _MoveCandidate) -> None:
+        self._uids(candidate, readonly=True)
+
+    def move(self, candidate: _MoveCandidate) -> None:
+        uids = self._uids(candidate, readonly=False)
+        if self.connection is None:
+            raise RuntimeError("IMAP session is not open")
+        status, _ = self.connection.uid(
+            "MOVE",
+            uids[0],
+            _quoted_mailbox(candidate.account.trash_folder),
+        )
+        if status != "OK":
+            raise RuntimeError("IMAP MOVE failed")
+
+
+def _candidates_by_account(
+    messages: tuple[MailMessage, ...],
+    accounts: tuple[ImapAccount, ...],
+    *,
+    prefs_cache: _PrefsCache | None = None,
+) -> dict[ImapAccount, list[_MoveCandidate]]:
+    grouped: dict[ImapAccount, list[_MoveCandidate]] = {}
+    for message in messages:
+        candidate = _move_candidate(message, accounts, prefs_cache=prefs_cache)
+        grouped.setdefault(candidate.account, []).append(candidate)
+    return grouped
+
+
+def verify_messages_available_for_move(
+    messages: tuple[MailMessage, ...],
+    accounts: tuple[ImapAccount, ...],
+    *,
+    connector: Callable[..., imaplib.IMAP4_SSL] = imaplib.IMAP4_SSL,
+    prefs_cache: _PrefsCache | None = None,
+) -> None:
+    """Read-only preflight for a batch, using one IMAP login per account."""
+    for account, candidates in _candidates_by_account(
+        messages,
+        accounts,
+        prefs_cache=prefs_cache,
+    ).items():
+        with _ImapTrashSession(account, connector=connector) as session:
+            for candidate in candidates:
+                session.verify(candidate)
+
+
+def move_messages_to_trash(
+    messages: tuple[MailMessage, ...],
+    accounts: tuple[ImapAccount, ...],
+    *,
+    connector: Callable[..., imaplib.IMAP4_SSL] = imaplib.IMAP4_SSL,
+    prefs_cache: _PrefsCache | None = None,
+) -> dict[str, str | None]:
+    """Move a batch with one IMAP login per account; return per-message errors."""
+    outcomes: dict[str, str | None] = {
+        message.header_message_id: None for message in messages
+    }
+    grouped: dict[ImapAccount, list[_MoveCandidate]] = {}
+    for message in messages:
+        try:
+            candidate = _move_candidate(message, accounts, prefs_cache=prefs_cache)
+        except Exception as exc:
+            outcomes[message.header_message_id] = str(exc)
+            continue
+        grouped.setdefault(candidate.account, []).append(candidate)
+    for account, candidates in grouped.items():
+        try:
+            with _ImapTrashSession(account, connector=connector) as session:
+                for candidate in candidates:
+                    try:
+                        session.move(candidate)
+                    except Exception as exc:
+                        outcomes[candidate.message.header_message_id] = str(exc)
+                    else:
+                        outcomes[candidate.message.header_message_id] = None
+        except Exception as exc:
+            for candidate in candidates:
+                outcomes[candidate.message.header_message_id] = str(exc)
+    return outcomes
+
+
 def verify_message_available_for_move(
     message: MailMessage,
     accounts: tuple[ImapAccount, ...],
@@ -331,40 +539,7 @@ def verify_message_available_for_move(
     connector: Callable[..., imaplib.IMAP4_SSL] = imaplib.IMAP4_SSL,
 ) -> None:
     """Read-only preflight for creating a user-visible Trash proposal."""
-    account, folder = validate_move_candidate(message, accounts)
-    message_id = _validated_message_id(message.header_message_id)
-    password = os.getenv(account.password_env)
-    if not password:
-        raise RuntimeError(
-            f"Required password environment variable is unset: {account.password_env}"
-        )
-    connection = connector(
-        account.host,
-        account.port,
-        ssl_context=ssl.create_default_context(),
-        timeout=30,
-    )
-    try:
-        status, _ = connection.login(account.username, password)
-        if status != "OK":
-            raise RuntimeError("IMAP login failed")
-        capabilities = _post_login_capabilities(connection)
-        if "MOVE" not in capabilities:
-            raise RuntimeError("IMAP server does not support atomic MOVE")
-        _, uids = _locate_message_uids(
-            connection,
-            folder,
-            message_id,
-            gmail_extensions="X-GM-EXT-1" in capabilities,
-            readonly=True,
-        )
-        if len(uids) != 1:
-            raise RuntimeError(_unexpected_match_count_message(len(uids)))
-    finally:
-        try:
-            connection.logout()
-        except Exception:
-            pass
+    verify_messages_available_for_move((message,), accounts, connector=connector)
 
 
 def move_message_to_trash(
@@ -372,41 +547,7 @@ def move_message_to_trash(
     accounts: tuple[ImapAccount, ...],
     *,
     connector: Callable[..., imaplib.IMAP4_SSL] = imaplib.IMAP4_SSL,
-    ) -> None:
-    account, folder = validate_move_candidate(message, accounts)
-    message_id = _validated_message_id(message.header_message_id)
-    trash_folder = _quoted_mailbox(account.trash_folder)
-    password = os.getenv(account.password_env)
-    if not password:
-        raise RuntimeError(f"Required password environment variable is unset: {account.password_env}")
-    connection = connector(
-        account.host,
-        account.port,
-        ssl_context=ssl.create_default_context(),
-        timeout=30,
-    )
-    try:
-        status, _ = connection.login(account.username, password)
-        if status != "OK":
-            raise RuntimeError("IMAP login failed")
-        capabilities = _post_login_capabilities(connection)
-        if "MOVE" not in capabilities:
-            raise RuntimeError("IMAP server does not support atomic MOVE")
-        gmail_extensions = "X-GM-EXT-1" in capabilities
-        selected_folder, uids = _locate_message_uids(
-            connection,
-            folder,
-            message_id,
-            gmail_extensions=gmail_extensions,
-            readonly=False,
-        )
-        if len(uids) != 1:
-            raise RuntimeError(_unexpected_match_count_message(len(uids)))
-        status, _ = connection.uid("MOVE", uids[0], trash_folder)
-        if status != "OK":
-            raise RuntimeError("IMAP MOVE failed")
-    finally:
-        try:
-            connection.logout()
-        except Exception:
-            pass
+) -> None:
+    candidate = _move_candidate(message, accounts)
+    with _ImapTrashSession(candidate.account, connector=connector) as session:
+        session.move(candidate)

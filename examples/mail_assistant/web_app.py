@@ -37,9 +37,9 @@ from .summarizer import SectionSummarizer
 from .imap_trash import (
     account_for_message,
     load_imap_accounts,
-    move_message_to_trash,
+    move_messages_to_trash,
     validate_move_candidate,
-    verify_message_available_for_move,
+    verify_messages_available_for_move,
 )
 
 
@@ -150,12 +150,17 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     csrf_token = secrets.token_urlsafe(32)
     store = AssistantStore(config.database_path)
     imap_accounts = load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
+    prefs_cache = {}
 
     def include_message(message: MailMessage) -> bool:
         if not imap_accounts:
             return True
         try:
-            account, folder = account_for_message(message, imap_accounts)
+            account, folder = account_for_message(
+                message,
+                imap_accounts,
+                prefs_cache=prefs_cache,
+            )
         except ValueError:
             return True
         observed_folders = (folder, *message.signal_folders)
@@ -291,7 +296,9 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                     message_id = item.message.header_message_id
                     try:
                         account, folder = validate_move_candidate(
-                            item.message, imap_accounts
+                            item.message,
+                            imap_accounts,
+                            prefs_cache=prefs_cache,
                         )
                     except ValueError as exc:
                         trash_status_by_id[message_id] = str(exc)
@@ -445,15 +452,13 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         if any(message_id not in by_id for message_id in selected_ids):
             raise HTTPException(status_code=404, detail="Unknown message ID in selection")
         rows = []
+        selected_messages = tuple(by_id[message_id] for message_id in selected_ids)
         try:
-            for message_id in selected_ids:
-                message = by_id[message_id]
-                account, folder = validate_move_candidate(message, imap_accounts)
-                await _run_blocking(
-                    verify_message_available_for_move,
+            for message in selected_messages:
+                account, folder = validate_move_candidate(
                     message,
                     imap_accounts,
-                    timeout=45,
+                    prefs_cache=prefs_cache,
                 )
                 rows.append(
                     {
@@ -463,6 +468,15 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                         "trash_folder": account.trash_folder,
                     }
                 )
+
+            def preflight_selected_messages() -> None:
+                verify_messages_available_for_move(
+                    selected_messages,
+                    imap_accounts,
+                    prefs_cache=prefs_cache,
+                )
+
+            await _run_blocking(preflight_selected_messages, timeout=120)
         except Exception as exc:
             return templates.TemplateResponse(
                 request,
@@ -511,19 +525,33 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         selected_ids = pending[0]
         by_id = {item.header_message_id: item for item in mail.state.messages}
         outcomes = []
-        moved_ids = []
+        messages_to_move = []
         for message_id in selected_ids:
             message = by_id.get(message_id)
             if message is None:
                 outcomes.append({"message_id": message_id, "subject": "", "status": "skipped", "detail": "Message left the snapshot before confirmation."})
                 continue
-            try:
-                await _run_blocking(move_message_to_trash, message, imap_accounts, timeout=45)
-            except Exception as exc:
-                outcomes.append({"message_id": message_id, "subject": message.subject, "status": "failed", "detail": str(exc)})
+            messages_to_move.append(message)
+        if messages_to_move:
+
+            def move_selected_messages() -> dict[str, str | None]:
+                return move_messages_to_trash(
+                    tuple(messages_to_move),
+                    imap_accounts,
+                    prefs_cache=prefs_cache,
+                )
+
+            move_results = await _run_blocking(move_selected_messages, timeout=120)
+        else:
+            move_results = {}
+        moved_ids = []
+        for message in messages_to_move:
+            detail = move_results.get(message.header_message_id)
+            if detail is None:
+                moved_ids.append(message.header_message_id)
+                outcomes.append({"message_id": message.header_message_id, "subject": message.subject, "status": "moved", "detail": "Moved to Trash."})
             else:
-                moved_ids.append(message_id)
-                outcomes.append({"message_id": message_id, "subject": message.subject, "status": "moved", "detail": "Moved to Trash."})
+                outcomes.append({"message_id": message.header_message_id, "subject": message.subject, "status": "failed", "detail": detail})
         if moved_ids:
             mail.remove_messages(moved_ids)
         return templates.TemplateResponse(
