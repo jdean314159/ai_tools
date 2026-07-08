@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -28,11 +28,14 @@ MAIL-02 shipped the ratified localhost mail-assistant MVP at `cb4f11e`: prioriti
 views, app-owned read and summary state, bounded local-model section summaries, and reviewed,
 conflict-detecting personal-rule commits that preserve the hand-authored TOML prefix. The combined
 mail/app/import/public-API gate passed at the MVP checkpoint (`75 passed`). Post-MVP work through
-2026-07-06 added age-filtered views, cached background refresh, sender/domain statistics,
+2026-07-08 added age-filtered views, cached background refresh, sender/domain statistics,
 selection controls, and an explicitly configured, preview-and-confirm IMAP Move-to-Trash path
 for individual messages and batches. Thunderbird mbox and Gloda access remains read-only; only
 the separately configured IMAP action mutates server state. The action fails closed on missing or
-ambiguous account mapping, requires IMAP `MOVE`, and does not fall back to copy/delete.
+ambiguous account mapping, requires IMAP `MOVE`, and does not fall back to copy/delete. Live
+validation forced Gmail post-auth capability refresh, Gmail `X-GM-RAW` Message-ID lookup,
+SPECIAL-USE All Mail fallback, Trash-folder filtering, per-row eligibility reasons, read-only
+proposal preflight, and one IMAP session per selected account during proposal and commit.
 
 The current gate is continued private adoption observation. No outcome for the planned two-week
 run is recorded yet. F1 chat, F2 IMAP `\Seen` propagation, F3 `rag_lib`, F4 `engram`, and F5

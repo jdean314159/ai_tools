@@ -9,7 +9,7 @@ def install_repo_source_paths() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     source_paths = [
         repo_root / "llm_harness_core" / "src",
-        repo_root / "llm_engines",
+        repo_root / "llm_engines" / "src",
         repo_root / "engram" / "src",
     ]
     for path in reversed(source_paths):

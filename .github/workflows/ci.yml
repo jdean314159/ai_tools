@@ -48,7 +48,7 @@ jobs:
         # examples/ applications are integration vehicles, not published packages.
         # Wheel builds for examples are intentionally omitted.
         run: |
-          for pkg in llm_harness_core llm_engines engram rag_lib llm_inspector llm_inspector_ui agent_lib; do
+          for pkg in llm_harness_core llm_engines engram rag_lib mail_lib llm_inspector llm_inspector_ui agent_lib; do
             (cd "$pkg" && python -m build --wheel)
           done
 
@@ -73,6 +73,7 @@ jobs:
           python -m pip install -e ./engram[dev]
           python -m pip install -e ./llm_inspector[dev]
           python -m pip install -e ./rag_lib[dev]
+          python -m pip install -e ./mail_lib[dev]
           python -m pip install -e ./llm_inspector_ui[dev]
           python -m pip install -e ./agent_lib[dev]
           python -m pip install -e ./examples/diagnostics_agent[dev]
@@ -104,6 +105,7 @@ jobs:
           python -m pip install -e ./engram
           python -m pip install -e ./llm_inspector[dev]
           python -m pip install -e ./rag_lib[dev]
+          python -m pip install -e ./mail_lib[dev]
           python -m pip install -e ./llm_inspector_ui[dev]
       - name: Run integration tests
         run: python -m pytest -q tests/integration_tests
@@ -217,6 +219,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ./llm_harness_core[dev]
           python -m pip install -e ./llm_engines[dev]
+          python -m pip install -e './mail_lib[dev]'
           python -m pip install -e './examples/mail_assistant[dev]'
       - name: Run mail tests
         run: |

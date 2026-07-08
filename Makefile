@@ -40,6 +40,7 @@ install: venv
 	$(PIP) install -e './engram[dev]'
 	$(PIP) install -e './llm_inspector[dev]'
 	$(PIP) install -e './rag_lib[dev]'
+	$(PIP) install -e './mail_lib[dev]'
 	$(PIP) install -e './llm_inspector_ui[dev]'
 	$(PIP) install -e './examples/language_tutor[dev]'   
 	$(PIP) install -e './examples/diagnostics_agent[dev]'

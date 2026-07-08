@@ -37,6 +37,7 @@ SOURCE_PACKAGE_EXPECTATIONS = {
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",
     "examples.language_tutor": REPO_ROOT / "examples" / "language_tutor",
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
+    "mail_lib": REPO_ROOT / "mail_lib",
 }
 
 

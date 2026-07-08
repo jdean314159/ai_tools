@@ -404,11 +404,15 @@ is not authorization. The server validates the complete batch, renders every
 sender, subject, account host, source folder, and destination folder, then binds
 that exact ordered ID set to a one-shot expiring confirmation token.
 
-Commit reuses the hardened `move_message_to_trash` path sequentially. IMAP moves
-cannot be rolled back as one transaction: failures are recorded per message and
-do not suppress later attempts; disappeared snapshot messages are skipped; only
-successful moves are removed from app state. Any unsafe Message-ID, mailbox, or
-unresolved account rejects the whole proposal before socket creation. Rules and
+Proposal creation performs a read-only IMAP preflight grouped by resolved
+account, using one login per selected account. Commit uses the same account
+resolution, exact Message-ID lookup, post-auth capability refresh, and
+server-side `MOVE` requirement, again grouped by account rather than opening one
+connection per message. IMAP moves cannot be rolled back as one transaction:
+failures are recorded per message and do not suppress later attempts;
+disappeared snapshot messages are skipped; only successful moves are removed
+from app state. Any unsafe Message-ID, mailbox, unresolved account, or server
+preflight mismatch rejects the whole proposal before authorization. Rules and
 model output cannot authorize or execute trash actions.
 
 ## 18. Sender/domain volume statistics amendment (2026-07-06)

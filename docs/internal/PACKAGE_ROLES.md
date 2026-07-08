@@ -28,7 +28,7 @@ See `STATUS.md` for the authoritative current baseline and active work list.
 | `rag_lib` | RAG building blocks, labs, and evaluation utilities. | Default retrieval path. | Keep examples runnable without live model access where practical. |
 | `agent_lib` | Agent abstractions and coordination primitives. | Experimental/advanced. | Continue only with explicit sandbox, policy, and trace boundaries. |
 | `language_tutor` | Reference app using engines, memory, and optional richer features. | Active. Engine imports migrated to llm_engines. | Default memory path is `engram`. |
-| `mail_lib` | Deterministic Thunderbird reading, indexing, personal rules, triage, and digest primitives. | Active application module. | Thunderbird profile access is read-only; server mutation belongs to the separately configured mail-assistant IMAP action. |
+| `mail_lib` | Deterministic Thunderbird reading, indexing, personal rules, triage, and digest primitives. | Active lightweight package. | Thunderbird profile access is read-only; server mutation belongs to the separately configured mail-assistant IMAP action. |
 | `mail_assistant` | Local FastAPI/Jinja/HTMX mail application. | Active application example. | Uses app-owned state and explicit preview/confirmation for IMAP Move-to-Trash. |
 
 `asc/` is no longer present in the repository. Historical references to that

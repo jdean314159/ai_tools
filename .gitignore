@@ -68,6 +68,7 @@ Thumbs.db
 *.tar.gz
 
 # Runtime artifacts and eval results
+artifacts/
 engram/data/
 engram/tests/eval/eval_results_*/
 integration_tests/eval/runs/

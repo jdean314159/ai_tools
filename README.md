@@ -40,6 +40,7 @@ expecting stability.
 | [llm_engines](./llm_engines/README.md) | stable | One interface over Ollama, OpenAI-compatible APIs, Anthropic, vLLM, llama.cpp | engine factory |
 | [engram](./engram/README.md) | beta | Project memory: prompt building, hybrid retrieval, inspectable evidence traces | `ProjectMemory` |
 | [rag_lib](./rag_lib/README.md) | beta | Retrieval building blocks: chunking, hybrid BM25+dense, reranking, evaluation contracts | pipeline object |
+| [mail_lib](./mail_lib/) | beta | Deterministic local Thunderbird mail reading, indexing, personal rules, and triage helpers | mail message/rules helpers |
 | [llm_inspector](./llm_inspector/README.md) | beta | Trace normalization, run comparison, evidence/report conversion | inspection API |
 | [llm_inspector_ui](./llm_inspector_ui/README.md) | beta | Interactive workbench to inspect engines, memory, and RAG behavior | run as a tool |
 | [agent_lib](./agent_lib/README.md) | **experimental** | Planner/executor/tool runtime with policy and sandbox boundaries | coordination primitives |

@@ -1,6 +1,6 @@
 # ai_tools — Session Handoff (for new thread / Codex)
 
-**Date:** 2026-07-07
+**Date:** 2026-07-08
 **Read order for any new thread:** `docs/internal/STATUS.md` first, then this
 file. For a neural-memory thread also read ADR-016 and
 `docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`. For mail_lib: this file →
@@ -21,10 +21,13 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 MAIL-02 remains the active application. Work after the original MVP added
 age-filtered views, cached background refresh, sender/domain statistics,
 bounded rendering and summaries, selectable message groups, and confirmed
-single/batch IMAP Move-to-Trash. IMAP mutation is opt-in through a separate
+single/batch IMAP Move-to-Trash. The Trash path now uses post-auth IMAP
+capability refresh, Gmail `X-GM-RAW` Message-ID lookup with SPECIAL-USE All
+Mail fallback, read-only proposal preflight, and one IMAP session per selected
+account during proposal and commit. IMAP mutation is opt-in through a separate
 account mapping and password environment variables; it fails closed on unsafe,
-missing, or ambiguous mappings and requires server-side `MOVE`. Thunderbird
-mbox and Gloda access remains read-only.
+missing, ambiguous, or stale-server mappings and requires server-side `MOVE`.
+Thunderbird mbox and Gloda access remains read-only.
 
 The next action is continued private adoption observation and recording of
 structural failures without committing real mail, private rules, credentials,

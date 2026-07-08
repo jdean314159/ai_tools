@@ -169,6 +169,6 @@ publication.
 
 ## Loose ends caught by the filter
 
-- `update_engram.sh` — likely stale post-consolidation; verify and delete.
-- `artifacts/` — looks like build output; gitignore and untrack.
-- `LICENCE.txt` — rename to `LICENSE` (tooling/convention expects US spelling).
+- `update_engram.sh` — deleted after consolidation.
+- `artifacts/` — treated as generated output; gitignored and untracked.
+- `LICENCE.txt` — resolved in favor of `LICENSE`.

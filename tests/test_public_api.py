@@ -17,6 +17,7 @@ PACKAGES = [
     "llm_inspector",
     "llm_inspector_ui",
     "agent_lib",
+    "mail_lib",
 ]
 
 

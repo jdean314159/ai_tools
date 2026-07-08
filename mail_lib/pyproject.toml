@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mail-lib"
+version = "0.1.0"
+description = "Deterministic local Thunderbird mail reading, indexing, rules, and triage helpers."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+]
+
+[tool.setuptools]
+packages = ["mail_lib"]
+
+[tool.setuptools.package-dir]
+"mail_lib" = "."
+
+[tool.pytest.ini_options]
+testpaths = ["../tests"]

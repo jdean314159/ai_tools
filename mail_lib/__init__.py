@@ -1,7 +1,4 @@
-"""Script-first local mail triage helpers.
-
-MAIL-00 keeps this as an importable repo directory, not a promoted package.
-"""
+"""Deterministic local mail reading, rules, indexing, and triage helpers."""
 
 from .thunderbird import MailMessage, MessageMetadata, iter_messages
 from .triage import Priority, TriageResult, triage_message, triage_messages
