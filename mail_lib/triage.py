@@ -66,13 +66,16 @@ def _is_self_mail(message: MailMessage) -> bool:
     return sender in {(item or "").strip().lower() for item in message.recipients}
 
 
-def _is_bare_link(body: str) -> bool:
+def is_bare_link_body(body: str) -> bool:
     """Return whether a body contains URLs and at most a short amount of prose."""
     if not _URL_RE.search(body):
         return False
     without_urls = _URL_RE.sub("", body)
     prose_characters = sum(not character.isspace() for character in without_urls)
     return prose_characters <= SELFMAIL_LINK_MAX_PROSE_CHARS
+
+
+_is_bare_link = is_bare_link_body
 
 
 def triage_message(message: MailMessage) -> TriageResult:
@@ -119,7 +122,12 @@ def triage_message(message: MailMessage) -> TriageResult:
         reason = "Thread already has a reply; demoted."
 
     if self_mail:
-        if _is_bare_link(message.body):
+        is_bare_link = (
+            message.body_is_bare_link
+            if message.body_is_bare_link is not None
+            else is_bare_link_body(message.body)
+        )
+        if is_bare_link:
             rules.append("self-mail:link")
             priority = Priority.NORMAL
             reason = "Self-addressed mail carrying a link (likely a saved article)."

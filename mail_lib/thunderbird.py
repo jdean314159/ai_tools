@@ -74,6 +74,7 @@ class MailMessage:
     local_read: bool = False
     read_state_source: str = "mbox"
     body_complete: bool = True
+    body_is_bare_link: bool | None = None
 
     @property
     def has_gloda_metadata(self) -> bool:

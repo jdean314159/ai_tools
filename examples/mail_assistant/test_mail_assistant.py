@@ -264,6 +264,27 @@ def test_refresh_stores_body_preview_and_hydrates_full_message(
     assert hydrated.body_complete is True
 
 
+def test_truncated_snapshot_preserves_self_mail_link_triage_signal(tmp_path: Path) -> None:
+    body = "\n" * (SNAPSHOT_BODY_PREVIEW_CHARS + 20) + "https://example.test/saved"
+    message = _message(
+        "saved-link@example.test",
+        body=body,
+        sender="user@example.test",
+    )
+    store = AssistantStore(tmp_path / "preview-triage.db")
+    service = MailAssistantService(tmp_path, store, reader=lambda _path, **_kwargs: [message])
+
+    service.refresh()
+    cached_message = service.state.messages[0]
+    classified = classify_message(cached_message, ())
+
+    assert cached_message.body_complete is False
+    assert cached_message.body_is_bare_link is True
+    assert "https://example.test/saved" not in cached_message.body
+    assert classified.triage.priority == Priority.NORMAL
+    assert "self-mail:link" in classified.triage.matched_rules
+
+
 def test_full_messages_hydrates_by_mbox_in_batches(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

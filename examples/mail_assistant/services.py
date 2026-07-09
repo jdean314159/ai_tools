@@ -17,7 +17,7 @@ from mail_lib.thunderbird import (
     load_message_bodies,
     load_message_body,
 )
-from mail_lib.triage import Priority
+from mail_lib.triage import Priority, is_bare_link_body
 
 from .store import AssistantStore
 
@@ -53,6 +53,11 @@ def _preview_message(message: MailMessage) -> MailMessage:
         message,
         body=message.body[:SNAPSHOT_BODY_PREVIEW_CHARS],
         body_complete=False,
+        body_is_bare_link=(
+            message.body_is_bare_link
+            if message.body_is_bare_link is not None
+            else is_bare_link_body(message.body)
+        ),
     )
 
 
@@ -182,7 +187,12 @@ class MailAssistantService:
             body = load_message_body(message.mbox_path, message.header_message_id)
         except (OSError, KeyError, ValueError):
             return message
-        return replace(message, body=body, body_complete=True)
+        return replace(
+            message,
+            body=body,
+            body_complete=True,
+            body_is_bare_link=is_bare_link_body(body),
+        )
 
     def full_messages(self, header_message_ids: Iterable[str]) -> tuple[MailMessage, ...]:
         requested = tuple(header_message_ids)
@@ -213,7 +223,12 @@ class MailAssistantService:
                 hydrated[message.header_message_id] = (
                     message
                     if body is None
-                    else replace(message, body=body, body_complete=True)
+                    else replace(
+                        message,
+                        body=body,
+                        body_complete=True,
+                        body_is_bare_link=is_bare_link_body(body),
+                    )
                 )
 
         return tuple(hydrated[message_id] for message_id in requested)
@@ -373,6 +388,7 @@ def _encode_snapshot(
                 "local_read": message.local_read,
                 "read_state_source": message.read_state_source,
                 "body_complete": message.body_complete,
+                "body_is_bare_link": message.body_is_bare_link,
                 "metadata": None if metadata is None else {
                     "header_message_id": metadata.header_message_id,
                     "message_key": metadata.message_key,
@@ -485,6 +501,7 @@ def _decode_snapshot_state(payload: str) -> DecodedSnapshot:
             local_read=bool(raw.get("local_read", False)),
             read_state_source=str(raw.get("read_state_source", "mbox")),
             body_complete=bool(raw.get("body_complete", True)),
+            body_is_bare_link=raw.get("body_is_bare_link"),
         ))
     return DecodedSnapshot(
         messages=tuple(messages),

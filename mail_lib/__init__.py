@@ -7,7 +7,7 @@ from .thunderbird import (
     load_message_bodies,
     load_message_body,
 )
-from .triage import Priority, TriageResult, triage_message, triage_messages
+from .triage import Priority, TriageResult, is_bare_link_body, triage_message, triage_messages
 
 __all__ = [
     "MailMessage",
@@ -17,6 +17,7 @@ __all__ = [
     "iter_messages",
     "load_message_bodies",
     "load_message_body",
+    "is_bare_link_body",
     "triage_message",
     "triage_messages",
 ]
