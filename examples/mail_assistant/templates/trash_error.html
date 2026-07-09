@@ -7,7 +7,12 @@
     <p>No messages were moved.</p>
     <p><strong>{{ message.sender }}</strong> — {{ message.subject }}</p>
     <p>{{ error }}</p>
-    <p><a href="/">Return to the message list</a></p>
+    {% if stale_snapshot %}
+    <p>A mail-assistant snapshot refresh has been queued. If Thunderbird still
+    shows this message, refresh/sync Thunderbird first, then reload the
+    assistant after the background refresh completes.</p>
+    {% endif %}
+    <p><a href="{{ return_url }}">Return to the message list</a></p>
   </main>
 </body>
 </html>

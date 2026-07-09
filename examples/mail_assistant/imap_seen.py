@@ -15,7 +15,7 @@ from .imap_trash import (
     _locate_message_uids,
     _post_login_capabilities,
     _quoted_mailbox,
-    _unexpected_match_count_message,
+    _unexpected_match_count_error,
     _validated_message_id,
     account_for_message,
 )
@@ -113,7 +113,7 @@ class _ImapSeenSession:
             readonly=False,
         )
         if len(uids) != 1:
-            raise RuntimeError(_unexpected_match_count_message(len(uids)))
+            raise _unexpected_match_count_error(len(uids))
         return uids
 
     def mark_seen(self, candidate: _SeenCandidate) -> None:

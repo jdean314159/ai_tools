@@ -46,6 +46,10 @@ _PrefsServerMap = dict[str, dict[str, str]]
 _PrefsCache = dict[Path, _PrefsServerMap | None]
 
 
+class ImapMessageNotFound(RuntimeError):
+    """Exact preflight could not find the snapshot message on the IMAP server."""
+
+
 def _quoted_mailbox(value: str) -> str:
     if "\r" in value or "\n" in value:
         raise ValueError("IMAP mailbox names must not contain CR or LF")
@@ -393,6 +397,12 @@ def _unexpected_match_count_message(count: int) -> str:
     return f"Expected one IMAP message match, found {count}"
 
 
+def _unexpected_match_count_error(count: int) -> RuntimeError:
+    if count == 0:
+        return ImapMessageNotFound(_unexpected_match_count_message(count))
+    return RuntimeError(_unexpected_match_count_message(count))
+
+
 class _ImapTrashSession:
     def __init__(
         self,
@@ -447,7 +457,7 @@ class _ImapTrashSession:
             readonly=readonly,
         )
         if len(uids) != 1:
-            raise RuntimeError(_unexpected_match_count_message(len(uids)))
+            raise _unexpected_match_count_error(len(uids))
         return uids
 
     def verify(self, candidate: _MoveCandidate) -> None:

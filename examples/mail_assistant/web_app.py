@@ -36,6 +36,7 @@ from .services import MailAssistantService, PRIORITY_ORDER, _snapshot_covers_win
 from .store import AssistantStore, DEFAULT_STORE_PATH
 from .summarizer import SectionSummarizer
 from .imap_trash import (
+    ImapMessageNotFound,
     account_for_message,
     load_imap_accounts,
 )
@@ -581,6 +582,20 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 return trash_workflow.propose(selected_messages)
 
             token, rows = await _run_blocking(propose_selected_messages, timeout=120)
+        except ImapMessageNotFound as exc:
+            start_background_refresh(max_age_days=window_days(window_value, window_unit))
+            return templates.TemplateResponse(
+                request,
+                "trash_error.html",
+                {
+                    "request": request,
+                    "message": error_message,
+                    "error": str(exc),
+                    "stale_snapshot": True,
+                    "return_url": route_state.url(),
+                },
+                status_code=400,
+            )
         except Exception as exc:
             return templates.TemplateResponse(
                 request,
@@ -589,6 +604,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                     "request": request,
                     "message": error_message,
                     "error": str(exc),
+                    "stale_snapshot": False,
+                    "return_url": route_state.url(),
                 },
                 status_code=400,
             )

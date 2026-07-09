@@ -24,6 +24,7 @@ from mail_lib.personal_rules import RuleAction, classify_message
 from mail_lib.thunderbird import MailMessage, MessageMetadata
 from mail_lib.triage import Priority
 
+from .imap_trash import ImapMessageNotFound
 from .rules import RuleTransactionService
 from .seen_workflow import SeenOutcome
 from .services import (
@@ -1320,7 +1321,7 @@ def test_batch_trash_proposal_rejects_message_missing_from_imap_server(
     app.state.mail.refresh()
 
     def missing_from_server(_messages, _accounts, *, prefs_cache=None):
-        raise RuntimeError("Message was not found on the IMAP server")
+        raise ImapMessageNotFound("Message was not found on the IMAP server")
 
     monkeypatch.setattr(
         "examples.mail_assistant.trash_workflow.verify_messages_available_for_move",
@@ -1342,7 +1343,11 @@ def test_batch_trash_proposal_rejects_message_missing_from_imap_server(
             assert response.status_code == 400
             assert "No messages were moved." in response.text
             assert "Message was not found on the IMAP server" in response.text
+            assert "snapshot refresh has been queued" in response.text
+            assert 'href="/?view=unread&amp;window_value=1&amp;window_unit=weeks"' in response.text
             assert "trash_token" not in response.text
+            assert app.state.refresh_task is not None
+            await app.state.refresh_task
 
     asyncio.run(exercise())
 
