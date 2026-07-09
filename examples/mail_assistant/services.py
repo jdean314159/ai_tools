@@ -42,6 +42,7 @@ def message_datetime(message: MailMessage) -> datetime | None:
 class SnapshotState:
     messages: tuple[MailMessage, ...]
     revision: int
+    # None means the snapshot is unbounded. 0 means legacy/unknown coverage.
     max_age_days: int | None = None
 
 
@@ -97,7 +98,10 @@ class MailAssistantService:
             for message in self._reader(self.profile, **reader_kwargs)
             if self._include_message(message)
         )
-        self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(loaded))
+        self.store.put_mail_snapshot(
+            str(self.profile.resolve()),
+            _encode_snapshot(loaded, max_age_days=max_age_days),
+        )
         with self._lock:
             self._state = SnapshotState(loaded, self._state.revision + 1, max_age_days)
             return self._state
@@ -106,13 +110,18 @@ class MailAssistantService:
         payload = self.store.get_mail_snapshot(str(self.profile.resolve()))
         if payload is None:
             return self.state
+        decoded_messages, cached_max_age_days = _decode_snapshot_state(payload)
         loaded = tuple(
             message
-            for message in _decode_snapshot(payload)
+            for message in decoded_messages
             if self._include_message(message)
         )
         with self._lock:
-            self._state = SnapshotState(loaded, self._state.revision + 1, None)
+            self._state = SnapshotState(
+                loaded,
+                self._state.revision + 1,
+                cached_max_age_days,
+            )
             return self._state
 
     def classify(self, rules: tuple[PersonalRule, ...]) -> tuple[ClassifiedMessage, ...]:
@@ -213,6 +222,7 @@ class MailAssistantService:
     def remove_messages(self, header_message_ids: Iterable[str]) -> None:
         selected = set(header_message_ids)
         with self._lock:
+            max_age_days = self._state.max_age_days
             remaining = tuple(
                 item for item in self._state.messages if item.header_message_id not in selected
             )
@@ -221,12 +231,25 @@ class MailAssistantService:
             self._state = SnapshotState(
                 remaining,
                 self._state.revision + 1,
-                self._state.max_age_days,
+                max_age_days,
             )
-        self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(remaining))
+        self.store.put_mail_snapshot(
+            str(self.profile.resolve()),
+            _encode_snapshot(remaining, max_age_days=max_age_days),
+        )
 
 
-def _encode_snapshot(messages: tuple[MailMessage, ...]) -> str:
+def _snapshot_covers_window(available_days: int | None, requested_days: int) -> bool:
+    if available_days is None:
+        return True
+    return available_days >= requested_days
+
+
+def _encode_snapshot(
+    messages: tuple[MailMessage, ...],
+    *,
+    max_age_days: int | None = None,
+) -> str:
     encoded = []
     for message in messages:
         metadata = message.metadata
@@ -266,12 +289,34 @@ def _encode_snapshot(messages: tuple[MailMessage, ...]) -> str:
                 },
             }
         )
-    return json.dumps(encoded, ensure_ascii=False, separators=(",", ":"))
+    return json.dumps(
+        {"max_age_days": max_age_days, "messages": encoded},
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
 
 def _decode_snapshot(payload: str) -> tuple[MailMessage, ...]:
+    messages, _max_age_days = _decode_snapshot_state(payload)
+    return messages
+
+
+def _decode_snapshot_state(payload: str) -> tuple[tuple[MailMessage, ...], int | None]:
+    data = json.loads(payload)
+    if isinstance(data, list):
+        raw_messages = data
+        # Legacy snapshots predate window metadata. They may be full or
+        # windowed, so treat coverage as unknown to force a fresh refresh for
+        # any explicit window while still rendering the cached rows immediately.
+        max_age_days = 0
+    elif isinstance(data, dict):
+        raw_messages = data.get("messages", [])
+        raw_max_age_days = data.get("max_age_days")
+        max_age_days = int(raw_max_age_days) if raw_max_age_days is not None else None
+    else:
+        raise ValueError("Snapshot payload must be a list or object")
     messages = []
-    for raw in json.loads(payload):
+    for raw in raw_messages:
         raw_metadata = raw["metadata"]
         metadata = None
         if raw_metadata is not None:
@@ -304,4 +349,4 @@ def _decode_snapshot(payload: str) -> tuple[MailMessage, ...]:
             local_read=bool(raw.get("local_read", False)),
             read_state_source=str(raw.get("read_state_source", "mbox")),
         ))
-    return tuple(messages)
+    return tuple(messages), max_age_days

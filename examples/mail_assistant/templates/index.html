@@ -24,6 +24,8 @@
       <input type="hidden" name="view" value="{{ view }}">
       <input type="hidden" name="window_value" value="{{ window_value }}">
       <input type="hidden" name="window_unit" value="{{ window_unit }}">
+      <input type="hidden" name="sender_filter" value="{{ sender_filter }}">
+      <input type="hidden" name="domain_filter" value="{{ domain_filter }}">
       <button type="submit">Refresh snapshot</button>
     </form>
     {% if trash_enabled %}<form id="batch-trash-form" method="post" action="/trash/propose">
@@ -31,6 +33,8 @@
       <input type="hidden" name="view" value="{{ view }}">
       <input type="hidden" name="window_value" value="{{ window_value }}">
       <input type="hidden" name="window_unit" value="{{ window_unit }}">
+      <input type="hidden" name="sender_filter" value="{{ sender_filter }}">
+      <input type="hidden" name="domain_filter" value="{{ domain_filter }}">
       <button type="submit">Review selected for Trash…</button>
     </form>{% endif %}
   </header>

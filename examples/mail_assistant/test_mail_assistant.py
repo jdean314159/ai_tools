@@ -201,6 +201,20 @@ def test_snapshot_cache_round_trips_messages_and_metadata(tmp_path: Path) -> Non
     loaded = reader.load_cached()
 
     assert loaded.messages == (original,)
+    assert loaded.max_age_days is None
+
+
+def test_snapshot_cache_preserves_window_coverage(tmp_path: Path) -> None:
+    store = AssistantStore(tmp_path / "windowed-cache.db")
+    original = _message("cached", date="2026-07-05T12:00:00+00:00")
+    writer = MailAssistantService(tmp_path, store, reader=lambda _path, **_kwargs: [original])
+    writer.refresh(max_age_days=7, now=datetime(2026, 7, 9, tzinfo=timezone.utc))
+    reader = MailAssistantService(tmp_path, store, reader=lambda _path, **_kwargs: [])
+
+    loaded = reader.load_cached()
+
+    assert loaded.messages == (original,)
+    assert loaded.max_age_days == 7
 
 
 def test_messages_are_newest_first_and_filtered_by_age(tmp_path: Path) -> None:
@@ -598,6 +612,21 @@ def test_stats_route_and_exact_sender_filter(tmp_path: Path) -> None:
             prompt = app.state.test_engine.requests[-1].messages[1].content
             assert "a@example.test" in prompt
             assert "b@example.test" not in prompt
+            marked = await client.post(
+                "/read",
+                data={
+                    "message_id": "stats-a@example.test",
+                    "csrf_token": app.state.csrf_token,
+                    "view": "all",
+                    "window_value": 1,
+                    "window_unit": "weeks",
+                    "sender_filter": "a@example.test",
+                    "domain_filter": "",
+                },
+            )
+            assert marked.status_code == 200
+            assert "From A" in marked.text
+            assert "From B" not in marked.text
 
     asyncio.run(exercise())
 
@@ -715,6 +744,57 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
         assert refresh_windows == [7]
 
     asyncio.run(exercise())
+
+
+def test_wider_refresh_request_is_not_lost_while_refresh_runs(tmp_path: Path) -> None:
+    app = _web_app(tmp_path)
+    calls: list[int | None] = []
+    first_started = threading.Event()
+    release_first = threading.Event()
+
+    def tracked_refresh(*, max_age_days=None):
+        calls.append(max_age_days)
+        if len(calls) == 1:
+            first_started.set()
+            assert release_first.wait(timeout=5)
+        return app.state.mail.__class__.refresh(
+            app.state.mail,
+            max_age_days=max_age_days,
+        )
+
+    app.state.mail.refresh = tracked_refresh
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            first = await client.post(
+                "/refresh",
+                data={
+                    "csrf_token": app.state.csrf_token,
+                    "view": "unread",
+                    "window_value": 1,
+                    "window_unit": "weeks",
+                },
+            )
+            assert first.status_code == 303
+            assert first_started.wait(timeout=5)
+            second = await client.post(
+                "/refresh",
+                data={
+                    "csrf_token": app.state.csrf_token,
+                    "view": "unread",
+                    "window_value": 4,
+                    "window_unit": "weeks",
+                },
+            )
+            assert second.status_code == 303
+            release_first.set()
+            await app.state.refresh_task
+
+    asyncio.run(exercise())
+
+    assert calls == [7, 28]
+    assert app.state.mail.state.max_age_days == 28
 
 
 def test_rule_preview_targets_selected_message_row(tmp_path: Path) -> None:

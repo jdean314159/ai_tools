@@ -31,7 +31,7 @@ from mail_lib.thunderbird import MailMessage
 from mail_lib.triage import Priority
 
 from .rules import RuleTransactionService
-from .services import MailAssistantService, PRIORITY_ORDER
+from .services import MailAssistantService, PRIORITY_ORDER, _snapshot_covers_window
 from .store import AssistantStore, DEFAULT_STORE_PATH
 from .summarizer import SectionSummarizer
 from .imap_trash import (
@@ -151,6 +151,25 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     prefs_cache = {}
     trash_workflow = TrashWorkflow(imap_accounts, prefs_cache=prefs_cache)
 
+    def mail_query(
+        *,
+        view: str,
+        window_value: int,
+        window_unit: str,
+        sender_filter: str | None = None,
+        domain_filter: str | None = None,
+    ) -> str:
+        values = {
+            "view": view,
+            "window_value": window_value,
+            "window_unit": window_unit,
+        }
+        if sender_filter:
+            values["sender"] = sender_filter
+        if domain_filter:
+            values["domain"] = domain_filter
+        return urlencode(values)
+
     def include_message(message: MailMessage) -> bool:
         if not imap_accounts:
             return True
@@ -177,12 +196,28 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     rule_transactions = RuleTransactionService(config.rules_path)
     summary_service: SectionSummarizer | None = None
 
+    def needs_refresh(max_age_days: int) -> bool:
+        return not _snapshot_covers_window(mail.state.max_age_days, max_age_days)
+
     async def refresh_in_background(target_app: FastAPI, *, max_age_days: int) -> None:
-        target_app.state.refresh_error = None
-        try:
-            await _run_blocking(lambda: mail.refresh(max_age_days=max_age_days))
-        except Exception as exc:
-            target_app.state.refresh_error = str(exc)
+        requested_days = max_age_days
+        while True:
+            target_app.state.refresh_error = None
+            target_app.state.refresh_target_days = requested_days
+            try:
+                await _run_blocking(lambda: mail.refresh(max_age_days=requested_days))
+            except Exception as exc:
+                target_app.state.refresh_error = str(exc)
+                return
+            pending_days = target_app.state.refresh_requested_days
+            if pending_days is None or _snapshot_covers_window(
+                mail.state.max_age_days,
+                pending_days,
+            ):
+                target_app.state.refresh_requested_days = None
+                return
+            target_app.state.refresh_requested_days = None
+            requested_days = pending_days
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -212,11 +247,17 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     app.state.csrf_token = csrf_token
     app.state.refresh_task = None
     app.state.refresh_error = None
+    app.state.refresh_requested_days = None
+    app.state.refresh_target_days = None
 
     def start_background_refresh(*, max_age_days: int) -> bool:
         task = app.state.refresh_task
         if task is not None and not task.done():
+            pending = app.state.refresh_requested_days
+            if pending is None or max_age_days > pending:
+                app.state.refresh_requested_days = max_age_days
             return False
+        app.state.refresh_requested_days = None
         app.state.refresh_task = asyncio.create_task(
             refresh_in_background(app, max_age_days=max_age_days)
         )
@@ -279,6 +320,14 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     ) -> dict[str, Any]:
         rules = current_rules()
         task = app.state.refresh_task
+        requested_days = window_days(window_value, window_unit)
+        if needs_refresh(requested_days) and (task is None or task.done()):
+            start_background_refresh(max_age_days=requested_days)
+            task = app.state.refresh_task
+        elif needs_refresh(requested_days):
+            pending = app.state.refresh_requested_days
+            if pending is None or requested_days > pending:
+                app.state.refresh_requested_days = requested_days
         if notice is None and task is not None and not task.done():
             notice = "Snapshot refresh is running in the background."
         if notice is None and app.state.refresh_error:
@@ -287,7 +336,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             groups = mail.visible(
                 rules.rules,
                 view=view,
-                max_age_days=window_days(window_value, window_unit),
+                max_age_days=requested_days,
                 sender_filter=sender_filter,
                 domain_filter=domain_filter,
             )
@@ -379,8 +428,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     ):
         require_csrf(request, csrf_token)
         start_background_refresh(max_age_days=window_days(window_value, window_unit))
-        query = urlencode(
-            {"view": view, "window_value": window_value, "window_unit": window_unit}
+        query = mail_query(
+            view=view,
+            window_value=window_value,
+            window_unit=window_unit,
+            sender_filter=sender_filter,
+            domain_filter=domain_filter,
         )
         return RedirectResponse(url=f"/?{query}", status_code=303)
 
@@ -428,7 +481,14 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         return templates.TemplateResponse(
             request,
             "mail_list.html",
-            context(request, view=view, window_value=window_value, window_unit=window_unit),
+            context(
+                request,
+                view=view,
+                window_value=window_value,
+                window_unit=window_unit,
+                sender_filter=sender_filter,
+                domain_filter=domain_filter,
+            ),
         )
 
     @app.post("/trash/propose", response_class=HTMLResponse)
@@ -439,6 +499,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+        sender_filter: str | None = Form(None),
+        domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
         selected_ids = tuple(dict.fromkeys(message_ids))
@@ -476,6 +538,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 "view": view,
                 "window_value": window_value,
                 "window_unit": window_unit,
+                "sender_filter": sender_filter or "",
+                "domain_filter": domain_filter or "",
             },
         )
 
@@ -487,6 +551,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+        sender_filter: str | None = Form(None),
+        domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
         selected_ids = trash_workflow.pop_pending(trash_token)
@@ -528,7 +594,16 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 "moved_count": len(moved_ids),
                 "failed_count": sum(item.status == "failed" for item in outcomes),
                 "skipped_count": sum(item.status == "skipped" for item in outcomes),
-                "return_url": f"/?{urlencode({'view': view, 'window_value': window_value, 'window_unit': window_unit})}",
+                "return_url": (
+                    "/?"
+                    + mail_query(
+                        view=view,
+                        window_value=window_value,
+                        window_unit=window_unit,
+                        sender_filter=sender_filter,
+                        domain_filter=domain_filter,
+                    )
+                ),
             },
         )
 
@@ -605,6 +680,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+        sender_filter: str | None = Form(None),
+        domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
         messages = {item.header_message_id: item for item in mail.state.messages}
@@ -631,6 +708,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 "view": view,
                 "window_value": window_value,
                 "window_unit": window_unit,
+                "sender_filter": sender_filter or "",
+                "domain_filter": domain_filter or "",
             },
         )
 
@@ -642,6 +721,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         view: str = Form("unread"),
         window_value: int = Form(DEFAULT_WINDOW_VALUE),
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
+        sender_filter: str | None = Form(None),
+        domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
         try:
@@ -658,6 +739,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 view=view,
                 window_value=window_value,
                 window_unit=window_unit,
+                sender_filter=sender_filter,
+                domain_filter=domain_filter,
                 notice="Rule committed.",
             ),
         )

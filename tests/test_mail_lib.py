@@ -13,6 +13,7 @@ from mail_lib.indexer import MailIndex
 from mail_lib.thunderbird import (
     MailMessage,
     MessageMetadata,
+    _merge_messages,
     _message_from_mbox,
     discover_mbox_files,
     iter_messages,
@@ -98,6 +99,40 @@ def test_iter_messages_uses_msf_state_when_mbox_status_is_stale(tmp_path: Path) 
     assert loaded.header_message_id == "stale-local@example.test"
     assert loaded.local_read is False
     assert loaded.read_state_source == "msf"
+
+
+def test_msf_read_state_wins_when_duplicate_has_stale_mbox_state() -> None:
+    msf_read = MailMessage(
+        header_message_id="duplicate@example.test",
+        subject="Duplicate",
+        body="body",
+        sender="sender@example.test",
+        recipients=("user@example.test",),
+        date=None,
+        source_folder="INBOX",
+        local_read=True,
+        read_state_source="msf",
+    )
+    stale_mbox_unread = MailMessage(
+        header_message_id="duplicate@example.test",
+        subject="Duplicate",
+        body="body",
+        sender="sender@example.test",
+        recipients=("user@example.test",),
+        date=None,
+        source_folder=None,
+        signal_folders=("Important",),
+        local_read=False,
+        read_state_source="mbox",
+    )
+
+    merged = _merge_messages(msf_read, stale_mbox_unread)
+    reverse = _merge_messages(stale_mbox_unread, msf_read)
+
+    assert merged.local_read is True
+    assert merged.read_state_source == "msf"
+    assert reverse.local_read is True
+    assert reverse.read_state_source == "msf"
 
 
 def test_iter_messages_respects_newer_than_window(tmp_path: Path) -> None:

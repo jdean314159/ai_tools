@@ -455,6 +455,18 @@ def _merge_messages(existing: MailMessage, new: MailMessage) -> MailMessage:
     signals = tuple(dict.fromkeys(existing.signal_folders + new.signal_folders))
     metadata = existing.metadata or new.metadata
     body_source = existing if existing.body else new
+    if existing.read_state_source == "msf" and new.read_state_source == "msf":
+        local_read = existing.local_read and new.local_read
+        read_state_source = "msf"
+    elif existing.read_state_source == "msf":
+        local_read = existing.local_read
+        read_state_source = "msf"
+    elif new.read_state_source == "msf":
+        local_read = new.local_read
+        read_state_source = "msf"
+    else:
+        local_read = existing.local_read and new.local_read
+        read_state_source = existing.read_state_source
     return MailMessage(
         header_message_id=existing.header_message_id,
         subject=body_source.subject,
@@ -466,8 +478,8 @@ def _merge_messages(existing: MailMessage, new: MailMessage) -> MailMessage:
         signal_folders=signals,
         metadata=metadata,
         mbox_path=body_source.mbox_path,
-        local_read=existing.local_read and new.local_read,
-        read_state_source="msf" if "msf" in {existing.read_state_source, new.read_state_source} else existing.read_state_source,
+        local_read=local_read,
+        read_state_source=read_state_source,
     )
 
 

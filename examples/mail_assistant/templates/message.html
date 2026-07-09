@@ -14,6 +14,8 @@
     <input type="hidden" name="view" value="{{ view }}">
     <input type="hidden" name="window_value" value="{{ window_value }}">
     <input type="hidden" name="window_unit" value="{{ window_unit }}">
+    <input type="hidden" name="sender_filter" value="{{ sender_filter }}">
+    <input type="hidden" name="domain_filter" value="{{ domain_filter }}">
     <button type="submit">Mark locally read</button>
   </form>
   <form hx-post="/rules/propose" hx-target="#{{ proposal_id }}" hx-swap="innerHTML" method="post" action="/rules/propose">
@@ -22,6 +24,8 @@
     <input type="hidden" name="view" value="{{ view }}">
     <input type="hidden" name="window_value" value="{{ window_value }}">
     <input type="hidden" name="window_unit" value="{{ window_unit }}">
+    <input type="hidden" name="sender_filter" value="{{ sender_filter }}">
+    <input type="hidden" name="domain_filter" value="{{ domain_filter }}">
     <label>Match <select name="field"><option>sender</option><option>domain</option><option>subject</option></select></label>
     <label>Priority <select name="priority"><option>urgent</option><option>normal</option><option>low</option><option>ignore</option></select></label>
     <label>Action <select name="action"><option>none</option><option>summarize</option><option>ignore</option></select></label>
