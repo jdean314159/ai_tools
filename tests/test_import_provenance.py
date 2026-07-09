@@ -16,6 +16,7 @@ PACKAGE_EXPECTATIONS = {
     "engram": REPO_ROOT / "engram" / "src" / "engram",
     "llm_engines": REPO_ROOT / "llm_engines" / "src" / "llm_engines",
     "examples.language_tutor": REPO_ROOT / "examples" / "language_tutor",
+    "mail_lib": REPO_ROOT / "mail_lib",
 }
 
 
