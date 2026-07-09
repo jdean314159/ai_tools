@@ -32,7 +32,7 @@ from .services import (
 )
 from .store import AssistantStore
 from .summarizer import PROMPT_VERSION, SectionSummarizer, section_key
-from .web_app import AppConfig, _discover_thunderbird_profile, create_app
+from .web_app import AppConfig, MailRouteState, _discover_thunderbird_profile, create_app
 from .web_app import _run_blocking
 
 
@@ -461,6 +461,26 @@ def test_summarize_hydrates_full_body_before_model_call(
             assert "FULL_TAIL" in prompt
 
     asyncio.run(exercise())
+
+
+def test_mail_route_state_builds_return_urls_and_template_values() -> None:
+    state = MailRouteState(
+        view="all",
+        window_value=2,
+        window_unit="weeks",
+        sender_filter="a+b@example.test",
+        domain_filter=None,
+    )
+
+    assert state.query() == "view=all&window_value=2&window_unit=weeks&sender=a%2Bb%40example.test"
+    assert state.url() == "/?view=all&window_value=2&window_unit=weeks&sender=a%2Bb%40example.test"
+    assert state.template_values() == {
+        "view": "all",
+        "window_value": 2,
+        "window_unit": "weeks",
+        "sender_filter": "a+b@example.test",
+        "domain_filter": "",
+    }
 
 
 def test_summarizer_rejects_one_oversized_message(tmp_path: Path) -> None:
