@@ -17,6 +17,7 @@ from mail_lib.thunderbird import (
     _message_from_mbox,
     discover_mbox_files,
     iter_messages,
+    load_message_body,
     load_msf_read_states,
     load_gloda_metadata,
     normalize_message_id,
@@ -166,6 +167,29 @@ def test_iter_messages_respects_newer_than_window(tmp_path: Path) -> None:
     )
 
     assert [message.header_message_id for message in messages] == ["new@example.test"]
+
+
+def test_load_message_body_finds_one_body_by_message_id(tmp_path: Path) -> None:
+    inbox = tmp_path / "INBOX"
+    box = mailbox.mbox(inbox)
+    try:
+        for message_id, body in (
+            ("first@example.test", "first body"),
+            ("target@example.test", "target full body"),
+        ):
+            message = EmailMessage()
+            message["Message-ID"] = f"<{message_id}>"
+            message["From"] = "sender@example.test"
+            message["To"] = "user@example.test"
+            message.set_content(body)
+            box.add(message)
+        box.flush()
+    finally:
+        box.close()
+
+    assert load_message_body(inbox, "target@example.test").strip() == "target full body"
+    with pytest.raises(KeyError):
+        load_message_body(inbox, "missing@example.test")
 
 
 def test_fixtures_use_only_reserved_example_data() -> None:

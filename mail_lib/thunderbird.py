@@ -73,6 +73,7 @@ class MailMessage:
     mbox_path: Path | None = None
     local_read: bool = False
     read_state_source: str = "mbox"
+    body_complete: bool = True
 
     @property
     def has_gloda_metadata(self) -> bool:
@@ -287,6 +288,21 @@ def _message_body(message: Message) -> str:
     if message.get_content_type() == "text/html":
         return _html_to_text(_decode_part(message))
     return _decode_part(message)
+
+
+def load_message_body(mbox_path: str | Path, header_message_id: str) -> str:
+    """Load one full message body from an mbox by normalized Message-ID."""
+    target = normalize_message_id(header_message_id)
+    if not target:
+        raise ValueError("header_message_id is required")
+    box = mailbox.mbox(Path(mbox_path), create=False)
+    try:
+        for message in box:
+            if normalize_message_id(message.get("Message-ID")) == target:
+                return _message_body(message)
+    finally:
+        box.close()
+    raise KeyError(header_message_id)
 
 
 def _decode_part(message: Message) -> str:

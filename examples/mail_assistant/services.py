@@ -1,7 +1,7 @@
 """Snapshot, classification, and view assembly for the mail assistant."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import json
@@ -9,13 +9,20 @@ import threading
 from typing import Any, Callable, Iterable
 
 from mail_lib.personal_rules import ClassifiedMessage, PersonalRule, classify_message
-from mail_lib.thunderbird import Identity, MailMessage, MessageMetadata, iter_messages
+from mail_lib.thunderbird import (
+    Identity,
+    MailMessage,
+    MessageMetadata,
+    iter_messages,
+    load_message_body,
+)
 from mail_lib.triage import Priority
 
 from .store import AssistantStore
 
 
 PRIORITY_ORDER = (Priority.URGENT, Priority.NORMAL, Priority.LOW, Priority.IGNORE)
+SNAPSHOT_BODY_PREVIEW_CHARS = 1_000
 
 
 def thunderbird_read(message: MailMessage) -> bool:
@@ -36,6 +43,16 @@ def message_datetime(message: MailMessage) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
+def _preview_message(message: MailMessage) -> MailMessage:
+    if len(message.body) <= SNAPSHOT_BODY_PREVIEW_CHARS:
+        return message
+    return replace(
+        message,
+        body=message.body[:SNAPSHOT_BODY_PREVIEW_CHARS],
+        body_complete=False,
+    )
 
 
 @dataclass(frozen=True)
@@ -100,7 +117,7 @@ class MailAssistantService:
         if newer_than is not None:
             reader_kwargs["newer_than"] = newer_than
         loaded = tuple(
-            message
+            _preview_message(message)
             for message in self._reader(self.profile, **reader_kwargs)
             if self._include_message(message)
         )
@@ -148,6 +165,26 @@ class MailAssistantService:
 
     def classify(self, rules: tuple[PersonalRule, ...]) -> tuple[ClassifiedMessage, ...]:
         return tuple(classify_message(message, rules) for message in self.state.messages)
+
+    def full_message(self, header_message_id: str) -> MailMessage:
+        message = next(
+            (item for item in self.state.messages if item.header_message_id == header_message_id),
+            None,
+        )
+        if message is None:
+            raise KeyError(header_message_id)
+        if message.mbox_path is None:
+            return message
+        if message.body_complete:
+            return message
+        try:
+            body = load_message_body(message.mbox_path, message.header_message_id)
+        except (OSError, KeyError, ValueError):
+            return message
+        return replace(message, body=body, body_complete=True)
+
+    def full_messages(self, header_message_ids: Iterable[str]) -> tuple[MailMessage, ...]:
+        return tuple(self.full_message(message_id) for message_id in header_message_ids)
 
     def visible(
         self,
@@ -303,6 +340,7 @@ def _encode_snapshot(
                 "mbox_path": str(message.mbox_path) if message.mbox_path else None,
                 "local_read": message.local_read,
                 "read_state_source": message.read_state_source,
+                "body_complete": message.body_complete,
                 "metadata": None if metadata is None else {
                     "header_message_id": metadata.header_message_id,
                     "message_key": metadata.message_key,
@@ -414,6 +452,7 @@ def _decode_snapshot_state(payload: str) -> DecodedSnapshot:
             mbox_path=Path(raw["mbox_path"]) if raw["mbox_path"] else None,
             local_read=bool(raw.get("local_read", False)),
             read_state_source=str(raw.get("read_state_source", "mbox")),
+            body_complete=bool(raw.get("body_complete", True)),
         ))
     return DecodedSnapshot(
         messages=tuple(messages),

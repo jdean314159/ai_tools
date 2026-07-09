@@ -35,7 +35,9 @@ the background. If a wider window is requested than the current snapshot covers,
 the app starts or queues a wider background refresh. **Refresh snapshot** is also
 non-blocking; reload the page after the background refresh completes. The page
 shows the current snapshot's coverage, refresh time, message count, latest
-message date, and whether it covers the selected window.
+message date, and whether it covers the selected window. The snapshot stores
+bounded body previews for list rendering; full message bodies are loaded from the
+Thunderbird mbox only when opening a message or summarizing a visible section.
 
 Section summarization is explicit and deterministic at the prompt boundary. The
 app allocates the configured input-token budget across every message in the

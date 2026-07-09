@@ -24,7 +24,11 @@ from mail_lib.thunderbird import MailMessage, MessageMetadata
 from mail_lib.triage import Priority
 
 from .rules import RuleTransactionService
-from .services import MailAssistantService, message_datetime
+from .services import (
+    SNAPSHOT_BODY_PREVIEW_CHARS,
+    MailAssistantService,
+    message_datetime,
+)
 from .store import AssistantStore
 from .summarizer import PROMPT_VERSION, SectionSummarizer, section_key
 from .web_app import AppConfig, _discover_thunderbird_profile, create_app
@@ -226,6 +230,39 @@ def test_snapshot_cache_preserves_window_coverage(tmp_path: Path) -> None:
     assert loaded.latest_message_at == datetime(2026, 7, 5, 12, tzinfo=timezone.utc)
 
 
+def test_refresh_stores_body_preview_and_hydrates_full_message(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from . import services as services_module
+
+    full_body = "x" * (SNAPSHOT_BODY_PREVIEW_CHARS + 25)
+    mbox_path = tmp_path / "INBOX"
+    original = replace(_message("full@example.test", body=full_body), mbox_path=mbox_path)
+    store = AssistantStore(tmp_path / "preview.db")
+    service = MailAssistantService(tmp_path, store, reader=lambda _path, **_kwargs: [original])
+    monkeypatch.setattr(
+        services_module,
+        "load_message_body",
+        lambda path, message_id: full_body
+        if path == mbox_path and message_id == "full@example.test"
+        else "",
+    )
+
+    refreshed = service.refresh()
+    reloaded = MailAssistantService(tmp_path, store, reader=lambda _path, **_kwargs: [])
+    cached = reloaded.load_cached()
+
+    assert len(refreshed.messages[0].body) == SNAPSHOT_BODY_PREVIEW_CHARS
+    assert refreshed.messages[0].body == full_body[:SNAPSHOT_BODY_PREVIEW_CHARS]
+    assert refreshed.messages[0].body_complete is False
+    assert cached.messages[0].body == full_body[:SNAPSHOT_BODY_PREVIEW_CHARS]
+    assert cached.messages[0].body_complete is False
+    hydrated = service.full_message("full@example.test")
+    assert hydrated.body == full_body
+    assert hydrated.body_complete is True
+
+
 def test_messages_are_newest_first_and_filtered_by_age(tmp_path: Path) -> None:
     now = datetime(2026, 7, 5, 12, tzinfo=timezone.utc)
     messages = (
@@ -332,6 +369,48 @@ def test_summary_cache_varies_with_exact_content_model_and_prompt(tmp_path: Path
     assert engine.calls == 2
     assert section_key(first) != section_key(changed)
     assert store.get_summary(section_key(first), "fixture", PROMPT_VERSION)
+
+
+def test_summarize_hydrates_full_body_before_model_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from . import services as services_module
+
+    full_body = "x" * SNAPSHOT_BODY_PREVIEW_CHARS + "FULL_TAIL"
+    mbox_path = tmp_path / "INBOX"
+    message = replace(
+        _message("summary-full@example.test", body=full_body, date=datetime.now(timezone.utc).isoformat()),
+        mbox_path=mbox_path,
+    )
+    monkeypatch.setattr(
+        services_module,
+        "load_message_body",
+        lambda path, message_id: full_body
+        if path == mbox_path and message_id == "summary-full@example.test"
+        else "",
+    )
+    app = _web_app(tmp_path)
+    app.state.mail._reader = lambda _path, **_kwargs: [message]
+    app.state.mail.refresh()
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            response = await client.post(
+                "/summarize/normal",
+                data={
+                    "csrf_token": app.state.csrf_token,
+                    "view": "all",
+                    "window_value": 1,
+                    "window_unit": "weeks",
+                },
+            )
+            assert response.status_code == 200
+            prompt = app.state.test_engine.requests[-1].messages[1].content
+            assert "FULL_TAIL" in prompt
+
+    asyncio.run(exercise())
 
 
 def test_summarizer_rejects_one_oversized_message(tmp_path: Path) -> None:

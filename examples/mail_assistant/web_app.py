@@ -2,7 +2,7 @@
 # ruff: noqa: E402 -- repository bootstrap must run before sibling-package imports
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from contextlib import asynccontextmanager
 import configparser
 import os
@@ -491,11 +491,9 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
 
     @app.get("/message", response_class=HTMLResponse)
     async def message_detail(request: Request, message_id: str):
-        message = next(
-            (item for item in mail.state.messages if item.header_message_id == message_id),
-            None,
-        )
-        if message is None:
+        try:
+            message = mail.full_message(message_id)
+        except KeyError as exc:
             raise HTTPException(status_code=404, detail="Unknown message ID")
         return templates.TemplateResponse(
             request,
@@ -671,6 +669,10 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         )[section][:display_limit(summary_limit)]
         if not messages:
             raise HTTPException(status_code=404, detail="Section is empty")
+        messages = tuple(
+            replace(item, message=mail.full_message(item.message.header_message_id))
+            for item in messages
+        )
         if summary_service is None:
             actual_engine = engine or get_engine(config.backend, config.model)
             summary_service = SectionSummarizer(
