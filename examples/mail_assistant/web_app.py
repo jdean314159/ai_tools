@@ -177,17 +177,22 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     rule_transactions = RuleTransactionService(config.rules_path)
     summary_service: SectionSummarizer | None = None
 
-    async def refresh_in_background(target_app: FastAPI) -> None:
+    async def refresh_in_background(target_app: FastAPI, *, max_age_days: int) -> None:
         target_app.state.refresh_error = None
         try:
-            await _run_blocking(mail.refresh)
+            await _run_blocking(lambda: mail.refresh(max_age_days=max_age_days))
         except Exception as exc:
             target_app.state.refresh_error = str(exc)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         mail.load_cached()
-        _app.state.refresh_task = asyncio.create_task(refresh_in_background(_app))
+        _app.state.refresh_task = asyncio.create_task(
+            refresh_in_background(
+                _app,
+                max_age_days=window_days(DEFAULT_WINDOW_VALUE, DEFAULT_WINDOW_UNIT),
+            )
+        )
         try:
             yield
         finally:
@@ -208,11 +213,13 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     app.state.refresh_task = None
     app.state.refresh_error = None
 
-    def start_background_refresh() -> bool:
+    def start_background_refresh(*, max_age_days: int) -> bool:
         task = app.state.refresh_task
         if task is not None and not task.done():
             return False
-        app.state.refresh_task = asyncio.create_task(refresh_in_background(app))
+        app.state.refresh_task = asyncio.create_task(
+            refresh_in_background(app, max_age_days=max_age_days)
+        )
         return True
 
     @app.middleware("http")
@@ -371,7 +378,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
-        start_background_refresh()
+        start_background_refresh(max_age_days=window_days(window_value, window_unit))
         query = urlencode(
             {"view": view, "window_value": window_value, "window_unit": window_unit}
         )

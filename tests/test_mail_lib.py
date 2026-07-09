@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import mailbox
 import sqlite3
@@ -98,6 +98,39 @@ def test_iter_messages_uses_msf_state_when_mbox_status_is_stale(tmp_path: Path) 
     assert loaded.header_message_id == "stale-local@example.test"
     assert loaded.local_read is False
     assert loaded.read_state_source == "msf"
+
+
+def test_iter_messages_respects_newer_than_window(tmp_path: Path) -> None:
+    folder = tmp_path / "ImapMail" / "imap.example.test"
+    folder.mkdir(parents=True)
+    inbox = folder / "INBOX"
+    box = mailbox.mbox(inbox)
+    try:
+        for message_id, date in (
+            ("old@example.test", "Mon, 01 Jun 2026 12:00:00 +0000"),
+            ("new@example.test", "Wed, 08 Jul 2026 12:00:00 +0000"),
+        ):
+            message = EmailMessage()
+            message["Message-ID"] = f"<{message_id}>"
+            message["From"] = "sender@example.test"
+            message["To"] = "user@example.test"
+            message["Subject"] = message_id
+            message["Date"] = date
+            message.set_content("body")
+            box.add(message)
+        box.flush()
+    finally:
+        box.close()
+    inbox.with_name("INBOX.msf").write_text("synthetic msf marker", encoding="utf-8")
+
+    messages = list(
+        iter_messages(
+            tmp_path,
+            newer_than=datetime(2026, 7, 1, tzinfo=timezone.utc),
+        )
+    )
+
+    assert [message.header_message_id for message in messages] == ["new@example.test"]
 
 
 def test_fixtures_use_only_reserved_example_data() -> None:

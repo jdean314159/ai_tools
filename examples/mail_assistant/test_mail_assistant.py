@@ -169,6 +169,26 @@ def test_failed_refresh_preserves_previous_snapshot(tmp_path: Path) -> None:
     assert service.state == first
 
 
+def test_refresh_passes_time_window_to_reader(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 9, 12, tzinfo=timezone.utc)
+    seen_cutoffs: list[datetime] = []
+
+    def reader(_path, *, newer_than=None):
+        seen_cutoffs.append(newer_than)
+        return [_message(date=now.isoformat())]
+
+    service = MailAssistantService(
+        tmp_path,
+        AssistantStore(tmp_path / "windowed.db"),
+        reader=reader,
+    )
+
+    state = service.refresh(max_age_days=7, now=now)
+
+    assert seen_cutoffs == [now - timedelta(days=7)]
+    assert state.max_age_days == 7
+
+
 def test_snapshot_cache_round_trips_messages_and_metadata(tmp_path: Path) -> None:
     store = AssistantStore(tmp_path / "a.db")
     original = _message(
@@ -499,7 +519,7 @@ def _web_app(
     test_engine = FakeEngine()
     app = create_app(config, engine=test_engine)
     app.state.test_engine = test_engine
-    app.state.mail._reader = lambda _path: [message or _message()]
+    app.state.mail._reader = lambda _path, **_kwargs: [message or _message()]
     return app
 
 
@@ -668,10 +688,12 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
     app = _web_app(tmp_path)
     original_refresh = app.state.mail.refresh
     worker_threads: list[int] = []
+    refresh_windows: list[int | None] = []
 
-    def tracked_refresh():
+    def tracked_refresh(*, max_age_days=None):
         worker_threads.append(threading.get_ident())
-        return original_refresh()
+        refresh_windows.append(max_age_days)
+        return original_refresh(max_age_days=max_age_days)
 
     app.state.mail.refresh = tracked_refresh
 
@@ -690,6 +712,7 @@ def test_refresh_route_runs_mailbox_scan_off_event_loop(tmp_path: Path) -> None:
         assert completed.status_code == 204
         assert completed.headers["hx-refresh"] == "true"
         assert worker_threads and worker_threads[0] != event_loop_thread
+        assert refresh_windows == [7]
 
     asyncio.run(exercise())
 

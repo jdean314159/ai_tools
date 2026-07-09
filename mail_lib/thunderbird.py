@@ -7,6 +7,7 @@ Gloda ``messages.headerMessageID`` rows. It never seeks by ``messageKey``.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
 import html
@@ -156,7 +157,19 @@ def _load_folder_locations(conn: sqlite3.Connection) -> dict[int, tuple[str, str
     return {int(row["id"]): (str(row["folderURI"] or ""), str(row["name"] or "")) for row in rows}
 
 
-def load_gloda_metadata(profile_root: str | Path) -> dict[str, MessageMetadata]:
+def _cutoff_microseconds(newer_than: datetime | None) -> int | None:
+    if newer_than is None:
+        return None
+    if newer_than.tzinfo is None:
+        newer_than = newer_than.replace(tzinfo=timezone.utc)
+    return int(newer_than.astimezone(timezone.utc).timestamp() * 1_000_000)
+
+
+def load_gloda_metadata(
+    profile_root: str | Path,
+    *,
+    newer_than: datetime | None = None,
+) -> dict[str, MessageMetadata]:
     """Load Gloda metadata keyed by normalized header Message-ID."""
     db_path = _gloda_path(Path(profile_root))
     if not db_path.exists():
@@ -164,10 +177,16 @@ def load_gloda_metadata(profile_root: str | Path) -> dict[str, MessageMetadata]:
     with open_gloda_readonly(db_path) as conn:
         identities = _load_identities(conn)
         folders = _load_folder_locations(conn)
-        rows = conn.execute(
+        query = (
             "SELECT id, folderID, messageKey, conversationID, date, headerMessageID, "
             "deleted, jsonAttributes, notability FROM messages WHERE COALESCE(deleted, 0) = 0"
-        ).fetchall()
+        )
+        params: tuple[int, ...] = ()
+        cutoff = _cutoff_microseconds(newer_than)
+        if cutoff is not None:
+            query += " AND date >= ?"
+            params = (cutoff,)
+        rows = conn.execute(query, params).fetchall()
         by_message_id: dict[str, MessageMetadata] = {}
         for row in rows:
             attrs = _parse_json_attributes(row["jsonAttributes"])
@@ -307,13 +326,24 @@ def _addresses(header_value: str | None) -> tuple[str, ...]:
 
 
 def _message_date(message: Message) -> str | None:
+    parsed = _message_datetime(message)
+    if parsed is not None:
+        return parsed.isoformat()
+    raw = message.get("Date")
+    return str(raw) if raw else None
+
+
+def _message_datetime(message: Message) -> datetime | None:
     raw = message.get("Date")
     if not raw:
         return None
     try:
-        return parsedate_to_datetime(raw).isoformat()
+        parsed = parsedate_to_datetime(raw)
     except Exception:
-        return raw
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def _mozilla_read(message: Message) -> bool:
@@ -441,10 +471,19 @@ def _merge_messages(existing: MailMessage, new: MailMessage) -> MailMessage:
     )
 
 
-def iter_messages(profile_root: str | Path) -> Iterable[MailMessage]:
+def iter_messages(
+    profile_root: str | Path,
+    *,
+    newer_than: datetime | None = None,
+) -> Iterable[MailMessage]:
     """Yield deduplicated mbox messages enriched with Gloda metadata when present."""
     root = Path(profile_root)
-    metadata_by_id = load_gloda_metadata(root)
+    cutoff = newer_than
+    if cutoff is not None and cutoff.tzinfo is None:
+        cutoff = cutoff.replace(tzinfo=timezone.utc)
+    if cutoff is not None:
+        cutoff = cutoff.astimezone(timezone.utc)
+    metadata_by_id = load_gloda_metadata(root, newer_than=cutoff)
     messages: dict[str, MailMessage] = {}
     for mbox_path in discover_mbox_files(root):
         folder_label = _folder_label(mbox_path)
@@ -452,6 +491,9 @@ def iter_messages(profile_root: str | Path) -> Iterable[MailMessage]:
         box = mailbox.mbox(mbox_path, create=False)
         try:
             for message in box:
+                message_dt = _message_datetime(message)
+                if cutoff is not None and (message_dt is None or message_dt < cutoff):
+                    continue
                 header_id = normalize_message_id(message.get("Message-ID"))
                 metadata = metadata_by_id.get(header_id)
                 mail_message = _message_from_mbox(

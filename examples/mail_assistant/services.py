@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import json
 import threading
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable
 
 from mail_lib.personal_rules import ClassifiedMessage, PersonalRule, classify_message
 from mail_lib.thunderbird import Identity, MailMessage, MessageMetadata, iter_messages
@@ -42,6 +42,7 @@ def message_datetime(message: MailMessage) -> datetime | None:
 class SnapshotState:
     messages: tuple[MailMessage, ...]
     revision: int
+    max_age_days: int | None = None
 
 
 @dataclass(frozen=True)
@@ -61,7 +62,7 @@ class MailAssistantService:
         profile: str | Path,
         store: AssistantStore,
         *,
-        reader: Callable[[str | Path], Iterable[MailMessage]] = iter_messages,
+        reader: Callable[..., Iterable[MailMessage]] = iter_messages,
         include_message: Callable[[MailMessage], bool] | None = None,
     ) -> None:
         self.profile = Path(profile)
@@ -69,22 +70,36 @@ class MailAssistantService:
         self._reader = reader
         self._include_message = include_message or (lambda _message: True)
         self._lock = threading.RLock()
-        self._state = SnapshotState((), 0)
+        self._state = SnapshotState((), 0, None)
 
     @property
     def state(self) -> SnapshotState:
         with self._lock:
             return self._state
 
-    def refresh(self) -> SnapshotState:
+    def refresh(
+        self,
+        *,
+        max_age_days: int | None = None,
+        now: datetime | None = None,
+    ) -> SnapshotState:
+        newer_than = None
+        if max_age_days is not None:
+            current = now or datetime.now(timezone.utc)
+            if current.tzinfo is None:
+                current = current.replace(tzinfo=timezone.utc)
+            newer_than = current.astimezone(timezone.utc) - timedelta(days=max_age_days)
+        reader_kwargs: dict[str, Any] = {}
+        if newer_than is not None:
+            reader_kwargs["newer_than"] = newer_than
         loaded = tuple(
             message
-            for message in self._reader(self.profile)
+            for message in self._reader(self.profile, **reader_kwargs)
             if self._include_message(message)
         )
         self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(loaded))
         with self._lock:
-            self._state = SnapshotState(loaded, self._state.revision + 1)
+            self._state = SnapshotState(loaded, self._state.revision + 1, max_age_days)
             return self._state
 
     def load_cached(self) -> SnapshotState:
@@ -97,7 +112,7 @@ class MailAssistantService:
             if self._include_message(message)
         )
         with self._lock:
-            self._state = SnapshotState(loaded, self._state.revision + 1)
+            self._state = SnapshotState(loaded, self._state.revision + 1, None)
             return self._state
 
     def classify(self, rules: tuple[PersonalRule, ...]) -> tuple[ClassifiedMessage, ...]:
@@ -203,7 +218,11 @@ class MailAssistantService:
             )
             if len(remaining) == len(self._state.messages):
                 raise KeyError(next(iter(selected), ""))
-            self._state = SnapshotState(remaining, self._state.revision + 1)
+            self._state = SnapshotState(
+                remaining,
+                self._state.revision + 1,
+                self._state.max_age_days,
+            )
         self.store.put_mail_snapshot(str(self.profile.resolve()), _encode_snapshot(remaining))
 
 
