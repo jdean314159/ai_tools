@@ -27,6 +27,7 @@ TEST_SOURCE_PATHS = [
     REPO_ROOT / "rag_lib" / "src",
     REPO_ROOT / "llm_inspector_ui" / "src",
     REPO_ROOT / "agent_lib" / "src",
+    REPO_ROOT / "examples" / "diagnostics_agent" / "src",
 ]
 
 SOURCE_PACKAGE_EXPECTATIONS = {
@@ -37,11 +38,15 @@ SOURCE_PACKAGE_EXPECTATIONS = {
     "llm_inspector_ui": REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui",
     "examples.language_tutor": REPO_ROOT / "examples" / "language_tutor",
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
+    "diagnostics_agent": (
+        REPO_ROOT / "examples" / "diagnostics_agent" / "src" / "diagnostics_agent"
+    ),
     "mail_lib": REPO_ROOT / "mail_lib",
 }
 
 
 def _install_test_source_paths() -> None:
+    installed: list[str] = []
     for path in reversed(TEST_SOURCE_PATHS):
         if not path.exists():
             continue
@@ -49,6 +54,19 @@ def _install_test_source_paths() -> None:
         while text in sys.path:
             sys.path.remove(text)
         sys.path.insert(0, text)
+        installed.append(text)
+
+    existing_pythonpath = [
+        item for item in os.environ.get("PYTHONPATH", "").split(os.pathsep) if item
+    ]
+    exported: list[str] = []
+    for text in reversed(installed):
+        if text not in exported:
+            exported.append(text)
+    for text in existing_pythonpath:
+        if text not in exported:
+            exported.append(text)
+    os.environ["PYTHONPATH"] = os.pathsep.join(exported)
 
 
 def _module_location(module: object) -> Path | None:
