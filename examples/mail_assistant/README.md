@@ -53,6 +53,16 @@ use no model, network call, or persistent historical table.
 `static/htmx.min.js` is the pinned HTMX 2.0.4 browser distribution from the
 official `bigskysoftware/htmx` release. See `static/HTMX-PROVENANCE.txt`.
 
+## Mark read / Seen sync
+
+**Mark read** always records the user's choice in the assistant's local ledger;
+that local ledger remains the UI source of truth. When IMAP accounts are
+configured, the same explicit click also attempts to propagate `\Seen` to the
+resolved server account. Propagation uses the same exact-message lookup posture
+as Trash: resolve the account/folder, find exactly one matching `Message-ID`,
+then issue `UID STORE +FLAGS.SILENT (\Seen)`. Per-message propagation status is
+recorded so failures can be retried by a later explicit mark-read action.
+
 ## Move to Trash
 
 Server-side trashing is disabled until an IMAP account file exists at

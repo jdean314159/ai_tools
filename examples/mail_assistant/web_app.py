@@ -31,6 +31,7 @@ from mail_lib.thunderbird import MailMessage
 from mail_lib.triage import Priority
 
 from .rules import RuleTransactionService
+from .seen_workflow import SeenWorkflow
 from .services import MailAssistantService, PRIORITY_ORDER, _snapshot_covers_window
 from .store import AssistantStore, DEFAULT_STORE_PATH
 from .summarizer import SectionSummarizer
@@ -183,6 +184,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     imap_accounts = load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
     prefs_cache = {}
     trash_workflow = TrashWorkflow(imap_accounts, prefs_cache=prefs_cache)
+    seen_workflow = SeenWorkflow(store, imap_accounts, prefs_cache=prefs_cache)
 
     def include_message(message: MailMessage) -> bool:
         if not imap_accounts:
@@ -294,6 +296,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     app.state.config = config
     app.state.mail = mail
     app.state.store = store
+    app.state.seen_workflow = seen_workflow
+    app.state.trash_workflow = trash_workflow
     app.state.csrf_token = csrf_token
     app.state.refresh_task = None
     app.state.refresh_error = None
@@ -395,12 +399,16 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         trash_eligible_ids: set[str] = set()
         trash_status_by_id: dict[str, str] = {}
+        seen_status_by_id: dict[str, str] = {}
         if imap_accounts:
             for messages in groups.values():
                 for item in messages:
                     message_id = item.message.header_message_id
                     eligible, status = trash_workflow.status_for(item.message)
                     trash_status_by_id[message_id] = status
+                    seen_status = store.seen_propagation_status(message_id)
+                    if seen_status is not None:
+                        seen_status_by_id[message_id] = f"{seen_status[0]}: {seen_status[1]}"
                     if not eligible:
                         continue
                     trash_eligible_ids.add(message_id)
@@ -418,6 +426,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "trash_enabled": bool(imap_accounts),
             "trash_eligible_ids": trash_eligible_ids,
             "trash_status_by_id": trash_status_by_id,
+            "seen_enabled": bool(imap_accounts),
+            "seen_status_by_id": seen_status_by_id,
             "sender_filter": sender_filter or "",
             "domain_filter": domain_filter or "",
             "display_limit": display_limit(limit),
@@ -521,20 +531,27 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         domain_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
+        route_state = MailRouteState(view, window_value, window_unit, sender_filter, domain_filter)
+        by_id = {item.header_message_id: item for item in mail.state.messages}
+        message = by_id.get(message_id)
+        if message is None:
+            raise HTTPException(status_code=404, detail="Unknown message ID")
         try:
             mail.mark_read(message_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="Unknown message ID") from exc
+        if imap_accounts:
+            await _run_blocking(lambda: app.state.seen_workflow.propagate((message,)), timeout=120)
         return templates.TemplateResponse(
             request,
             "mail_list.html",
             context(
                 request,
-                view=view,
-                window_value=window_value,
-                window_unit=window_unit,
-                sender_filter=sender_filter,
-                domain_filter=domain_filter,
+                view=route_state.view,
+                window_value=route_state.window_value,
+                window_unit=route_state.window_unit,
+                sender_filter=route_state.sender_filter,
+                domain_filter=route_state.domain_filter,
             ),
         )
 

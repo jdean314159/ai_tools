@@ -48,6 +48,12 @@ class AssistantStore:
                     payload TEXT NOT NULL,
                     created_at REAL NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS seen_propagation (
+                    header_message_id TEXT PRIMARY KEY,
+                    status TEXT NOT NULL,
+                    detail TEXT NOT NULL,
+                    updated_at REAL NOT NULL
+                );
                 """
             )
             connection.commit()
@@ -81,6 +87,35 @@ class AssistantStore:
         with closing(self._connect()) as connection:
             rows = connection.execute("SELECT header_message_id FROM read_state").fetchall()
         return {str(row["header_message_id"]) for row in rows}
+
+    def record_seen_propagation(
+        self,
+        header_message_id: str,
+        *,
+        status: str,
+        detail: str,
+        updated_at: float | None = None,
+    ) -> None:
+        if status not in {"pending", "succeeded", "failed", "skipped"}:
+            raise ValueError("Invalid seen propagation status")
+        timestamp = time.time() if updated_at is None else updated_at
+        with closing(self._connect()) as connection:
+            connection.execute(
+                "INSERT OR REPLACE INTO seen_propagation "
+                "(header_message_id, status, detail, updated_at) VALUES (?, ?, ?, ?)",
+                (header_message_id, status, detail, timestamp),
+            )
+            connection.commit()
+
+    def seen_propagation_status(self, header_message_id: str) -> tuple[str, str] | None:
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT status, detail FROM seen_propagation WHERE header_message_id = ?",
+                (header_message_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return str(row["status"]), str(row["detail"])
 
     def get_summary(self, section_key: str, model: str, prompt_version: str) -> str | None:
         with closing(self._connect()) as connection:

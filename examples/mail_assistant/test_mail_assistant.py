@@ -25,6 +25,7 @@ from mail_lib.thunderbird import MailMessage, MessageMetadata
 from mail_lib.triage import Priority
 
 from .rules import RuleTransactionService
+from .seen_workflow import SeenOutcome
 from .services import (
     SNAPSHOT_BODY_PREVIEW_CHARS,
     MailAssistantService,
@@ -93,13 +94,15 @@ def test_store_is_app_owned_and_idempotent(tmp_path: Path) -> None:
     store = AssistantStore(path)
     AssistantStore(path)
     store.mark_read("one", read_at=1.0)
+    store.record_seen_propagation("one", status="failed", detail="network unavailable", updated_at=1.5)
     store.put_summary("key", "model", "v1", "summary", created_at=2.0)
 
     assert store.read_ids() == {"one"}
+    assert store.seen_propagation_status("one") == ("failed", "network unavailable")
     assert store.get_summary("key", "model", "v1") == "summary"
     with sqlite3.connect(path) as connection:
         tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master")}
-    assert {"read_state", "section_summary_cache"} <= tables
+    assert {"read_state", "seen_propagation", "section_summary_cache"} <= tables
     assert "processed_messages" not in tables
     assert path.stat().st_mode & 0o777 == 0o600
     assert tmp_path.stat().st_mode & 0o777 == 0o700
@@ -811,6 +814,74 @@ def test_stats_route_and_exact_sender_filter(tmp_path: Path) -> None:
             assert "From B" not in marked.text
 
     asyncio.run(exercise())
+
+
+def test_mark_read_propagates_seen_when_imap_is_configured(tmp_path: Path) -> None:
+    imap_config = tmp_path / "imap.toml"
+    imap_config.write_text(
+        """
+[[account]]
+host = "imap.example.test"
+username = "user@example.test"
+password_env = "MAIL_TEST_PASSWORD"
+trash_folder = "Trash"
+""",
+        encoding="utf-8",
+    )
+    message = _message(
+        "seen-web@example.test",
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    app = _web_app(tmp_path, message=message, imap_accounts_path=imap_config)
+    app.state.mail.refresh()
+    propagated: list[tuple[MailMessage, ...]] = []
+
+    class FakeSeenWorkflow:
+        def propagate(self, messages: tuple[MailMessage, ...]) -> tuple[SeenOutcome, ...]:
+            propagated.append(messages)
+            app.state.store.record_seen_propagation(
+                messages[0].header_message_id,
+                status="succeeded",
+                detail="Marked \\Seen on the IMAP server.",
+            )
+            return (
+                SeenOutcome(
+                    message_id=messages[0].header_message_id,
+                    subject=messages[0].subject,
+                    status="succeeded",
+                    detail="Marked \\Seen on the IMAP server.",
+                ),
+            )
+
+    app.state.seen_workflow = FakeSeenWorkflow()
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            response = await client.post(
+                "/read",
+                data={
+                    "message_id": "seen-web@example.test",
+                    "csrf_token": app.state.csrf_token,
+                    "view": "all",
+                    "window_value": 1,
+                    "window_unit": "weeks",
+                    "sender_filter": "",
+                    "domain_filter": "",
+                },
+            )
+            assert response.status_code == 200
+
+    asyncio.run(exercise())
+
+    assert [[message.header_message_id for message in batch] for batch in propagated] == [
+        ["seen-web@example.test"]
+    ]
+    assert app.state.store.read_ids() == {"seen-web@example.test"}
+    assert app.state.store.seen_propagation_status("seen-web@example.test") == (
+        "succeeded",
+        "Marked \\Seen on the IMAP server.",
+    )
 
 
 def test_list_render_limit_caps_cards_without_changing_section_count(tmp_path: Path) -> None:
