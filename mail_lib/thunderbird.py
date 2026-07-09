@@ -305,6 +305,33 @@ def load_message_body(mbox_path: str | Path, header_message_id: str) -> str:
     raise KeyError(header_message_id)
 
 
+def load_message_bodies(mbox_path: str | Path, header_message_ids: Iterable[str]) -> dict[str, str]:
+    """Load full message bodies from one mbox by normalized Message-ID."""
+    targets: dict[str, str] = {}
+    for header_message_id in header_message_ids:
+        target = normalize_message_id(header_message_id)
+        if not target:
+            raise ValueError("header_message_ids must not contain empty values")
+        targets[target] = header_message_id
+    if not targets:
+        return {}
+
+    found: dict[str, str] = {}
+    box = mailbox.mbox(Path(mbox_path), create=False)
+    try:
+        for message in box:
+            normalized = normalize_message_id(message.get("Message-ID"))
+            original = targets.get(normalized)
+            if original is None:
+                continue
+            found[original] = _message_body(message)
+            if len(found) == len(targets):
+                break
+    finally:
+        box.close()
+    return found
+
+
 def _decode_part(message: Message) -> str:
     payload = message.get_payload(decode=True)
     charset = message.get_content_charset() or "utf-8"

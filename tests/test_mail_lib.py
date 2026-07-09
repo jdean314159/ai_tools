@@ -17,6 +17,7 @@ from mail_lib.thunderbird import (
     _message_from_mbox,
     discover_mbox_files,
     iter_messages,
+    load_message_bodies,
     load_message_body,
     load_msf_read_states,
     load_gloda_metadata,
@@ -190,6 +191,37 @@ def test_load_message_body_finds_one_body_by_message_id(tmp_path: Path) -> None:
     assert load_message_body(inbox, "target@example.test").strip() == "target full body"
     with pytest.raises(KeyError):
         load_message_body(inbox, "missing@example.test")
+
+
+def test_load_message_bodies_scans_one_mbox_for_multiple_ids(tmp_path: Path) -> None:
+    inbox = tmp_path / "INBOX"
+    box = mailbox.mbox(inbox)
+    try:
+        for message_id, body in (
+            ("first@example.test", "first body"),
+            ("second@example.test", "second body"),
+            ("third@example.test", "third body"),
+        ):
+            message = EmailMessage()
+            message["Message-ID"] = f"<{message_id}>"
+            message["From"] = "sender@example.test"
+            message["To"] = "user@example.test"
+            message.set_content(body)
+            box.add(message)
+        box.flush()
+    finally:
+        box.close()
+
+    assert load_message_bodies(
+        inbox,
+        ("second@example.test", "missing@example.test", "first@example.test"),
+    ) == {
+        "second@example.test": "second body\n",
+        "first@example.test": "first body\n",
+    }
+    assert load_message_bodies(inbox, ()) == {}
+    with pytest.raises(ValueError):
+        load_message_bodies(inbox, ("",))
 
 
 def test_fixtures_use_only_reserved_example_data() -> None:

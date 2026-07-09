@@ -14,6 +14,7 @@ from mail_lib.thunderbird import (
     MailMessage,
     MessageMetadata,
     iter_messages,
+    load_message_bodies,
     load_message_body,
 )
 from mail_lib.triage import Priority
@@ -184,7 +185,38 @@ class MailAssistantService:
         return replace(message, body=body, body_complete=True)
 
     def full_messages(self, header_message_ids: Iterable[str]) -> tuple[MailMessage, ...]:
-        return tuple(self.full_message(message_id) for message_id in header_message_ids)
+        requested = tuple(header_message_ids)
+        by_id = {message.header_message_id: message for message in self.state.messages}
+        missing = [message_id for message_id in requested if message_id not in by_id]
+        if missing:
+            raise KeyError(missing[0])
+
+        hydrated: dict[str, MailMessage] = {}
+        by_mbox: dict[Path, list[MailMessage]] = {}
+        for message_id in requested:
+            message = by_id[message_id]
+            if message.body_complete or message.mbox_path is None:
+                hydrated[message_id] = message
+            else:
+                by_mbox.setdefault(message.mbox_path, []).append(message)
+
+        for mbox_path, messages in by_mbox.items():
+            try:
+                bodies = load_message_bodies(
+                    mbox_path,
+                    (message.header_message_id for message in messages),
+                )
+            except (OSError, ValueError):
+                bodies = {}
+            for message in messages:
+                body = bodies.get(message.header_message_id)
+                hydrated[message.header_message_id] = (
+                    message
+                    if body is None
+                    else replace(message, body=body, body_complete=True)
+                )
+
+        return tuple(hydrated[message_id] for message_id in requested)
 
     def visible(
         self,

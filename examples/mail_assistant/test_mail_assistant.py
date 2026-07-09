@@ -9,6 +9,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 import threading
 import time
+from typing import Iterable
 
 import httpx
 import pytest
@@ -263,6 +264,55 @@ def test_refresh_stores_body_preview_and_hydrates_full_message(
     assert hydrated.body_complete is True
 
 
+def test_full_messages_hydrates_by_mbox_in_batches(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from . import services as services_module
+
+    mbox_path = tmp_path / "INBOX"
+    messages = (
+        replace(
+            _message("first@example.test", body="first-preview"),
+            mbox_path=mbox_path,
+            body_complete=False,
+        ),
+        replace(
+            _message("second@example.test", body="second-preview"),
+            mbox_path=mbox_path,
+            body_complete=False,
+        ),
+    )
+    service = MailAssistantService(
+        tmp_path,
+        AssistantStore(tmp_path / "batch.db"),
+        reader=lambda _path, **_kwargs: messages,
+    )
+    service.refresh()
+    calls: list[tuple[Path, tuple[str, ...]]] = []
+
+    def fake_load_message_bodies(path: Path, message_ids: Iterable[str]) -> dict[str, str]:
+        requested = tuple(message_ids)
+        calls.append((path, requested))
+        return {
+            "first@example.test": "first-full",
+            "second@example.test": "second-full",
+        }
+
+    monkeypatch.setattr(services_module, "load_message_bodies", fake_load_message_bodies)
+
+    hydrated = service.full_messages(("second@example.test", "first@example.test"))
+
+    assert [message.body for message in hydrated] == ["second-full", "first-full"]
+    assert all(message.body_complete for message in hydrated)
+    assert calls == [
+        (
+            mbox_path,
+            ("second@example.test", "first@example.test"),
+        )
+    ]
+
+
 def test_messages_are_newest_first_and_filtered_by_age(tmp_path: Path) -> None:
     now = datetime(2026, 7, 5, 12, tzinfo=timezone.utc)
     messages = (
@@ -385,10 +435,10 @@ def test_summarize_hydrates_full_body_before_model_call(
     )
     monkeypatch.setattr(
         services_module,
-        "load_message_body",
-        lambda path, message_id: full_body
-        if path == mbox_path and message_id == "summary-full@example.test"
-        else "",
+        "load_message_bodies",
+        lambda path, message_ids: {"summary-full@example.test": full_body}
+        if path == mbox_path and tuple(message_ids) == ("summary-full@example.test",)
+        else {},
     )
     app = _web_app(tmp_path)
     app.state.mail._reader = lambda _path, **_kwargs: [message]

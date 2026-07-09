@@ -669,9 +669,10 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         )[section][:display_limit(summary_limit)]
         if not messages:
             raise HTTPException(status_code=404, detail="Section is empty")
+        full_messages = mail.full_messages(item.message.header_message_id for item in messages)
         messages = tuple(
-            replace(item, message=mail.full_message(item.message.header_message_id))
-            for item in messages
+            replace(item, message=full_message)
+            for item, full_message in zip(messages, full_messages, strict=True)
         )
         if summary_service is None:
             actual_engine = engine or get_engine(config.backend, config.model)
