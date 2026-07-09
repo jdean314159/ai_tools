@@ -33,7 +33,9 @@ scoped to the active days/weeks window and record their coverage. Later startups
 render the cached snapshot immediately while a fresh default-window scan runs in
 the background. If a wider window is requested than the current snapshot covers,
 the app starts or queues a wider background refresh. **Refresh snapshot** is also
-non-blocking; reload the page after the background refresh completes.
+non-blocking; reload the page after the background refresh completes. The page
+shows the current snapshot's coverage, refresh time, message count, latest
+message date, and whether it covers the selected window.
 
 Section summarization is explicit and deterministic at the prompt boundary. The
 app allocates the configured input-token budget across every message in the

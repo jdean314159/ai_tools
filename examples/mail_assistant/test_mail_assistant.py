@@ -187,6 +187,9 @@ def test_refresh_passes_time_window_to_reader(tmp_path: Path) -> None:
 
     assert seen_cutoffs == [now - timedelta(days=7)]
     assert state.max_age_days == 7
+    assert state.message_count == 1
+    assert state.refreshed_at is not None
+    assert state.latest_message_at == now
 
 
 def test_snapshot_cache_round_trips_messages_and_metadata(tmp_path: Path) -> None:
@@ -202,6 +205,9 @@ def test_snapshot_cache_round_trips_messages_and_metadata(tmp_path: Path) -> Non
 
     assert loaded.messages == (original,)
     assert loaded.max_age_days is None
+    assert loaded.message_count == 1
+    assert loaded.refreshed_at is not None
+    assert loaded.latest_message_at == datetime(2026, 7, 5, 12, tzinfo=timezone.utc)
 
 
 def test_snapshot_cache_preserves_window_coverage(tmp_path: Path) -> None:
@@ -215,6 +221,9 @@ def test_snapshot_cache_preserves_window_coverage(tmp_path: Path) -> None:
 
     assert loaded.messages == (original,)
     assert loaded.max_age_days == 7
+    assert loaded.message_count == 1
+    assert loaded.refreshed_at is not None
+    assert loaded.latest_message_at == datetime(2026, 7, 5, 12, tzinfo=timezone.utc)
 
 
 def test_messages_are_newest_first_and_filtered_by_age(tmp_path: Path) -> None:
@@ -547,6 +556,8 @@ def test_web_security_headers_host_and_csrf_token(tmp_path: Path) -> None:
             response = await client.get("/")
             assert response.status_code == 200
             assert "default-src 'self'" in response.headers["content-security-policy"]
+            assert "Snapshot:" in response.text
+            assert "Snapshot covers the selected window." in response.text
             assert 'name="window_value" min="1" max="3650" value="1"' in response.text
             assert '<option value="weeks" selected>weeks</option>' in response.text
             assert (await client.get("/", headers={"host": "attacker.test"})).status_code == 400
@@ -589,6 +600,7 @@ def test_stats_route_and_exact_sender_filter(tmp_path: Path) -> None:
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             stats = await client.get("/stats")
             assert stats.status_code == 200
+            assert "Snapshot:" in stats.text
             assert "a@example.test" in stats.text
             assert "b@example.test" in stats.text
             filtered = await client.get(

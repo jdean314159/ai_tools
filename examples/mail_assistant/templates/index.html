@@ -39,6 +39,7 @@
     </form>{% endif %}
   </header>
   {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+  <p class="notice">Snapshot: {{ snapshot_status.message_count }} messages; coverage {{ snapshot_status.coverage }}; refreshed {{ snapshot_status.refreshed_at }}; latest message {{ snapshot_status.latest_message_at }}. {{ snapshot_status.detail }}</p>
   {% if sender_filter or domain_filter %}<p class="notice">Filtered by {% if sender_filter %}sender: {{ sender_filter }}{% else %}domain: {{ domain_filter }}{% endif %}. <a href="/?view={{ view }}&window_value={{ window_value }}&window_unit={{ window_unit }}">Clear filter</a></p>{% endif %}
   {% if refresh_running %}<div id="refresh-status" class="notice" hx-get="/refresh-status" hx-trigger="load delay:2s" hx-swap="outerHTML">Loading mail snapshot in the background…</div>{% endif %}
   <div class="workspace">

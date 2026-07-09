@@ -199,6 +199,42 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     def needs_refresh(max_age_days: int) -> bool:
         return not _snapshot_covers_window(mail.state.max_age_days, max_age_days)
 
+    def snapshot_status(requested_days: int) -> dict[str, Any]:
+        state = mail.state
+        task = app.state.refresh_task
+        running = bool(task is not None and not task.done())
+        covers_window = _snapshot_covers_window(state.max_age_days, requested_days)
+        coverage = (
+            "all mail"
+            if state.max_age_days is None
+            else "unknown"
+            if state.max_age_days == 0
+            else f"{state.max_age_days} days"
+        )
+        latest = state.latest_message_at.isoformat() if state.latest_message_at else "none"
+        refreshed = state.refreshed_at.isoformat() if state.refreshed_at else "not yet"
+        if running:
+            target = app.state.refresh_target_days
+            pending = app.state.refresh_requested_days
+            detail = f"Refresh running for {target or requested_days} days"
+            if pending:
+                detail += f"; queued {pending} days"
+        elif app.state.refresh_error:
+            detail = f"Refresh failed: {app.state.refresh_error}"
+        elif not covers_window:
+            detail = "Snapshot does not cover the selected window; refresh queued."
+        else:
+            detail = "Snapshot covers the selected window."
+        return {
+            "coverage": coverage,
+            "covers_window": covers_window,
+            "detail": detail,
+            "latest_message_at": latest,
+            "message_count": state.message_count,
+            "refreshed_at": refreshed,
+            "refresh_running": running,
+        }
+
     async def refresh_in_background(target_app: FastAPI, *, max_age_days: int) -> None:
         requested_days = max_age_days
         while True:
@@ -332,6 +368,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             notice = "Snapshot refresh is running in the background."
         if notice is None and app.state.refresh_error:
             notice = f"Snapshot refresh failed: {app.state.refresh_error}"
+        status = snapshot_status(requested_days)
         try:
             groups = mail.visible(
                 rules.rules,
@@ -360,6 +397,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "priorities": PRIORITY_ORDER,
             "csrf_token": csrf_token,
             "notice": notice,
+            "snapshot_status": status,
             "window_value": window_value,
             "window_unit": window_unit,
             "refresh_running": bool(task is not None and not task.done()),
@@ -402,6 +440,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = DEFAULT_WINDOW_UNIT,
     ):
         days = window_days(window_value, window_unit)
+        if needs_refresh(days):
+            start_background_refresh(max_age_days=days)
         sender_stats, domain_stats = mail.volume_stats(max_age_days=days)
         return templates.TemplateResponse(
             request,
@@ -412,6 +452,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 "domain_stats": domain_stats,
                 "window_value": window_value,
                 "window_unit": window_unit,
+                "snapshot_status": snapshot_status(days),
                 "csrf_token": csrf_token,
             },
         )
