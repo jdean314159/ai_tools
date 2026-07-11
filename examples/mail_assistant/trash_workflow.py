@@ -9,6 +9,7 @@ from mail_lib.thunderbird import MailMessage
 
 from .imap_trash import (
     ImapAccount,
+    ImapMessageNotFound,
     move_messages_to_trash,
     validate_move_candidate,
     verify_messages_available_for_move,
@@ -19,6 +20,7 @@ from .imap_trash import (
 class TrashPreviewRow:
     message: MailMessage
     host: str
+    username: str
     folder: str
     trash_folder: str
 
@@ -29,6 +31,13 @@ class TrashOutcome:
     subject: str
     status: str
     detail: str
+
+
+class TrashProposalUnavailable(RuntimeError):
+    def __init__(self, skipped: tuple[TrashOutcome, ...]) -> None:
+        self.skipped = skipped
+        detail = skipped[0].detail if skipped else "No messages are available to move"
+        super().__init__(detail)
 
 
 class TrashWorkflow:
@@ -57,7 +66,7 @@ class TrashWorkflow:
 
     def propose(
         self, messages: tuple[MailMessage, ...]
-    ) -> tuple[str, tuple[TrashPreviewRow, ...]]:
+    ) -> tuple[str, tuple[TrashPreviewRow, ...], tuple[TrashOutcome, ...]]:
         rows = []
         for message in messages:
             account, folder = validate_move_candidate(
@@ -69,15 +78,20 @@ class TrashWorkflow:
                 TrashPreviewRow(
                     message=message,
                     host=account.host,
+                    username=account.username,
                     folder=folder,
                     trash_folder=account.trash_folder,
                 )
             )
-        verify_messages_available_for_move(
-            messages,
-            self.accounts,
-            prefs_cache=self.prefs_cache,
-        )
+        skipped: tuple[TrashOutcome, ...] = ()
+        try:
+            verify_messages_available_for_move(
+                messages,
+                self.accounts,
+                prefs_cache=self.prefs_cache,
+            )
+        except ImapMessageNotFound:
+            rows, skipped = self._filter_available_rows(tuple(rows))
         token = secrets.token_urlsafe(32)
         now = time.time()
         for expired_token in [
@@ -85,10 +99,41 @@ class TrashWorkflow:
         ]:
             self._pending.pop(expired_token, None)
         self._pending[token] = (
-            tuple(message.header_message_id for message in messages),
+            tuple(row.message.header_message_id for row in rows),
             now + self.token_ttl_seconds,
         )
-        return token, tuple(rows)
+        return token, tuple(rows), skipped
+
+    def _filter_available_rows(
+        self, rows: tuple[TrashPreviewRow, ...]
+    ) -> tuple[list[TrashPreviewRow], tuple[TrashOutcome, ...]]:
+        available: list[TrashPreviewRow] = []
+        skipped = []
+        for row in rows:
+            try:
+                verify_messages_available_for_move(
+                    (row.message,),
+                    self.accounts,
+                    prefs_cache=self.prefs_cache,
+                )
+            except ImapMessageNotFound as exc:
+                skipped.append(
+                    TrashOutcome(
+                        message_id=row.message.header_message_id,
+                        subject=row.message.subject,
+                        status="skipped",
+                        detail=(
+                            f"{exc} Searched {row.message.header_message_id!r} "
+                            f"on {row.username}@{row.host}, starting from source "
+                            f"folder {row.folder!r}."
+                        ),
+                    )
+                )
+            else:
+                available.append(row)
+        if not available and skipped:
+            raise TrashProposalUnavailable(tuple(skipped))
+        return available, tuple(skipped)
 
     def pop_pending(self, token: str) -> tuple[str, ...] | None:
         pending = self._pending.pop(token, None)

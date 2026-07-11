@@ -302,18 +302,19 @@ def _search_message_uids(
             uids = data[0].split() if data else []
             if uids:
                 return uids
-        return []
-    else:
+    for candidate in (f"<{message_id}>", message_id):
         status, data = connection.uid(
             "SEARCH",
-            None,
             "HEADER",
             "Message-ID",
-            _quoted_mailbox(f"<{message_id}>"),
+            _quoted_mailbox(candidate),
         )
-    if status != "OK":
-        raise RuntimeError("IMAP message search failed")
-    return data[0].split() if data else []
+        if status != "OK":
+            raise RuntimeError("IMAP message search failed")
+        uids = data[0].split() if data else []
+        if uids:
+            return uids
+    return []
 
 
 def _post_login_capabilities(connection: imaplib.IMAP4_SSL) -> set[str]:

@@ -50,6 +50,13 @@ share of window mail, and most recent date. Rows link to exact sender/domain
 list filters and can preview an ordinary reviewed personal-rule proposal. Stats
 use no model, network call, or persistent historical table.
 
+The main mail view can be filtered to one configured IMAP account at a time.
+Use the **Account** selector to process a high-volume account such as
+`dabak6812@gmail.com` first, then switch to the remaining accounts. The filter
+is preserved across mark-read, summarize, rule-preview, refresh, and Trash
+confirmation flows so batch Trash review operates on the selected account's
+visible messages rather than a mixed-account list.
+
 `static/htmx.min.js` is the pinned HTMX 2.0.4 browser distribution from the
 official `bigskysoftware/htmx` release. See `static/HTMX-PROVENANCE.txt`.
 
@@ -87,12 +94,18 @@ second confirmation before mutation. It does not fall back to copy/delete or
 write Thunderbird mbox files.
 
 Select one or more message-row checkboxes, then choose **Review selected for
-Trash…**. The proposal lists every selected sender, subject, account, source,
-and destination. Confirmation is bound to that exact selection. Moves execute
-sequentially within each selected account; the outcome page reports each
-success, failure, or message skipped because it left the snapshot. Only
-successful moves disappear locally. Collapsed ignore groups provide a
-client-side select-all control; selection alone never authorizes a move.
+Trash…**. The proposal lists each verified sender, subject, account, source,
+and destination. Confirmation is bound to that exact verified selection. Moves
+execute sequentially within each selected account; the outcome page reports each
+success, failure, or message skipped because it left the snapshot. If a mixed
+batch includes messages that the server preflight can no longer find, those
+stale messages are left out of the confirmation token and listed as skipped;
+the still-verified subset can continue to confirmation. Server-missing skipped
+messages are recorded in the assistant's local database and suppressed from
+future snapshots so stale Thunderbird cache rows stop reappearing. Only
+successful moves disappear locally as server actions. Collapsed ignore groups
+provide a client-side select-all control; selection alone never authorizes a
+move.
 
 Messages already observed in a configured Trash folder are filtered out of the
 assistant snapshot, so they do not appear in message lists, all-view results, or

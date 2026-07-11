@@ -18,6 +18,7 @@ from .imap_trash import (  # noqa: E402
     ImapAccount,
     _all_mailbox,
     _quoted_mailbox,
+    _validated_message_id,
     account_for_message,
     load_imap_accounts,
 )
@@ -83,6 +84,18 @@ def _raw_search(connection: imaplib.IMAP4_SSL, query: str) -> list[bytes]:
     return data[0].split() if data else []
 
 
+def _header_search(connection: imaplib.IMAP4_SSL, value: str) -> list[bytes]:
+    status, data = connection.uid(
+        "SEARCH",
+        "HEADER",
+        "Message-ID",
+        _quoted_mailbox(value),
+    )
+    if status != "OK":
+        raise RuntimeError(f"HEADER Message-ID search failed: {status}")
+    return data[0].split() if data else []
+
+
 def _header_fields(connection: imaplib.IMAP4_SSL, uid: bytes) -> tuple[str, str]:
     status, data = connection.uid(
         "FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID SUBJECT)])"
@@ -105,7 +118,11 @@ def _header_fields(connection: imaplib.IMAP4_SSL, uid: bytes) -> tuple[str, str]
     return str(headers.get("Subject", "")), str(headers.get("Message-ID", ""))
 
 
-def _probe_account(account: ImapAccount, subject: str, message_ids: set[str]) -> None:
+def _probe_account(
+    account: ImapAccount,
+    subject: str | None,
+    message_ids: set[str],
+) -> None:
     password = os.getenv(account.password_env)
     print(
         f"\nACCOUNT host={account.host!r} username={account.username!r} "
@@ -145,22 +162,27 @@ def _probe_account(account: ImapAccount, subject: str, message_ids: set[str]) ->
         for message_id in sorted(message_ids):
             bare = _raw_search(connection, f"rfc822msgid:{message_id}")
             bracketed = _raw_search(connection, f"rfc822msgid:<{message_id}>")
+            header_bracketed = _header_search(connection, f"<{message_id}>")
+            header_bare = _header_search(connection, message_id)
             print(
                 f"  snapshot_message_id={message_id!r} "
                 f"bare_uids={[uid.decode('ascii', errors='replace') for uid in bare]} "
-                f"bracketed_uids={[uid.decode('ascii', errors='replace') for uid in bracketed]}"
+                f"bracketed_uids={[uid.decode('ascii', errors='replace') for uid in bracketed]} "
+                f"header_bracketed_uids={[uid.decode('ascii', errors='replace') for uid in header_bracketed]} "
+                f"header_bare_uids={[uid.decode('ascii', errors='replace') for uid in header_bare]}"
             )
-        subject_uids = _raw_search(connection, f'subject:"{subject}"')
-        print(
-            "  subject_search_uids="
-            f"{[uid.decode('ascii', errors='replace') for uid in subject_uids]}"
-        )
-        for uid in subject_uids:
-            server_subject, server_message_id = _header_fields(connection, uid)
+        if subject is not None:
+            subject_uids = _raw_search(connection, f'subject:"{subject}"')
             print(
-                f"  UID {uid.decode('ascii', errors='replace')}: "
-                f"Subject={server_subject!r} Message-ID={server_message_id!r}"
+                "  subject_search_uids="
+                f"{[uid.decode('ascii', errors='replace') for uid in subject_uids]}"
             )
+            for uid in subject_uids:
+                server_subject, server_message_id = _header_fields(connection, uid)
+                print(
+                    f"  UID {uid.decode('ascii', errors='replace')}: "
+                    f"Subject={server_subject!r} Message-ID={server_message_id!r}"
+                )
     finally:
         try:
             connection.logout()
@@ -173,6 +195,12 @@ def main() -> int:
         description="Read-only Gmail lookup diagnosis; prints subjects and Message-IDs only."
     )
     parser.add_argument("--subject")
+    parser.add_argument(
+        "--message-id",
+        action="append",
+        default=[],
+        help="Probe one bare Message-ID directly; may be supplied multiple times.",
+    )
     parser.add_argument(
         "--list-subjects",
         action="store_true",
@@ -201,20 +229,25 @@ def main() -> int:
     if args.list_subjects:
         _print_subject_hints(args.database, args.contains)
         return 0
-    if not args.subject:
-        parser.error("--subject is required unless --list-subjects is used")
+    if not args.subject and not args.message_id:
+        parser.error("--subject or --message-id is required unless --list-subjects is used")
     if args.subject == "Exact failing message subject":
         parser.error(
             "replace the placeholder with the actual subject text from the failing message"
         )
-    subject = _validated_subject(args.subject)
+    subject = _validated_subject(args.subject) if args.subject else None
     accounts = load_imap_accounts(args.imap_accounts)
-    messages = _snapshot_messages(args.database, subject)
-    if not messages:
+    messages = _snapshot_messages(args.database, subject) if subject else ()
+    if subject and not messages:
         print("No cached snapshot message has that exact subject.")
         _print_subject_hints(args.database, args.contains or subject)
         return 2
-    print(f"SNAPSHOT exact_subject_matches={len(messages)}")
+    message_ids = {
+        _validated_message_id(message_id) for message_id in args.message_id
+    }
+    message_ids.update(message.header_message_id for message in messages)
+    if messages:
+        print(f"SNAPSHOT exact_subject_matches={len(messages)}")
     for index, message in enumerate(messages, start=1):
         folder_uri = message.metadata.folder_uri if message.metadata else None
         try:
@@ -229,7 +262,6 @@ def main() -> int:
             f"folder_uri={folder_uri!r} mbox_path={str(message.mbox_path)!r} "
             f"resolution={resolution}"
         )
-    message_ids = {message.header_message_id for message in messages}
     for account in accounts:
         _probe_account(account, subject, message_ids)
     return 0

@@ -54,6 +54,11 @@ class AssistantStore:
                     detail TEXT NOT NULL,
                     updated_at REAL NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS server_missing (
+                    header_message_id TEXT PRIMARY KEY,
+                    detail TEXT NOT NULL,
+                    updated_at REAL NOT NULL
+                );
                 """
             )
             connection.commit()
@@ -116,6 +121,29 @@ class AssistantStore:
         if row is None:
             return None
         return str(row["status"]), str(row["detail"])
+
+    def record_server_missing(
+        self,
+        header_message_id: str,
+        *,
+        detail: str,
+        updated_at: float | None = None,
+    ) -> None:
+        timestamp = time.time() if updated_at is None else updated_at
+        with closing(self._connect()) as connection:
+            connection.execute(
+                "INSERT OR REPLACE INTO server_missing "
+                "(header_message_id, detail, updated_at) VALUES (?, ?, ?)",
+                (header_message_id, detail, timestamp),
+            )
+            connection.commit()
+
+    def server_missing_ids(self) -> set[str]:
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                "SELECT header_message_id FROM server_missing"
+            ).fetchall()
+        return {str(row["header_message_id"]) for row in rows}
 
     def get_summary(self, section_key: str, model: str, prompt_version: str) -> str | None:
         with closing(self._connect()) as connection:

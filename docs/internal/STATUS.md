@@ -1,17 +1,17 @@
 # Repo Status
 
-Last updated: 2026-07-08
+Last updated: 2026-07-11
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: MAIL-02 MVP COMPLETE; post-MVP mail-assistant hardening and adoption
-observation are active. Neural memory remains parked and output-isolated;
+**Phase: MAIL-02 MVP COMPLETE; mail-assistant adoption observation closed.
+Neural memory remains parked and output-isolated;
 NAV-TEST-00 is available; knowledge-curation MVP remains complete.**
 
-**mail_lib — current active project.** MAIL-00 shipped a script-first, deterministic Thunderbird
+**mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
 reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
 extensionless mbox files as the source of truth, joins Gloda metadata by bracket-stripped
 `Message-ID`, treats Gloda as lagging enrichment, and remains read-only against the Thunderbird
@@ -37,11 +37,16 @@ validation forced Gmail post-auth capability refresh, Gmail `X-GM-RAW` Message-I
 SPECIAL-USE All Mail fallback, Trash-folder filtering, per-row eligibility reasons, read-only
 proposal preflight, and one IMAP session per selected account during proposal and commit.
 
-The current gate is continued private adoption observation. No outcome for the planned two-week
-run is recorded yet. F1 chat, F2 IMAP `\Seen` propagation, F3 `rag_lib`, F4 `engram`, and F5
-interest scoring remain dormant until their triggers in
-`docs/projects/mail_lib/SPEC-MAIL-02-assistant-app.md` fire. See the newest update in
-`SESSION_HANDOFF.md`.
+The private adoption observation concluded on 2026-07-11: the assistant is
+closed as an active daily-use product direction because it competed with
+Thunderbird/Gmail on their mature reading and state-management surface. The
+LLM features were not the bottleneck; state duplication, sync drift, and
+incumbent-client ergonomics were. Keep `mail_lib` and the assistant code as a
+deterministic local-mail example/case study, but do not expand it into a
+general mail client. See
+`docs/projects/mail_lib/POSTMORTEM-MAIL-ASSISTANT.md`. F1 chat, F2 IMAP
+`\Seen` propagation, F3 `rag_lib`, F4 `engram`, and F5 interest scoring remain
+dormant unless a new non-client-replacement mandate appears.
 
 Earlier neural-memory and knowledge-curation threads both concluded by *declining* to build the
 larger system their investigations started toward — each on evidence, per the governing rule
@@ -81,7 +86,7 @@ NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `c95b8ab` as a
 confined, read-only Qwen3.6 repository-navigation evaluation with external
 ground truth and result storage.
 
-Next project: complete MAIL-02 adoption observation and specify only failures forced by that run.
+Next project: choose a new non-mail direction only after grounding it in the current repo state.
 Standing backlog (none gate-blocking): course-repo extraction, TOPOLOGY-01
 conversion (ADR-015), and neural reactivation only under a new mandate.
 

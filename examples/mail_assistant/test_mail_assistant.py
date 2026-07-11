@@ -25,6 +25,7 @@ from mail_lib.thunderbird import MailMessage, MessageMetadata
 from mail_lib.triage import Priority
 
 from .imap_trash import ImapMessageNotFound
+from . import diagnose_imap_lookup
 from .rules import RuleTransactionService
 from .seen_workflow import SeenOutcome
 from .services import (
@@ -96,14 +97,21 @@ def test_store_is_app_owned_and_idempotent(tmp_path: Path) -> None:
     AssistantStore(path)
     store.mark_read("one", read_at=1.0)
     store.record_seen_propagation("one", status="failed", detail="network unavailable", updated_at=1.5)
+    store.record_server_missing("missing", detail="not on server", updated_at=1.75)
     store.put_summary("key", "model", "v1", "summary", created_at=2.0)
 
     assert store.read_ids() == {"one"}
     assert store.seen_propagation_status("one") == ("failed", "network unavailable")
+    assert store.server_missing_ids() == {"missing"}
     assert store.get_summary("key", "model", "v1") == "summary"
     with sqlite3.connect(path) as connection:
         tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master")}
-    assert {"read_state", "seen_propagation", "section_summary_cache"} <= tables
+    assert {
+        "read_state",
+        "seen_propagation",
+        "server_missing",
+        "section_summary_cache",
+    } <= tables
     assert "processed_messages" not in tables
     assert path.stat().st_mode & 0o777 == 0o600
     assert tmp_path.stat().st_mode & 0o777 == 0o700
@@ -505,6 +513,7 @@ def test_mail_route_state_builds_return_urls_and_template_values() -> None:
         "window_unit": "weeks",
         "sender_filter": "a+b@example.test",
         "domain_filter": "",
+        "account_filter": "",
     }
 
 
@@ -1206,6 +1215,49 @@ def test_trash_requires_preview_then_removes_only_after_move(
     asyncio.run(exercise())
 
 
+def test_account_filter_limits_message_list_and_trash_form_scope(tmp_path: Path) -> None:
+    config_path = tmp_path / "imap.toml"
+    config_path.write_text(
+        "[[account]]\nhost='imap.gmail.com'\nusername='dabak6812@gmail.com'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='[Gmail]/Trash'\n"
+        "[[account]]\nhost='imap.gmail.com'\nusername='jdean314159@gmail.com'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='[Gmail]/Trash'\n",
+        encoding="utf-8",
+    )
+    dabak = _message(
+        "dabak@example.test",
+        subject="Dabak account message",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://dabak6812%40gmail.com@imap.gmail.com/INBOX",
+    )
+    jdean = _message(
+        "jdean@example.test",
+        subject="Jdean account message",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://jdean314159%40gmail.com@imap.gmail.com/INBOX",
+    )
+    app = _web_app(tmp_path, dabak, imap_accounts_path=config_path)
+    app.state.mail._reader = lambda _path: [dabak, jdean]
+    app.state.mail.refresh()
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            page = await client.get("/?view=all&account=dabak6812@gmail.com")
+            assert page.status_code == 200
+            assert "Dabak account message" in page.text
+            assert "Jdean account message" not in page.text
+            assert '<option value="dabak6812@gmail.com" selected>' in page.text
+            assert 'class="account-filter"' in page.text
+            assert "Apply filters" in page.text
+            assert 'name="account_filter" value="dabak6812@gmail.com"' in page.text
+            assert "Trash target: dabak6812@gmail.com INBOX → [Gmail]/Trash" in page.text
+
+    asyncio.run(exercise())
+
+
 def test_configured_trash_messages_are_excluded_from_refresh_and_cache(
     tmp_path: Path,
 ) -> None:
@@ -1341,13 +1393,131 @@ def test_batch_trash_proposal_rejects_message_missing_from_imap_server(
                 },
             )
             assert response.status_code == 400
-            assert "No messages were moved." in response.text
+            assert "No selected messages are currently available to move." in response.text
             assert "Message was not found on the IMAP server" in response.text
             assert "snapshot refresh has been queued" in response.text
-            assert 'href="/?view=unread&amp;window_value=1&amp;window_unit=weeks"' in response.text
             assert "trash_token" not in response.text
+            assert app.state.store.server_missing_ids() == {stale.header_message_id}
+            assert stale.header_message_id not in {
+                item.header_message_id for item in app.state.mail.state.messages
+            }
             assert app.state.refresh_task is not None
             await app.state.refresh_task
+            page = await client.get("/?view=all")
+            assert stale.subject not in page.text
+
+    asyncio.run(exercise())
+
+
+def test_diagnose_imap_lookup_accepts_direct_message_id(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    probed = []
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "diagnose_imap_lookup",
+            "--message-id",
+            "one@example.test",
+            "--database",
+            str(tmp_path / "missing.db"),
+        ],
+    )
+    monkeypatch.setattr(diagnose_imap_lookup, "load_imap_accounts", lambda _path: ())
+    monkeypatch.setattr(
+        diagnose_imap_lookup,
+        "_probe_account",
+        lambda account, subject, message_ids: probed.append(
+            (account, subject, message_ids)
+        ),
+    )
+
+    assert diagnose_imap_lookup.main() == 0
+    assert probed == []
+
+
+def test_batch_trash_proposal_skips_missing_message_and_confirms_available_subset(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "imap.toml"
+    config_path.write_text(
+        "[[account]]\nhost='imap.example.test'\nusername='user@example.test'\n"
+        "password_env='TEST_IMAP_PASSWORD'\ntrash_folder='Trash'\n",
+        encoding="utf-8",
+    )
+    good = _message(
+        "good@example.test",
+        subject="Available message",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    stale = _message(
+        "stale@example.test",
+        subject="Stale local cache row",
+        date=datetime.now(timezone.utc).isoformat(),
+        folder_uri="imap://user%40example.test@imap.example.test/INBOX",
+    )
+    app = _web_app(tmp_path, good, imap_accounts_path=config_path)
+    app.state.mail._reader = lambda _path: [good, stale]
+    app.state.mail.refresh()
+
+    def preflight(messages, _accounts, *, prefs_cache=None):
+        if any(
+            message.header_message_id == stale.header_message_id
+            for message in messages
+        ):
+            raise ImapMessageNotFound("Message was not found on the IMAP server")
+
+    moved = []
+    monkeypatch.setattr(
+        "examples.mail_assistant.trash_workflow.verify_messages_available_for_move",
+        preflight,
+    )
+    monkeypatch.setattr(
+        "examples.mail_assistant.trash_workflow.move_messages_to_trash",
+        lambda messages, _accounts, *, prefs_cache=None: {
+            message.header_message_id: (
+                moved.append(message.header_message_id) and None
+            )
+            for message in messages
+        },
+    )
+
+    async def exercise() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            preview = await client.post(
+                "/trash/propose",
+                data={
+                    "message_ids": [good.header_message_id, stale.header_message_id],
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert preview.status_code == 200
+            assert "Confirm move of 1 message to Trash" in preview.text
+            assert "Stale local cache row" in preview.text
+            assert app.state.store.server_missing_ids() == {stale.header_message_id}
+            assert stale.header_message_id not in {
+                item.header_message_id for item in app.state.mail.state.messages
+            }
+            token = re.search(r'name="trash_token" value="([^"]+)"', preview.text)
+            assert token is not None
+
+            committed = await client.post(
+                "/trash/commit",
+                data={
+                    "trash_token": token.group(1),
+                    "csrf_token": app.state.csrf_token,
+                },
+            )
+            assert committed.status_code == 200
+            assert moved == [good.header_message_id]
+            assert "Available message" in committed.text
+            assert "Stale local cache row" not in committed.text
+            if app.state.refresh_task is not None:
+                await app.state.refresh_task
 
     asyncio.run(exercise())
 

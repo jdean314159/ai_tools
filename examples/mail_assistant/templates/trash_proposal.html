@@ -1,8 +1,15 @@
 <aside class="proposal">
   <h3>Confirm Move to Trash</h3>
   <p>No messages move until you confirm this exact batch.</p>
+  {% if skipped %}
+  <p>{{ skipped|length }} selected message{% if skipped|length != 1 %}s were{% else %} was{% endif %} not included because the server preflight could not find {% if skipped|length != 1 %}them{% else %}it{% endif %}.</p>
+  <table><thead><tr><th>Subject</th><th>Status</th></tr></thead><tbody>
+  {% for item in skipped %}<tr><td>{{ item.subject }}</td><td>{{ item.detail }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  {% if rows %}
   <table><thead><tr><th>Sender</th><th>Subject</th><th>Account</th><th>Source</th><th>Destination</th></tr></thead><tbody>
-  {% for row in rows %}<tr><td>{{ row.message.sender }}</td><td>{{ row.message.subject }}</td><td>{{ row.host }}</td><td>{{ row.folder }}</td><td>{{ row.trash_folder }}</td></tr>{% endfor %}
+  {% for row in rows %}<tr><td>{{ row.message.sender }}</td><td>{{ row.message.subject }}</td><td>{{ row.username }}@{{ row.host }}</td><td>{{ row.folder }}</td><td>{{ row.trash_folder }}</td></tr>{% endfor %}
   </tbody></table>
   <form method="post" action="/trash/commit">
     <input type="hidden" name="trash_token" value="{{ token }}">
@@ -12,6 +19,12 @@
     <input type="hidden" name="window_unit" value="{{ window_unit }}">
     <input type="hidden" name="sender_filter" value="{{ sender_filter }}">
     <input type="hidden" name="domain_filter" value="{{ domain_filter }}">
-    <button type="submit">Confirm move of {{ rows|length }} messages to Trash</button>
+    <input type="hidden" name="account_filter" value="{{ account_filter }}">
+    <button type="submit">Confirm move of {{ rows|length }} message{% if rows|length != 1 %}s{% endif %} to Trash</button>
   </form>
+  {% else %}
+  <p>No selected messages are currently available to move.</p>
+  <p>A mail-assistant snapshot refresh has been queued. If Thunderbird still shows these messages, refresh/sync Thunderbird first, then reload the assistant after the background refresh completes.</p>
+  <p><a href="{{ return_url }}">Return to the message list</a></p>
+  {% endif %}
 </aside>

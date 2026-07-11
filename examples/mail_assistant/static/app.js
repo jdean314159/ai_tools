@@ -10,6 +10,11 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  const accountFilter = event.target.closest(".account-filter");
+  if (accountFilter) {
+    accountFilter.form.requestSubmit();
+    return;
+  }
   const control = event.target.closest(".select-trash-visible");
   if (!control) return;
   const group = control.dataset.trashGroup;

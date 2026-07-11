@@ -1,6 +1,6 @@
 # ai_tools — Session Handoff (for new thread / Codex)
 
-**Date:** 2026-07-08
+**Date:** 2026-07-11
 **Read order for any new thread:** `docs/internal/STATUS.md` first, then this
 file. For a neural-memory thread also read ADR-016 and
 `docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`. For mail_lib: this file →
@@ -15,6 +15,29 @@ STATUS.md is the standing state; this file is "what just happened and the next a
 ---
 
 ## TL;DR
+
+## Update — 2026-07-11 (MAIL assistant closed)
+
+MAIL-02 adoption observation is complete. The local mail assistant should no
+longer be treated as the active product direction. The post-mortem is
+`docs/projects/mail_lib/POSTMORTEM-MAIL-ASSISTANT.md`.
+
+Conclusion: the assistant failed adoption because it competed with
+Thunderbird/Gmail on their mature reading, sync, and state-management surface.
+The LLM features were not the bottleneck. State duplication, stale local cache
+rows, account/folder drift, and incumbent-client ergonomics dominated. Keep
+`mail_lib` and `examples/mail_assistant` as harvested code and a case study;
+do not expand the assistant into a general mail client.
+
+What was harvested: deterministic Thunderbird ingestion, personal rules,
+snapshot/cache patterns, reviewed config mutation, section-summary boundaries,
+and IMAP safety lessons. The next daily-tool candidate should avoid replacing a
+mature incumbent's main surface and should target a workflow with no coherent
+existing tool.
+
+For a new Claude thread, read `docs/internal/STATUS.md` first, then the
+post-mortem above. Older mail updates below are historical context, not current
+next actions.
 
 ## Update — 2026-07-07 (MAIL-02 post-MVP hardening)
 

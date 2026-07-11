@@ -103,6 +103,41 @@ def test_iter_messages_uses_msf_state_when_mbox_status_is_stale(tmp_path: Path) 
     assert loaded.read_state_source == "msf"
 
 
+def test_iter_messages_skips_mbox_records_absent_from_parseable_msf(tmp_path: Path) -> None:
+    folder = tmp_path / "ImapMail" / "imap.example.test"
+    folder.mkdir(parents=True)
+    inbox = folder / "INBOX"
+    box = mailbox.mbox(inbox)
+    try:
+        for message_id in ("visible@example.test", "stale@example.test"):
+            message = EmailMessage()
+            message["Message-ID"] = f"<{message_id}>"
+            message["From"] = "sender@example.test"
+            message["To"] = "user@example.test"
+            message["Subject"] = message_id
+            message.set_content("body")
+            box.add(message)
+        box.flush()
+    finally:
+        box.close()
+    inbox.with_name("INBOX.msf").write_text(
+        """
+// <!-- <mdb:mork:z v="1.4"/> -->
+< <(80=ns:msg:db:row:scope:msgs:all)(83=message-id)(88=flags)> >
+<(90
+    =visible@example.test)>
+[-1(^83^90)(^88=1)]
+""",
+        encoding="utf-8",
+    )
+
+    messages = list(iter_messages(tmp_path))
+
+    assert [message.header_message_id for message in messages] == [
+        "visible@example.test"
+    ]
+
+
 def test_msf_read_state_wins_when_duplicate_has_stale_mbox_state() -> None:
     msf_read = MailMessage(
         header_message_id="duplicate@example.test",

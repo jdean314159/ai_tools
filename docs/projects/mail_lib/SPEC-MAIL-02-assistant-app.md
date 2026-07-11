@@ -411,9 +411,16 @@ server-side `MOVE` requirement, again grouped by account rather than opening one
 connection per message. IMAP moves cannot be rolled back as one transaction:
 failures are recorded per message and do not suppress later attempts;
 disappeared snapshot messages are skipped; only successful moves are removed
-from app state. Any unsafe Message-ID, mailbox, unresolved account, or server
-preflight mismatch rejects the whole proposal before authorization. Rules and
-model output cannot authorize or execute trash actions.
+from app state. Any unsafe Message-ID, mailbox, unresolved account, or
+non-stale server preflight mismatch rejects the whole proposal before
+authorization. If a grouped preflight reports that one or more selected messages
+were not found on the IMAP server, proposal creation rechecks the selected
+messages individually, excludes the stale rows from the confirmation token, and
+lists them as skipped; if none remain available, the proposal is rejected.
+Rows proven missing from the IMAP server are recorded in app-owned local state
+and suppressed from subsequent snapshots so Thunderbird cache artifacts do not
+remain actionable. Rules and model output cannot authorize or execute trash
+actions.
 
 ## 18. Sender/domain volume statistics amendment (2026-07-06)
 

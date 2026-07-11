@@ -85,7 +85,7 @@ def test_mark_seen_matches_exact_message_and_stores_seen(monkeypatch) -> None:
     assert (
         "uid",
         "SEARCH",
-        (None, "HEADER", "Message-ID", '"<one@example.test>"'),
+        ("HEADER", "Message-ID", '"<one@example.test>"'),
     ) in calls
     assert ("uid", "STORE", (b"42", "+FLAGS.SILENT", r"(\Seen)")) in calls
     assert calls[-1] == ("logout",)

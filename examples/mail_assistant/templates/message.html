@@ -16,6 +16,7 @@
     <input type="hidden" name="window_unit" value="{{ window_unit }}">
     <input type="hidden" name="sender_filter" value="{{ sender_filter }}">
     <input type="hidden" name="domain_filter" value="{{ domain_filter }}">
+    <input type="hidden" name="account_filter" value="{{ account_filter }}">
     <button type="submit">{% if seen_enabled %}Mark read and sync \Seen{% else %}Mark locally read{% endif %}</button>
   </form>
   {% if seen_status_by_id.get(item.message.header_message_id) %}<p><small>Seen sync: {{ seen_status_by_id[item.message.header_message_id] }}</small></p>{% endif %}
@@ -27,6 +28,7 @@
     <input type="hidden" name="window_unit" value="{{ window_unit }}">
     <input type="hidden" name="sender_filter" value="{{ sender_filter }}">
     <input type="hidden" name="domain_filter" value="{{ domain_filter }}">
+    <input type="hidden" name="account_filter" value="{{ account_filter }}">
     <label>Match <select name="field"><option>sender</option><option>domain</option><option>subject</option></select></label>
     <label>Priority <select name="priority"><option>urgent</option><option>normal</option><option>low</option><option>ignore</option></select></label>
     <label>Action <select name="action"><option>none</option><option>summarize</option><option>ignore</option></select></label>

@@ -40,7 +40,7 @@ from .imap_trash import (
     account_for_message,
     load_imap_accounts,
 )
-from .trash_workflow import TrashOutcome, TrashWorkflow
+from .trash_workflow import TrashOutcome, TrashProposalUnavailable, TrashWorkflow
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -97,6 +97,7 @@ class MailRouteState:
     window_unit: str
     sender_filter: str | None = None
     domain_filter: str | None = None
+    account_filter: str | None = None
 
     def query(self) -> str:
         values = {
@@ -108,6 +109,8 @@ class MailRouteState:
             values["sender"] = self.sender_filter
         if self.domain_filter:
             values["domain"] = self.domain_filter
+        if self.account_filter:
+            values["account"] = self.account_filter
         return urlencode(values)
 
     def url(self) -> str:
@@ -120,6 +123,7 @@ class MailRouteState:
             "window_unit": self.window_unit,
             "sender_filter": self.sender_filter or "",
             "domain_filter": self.domain_filter or "",
+            "account_filter": self.account_filter or "",
         }
 
 
@@ -186,8 +190,11 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     prefs_cache = {}
     trash_workflow = TrashWorkflow(imap_accounts, prefs_cache=prefs_cache)
     seen_workflow = SeenWorkflow(store, imap_accounts, prefs_cache=prefs_cache)
+    server_missing_ids = store.server_missing_ids()
 
     def include_message(message: MailMessage) -> bool:
+        if message.header_message_id in server_missing_ids:
+            return False
         if not imap_accounts:
             return True
         try:
@@ -204,6 +211,23 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             != account.trash_folder.casefold().strip("/")
             for observed in observed_folders
         )
+
+    def message_account_username(message: MailMessage) -> str | None:
+        if not imap_accounts:
+            return None
+        try:
+            account, _folder = account_for_message(
+                message,
+                imap_accounts,
+                prefs_cache=prefs_cache,
+            )
+        except ValueError:
+            return None
+        return account.username
+
+    account_filter_options = tuple(
+        dict.fromkeys(account.username for account in imap_accounts)
+    )
 
     mail = MailAssistantService(
         config.profile,
@@ -318,6 +342,20 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         )
         return True
 
+    def suppress_server_missing(outcomes: tuple[TrashOutcome, ...]) -> None:
+        ids = [outcome.message_id for outcome in outcomes if outcome.status == "skipped"]
+        if not ids:
+            return
+        for outcome in outcomes:
+            if outcome.status != "skipped":
+                continue
+            store.record_server_missing(outcome.message_id, detail=outcome.detail)
+            server_missing_ids.add(outcome.message_id)
+        try:
+            mail.remove_messages(ids)
+        except KeyError:
+            pass
+
     @app.middleware("http")
     async def response_security(request: Request, call_next):
         response = await call_next(request)
@@ -371,6 +409,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         notice: str | None = None,
         sender_filter: str | None = None,
         domain_filter: str | None = None,
+        account_filter: str | None = None,
         limit: int = 50,
     ) -> dict[str, Any]:
         rules = current_rules()
@@ -398,6 +437,19 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        normalized_account_filter = (account_filter or "").strip().casefold()
+        if normalized_account_filter:
+            groups = {
+                priority: tuple(
+                    item
+                    for item in messages
+                    if (
+                        message_account_username(item.message) or ""
+                    ).casefold()
+                    == normalized_account_filter
+                )
+                for priority, messages in groups.items()
+            }
         trash_eligible_ids: set[str] = set()
         trash_status_by_id: dict[str, str] = {}
         seen_status_by_id: dict[str, str] = {}
@@ -431,6 +483,8 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             "seen_status_by_id": seen_status_by_id,
             "sender_filter": sender_filter or "",
             "domain_filter": domain_filter or "",
+            "account_filter": account_filter or "",
+            "account_filter_options": account_filter_options,
             "display_limit": display_limit(limit),
         }
 
@@ -442,6 +496,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = DEFAULT_WINDOW_UNIT,
         sender: str | None = None,
         domain: str | None = None,
+        account: str | None = None,
         limit: int = 50,
     ):
         return templates.TemplateResponse(
@@ -454,6 +509,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 window_unit=window_unit,
                 sender_filter=sender,
                 domain_filter=domain,
+                account_filter=account,
                 limit=limit,
             ),
         )
@@ -491,9 +547,17 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        account_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
-        route_state = MailRouteState(view, window_value, window_unit, sender_filter, domain_filter)
+        route_state = MailRouteState(
+            view,
+            window_value,
+            window_unit,
+            sender_filter,
+            domain_filter,
+            account_filter,
+        )
         start_background_refresh(max_age_days=window_days(window_value, window_unit))
         return RedirectResponse(url=route_state.url(), status_code=303)
 
@@ -530,9 +594,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        account_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
-        route_state = MailRouteState(view, window_value, window_unit, sender_filter, domain_filter)
+        route_state = MailRouteState(
+            view, window_value, window_unit, sender_filter, domain_filter, account_filter
+        )
         by_id = {item.header_message_id: item for item in mail.state.messages}
         message = by_id.get(message_id)
         if message is None:
@@ -553,6 +620,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 window_unit=route_state.window_unit,
                 sender_filter=route_state.sender_filter,
                 domain_filter=route_state.domain_filter,
+                account_filter=route_state.account_filter,
             ),
         )
 
@@ -566,9 +634,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        account_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
-        route_state = MailRouteState(view, window_value, window_unit, sender_filter, domain_filter)
+        route_state = MailRouteState(
+            view, window_value, window_unit, sender_filter, domain_filter, account_filter
+        )
         selected_ids = tuple(dict.fromkeys(message_ids))
         if not selected_ids:
             raise HTTPException(status_code=400, detail="Select at least one message")
@@ -581,7 +652,10 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             def propose_selected_messages():
                 return trash_workflow.propose(selected_messages)
 
-            token, rows = await _run_blocking(propose_selected_messages, timeout=120)
+            token, rows, skipped = await _run_blocking(
+                propose_selected_messages,
+                timeout=120,
+            )
         except ImapMessageNotFound as exc:
             start_background_refresh(max_age_days=window_days(window_value, window_unit))
             return templates.TemplateResponse(
@@ -593,6 +667,23 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                     "error": str(exc),
                     "stale_snapshot": True,
                     "return_url": route_state.url(),
+                },
+                status_code=400,
+            )
+        except TrashProposalUnavailable as exc:
+            suppress_server_missing(exc.skipped)
+            start_background_refresh(max_age_days=window_days(window_value, window_unit))
+            return templates.TemplateResponse(
+                request,
+                "trash_proposal.html",
+                {
+                    "request": request,
+                    "rows": (),
+                    "skipped": exc.skipped,
+                    "token": "",
+                    "csrf_token": csrf_token,
+                    "return_url": route_state.url(),
+                    **route_state.template_values(),
                 },
                 status_code=400,
             )
@@ -609,14 +700,19 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 },
                 status_code=400,
             )
+        if skipped:
+            suppress_server_missing(skipped)
+            start_background_refresh(max_age_days=window_days(window_value, window_unit))
         return templates.TemplateResponse(
             request,
             "trash_proposal.html",
             {
                 "request": request,
                 "rows": rows,
+                "skipped": skipped,
                 "token": token,
                 "csrf_token": csrf_token,
+                "return_url": route_state.url(),
                 **route_state.template_values(),
             },
         )
@@ -631,9 +727,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        account_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
-        route_state = MailRouteState(view, window_value, window_unit, sender_filter, domain_filter)
+        route_state = MailRouteState(
+            view, window_value, window_unit, sender_filter, domain_filter, account_filter
+        )
         selected_ids = trash_workflow.pop_pending(trash_token)
         if selected_ids is None:
             raise HTTPException(status_code=400, detail="Unknown or expired trash token")
@@ -687,18 +786,33 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        account_filter: str | None = Form(None),
         summary_limit: int = Form(50),
     ):
         nonlocal summary_service
         require_csrf(request, csrf_token)
-        route_state = MailRouteState(view, window_value, window_unit, sender_filter, domain_filter)
-        messages = mail.visible(
+        route_state = MailRouteState(
+            view, window_value, window_unit, sender_filter, domain_filter, account_filter
+        )
+        visible_groups = mail.visible(
             current_rules().rules,
             view=route_state.view,
             max_age_days=window_days(route_state.window_value, route_state.window_unit),
             sender_filter=route_state.sender_filter,
             domain_filter=route_state.domain_filter,
-        )[section][:display_limit(summary_limit)]
+        )
+        if route_state.account_filter:
+            wanted_account = route_state.account_filter.casefold()
+            visible_groups = {
+                priority: tuple(
+                    item
+                    for item in messages
+                    if (message_account_username(item.message) or "").casefold()
+                    == wanted_account
+                )
+                for priority, messages in visible_groups.items()
+            }
+        messages = visible_groups[section][:display_limit(summary_limit)]
         if not messages:
             raise HTTPException(status_code=404, detail="Section is empty")
         full_messages = mail.full_messages(item.message.header_message_id for item in messages)
@@ -758,9 +872,12 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        account_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
-        route_state = MailRouteState(view, window_value, window_unit, sender_filter, domain_filter)
+        route_state = MailRouteState(
+            view, window_value, window_unit, sender_filter, domain_filter, account_filter
+        )
         messages = {item.header_message_id: item for item in mail.state.messages}
         message = messages.get(message_id) if message_id else None
         if message_id and message is None:
@@ -796,6 +913,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         window_unit: str = Form(DEFAULT_WINDOW_UNIT),
         sender_filter: str | None = Form(None),
         domain_filter: str | None = Form(None),
+        account_filter: str | None = Form(None),
     ):
         require_csrf(request, csrf_token)
         try:
@@ -814,6 +932,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 window_unit=window_unit,
                 sender_filter=sender_filter,
                 domain_filter=domain_filter,
+                account_filter=account_filter,
                 notice="Rule committed.",
             ),
         )

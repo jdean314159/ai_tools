@@ -551,6 +551,8 @@ def iter_messages(
                 if cutoff is not None and (message_dt is None or message_dt < cutoff):
                     continue
                 header_id = normalize_message_id(message.get("Message-ID"))
+                if msf_read_by_id and header_id not in msf_read_by_id:
+                    continue
                 metadata = metadata_by_id.get(header_id)
                 mail_message = _message_from_mbox(
                     message,

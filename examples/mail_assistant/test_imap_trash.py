@@ -93,7 +93,7 @@ def test_move_to_trash_matches_account_and_uses_atomic_move(monkeypatch) -> None
     assert (
         "uid",
         "SEARCH",
-        (None, "HEADER", "Message-ID", '"<one@example.test>"'),
+        ("HEADER", "Message-ID", '"<one@example.test>"'),
     ) in calls
     assert ("uid", "MOVE", (b"42", '"Trash"')) in calls
     assert calls[-1] == ("logout",)
@@ -362,6 +362,72 @@ def test_gmail_retries_raw_search_with_rfc_angle_brackets(monkeypatch) -> None:
     assert ("uid", "MOVE", (b"91", '"Trash"')) in connections[0].calls
 
 
+def test_gmail_falls_back_to_header_search_for_raw_message_id_miss(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    message_id = (
+        "jdean314159/ai_tools/check-suites/"
+        "CS_kwDOSKnSks8AAAASRkhmkg/1783598783@github.com"
+    )
+    connections = []
+
+    class GmailHeaderFallbackImap(FakeImap):
+        def capability(self):
+            self.calls.append(("capability",))
+            return "OK", [b"IMAP4rev1 UIDPLUS MOVE X-GM-EXT-1"]
+
+        def uid(self, command, *args):
+            self.calls.append(("uid", command, args))
+            if command == "SEARCH" and args[-1] == f'"{message_id}"':
+                return "OK", [b"77"]
+            if command == "SEARCH":
+                return "OK", [b""]
+            return "OK", []
+
+    def connect(*args, **kwargs):
+        connection = GmailHeaderFallbackImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    move_message_to_trash(
+        replace(_message(), header_message_id=message_id),
+        (account,),
+        connector=connect,
+    )
+
+    searches = [
+        call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")
+    ]
+    assert searches == [
+        (
+            "uid",
+            "SEARCH",
+            ("X-GM-RAW", f'"rfc822msgid:{message_id}"'),
+        ),
+        (
+            "uid",
+            "SEARCH",
+            ("X-GM-RAW", f'"rfc822msgid:<{message_id}>"'),
+        ),
+        (
+            "uid",
+            "SEARCH",
+            ("HEADER", "Message-ID", f'"<{message_id}>"'),
+        ),
+        (
+            "uid",
+            "SEARCH",
+            ("HEADER", "Message-ID", f'"{message_id}"'),
+        ),
+    ]
+    assert ("uid", "MOVE", (b"77", '"Trash"')) in connections[0].calls
+
+
 def test_message_id_search_quotes_valid_imap_special_characters(monkeypatch) -> None:
     account = ImapAccount(
         host="imap.example.test",
@@ -386,8 +452,52 @@ def test_message_id_search_quotes_valid_imap_special_characters(monkeypatch) -> 
     assert (
         "uid",
         "SEARCH",
-        (None, "HEADER", "Message-ID", '"<safe%tag@example.test>"'),
+        ("HEADER", "Message-ID", '"<safe%tag@example.test>"'),
     ) in connections[0].calls
+
+
+def test_header_search_retries_with_bare_message_id(monkeypatch) -> None:
+    account = ImapAccount(
+        host="imap.example.test",
+        username="user@example.test",
+        password_env="MAIL_TEST_PASSWORD",
+        trash_folder="Trash",
+    )
+    monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
+    connections = []
+
+    class BareHeaderImap(FakeImap):
+        def uid(self, command, *args):
+            self.calls.append(("uid", command, args))
+            if command == "SEARCH" and args[-1] == '"one@example.test"':
+                return "OK", [b"52"]
+            if command == "SEARCH":
+                return "OK", [b""]
+            return "OK", []
+
+    def connect(*args, **kwargs):
+        connection = BareHeaderImap(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    move_message_to_trash(_message(), (account,), connector=connect)
+
+    searches = [
+        call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")
+    ]
+    assert searches == [
+        (
+            "uid",
+            "SEARCH",
+            ("HEADER", "Message-ID", '"<one@example.test>"'),
+        ),
+        (
+            "uid",
+            "SEARCH",
+            ("HEADER", "Message-ID", '"one@example.test"'),
+        ),
+    ]
+    assert ("uid", "MOVE", (b"52", '"Trash"')) in connections[0].calls
 
 
 def test_move_to_trash_fails_closed_without_mapping_or_password(monkeypatch) -> None:
