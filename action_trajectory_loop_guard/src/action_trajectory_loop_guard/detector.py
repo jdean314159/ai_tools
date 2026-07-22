@@ -185,16 +185,6 @@ def _near_duplicate(current: _Action, prior: _Action) -> bool:
     if current.tool == "read_file":
         if _canonical_path(current.arguments.get("path")) != _canonical_path(prior.arguments.get("path")):
             return False
-        current_full = current.arguments.get("full") is True
-        prior_full = prior.arguments.get("full") is True
-        if current_full or prior_full:
-            if current_full and prior_full:
-                return True
-            bounded = prior.arguments if current_full else current.arguments
-            bounded_range = _read_range(bounded)
-            # A whole-file request begins at line 1. A bounded retry beginning
-            # there re-covers its prefix; a later slice is progressive recovery.
-            return bounded_range is not None and bounded_range[0] == 1
         current_range = _read_range(current.arguments)
         prior_range = _read_range(prior.arguments)
         if current_range is None or prior_range is None:
