@@ -1130,7 +1130,7 @@ class NavigationHarness:
     planner: BudgetedNavigationPlanner
     tools: NavigationToolRuntime
     max_steps: int = 25
-    action_guard_mode: str = "enforce"
+    action_guard_mode: str = "shadow"
 
     def run(self, question: str = LEAD_QUESTION, *, task_id: str = "nav-test-00") -> AgentRun:
         return self.runtime.run(AgentTask(task_id=task_id, goal=question, context={"navigation_root": str(self.root)}), max_steps=self.max_steps)
@@ -1146,7 +1146,7 @@ def build_navigation_harness(
     max_steps: int = 25,
     temperature: float = 0.0,
     metadata: dict[str, Any] | None = None,
-    action_guard_mode: str = "enforce",
+    action_guard_mode: str = "shadow",
 ) -> NavigationHarness:
     if max_steps < 1:
         raise NavigationConfigurationError("max_steps must be positive")

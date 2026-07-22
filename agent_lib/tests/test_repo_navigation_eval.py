@@ -372,7 +372,7 @@ def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:
     assert run.status == "completed"
     assert run.stop_reason == "completed"
     assert len(harness.tools.telemetry.calls) == 1
-    assert run.meta["action_guard"] == {"fired": False, "checks": 1, "mode": "enforce"}
+    assert run.meta["action_guard"] == {"fired": False, "checks": 1, "mode": "shadow"}
     assert tree_content_digest(repo) == before
 
 
@@ -433,6 +433,7 @@ def test_action_guard_uses_one_tool_free_finalization_call(repo: Path) -> None:
             minimum_output_reserve=10,
             per_call_output_cap=100,
         ),
+        action_guard_mode="enforce",
     )
 
     run = harness.run("Find the relevant evidence", task_id="guard-success")
@@ -476,6 +477,7 @@ def test_action_guard_stops_after_one_non_final_response(repo: Path) -> None:
             minimum_output_reserve=10,
             per_call_output_cap=100,
         ),
+        action_guard_mode="enforce",
     )
 
     run = harness.run("Find the relevant evidence", task_id="guard-no-answer")

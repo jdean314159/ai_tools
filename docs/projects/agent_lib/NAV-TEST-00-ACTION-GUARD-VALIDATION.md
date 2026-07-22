@@ -62,7 +62,33 @@ measure final-answer quality and realized end-to-end token savings.
 
 The runner exposes and records three modes: `off`, `shadow`, and `enforce`.
 Shadow mode records a would-fire boundary while leaving the planner trajectory
-unchanged; it is the required mode for broader false-positive calibration.
+unchanged; it is the default and the required mode for broader false-positive
+calibration.
+
+## Live enforcement smoke test — failed
+
+The first live deterministic seed-0 validation against candidate `c6c726a`
+did not reproduce the historical trajectory. The guard did not fire and the
+run exhausted its budget at 116,227 tokens with 11/12 evidence recall and no
+answer. The loop returned to earlier reads outside the detector's trailing
+12-action comparison window.
+
+A follow-up candidate (`f7b9cf7`) treated a failed whole-file read followed by
+a bounded line-1 retry as a near-duplicate. It fired at step 11 and finalized at
+32,526 tokens, but this was a false positive on legitimate result-size recovery:
+only 7/12 evidence regions had surfaced, evidence recall was 0.583, and answer
+correctness was 0.667 (8/12), below the predeclared 11/12 floor. Its supposedly
+truncated finalization prompt was also 96 tokens larger after context rebuilding
+(`5302` versus `5206`), exposing that step truncation does not guarantee prompt
+token savings under the current compaction policy. That detector change was
+reverted in `8d66406`.
+
+The remaining sampled enforcement runs were not launched after the smoke gate
+failed. Active enforcement is therefore not validated and must remain opt-in.
+The next investigation should run shadow mode over broader trajectories and
+separate legitimate size-recovery retries from true evidence-free cycles. Prompt
+selection also needs an evidence-centric budget representation before token
+savings can be claimed.
 
 ## Scope and remaining risk
 

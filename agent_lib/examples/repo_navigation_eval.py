@@ -156,7 +156,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--action-guard-mode",
         choices=("off", "shadow", "enforce"),
-        default="enforce",
+        default="shadow",
         help="Disable, observe, or enforce the action-trajectory loop guard",
     )
     return parser

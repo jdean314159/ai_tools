@@ -280,7 +280,9 @@ budget stops without an engine call. See
 
 The evaluation CLI records an explicit `--action-guard-mode`: `off` reproduces
 unguarded behavior, `shadow` records the first would-fire intervention without
-changing control flow, and `enforce` performs constrained finalization.
+changing control flow, and `enforce` performs constrained finalization. Shadow
+is the default because the first live enforcement smoke test failed its answer-
+quality gate; enforcement must be selected explicitly.
 
 See:
 
