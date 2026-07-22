@@ -423,6 +423,8 @@ class AgentRuntime:
             "original_step_count": original_step_count,
             **dict(directive.metadata),
         }
+        if isinstance(previous_telemetry, dict) and "detector_trace" in previous_telemetry:
+            guard_telemetry["detector_trace"] = previous_telemetry["detector_trace"]
 
         if isinstance(planner, FinalizingPlanner):
             action = planner.finalize(
@@ -624,6 +626,34 @@ class AgentRuntime:
                             "fired": isinstance(candidate, FinalizeOnce),
                             "checks": checks + 1,
                             "mode": candidate_metadata.get("mode", "enforce"),
+                        }
+                        prior_trace = prior.get("detector_trace") if isinstance(prior, dict) else None
+                        trace_actions = list(prior_trace.get("actions", [])) if isinstance(prior_trace, dict) else []
+                        trace_decisions = list(prior_trace.get("decisions", [])) if isinstance(prior_trace, dict) else []
+                        detector_action = candidate_metadata.get("detector_action")
+                        detector_decision = candidate_metadata.get("detector_decision")
+                        if isinstance(detector_action, dict):
+                            trace_actions.append(detector_action)
+                        trace_decisions.append(
+                            {
+                                "check": checks + 1,
+                                "decision": detector_decision,
+                                "intervention": {
+                                    key: value
+                                    for key, value in candidate_metadata.items()
+                                    if key not in {
+                                        "control_hook", "mode", "fired", "would_fire",
+                                        "detector_schema_version", "detector_action", "detector_decision",
+                                    }
+                                } or None,
+                                "would_fire": bool(candidate_metadata.get("would_fire")),
+                                "fired": isinstance(candidate, FinalizeOnce),
+                            }
+                        )
+                        updated["detector_trace"] = {
+                            "schema_version": candidate_metadata.get("detector_schema_version", 1),
+                            "actions": trace_actions,
+                            "decisions": trace_decisions,
                         }
                         if isinstance(prior, dict) and prior.get("would_fire"):
                             updated["would_fire"] = True

@@ -372,7 +372,12 @@ def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:
     assert run.status == "completed"
     assert run.stop_reason == "completed"
     assert len(harness.tools.telemetry.calls) == 1
-    assert run.meta["action_guard"] == {"fired": False, "checks": 1, "mode": "shadow"}
+    guard = run.meta["action_guard"]
+    assert guard["fired"] is False
+    assert guard["checks"] == 1
+    assert guard["mode"] == "shadow"
+    assert guard["detector_trace"]["actions"][0]["action"]["tool_call"]["name"] == "grep"
+    assert guard["detector_trace"]["decisions"][0]["fired"] is False
     assert tree_content_digest(repo) == before
 
 
@@ -516,6 +521,10 @@ def test_action_guard_shadow_mode_records_without_intervening(repo: Path) -> Non
     assert run.meta["action_guard"]["fired"] is False
     assert run.meta["action_guard"]["would_fire"] is True
     assert run.meta["action_guard"]["shadow_intervention"]["loop_start_action"] == 9
+    trace = run.meta["action_guard"]["detector_trace"]
+    assert len(trace["actions"]) == 10
+    assert len(trace["decisions"]) == 10
+    assert trace["decisions"][-1]["would_fire"] is True
 
 
 def test_action_guard_off_mode_records_no_guard_telemetry(repo: Path) -> None:

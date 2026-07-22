@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from agent_lib import AgentAction, AgentObservation, AgentStep, ToolResult
-from action_trajectory_loop_guard import Intervention, detect_and_redirect
+from action_trajectory_loop_guard import Intervention, assess_trajectory, detect_and_redirect
 
 
 def _read(index: int, start: int, *, path: str = "module.py", success: bool = True) -> AgentStep:
@@ -77,6 +77,17 @@ def test_accepts_serialized_agent_steps() -> None:
     trajectory.extend(({"index": 9, **repeated}, {"index": 10, **repeated}))
 
     assert detect_and_redirect(trajectory) is not None
+
+
+def test_captured_detector_actions_replay_exactly() -> None:
+    trajectory = [_read(index, 1 + (index - 1) * 100) for index in range(1, 9)]
+    trajectory.extend((_read(9, 1), _read(10, 1)))
+
+    live = assess_trajectory(trajectory)
+    replayed = assess_trajectory(live.as_dict()["actions"])
+
+    assert replayed.as_dict() == live.as_dict()
+    assert live.action_assessments[-1]["near_duplicate_actions"] == [1, 9]
 
 
 def test_messages_and_final_actions_are_ignored() -> None:

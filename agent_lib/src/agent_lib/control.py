@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal, Sequence
 
-from action_trajectory_loop_guard import detect_and_redirect
+from action_trajectory_loop_guard import assess_trajectory
 
 from .contracts import AgentRun, AgentStep, AgentTask, ContinueRun, ControlDirective, FinalizeOnce
 
@@ -23,13 +23,22 @@ class ActionTrajectoryGuardHook:
         trajectory: Sequence[AgentStep],
         run: AgentRun,
     ) -> ControlDirective:
-        intervention = detect_and_redirect(trajectory)
+        assessment = assess_trajectory(trajectory)
+        intervention = assessment.intervention
+        detector_metadata = {
+            "detector_schema_version": assessment.schema_version,
+            "detector_action": assessment.actions[-1] if assessment.actions else None,
+            "detector_decision": (
+                assessment.action_assessments[-1] if assessment.action_assessments else None
+            ),
+        }
         if intervention is None:
             return ContinueRun(
                 metadata={
                     "control_hook": "action_trajectory_loop_guard",
                     "mode": self.mode,
                     "fired": False,
+                    **detector_metadata,
                 }
             )
         intervention_metadata = {
@@ -40,6 +49,8 @@ class ActionTrajectoryGuardHook:
             "evidence_novelty": intervention.evidence_novelty,
             "repeated_action": intervention.repeated_action,
             "truncation_point": intervention.truncation_point,
+            "instruction": intervention.instruction,
+            **detector_metadata,
         }
         if self.mode == "shadow":
             return ContinueRun(metadata={**intervention_metadata, "fired": False, "would_fire": True})

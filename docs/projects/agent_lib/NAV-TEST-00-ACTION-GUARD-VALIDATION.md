@@ -85,10 +85,26 @@ reverted in `8d66406`.
 
 The remaining sampled enforcement runs were not launched after the smoke gate
 failed. Active enforcement is therefore not validated and must remain opt-in.
-The next investigation should run shadow mode over broader trajectories and
-separate legitimate size-recovery retries from true evidence-free cycles. Prompt
-selection also needs an evidence-centric budget representation before token
-savings can be claimed.
+Replay-fidelity instrumentation is now the first gate. Each guarded live run
+records the exact canonical action supplied to the detector plus its comparison
+window, duplicate matches, evidence atom counts, novelty, redundancy decision,
+and proposed intervention under `run.meta.action_guard.detector_trace`. The
+replay utility consumes this captured stream directly and reports any decision
+mismatch. Older run records without this field still use reconstructed steps,
+but that path is explicitly labeled and is not considered fidelity evidence.
+
+Interpret the next shadow runs in this order:
+
+1. Verify that direct replay of captured detector input reproduces every live
+   decision.
+2. Diff captured input against reconstruction from the general run record.
+3. Only if direct replay is exact, attribute cross-run trajectory differences
+   to model/runtime nondeterminism and begin detector calibration.
+
+After that fidelity gate, run shadow mode over broader trajectories and
+separate legitimate size-recovery retries from true evidence-free cycles.
+Prompt selection also needs an evidence-centric budget representation before
+token savings can be claimed.
 
 ## Scope and remaining risk
 
