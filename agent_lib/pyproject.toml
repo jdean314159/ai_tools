@@ -13,6 +13,7 @@ dependencies = [
   "engram",
   "llm_engines",
   "llm-harness-core",
+  "action-trajectory-loop-guard",
 ]
 
 [project.scripts]

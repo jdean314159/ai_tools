@@ -2,12 +2,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Literal, Protocol, Sequence
+from typing import Any, Literal, Protocol, Sequence, runtime_checkable
 
 from llm_inspector import EvidenceItem, Trace
 
 ActionKind = Literal["tool", "final", "message"]
-StopReason = Literal["completed", "max_steps", "planner_stop", "error", "critic_completed", "token_budget", "context_limit"]
+StopReason = Literal[
+    "completed",
+    "max_steps",
+    "planner_stop",
+    "error",
+    "critic_completed",
+    "token_budget",
+    "context_limit",
+    "guard_no_answer",
+    "guard_budget_unavailable",
+]
 
 
 @dataclass(frozen=True)
@@ -129,6 +139,34 @@ class AgentRunLifecycleHook(Protocol):
     def on_finish(self, run: AgentRun) -> None: ...
 
 
+@dataclass(frozen=True)
+class ContinueRun:
+    """Control-hook directive allowing the normal planner loop to continue."""
+
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class FinalizeOnce:
+    """Request one final-only planner attempt over a trajectory prefix."""
+
+    truncation_point: int
+    instruction: str
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+ControlDirective = ContinueRun | FinalizeOnce
+
+
+class AgentControlHook(Protocol):
+    def after_step(
+        self,
+        task: AgentTask,
+        trajectory: Sequence[AgentStep],
+        run: AgentRun,
+    ) -> ControlDirective: ...
+
+
 RetryActionPayload = dict[str, Any]
 
 
@@ -147,6 +185,17 @@ class AgentContextBuilder(Protocol):
 
 class Planner(Protocol):
     def plan(self, context: AgentContext) -> AgentAction: ...
+
+
+@runtime_checkable
+class FinalizingPlanner(Protocol):
+    def finalize(
+        self,
+        context: AgentContext,
+        instruction: str,
+        *,
+        full_context: AgentContext | None = None,
+    ) -> AgentAction: ...
 
 
 class ToolRuntime(Protocol):

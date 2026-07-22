@@ -260,6 +260,28 @@ the navigation root. It verifies the server's context window and chat template b
 sends `cache_prompt=false` on every native completion, rejects any response reporting cached prompt
 tokens or truncation, and writes all artifacts only to the external result directory.
 
+The experimental `reasoning_loop_guard` text detector is not integrated into
+this evaluation. Replay against the recorded NAV runs produced a false positive
+on the successful control because the model emitted repeated JSON actions with
+thinking disabled. A future NAV guard must inspect typed action/tool trajectory
+events here in `agent_lib`; adding reasoning-block events to `llm_engines`
+would not expose a signal these runs contain. See
+[`NAV-TEST-00-LOOP-GUARD-VALIDATION.md`](../docs/projects/agent_lib/NAV-TEST-00-LOOP-GUARD-VALIDATION.md).
+
+The superseding `action_trajectory_loop_guard` consumes the typed `AgentStep`
+trajectory instead. Its pure detector passed the four recorded NAV gate runs:
+it fired before 120K on seed0 and sampled seeds 1/3 and did not fire on
+successful sampled seed2. `build_navigation_harness` enables the corresponding
+between-step control hook: it retains the audited trajectory, removes only the
+looping suffix from finalization context, disables tools with a final-only
+prompt/schema, and permits at most one finalization call. Unsafe remaining
+budget stops without an engine call. See
+[`NAV-TEST-00-ACTION-GUARD-VALIDATION.md`](../docs/projects/agent_lib/NAV-TEST-00-ACTION-GUARD-VALIDATION.md).
+
+The evaluation CLI records an explicit `--action-guard-mode`: `off` reproduces
+unguarded behavior, `shadow` records the first would-fire intervention without
+changing control flow, and `enforce` performs constrained finalization.
+
 See:
 
 - `agent_lib.coordination`

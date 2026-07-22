@@ -38,6 +38,8 @@ expecting stability.
 |---|---|---|---|
 | [llm_harness_core](./llm_harness_core/README.md) | stable | Shared interop contracts: capabilities, messages, evidence, results, trace events | contracts module |
 | [llm_engines](./llm_engines/README.md) | stable | One interface over Ollama, OpenAI-compatible APIs, Anthropic, vLLM, llama.cpp | engine factory |
+| [reasoning_loop_guard](./reasoning_loop_guard/README.md) | **experimental** | Pure sustained-repetition detection and finalize advice for reasoning streams | `detect_and_redirect` |
+| [action_trajectory_loop_guard](./action_trajectory_loop_guard/README.md) | **experimental** | Low-novelty duplicate tool-action detection for agent trajectories | `detect_and_redirect` |
 | [engram](./engram/README.md) | beta | Project memory: prompt building, hybrid retrieval, inspectable evidence traces | `ProjectMemory` |
 | [rag_lib](./rag_lib/README.md) | beta | Retrieval building blocks: chunking, hybrid BM25+dense, reranking, evaluation contracts | pipeline object |
 | [mail_lib](./mail_lib/) | beta | Deterministic local Thunderbird mail reading, indexing, personal rules, and triage helpers | mail message/rules helpers |

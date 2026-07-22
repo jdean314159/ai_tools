@@ -12,6 +12,8 @@ import pytest
 PACKAGES = [
     "llm_harness_core",
     "llm_engines",
+    "reasoning_loop_guard",
+    "action_trajectory_loop_guard",
     "engram",
     "rag_lib",
     "llm_inspector",

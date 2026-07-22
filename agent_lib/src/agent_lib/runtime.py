@@ -19,8 +19,12 @@ from .contracts import (
     EngineRoles,
     Planner,
     ToolRuntime,
+    ToolSpec,
     AgentRunLifecycleHook,
     AgentContextBuilder,
+    AgentControlHook,
+    FinalizeOnce,
+    FinalizingPlanner,
 )
 from .memory import NullMemoryAdapter
 
@@ -316,6 +320,7 @@ class AgentRuntime:
         engine_roles: EngineRoles | None = None,
         critic: Planner | None = None,
         lifecycle_hooks: Sequence[AgentRunLifecycleHook] | None = None,
+        control_hooks: Sequence[AgentControlHook] | None = None,
         max_repeated_tool_calls: int = 3,
         context_builder: AgentContextBuilder | None = None,
     ) -> None:
@@ -326,6 +331,7 @@ class AgentRuntime:
         self.engine_roles = engine_roles or EngineRoles()
         self.critic = critic
         self.lifecycle_hooks = list(lifecycle_hooks or [])
+        self.control_hooks = list(control_hooks or [])
         self.max_repeated_tool_calls = max(1, int(max_repeated_tool_calls))
         self.context_builder = context_builder
 
@@ -342,8 +348,16 @@ class AgentRuntime:
         run = self.run(task, max_steps=max_steps)
         return run_to_operation_result(run, runtime=self)
 
-    def _build_context(self, task: AgentTask, steps: Sequence[AgentStep], *, active_controller: str, escalated: bool) -> AgentContext:
-        tool_specs = self.tool_runtime.list_tools()
+    def _build_context(
+        self,
+        task: AgentTask,
+        steps: Sequence[AgentStep],
+        *,
+        active_controller: str,
+        escalated: bool,
+        tool_specs_override: Sequence[ToolSpec] | None = None,
+    ) -> AgentContext:
+        tool_specs = self.tool_runtime.list_tools() if tool_specs_override is None else list(tool_specs_override)
         if self.context_builder is not None:
             return self.context_builder.build_context(
                 task,
@@ -367,6 +381,126 @@ class AgentRuntime:
             active_controller=active_controller,
             escalated=escalated,
         )
+
+    def _finish_after_guard(
+        self,
+        *,
+        task: AgentTask,
+        run: AgentRun,
+        directive: FinalizeOnce,
+        planner: Planner,
+        active_controller: str,
+        started_clock: float,
+    ) -> AgentRun:
+        original_step_count = len(run.steps)
+        truncation_point = max(0, min(int(directive.truncation_point), original_step_count))
+        prefix = run.steps[:truncation_point]
+        final_context = self._build_context(
+            task,
+            prefix,
+            active_controller=active_controller,
+            escalated=active_controller == "critic",
+            tool_specs_override=[],
+        )
+        full_context = self._build_context(
+            task,
+            run.steps,
+            active_controller=active_controller,
+            escalated=active_controller == "critic",
+            tool_specs_override=[],
+        )
+        previous_telemetry = run.meta.get("action_guard")
+        prior_checks = (
+            int(previous_telemetry.get("checks", 0))
+            if isinstance(previous_telemetry, dict)
+            else 0
+        )
+        guard_telemetry = {
+            "fired": True,
+            "checks": prior_checks,
+            "truncation_point": truncation_point,
+            "discarded_context_range": [truncation_point, original_step_count],
+            "original_step_count": original_step_count,
+            **dict(directive.metadata),
+        }
+
+        if isinstance(planner, FinalizingPlanner):
+            action = planner.finalize(
+                final_context,
+                directive.instruction,
+                full_context=full_context,
+            )
+        else:
+            action = AgentAction.message_only(
+                "The active planner does not support constrained finalization.",
+                meta={"finalization_outcome": "no_answer"},
+            )
+
+        action_meta = dict(action.meta)
+        action_meta.setdefault("engine_role", active_controller)
+        action_meta["guard_finalization"] = True
+        action = AgentAction(
+            kind=action.kind,
+            message=action.message,
+            tool_call=action.tool_call,
+            final_output=action.final_output,
+            meta=action_meta,
+        )
+        observation = None
+        if action.kind != "final":
+            observation = AgentObservation(
+                kind="guard_finalization_rejected",
+                text=action.message or "Guard finalization did not return a final answer.",
+                meta={"finalization_outcome": action.meta.get("finalization_outcome", "no_answer")},
+            )
+        trace = self.trace_emitter.emit_step(
+            context=final_context,
+            action=action,
+            observation=observation,
+        )
+        final_step = AgentStep(
+            index=(run.steps[-1].index + 1 if run.steps else 1),
+            action=action,
+            observation=observation,
+            trace=trace,
+        )
+        run.steps.append(final_step)
+        self.memory.record_step(task, final_step)
+        for hook in self.lifecycle_hooks:
+            hook.on_step(task, final_context, final_step, run)
+
+        outcome = str(action.meta.get("finalization_outcome") or "")
+        for key in (
+            "full_prompt_tokens",
+            "truncated_prompt_tokens",
+            "token_savings",
+            "available_cumulative_tokens",
+            "available_context_tokens",
+            "required_minimum_tokens",
+            "budget_blockers",
+        ):
+            if key in action.meta:
+                guard_telemetry[key] = action.meta[key]
+
+        if action.kind == "final" and (action.final_output or action.message).strip():
+            outcome = "success"
+            run.status = "completed"
+            run.stop_reason = "completed"
+            run.final_output = action.final_output or action.message
+        elif outcome == "budget_unavailable":
+            run.status = "stopped"
+            run.stop_reason = "guard_budget_unavailable"
+            run.final_output = "Loop detected; insufficient safe budget remained for finalization."
+        else:
+            outcome = "no_answer"
+            run.status = "stopped"
+            run.stop_reason = "guard_no_answer"
+            run.final_output = "Loop detected; the single constrained finalization attempt returned no answer."
+        guard_telemetry["finalization_outcome"] = outcome
+        run.meta["action_guard"] = guard_telemetry
+        for hook in self.lifecycle_hooks:
+            hook.on_finish(run)
+        return self._finalize_run(run, started_clock)
 
     def _should_escalate(self, run: AgentRun) -> bool:
         if self.critic is None or not run.steps:
@@ -474,6 +608,47 @@ class AgentRuntime:
             self.memory.record_step(task, step)
             for hook in self.lifecycle_hooks:
                 hook.on_step(task, context, step, run)
+
+            if action.kind == "tool" and self.control_hooks:
+                directive = None
+                for control_hook in self.control_hooks:
+                    candidate = control_hook.after_step(task, run.steps, run)
+                    candidate_metadata = getattr(candidate, "metadata", {})
+                    if (
+                        isinstance(candidate_metadata, dict)
+                        and candidate_metadata.get("control_hook") == "action_trajectory_loop_guard"
+                    ):
+                        prior = run.meta.get("action_guard")
+                        checks = int(prior.get("checks", 0)) if isinstance(prior, dict) else 0
+                        updated = {
+                            "fired": isinstance(candidate, FinalizeOnce),
+                            "checks": checks + 1,
+                            "mode": candidate_metadata.get("mode", "enforce"),
+                        }
+                        if isinstance(prior, dict) and prior.get("would_fire"):
+                            updated["would_fire"] = True
+                            updated["shadow_intervention"] = prior.get("shadow_intervention")
+                        if candidate_metadata.get("would_fire"):
+                            updated["would_fire"] = True
+                            updated["shadow_intervention"] = {
+                                key: value
+                                for key, value in candidate_metadata.items()
+                                if key not in {"control_hook", "mode", "fired", "would_fire"}
+                            }
+                        run.meta["action_guard"] = updated
+                    if isinstance(candidate, FinalizeOnce):
+                        directive = candidate
+                        break
+                if directive is not None:
+                    active_planner = self.critic if active_controller == "critic" and self.critic is not None else self.planner
+                    return self._finish_after_guard(
+                        task=task,
+                        run=run,
+                        directive=directive,
+                        planner=active_planner,
+                        active_controller=active_controller,
+                        started_clock=started_clock,
+                    )
 
             stop_payload = task.context.pop("_programming_stop", None)
             if isinstance(stop_payload, dict):

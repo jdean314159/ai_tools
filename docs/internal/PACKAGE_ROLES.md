@@ -22,6 +22,8 @@ See `STATUS.md` for the authoritative current baseline and active work list.
 |---|---|---|---|
 | `llm_harness_core` | Shared harness/interoperability primitives. | Core package. | Keep APIs small and dependency-light. |
 | `llm_engines` | Engine abstraction for Ollama, OpenAI-compatible APIs, Anthropic, vLLM, llama.cpp, and future backends. | `src/` layout (`llm_engines/src/llm_engines`); converted from direct layout by ADR-014. | `dev` should stay lightweight. HuggingFace/PyTorch/vLLM/llama.cpp behind explicit extras. |
+| `reasoning_loop_guard` | Engine-neutral detection of sustained repetition in decoded reasoning streams. | Experimental control-loop package. | Pure detector/advisor only; cancellation and resubmission remain in `agent_lib`. |
+| `action_trajectory_loop_guard` | Detects repeated, low-novelty typed tool actions. | Experimental; NAV four-run gate passed. | Pure advisor between agent events and runtime policy; no engine or transport ownership. |
 | `engram` | Standalone memory library. JSONL source-of-truth, optional ChromaDB, RRF hybrid retrieval, semantic graph. | Active and recommended. | Default memory path for teaching and production use. No torch required by default. |
 | `llm_inspector` | Inspection/provenance layer for traces, evidence, prompt construction, and comparison workflows. | Core observability package. | Important for making memory/RAG/agent behavior inspectable. |
 | `llm_inspector_ui` | Interactive workbench for trace inspection and debugging. | Active. | Do not add direct engine/runtime dependencies here; consume engines via `llm_engines`. |

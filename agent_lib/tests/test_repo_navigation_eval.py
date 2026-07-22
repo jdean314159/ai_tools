@@ -372,6 +372,7 @@ def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:
     assert run.status == "completed"
     assert run.stop_reason == "completed"
     assert len(harness.tools.telemetry.calls) == 1
+    assert run.meta["action_guard"] == {"fired": False, "checks": 1, "mode": "enforce"}
     assert tree_content_digest(repo) == before
 
 
@@ -389,6 +390,173 @@ def test_harness_exposes_token_budget_stop_reason(repo: Path) -> None:
     assert run.status == "stopped"
     assert run.stop_reason == "token_budget"
     assert not engine.requests
+
+
+def _guard_triggering_responses(final_response: str) -> list[str]:
+    responses = [
+        json.dumps(
+            {
+                "kind": "tool",
+                "tool_name": "read_file",
+                "arguments": {
+                    "path": "short.py",
+                    "start_line": 1 + offset * 100,
+                    "line_count": 100,
+                },
+            }
+        )
+        for offset in range(8)
+    ]
+    repeated = json.dumps(
+        {
+            "kind": "tool",
+            "tool_name": "read_file",
+            "arguments": {"path": "short.py", "start_line": 1, "line_count": 100},
+        }
+    )
+    return [*responses, repeated, repeated, final_response]
+
+
+def test_action_guard_uses_one_tool_free_finalization_call(repo: Path) -> None:
+    engine = RecordingEngine(
+        _guard_triggering_responses(
+            '{"kind":"final","final_output":"short.py:1 is the relevant evidence."}'
+        )
+    )
+    harness = build_navigation_harness(
+        root=repo,
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        budget=NavigationBudget(
+            cumulative_token_limit=100_000,
+            context_window=10_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
+    )
+
+    run = harness.run("Find the relevant evidence", task_id="guard-success")
+
+    assert run.status == "completed"
+    assert run.final_output == "short.py:1 is the relevant evidence."
+    assert len(engine.requests) == 11
+    final_request = engine.requests[-1]
+    assert final_request.metadata["phase"] == "guard_finalization"
+    assert final_request.metadata["tools_enabled"] is False
+    assert final_request.json_schema == {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "kind": {"type": "string", "enum": ["final"]},
+            "final_output": {"type": "string", "minLength": 1},
+        },
+        "required": ["kind", "final_output"],
+    }
+    assert "Available actions" not in (final_request.messages[0].content or "")
+    assert run.meta["action_guard"]["finalization_outcome"] == "success"
+    assert run.meta["action_guard"]["discarded_context_range"] == [8, 10]
+    assert run.meta["action_guard"]["token_savings"] > 0
+    assert len(run.steps) == 11
+    assert run.steps[8].action.kind == "tool"  # Original looping trajectory is retained for audit.
+
+
+def test_action_guard_stops_after_one_non_final_response(repo: Path) -> None:
+    engine = RecordingEngine(
+        _guard_triggering_responses(
+            '{"kind":"tool","tool_name":"read_file","arguments":{"path":"short.py"}}'
+        )
+    )
+    harness = build_navigation_harness(
+        root=repo,
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        budget=NavigationBudget(
+            cumulative_token_limit=100_000,
+            context_window=10_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
+    )
+
+    run = harness.run("Find the relevant evidence", task_id="guard-no-answer")
+
+    assert run.status == "stopped"
+    assert run.stop_reason == "guard_no_answer"
+    assert run.meta["action_guard"]["finalization_outcome"] == "no_answer"
+    assert len(engine.requests) == 11
+    assert len(harness.tools.telemetry.calls) == 10
+
+
+def test_action_guard_shadow_mode_records_without_intervening(repo: Path) -> None:
+    responses = _guard_triggering_responses(
+        '{"kind":"final","final_output":"Normal planner final answer."}'
+    )
+    engine = RecordingEngine(responses)
+    harness = build_navigation_harness(
+        root=repo,
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        budget=NavigationBudget(
+            cumulative_token_limit=100_000,
+            context_window=10_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
+        action_guard_mode="shadow",
+    )
+
+    run = harness.run("Find the relevant evidence", task_id="guard-shadow")
+
+    assert run.status == "completed"
+    assert run.final_output == "Normal planner final answer."
+    assert len(engine.requests) == 11
+    assert all(request.metadata.get("phase") != "guard_finalization" for request in engine.requests)
+    assert run.meta["action_guard"]["fired"] is False
+    assert run.meta["action_guard"]["would_fire"] is True
+    assert run.meta["action_guard"]["shadow_intervention"]["loop_start_action"] == 9
+
+
+def test_action_guard_off_mode_records_no_guard_telemetry(repo: Path) -> None:
+    engine = RecordingEngine(['{"kind":"final","final_output":"done"}'])
+    harness = build_navigation_harness(
+        root=repo,
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        action_guard_mode="off",
+    )
+
+    run = harness.run("Finish immediately", task_id="guard-off")
+
+    assert run.status == "completed"
+    assert "action_guard" not in run.meta
+
+
+def test_finalizer_budget_unavailable_does_not_call_engine() -> None:
+    engine = RecordingEngine(['{"kind":"final","final_output":"must not be used"}'])
+    planner = BudgetedNavigationPlanner(
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        budget=NavigationBudget(
+            cumulative_token_limit=20,
+            context_window=2_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
+    )
+    context = AgentContext(
+        task=AgentTask(task_id="budget", goal="A task whose final prompt cannot fit safely"),
+        steps=[],
+        tool_specs=[],
+    )
+
+    action = planner.finalize(context, "Finalize now.", full_context=context)
+
+    assert action.kind == "message"
+    assert action.meta["finalization_outcome"] == "budget_unavailable"
+    assert action.meta["budget_blockers"] == ["cumulative_token_limit"]
+    assert action.meta["required_minimum_tokens"] > action.meta["available_cumulative_tokens"]
+    assert not engine.requests
+    assert planner.usage.cumulative_actual_tokens == 0
 
 
 def test_manifest_hashes_allowed_sources_without_secret_paths(repo: Path) -> None:

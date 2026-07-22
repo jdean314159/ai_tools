@@ -29,7 +29,12 @@ from .contracts import (
     AgentStep,
     AgentTask,
     AgentTraceEmitter,
+    AgentControlHook,
+    ContinueRun,
+    ControlDirective,
     EngineRoles,
+    FinalizeOnce,
+    FinalizingPlanner,
     Planner,
     StopReason,
     ToolCall,
@@ -68,6 +73,7 @@ from .llm_engines_adapter import LLMActionPlanner, RoleEngineSet, action_from_pa
 
 # --- Runtime ---
 from .runtime import AgentRuntime, InspectorTraceEmitter
+from .control import ActionTrajectoryGuardHook
 
 # --- Tools ---
 from .tools import LocalTool, LocalToolRuntime
@@ -104,7 +110,12 @@ __all__ = [
     "AgentStep",
     "AgentTask",
     "AgentTraceEmitter",
+    "AgentControlHook",
+    "ContinueRun",
+    "ControlDirective",
     "EngineRoles",
+    "FinalizeOnce",
+    "FinalizingPlanner",
     "Planner",
     "StopReason",
     "ToolCall",
@@ -137,6 +148,7 @@ __all__ = [
     # Runtime
     "AgentRuntime",
     "InspectorTraceEmitter",
+    "ActionTrajectoryGuardHook",
     # Tools
     "LocalTool",
     "LocalToolRuntime",

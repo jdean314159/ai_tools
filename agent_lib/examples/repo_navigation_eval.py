@@ -153,6 +153,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--context-window", type=int, default=40_000)
     parser.add_argument("--minimum-output-reserve", type=int, default=512)
     parser.add_argument("--per-call-output-cap", type=int, default=2_048)
+    parser.add_argument(
+        "--action-guard-mode",
+        choices=("off", "shadow", "enforce"),
+        default="enforce",
+        help="Disable, observe, or enforce the action-trajectory loop guard",
+    )
     return parser
 
 
@@ -208,6 +214,7 @@ def main(argv: list[str] | None = None) -> int:
             "per_call_output_cap": args.per_call_output_cap,
         },
         "answer_key_sha256": hashlib.sha256(answer_key.read_bytes()).hexdigest(),
+        "action_guard_mode": args.action_guard_mode,
     }
     harness = build_navigation_harness(
         root=root,
@@ -218,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
         max_steps=args.max_steps,
         temperature=args.temperature,
         metadata={"eval": "NAV-TEST-00", "seed": args.seed, "backend": "llama-server"},
+        action_guard_mode=args.action_guard_mode,
     )
     pre_digest = tree_content_digest(root)
     started = time.perf_counter()

@@ -41,6 +41,7 @@ from ..llm_engines_adapter import action_from_payload, extract_json_object
 from ..memory import NullMemoryAdapter
 from ..runtime import AgentRuntime
 from ..tools import LocalTool, LocalToolRuntime
+from ..control import ActionTrajectoryGuardHook
 
 
 LEAD_QUESTION = (
@@ -72,6 +73,14 @@ Tool rules:
   refused if it exceeds the visible result cap.
 - Every action must use `kind="tool"` or `kind="final"`; a tool name never belongs in `kind`."""
 
+FINALIZATION_SYSTEM_PROMPT = """You are finalizing a read-only repository navigation task.
+Use only the evidence already present in the supplied history. No tools are available and you must
+not request another search or file read. Return exactly one JSON object with this shape and no
+surrounding text: {"kind":"final","final_output":"Evidence-grounded answer."}
+
+The final answer must identify qualifying file paths, symbols or operations, and their requested
+classification. Do not invent evidence and do not mention excluded candidates."""
+
 NAVIGATION_ACTION_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -83,6 +92,16 @@ NAVIGATION_ACTION_SCHEMA: dict[str, Any] = {
         "final_output": {"type": "string"},
     },
     "required": ["kind"],
+}
+
+FINALIZATION_ACTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "kind": {"type": "string", "enum": ["final"]},
+        "final_output": {"type": "string", "minLength": 1},
+    },
+    "required": ["kind", "final_output"],
 }
 
 NAVIGATION_TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
@@ -852,6 +871,28 @@ class BudgetedNavigationPlanner:
         parts.append("Choose the next tool call or return the final answer as JSON.")
         return "\n\n".join(parts)
 
+    def _finalization_user_prompt(self, context: AgentContext, instruction: str) -> str:
+        parts = [f"Task:\n{context.task.goal}"]
+        history_summary = dict(context.task.context.get("context_budget") or {}).get("history_summary")
+        if history_summary:
+            parts.append(f"Earlier bounded history:\n{history_summary}")
+        if context.steps:
+            rendered: list[str] = []
+            for step in context.steps:
+                if step.action.tool_call:
+                    rendered.append(
+                        f"Step {step.index} request: {step.action.tool_call.name} "
+                        f"{json.dumps(step.action.tool_call.arguments, sort_keys=True)}"
+                    )
+                else:
+                    rendered.append(f"Step {step.index} action: {step.action.kind} {step.action.message}")
+                if step.observation:
+                    rendered.append(f"Step {step.index} result: {step.observation.text}")
+            parts.append("Preserved tool history:\n" + "\n".join(rendered))
+        parts.append(f"Control instruction:\n{instruction}")
+        parts.append("Return the final answer now. No tool action is permitted.")
+        return "\n\n".join(parts)
+
     def _budget_stop(self, reason: str) -> AgentAction:
         self.usage.stop_reason = reason
         return AgentAction.final(f"Navigation stopped before model invocation: {reason}.", meta={"navigation_stop_reason": reason, "usage": asdict(self.usage)})
@@ -942,6 +983,125 @@ class BudgetedNavigationPlanner:
             return AgentAction.message_only(f"Rejected invalid action: {validation_error}", meta={"invalid_action": True})
         return action_from_payload(payload, response=response, engine_role="planner")
 
+    def finalize(
+        self,
+        context: AgentContext,
+        instruction: str,
+        *,
+        full_context: AgentContext | None = None,
+    ) -> AgentAction:
+        messages = [
+            ChatMessage(role="system", content=FINALIZATION_SYSTEM_PROMPT),
+            ChatMessage(role="user", content=self._finalization_user_prompt(context, instruction)),
+        ]
+        full_messages = [
+            ChatMessage(role="system", content=FINALIZATION_SYSTEM_PROMPT),
+            ChatMessage(
+                role="user",
+                content=self._finalization_user_prompt(full_context or context, instruction),
+            ),
+        ]
+        prompt_tokens = self.tokenizer.count_messages(messages)
+        full_prompt_tokens = self.tokenizer.count_messages(full_messages)
+        remaining_cumulative = self.budget.cumulative_token_limit - self.usage.cumulative_actual_tokens
+        required_minimum = prompt_tokens + self.budget.minimum_output_reserve
+        telemetry = {
+            "full_prompt_tokens": full_prompt_tokens,
+            "truncated_prompt_tokens": prompt_tokens,
+            "token_savings": full_prompt_tokens - prompt_tokens,
+            "available_cumulative_tokens": remaining_cumulative,
+            "available_context_tokens": self.budget.context_window,
+            "required_minimum_tokens": required_minimum,
+        }
+        if required_minimum > remaining_cumulative or required_minimum > self.budget.context_window:
+            blockers = []
+            if required_minimum > remaining_cumulative:
+                blockers.append("cumulative_token_limit")
+            if required_minimum > self.budget.context_window:
+                blockers.append("context_window")
+            return AgentAction.message_only(
+                "Insufficient safe budget for constrained finalization.",
+                meta={
+                    "finalization_outcome": "budget_unavailable",
+                    "budget_blockers": blockers,
+                    **telemetry,
+                },
+            )
+
+        max_output = min(
+            self.budget.per_call_output_cap,
+            remaining_cumulative - prompt_tokens,
+            self.budget.context_window - prompt_tokens,
+        )
+        response = self.engine.generate(
+            GenerationRequest(
+                messages=messages,
+                max_tokens=max_output,
+                temperature=0.0,
+                json_schema=FINALIZATION_ACTION_SCHEMA,
+                metadata={
+                    **self.metadata,
+                    "task_id": context.task.task_id,
+                    "phase": "guard_finalization",
+                    "tools_enabled": False,
+                },
+            )
+        )
+        actual_input = response.usage.input_tokens
+        actual_output = response.usage.output_tokens
+        used_fallback = actual_input is None or actual_output is None
+        if actual_input is None:
+            actual_input = prompt_tokens
+        if actual_output is None:
+            actual_output = self.tokenizer.count_text(response.message.content or "")
+        actual_total = int(actual_input) + int(actual_output)
+        self.usage.cumulative_actual_tokens += actual_total
+        if used_fallback:
+            self.usage.fallback_usage_calls += 1
+        self.usage.calls.append(
+            {
+                "phase": "guard_finalization",
+                "system_prompt": FINALIZATION_SYSTEM_PROMPT,
+                "user_prompt": messages[1].content or "",
+                "prompt_tokens_pre_call": prompt_tokens,
+                "requested_max_output_tokens": max_output,
+                "actual_input_tokens": actual_input,
+                "actual_output_tokens": actual_output,
+                "actual_total_tokens": actual_total,
+                "backend_reported": not used_fallback,
+                "model": response.model_name,
+                "backend": response.backend,
+                "finish_reason": response.finish_reason,
+                "latency_ms": response.usage.latency_ms,
+                "response_text": response.message.content or "",
+            }
+        )
+        try:
+            payload = extract_json_object(response.message.content or "")
+        except (ValueError, json.JSONDecodeError) as exc:
+            return AgentAction.message_only(
+                f"Constrained finalization returned invalid JSON: {exc}",
+                meta={"finalization_outcome": "no_answer", **telemetry},
+            )
+        if set(payload) - {"kind", "final_output"}:
+            return AgentAction.message_only(
+                "Constrained finalization returned unsupported fields.",
+                meta={"finalization_outcome": "no_answer", **telemetry},
+            )
+        if str(payload.get("kind") or "").strip().lower() != "final":
+            return AgentAction.message_only(
+                "Constrained finalization did not return a final action.",
+                meta={"finalization_outcome": "no_answer", **telemetry},
+            )
+        output = str(payload.get("final_output") or "").strip()
+        if not output:
+            return AgentAction.message_only(
+                "Constrained finalization returned an empty answer.",
+                meta={"finalization_outcome": "no_answer", **telemetry},
+            )
+        action = action_from_payload(payload, response=response, engine_role="planner")
+        return AgentAction.final(output, meta={**dict(action.meta), "finalization_outcome": "success", **telemetry})
+
 
 class NavigationRunHook(AgentRunLifecycleHook):
     def __init__(self, planner: BudgetedNavigationPlanner) -> None:
@@ -970,6 +1130,7 @@ class NavigationHarness:
     planner: BudgetedNavigationPlanner
     tools: NavigationToolRuntime
     max_steps: int = 25
+    action_guard_mode: str = "enforce"
 
     def run(self, question: str = LEAD_QUESTION, *, task_id: str = "nav-test-00") -> AgentRun:
         return self.runtime.run(AgentTask(task_id=task_id, goal=question, context={"navigation_root": str(self.root)}), max_steps=self.max_steps)
@@ -985,21 +1146,37 @@ def build_navigation_harness(
     max_steps: int = 25,
     temperature: float = 0.0,
     metadata: dict[str, Any] | None = None,
+    action_guard_mode: str = "enforce",
 ) -> NavigationHarness:
     if max_steps < 1:
         raise NavigationConfigurationError("max_steps must be positive")
+    if action_guard_mode not in {"off", "shadow", "enforce"}:
+        raise NavigationConfigurationError("action_guard_mode must be one of: off, shadow, enforce")
     resolved_policy = policy or NavigationPolicy(Path(root))
     workspace = NavigationWorkspace(resolved_policy)
     tools = NavigationToolRuntime(workspace)
     planner = BudgetedNavigationPlanner(engine=engine, tokenizer=tokenizer, budget=budget, temperature=temperature, metadata=metadata)
+    control_hooks = (
+        []
+        if action_guard_mode == "off"
+        else [ActionTrajectoryGuardHook(mode=action_guard_mode)]
+    )
     runtime = AgentRuntime(
         planner=planner,
         tool_runtime=tools,
         memory=NullMemoryAdapter(),
         context_builder=NoWriteContextBuilder(),
         lifecycle_hooks=[NavigationRunHook(planner)],
+        control_hooks=control_hooks,
     )
-    return NavigationHarness(root=resolved_policy.root, runtime=runtime, planner=planner, tools=tools, max_steps=max_steps)
+    return NavigationHarness(
+        root=resolved_policy.root,
+        runtime=runtime,
+        planner=planner,
+        tools=tools,
+        max_steps=max_steps,
+        action_guard_mode=action_guard_mode,
+    )
 
 
 @dataclass(frozen=True)
