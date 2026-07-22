@@ -60,6 +60,22 @@ def test_repeated_failed_actions_after_warmup_are_confirmed() -> None:
     assert result.loop_start_action == 9
 
 
+def test_failed_full_read_then_bounded_prefix_is_near_duplicate_after_warmup() -> None:
+    trajectory = [_read(index, 1 + (index - 1) * 100) for index in range(1, 9)]
+    full = _read(9, 1, success=False)
+    full = AgentStep(
+        index=9,
+        action=AgentAction.tool("read_file", {"path": "large.py", "full": True}),
+        observation=full.observation,
+    )
+    bounded = _read(10, 1, path="large.py", success=False)
+
+    result = detect_and_redirect([*trajectory, full, bounded])
+
+    assert result is not None
+    assert result.loop_start_action == 9
+
+
 def test_accepts_serialized_agent_steps() -> None:
     trajectory = []
     for index in range(1, 9):
