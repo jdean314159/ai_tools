@@ -80,14 +80,17 @@ def test_accepts_serialized_agent_steps() -> None:
 
 
 def test_captured_detector_actions_replay_exactly() -> None:
-    trajectory = [_read(index, 1 + (index - 1) * 100) for index in range(1, 9)]
-    trajectory.extend((_read(9, 1), _read(10, 1)))
+    trajectory = [_read(index, 1 + (index - 1) * 100) for index in range(1, 4)]
+    trajectory.append(AgentStep(index=4, action=AgentAction.message_only("continue")))
+    trajectory.extend(_read(index, 1 + (index - 2) * 100) for index in range(5, 10))
+    trajectory.extend((_read(10, 1), _read(11, 1)))
 
     live = assess_trajectory(trajectory)
     replayed = assess_trajectory(live.as_dict()["actions"])
 
     assert replayed.as_dict() == live.as_dict()
-    assert live.action_assessments[-1]["near_duplicate_actions"] == [1, 9]
+    assert live.actions[3]["_detector_sequence_offset"] == 4
+    assert live.action_assessments[-1]["near_duplicate_actions"] == [1, 10]
 
 
 def test_messages_and_final_actions_are_ignored() -> None:

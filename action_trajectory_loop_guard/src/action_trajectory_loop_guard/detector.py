@@ -151,7 +151,7 @@ def assess_trajectory(
                 repeated_action=_signature(previous.action),
             )
     return DetectorAssessment(
-        schema_version=1,
+        schema_version=2,
         actions=snapshots,
         action_assessments=tuple(serialized_assessments),
         intervention=intervention,
@@ -181,8 +181,10 @@ def _extract_action(event: object, offset: int) -> _Action | None:
     category = typed_meta.get("category")
     number = _field(event, "index")
     action_number = int(number) if isinstance(number, int) else offset + 1
+    captured_offset = _field(event, "_detector_sequence_offset")
+    sequence_offset = int(captured_offset) if isinstance(captured_offset, int) else offset
     return _Action(
-        sequence_offset=offset,
+        sequence_offset=sequence_offset,
         action_number=action_number,
         tool=tool,
         arguments=dict(arguments),
@@ -201,6 +203,7 @@ def _serialize_action(action: _Action) -> dict[str, Any]:
         )
     ]
     return {
+        "_detector_sequence_offset": action.sequence_offset,
         "index": action.action_number,
         "action": {
             "kind": "tool",

@@ -651,7 +651,7 @@ class AgentRuntime:
                             }
                         )
                         updated["detector_trace"] = {
-                            "schema_version": candidate_metadata.get("detector_schema_version", 1),
+                            "schema_version": candidate_metadata.get("detector_schema_version", 2),
                             "actions": trace_actions,
                             "decisions": trace_decisions,
                         }
