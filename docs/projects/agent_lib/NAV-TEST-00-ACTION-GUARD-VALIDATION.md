@@ -106,6 +106,31 @@ separate legitimate size-recovery retries from true evidence-free cycles.
 Prompt selection also needs an evidence-centric budget representation before
 token savings can be claimed.
 
+### Captured-input shadow result
+
+A deterministic seed0 shadow run at `fe06e04` reached the same live outcome as
+the earlier `c6c726a` smoke run: 20 tool calls, 116,227 cumulative tokens,
+11/12 evidence regions, no final answer, and no detector intervention. Direct
+replay reproduced all 20 detector decisions, and reconstruction from the
+general run-record steps reproduced all 20 captured canonical actions.
+
+The first capture attempt exposed a schema-v1 instrumentation defect: dropping
+non-tool steps from the captured stream renumbered later sequence offsets, so
+direct replay disagreed from check 4 onward even though reconstructed actions
+matched. Schema v2 retains `_detector_sequence_offset`; the corrected run has
+zero decision or reconstruction mismatches. This is why captured-input replay
+must itself be gated before its results are trusted.
+
+For the corrected run, the replay adapter is not the source of the historical
+seed0/live disagreement. The historical and current live trajectories differ:
+after ignoring an explicit `full=false`, their first tool-argument divergence
+is action 10 (`pipeline.py`, 150 historical lines versus 200 live lines), and
+the historical trace has 17 tool actions versus 20 live actions. Historical
+replay therefore remains useful as a frozen regression fixture, but it cannot
+predict detector behavior on a newly generated trajectory, even with the same
+decoding seed. Calibration data must come from live shadow runs captured under
+the code and environment being evaluated.
+
 ## Scope and remaining risk
 
 This result supersedes the text n-gram detector for NAV-class failures. It does
