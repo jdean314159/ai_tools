@@ -25,7 +25,7 @@ and indirect helper calls cannot satisfy a direct-edge claim.
 
 ## Deterministic result
 
-The `agent_lib` package gate passed with `145 passed`. Dedicated tests cover all
+The `agent_lib` package gate passed with `148 passed`. Dedicated tests cover all
 four task shapes, exact relation scoring, indirect-as-direct rejection,
 unobserved evidence, source hash drift, aliases, same-named methods, nested
 functions, dynamic calls, relation-claim shape, and paired configuration drift.
@@ -172,6 +172,10 @@ rejected.
 The exploratory-tier adoption, rejection, and inconclusive boundaries are
 encoded in the deterministic campaign decision function. Cost is represented
 both by total exploratory tokens and median overhead where both arms complete.
+If both shared-schema arms terminate on all six exploratory tasks, the function
+returns `inconclusive_schema_ceiling` unless correctness or cost independently
+triggers rejection. Zero gain with available no-ledger failures remains a
+rejection.
 
 Candidate selection is also mechanical: enumerate all v1-oracle-resolvable
 task shapes, deduplicate normalized expected relations, hash the complete pool,

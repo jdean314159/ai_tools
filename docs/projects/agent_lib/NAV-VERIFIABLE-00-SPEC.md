@@ -62,10 +62,11 @@ AST scorer, model configuration, budget, question, and seed:
 1. no-ledger baseline with task-specific navigation goals disabled;
 2. ledger run with task-specific navigation goals enabled.
 
-Both arms emit identical typed `relation_claims`. No free-form extraction or
-looser baseline rubric is allowed. The experiment therefore isolates ledger
-state under a shared structured-answer contract; it is not NAV-TEST-00's
-free-form autonomous mode.
+Both arms emit identical typed `relation_claims` on the final action. No
+free-form extraction or looser baseline rubric is allowed. The experiment
+therefore isolates per-step ledger state under a shared structured-answer
+contract; it is not NAV-TEST-00's free-form autonomous mode and cannot establish
+whether final claims alone fix budget exhaustion.
 
 Run order must be recorded and alternated across tasks to expose order effects.
 Sampled trajectories mean a pair is a comparison unit, not proof that a seed
@@ -145,7 +146,7 @@ Implemented:
   diversity across three source snapshots, exact paired coverage, per-tier
   reporting, and only a secondary equal-tier macro-average. See
   `NAV-VERIFIABLE-CAMPAIGN-V1.md` and
-  `agent_lib/src/agent_lib/eval/verifiable_campaign.py`, lines 26–460.
+  `agent_lib/src/agent_lib/eval/verifiable_campaign.py`, lines 26–472.
 - Mechanical candidate enumeration, normalized-relation deduplication, a
   source-hashed pool, and deterministic stratified selection. See
   `NAV-CANDIDATE-SELECTION-V1.md` and

@@ -313,6 +313,12 @@ def decide_campaign(summary: Mapping[str, Any]) -> dict[str, Any]:
     median_overhead = exploratory.get(
         "median_both_complete_ledger_token_overhead_fraction"
     )
+    task_count = int(exploratory.get("task_count") or 0)
+    termination_ceiling = (
+        int(termination.get("both_pass") or 0) == task_count
+        and int(termination.get("no_ledger_pass_ledger_fail") or 0) == 0
+        and int(termination.get("no_ledger_fail_ledger_pass") or 0) == 0
+    )
 
     support = (
         termination_net >= 2
@@ -323,20 +329,24 @@ def decide_campaign(summary: Mapping[str, Any]) -> dict[str, Any]:
         and isinstance(median_overhead, (int, float))
         and float(median_overhead) <= 0.25
     )
-    reject = (
-        termination_net <= 0
-        or exact_net <= -2
+    quality_or_cost_reject = (
+        exact_net <= -2
         or relation_net <= -2
         or (token_ratio > 1.25 and exact_net <= 0)
     )
+    termination_reject = termination_net <= 0 and not termination_ceiling
+    reject = quality_or_cost_reject or termination_reject
     return {
         "decision": (
             "support_broader_shadow"
             if support
             else "reject_ledger_direction"
             if reject
+            else "inconclusive_schema_ceiling"
+            if termination_ceiling
             else "inconclusive"
         ),
+        "termination_ceiling": termination_ceiling,
         "termination_net": termination_net,
         "exact_net": exact_net,
         "relation_net": relation_net,

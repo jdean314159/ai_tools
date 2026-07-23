@@ -312,3 +312,66 @@ def test_campaign_decision_uses_exploratory_pairs_and_cost_gate() -> None:
 
     assert decision["decision"] == "support_broader_shadow"
     assert decision["termination_net"] == 2
+
+
+def test_campaign_decision_reports_shared_schema_termination_ceiling() -> None:
+    pairs = [
+        {
+            "task_id": f"ceiling-{index}",
+            "tier": "exploratory",
+            "no_ledger": _result(exact=True, tokens=100, steps=4),
+            "ledger": _result(exact=True, tokens=105, steps=4),
+        }
+        for index in range(6)
+    ]
+
+    decision = decide_campaign(summarize_paired_campaign(pairs))
+
+    assert decision["decision"] == "inconclusive_schema_ceiling"
+    assert decision["termination_ceiling"] is True
+
+
+def test_campaign_decision_rejects_zero_gain_when_headroom_exists() -> None:
+    pairs = []
+    for index in range(6):
+        completed = index > 0
+        result = {
+            **_result(exact=completed, tokens=100, steps=4),
+            "completed_with_answer": completed,
+        }
+        pairs.append(
+            {
+                "task_id": f"headroom-{index}",
+                "tier": "exploratory",
+                "no_ledger": result,
+                "ledger": dict(result),
+            }
+        )
+
+    decision = decide_campaign(summarize_paired_campaign(pairs))
+
+    assert decision["decision"] == "reject_ledger_direction"
+    assert decision["termination_ceiling"] is False
+
+
+def test_campaign_decision_rejects_ledger_termination_loss() -> None:
+    pairs = []
+    for index in range(6):
+        ledger_completed = index > 0
+        pairs.append(
+            {
+                "task_id": f"reverse-loss-{index}",
+                "tier": "exploratory",
+                "no_ledger": _result(exact=True, tokens=100, steps=4),
+                "ledger": {
+                    **_result(exact=ledger_completed, tokens=100, steps=4),
+                    "completed_with_answer": ledger_completed,
+                },
+            }
+        )
+
+    decision = decide_campaign(summarize_paired_campaign(pairs))
+
+    assert decision["decision"] == "reject_ledger_direction"
+    assert decision["termination_ceiling"] is False
+    assert decision["termination_net"] == -1

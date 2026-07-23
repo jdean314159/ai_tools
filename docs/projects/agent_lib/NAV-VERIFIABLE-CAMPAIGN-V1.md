@@ -24,9 +24,9 @@ must meet the hop-count or answer-file threshold. A task may satisfy both.
 
 Every pair uses the same admitted task, relation-claim schema, AST scorer, model
 configuration, budget, decoding configuration, and seed. Both arms must emit
-typed `relation_claims`. The no-ledger arm has no per-step navigation goals; the
-ledger arm does. Run-specific output locations and ledger state are the only
-permitted differences. Run order is recorded and alternated.
+typed `relation_claims` on the final action. The no-ledger arm has no per-step
+navigation goals; the ledger arm does. Run-specific output locations and ledger
+state are the only permitted differences. Run order is recorded and alternated.
 
 This is not the free-form autonomous mode measured by NAV-TEST-00. It is a
 shared-schema no-ledger baseline designed to isolate the ledger's effect.
@@ -70,7 +70,15 @@ Reject the ledger direction when any of these hold:
 - ledger uses more than 125% of no-ledger exploratory tokens without an exact
   paired improvement.
 
-All other complete results are inconclusive. Support means a broader shadow
+If both arms terminate on all six exploratory tasks, with no one-sided
+termination loss, return `inconclusive_schema_ceiling` unless a correctness or
+cost rejection applies. This means the shared final schema left no termination
+headroom in which to measure the ledger. Correctness and cost remain reportable,
+but the result is not termination evidence.
+
+Zero or negative termination gain remains a rejection when the no-ledger arm
+has failures available to improve or the ledger introduces reverse losses. All
+other complete results are inconclusive. Support means a broader shadow
 campaign, not shipping.
 
 ## Conclusion boundary
@@ -79,6 +87,10 @@ Fewer than six completed exploratory pairs supports no termination-control
 conclusion. The first campaign is a directional engineering gate, not a
 statistical-significance result. One trajectory per task is permitted, with
 model nondeterminism retained as a limitation.
+
+This campaign answers whether a per-step goal ledger adds value on top of typed
+final relation claims. It cannot establish that the ledger fixes NAV-TEST-00 or
+that structured final claims alone fix free-form budget exhaustion.
 
 Replicated runs require a separate predeclared campaign. They may not be
 selectively added only to surprising tasks.
