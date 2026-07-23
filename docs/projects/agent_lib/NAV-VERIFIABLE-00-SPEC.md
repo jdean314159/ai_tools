@@ -127,6 +127,9 @@ Implemented:
 
 Still required before live use:
 
+- A user-visible canonicalization rule shared by tasks, relation claims, and
+  the AST oracle. The formatter probe showed that internal module prefixes and
+  callable-only versus full-call expressions are currently mismatched.
 - Planner output-schema adoption for `relation_claims`.
 - Task-specific goal seeding instead of the NAV-STRUCT-00 exhaustive ledger.
 - A paired executable that runs both modes and writes the manifest plus scores.
@@ -144,5 +147,6 @@ the literal call expression without asserting its runtime dispatch target.
   for multiple tasks of all four shapes.
 - Alternating run order is sufficient to control local engine cache/order
   effects for the first small campaign.
-- The existing model can reliably emit the relation-aware claim schema once it
-  is added to the planner contract.
+- The model can emit structurally valid relation claims on the trivial fixture
+  (3/3 corrected formatter probes), but exact canonical representation remains
+  unresolved and must be fixed before planner adoption.

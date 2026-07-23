@@ -29,13 +29,26 @@ RELATION_CLAIMS_SCHEMA: dict[str, Any] = {
             "kind": {
                 "type": "string",
                 "enum": ["definition", "call_edge", "call_path", "mutation_target"],
+                "description": "Exact relation type requested by the task.",
             },
-            "path": {"type": "string", "minLength": 1},
-            "symbol": {"type": "string", "minLength": 1},
-            "target": {"type": "string"},
+            "path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Repository-relative source file path, never a call-chain description.",
+            },
+            "symbol": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Canonical module-qualified enclosing or caller symbol.",
+            },
+            "target": {
+                "type": "string",
+                "description": "Canonical callee/endpoint, or the exact call expression for mutation_target.",
+            },
             "path_symbols": {
                 "type": "array",
                 "items": {"type": "string", "minLength": 1},
+                "description": "Ordered canonical symbols for call_path only; empty for other kinds.",
             },
             "evidence": {
                 "type": "array",

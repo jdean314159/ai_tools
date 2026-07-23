@@ -47,3 +47,43 @@ seed each task's user-visible goals, require `relation_claims` only for this
 track, preserve the autonomous mode on the same question, and score both run
 records with the external AST oracle. Live runs remain premature until that
 contract passes.
+
+## Formatter-only live gate
+
+A reproducible probe now supplies the complete pinned `sample.py` source to
+Qwen3.6-27B-Q4_K_M and requests three constrained outputs without navigation
+tools: one direct edge, one ordered path, and one named-site target.
+
+The first protocol returned JSON matching the server grammar but failed the
+claim contract in all three cases. The model treated `path` as a human-readable
+call-chain field, used inconsistent relation kinds, and omitted canonical
+qualification. Because the schema provided types without field semantics, this
+was an underspecified representation rather than a model-capability result.
+
+One correction added field descriptions and explicit kind rules. The corrected
+temperature-zero gate produced:
+
+- 3/3 structurally valid `relation_claims`;
+- correct requested relation kinds in 3/3;
+- correct direct edge, ordered path shape, and evidence locations in 3/3;
+- 0/3 exact scorer passes.
+
+The remaining failures expose a second contract boundary. The oracle exports
+module-prefixed symbols such as `sample.Pipeline._prepare`, while the task and
+model use `Pipeline._prepare`. For named-site targets, the oracle records the
+callable expression `self.store.add`, while the model returned the complete
+call expression `self.store.add(value)`. Both model forms are supported by the
+visible source and task wording.
+
+Therefore formatter feasibility passes, but the external canonicalization
+contract does not. No further prompt or live iteration was performed. Planner
+adoption and production task construction remain blocked until the claim
+contract chooses and deterministically normalizes one user-visible symbol and
+call-expression representation.
+
+Artifacts:
+
+- initial protocol:
+  `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-20260723.json`;
+- corrected protocol:
+  `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-corrected-20260723.json`.
