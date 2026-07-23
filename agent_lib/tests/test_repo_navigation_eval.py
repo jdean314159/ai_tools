@@ -32,6 +32,7 @@ from agent_lib.eval.repo_navigation import (
     validate_ground_truth_snapshot,
     PlannerUsage,
 )
+from agent_lib.eval.navigation_goals import seed_navigation_goals
 from agent_lib.memory import NullMemoryAdapter
 from llm_engines.contracts import ChatMessage, EngineCapabilities, GenerationRequest, GenerationResponse, UsageStats
 from llm_engines.contracts import GenerationError
@@ -43,6 +44,24 @@ class WordTokenizer(ModelTokenizer):
 
     def count_text(self, text: str) -> int:
         return max(1, len(text.split()))
+
+
+def _goal_payload(*, status: str = "open", with_evidence: bool = False) -> list[dict]:
+    return [
+        {
+            **goal.as_dict(),
+            "status": status,
+            "resolution_summary": (
+                f"Resolved {goal.goal_id}." if status != "open" else ""
+            ),
+            "evidence": (
+                [{"path": "short.py", "start_line": 1, "end_line": 1}]
+                if with_evidence
+                else []
+            ),
+        }
+        for goal in seed_navigation_goals()
+    ]
 
 
 @dataclass
@@ -388,6 +407,72 @@ def test_budgeted_planner_preserves_structured_final_claims() -> None:
 
     assert action.kind == "final"
     assert action.meta["navigation_claims"] == claims
+
+
+def test_structured_planner_rejects_finalization_with_open_goals() -> None:
+    engine = RecordingEngine(
+        [
+            json.dumps(
+                {
+                    "kind": "final",
+                    "final_output": "Premature.",
+                    "navigation_claims": [],
+                    "navigation_goals": _goal_payload(),
+                }
+            )
+        ]
+    )
+    planner = BudgetedNavigationPlanner(
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        structured_navigation=True,
+    )
+
+    action = planner.plan(
+        AgentContext(task=AgentTask(task_id="structured", goal="find all"), steps=[])
+    )
+
+    assert action.kind == "message"
+    assert action.meta["invalid_navigation_goals"] is True
+    assert "cannot finalize with open navigation goals" in action.message
+
+
+def test_structured_harness_completes_only_after_resolving_seeded_goals(
+    repo: Path,
+) -> None:
+    tool_payload = {
+        "kind": "tool",
+        "tool_name": "read_file",
+        "arguments": {"path": "short.py", "start_line": 1, "line_count": 10},
+        "serves_goal_ids": [goal.goal_id for goal in seed_navigation_goals()],
+        "navigation_goals": _goal_payload(),
+    }
+    final_payload = {
+        "kind": "final",
+        "final_output": "Resolved from observed evidence.",
+        "navigation_claims": [],
+        "navigation_goals": _goal_payload(status="resolved", with_evidence=True),
+    }
+    engine = RecordingEngine([json.dumps(tool_payload), json.dumps(final_payload)])
+    harness = build_navigation_harness(
+        root=repo,
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        action_guard_mode="off",
+        structured_navigation=True,
+    )
+
+    run = harness.run("Find all required categories", task_id="nav-struct-test")
+
+    assert run.status == "completed"
+    assert run.final_output == "Resolved from observed evidence."
+    assert all(
+        goal["status"] == "resolved"
+        for goal in run.meta["structured_navigation"]["goals"]
+    )
+    assert run.steps[-1].action.meta["navigation_goals"] == final_payload[
+        "navigation_goals"
+    ]
 
 
 def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:

@@ -90,6 +90,10 @@ def action_from_payload(
     kind = str(payload.get('kind') or '').strip().lower()
     role = engine_role or 'planner'
     meta = dict(payload.get('meta') or {})
+    if isinstance(payload.get('navigation_goals'), list):
+        meta['navigation_goals'] = list(payload['navigation_goals'])
+    if isinstance(payload.get('serves_goal_ids'), list):
+        meta['serves_goal_ids'] = list(payload['serves_goal_ids'])
     meta.update(_action_meta(response, engine_role=role))
     if kind == 'tool':
         name = str(payload.get('tool_name') or payload.get('name') or '').strip()

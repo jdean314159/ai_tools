@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
+import copy
 from fnmatch import fnmatch
 import hashlib
 import json
@@ -48,6 +49,12 @@ from .navigation_claims import (
     NavigationClaim,
     navigation_claims_shape_error,
     validate_navigation_claims,
+)
+from .navigation_goals import (
+    NAVIGATION_GOAL_STATE_SCHEMA,
+    NavigationGoal,
+    seed_navigation_goals,
+    validate_goal_transition,
 )
 
 
@@ -121,6 +128,24 @@ NAVIGATION_ACTION_SCHEMA: dict[str, Any] = {
         },
     ]
 }
+
+
+def _structured_navigation_schema() -> dict[str, Any]:
+    schema = copy.deepcopy(NAVIGATION_ACTION_SCHEMA)
+    for branch in schema["oneOf"]:
+        branch["properties"]["navigation_goals"] = NAVIGATION_GOAL_STATE_SCHEMA
+        branch["required"].append("navigation_goals")
+        if branch["properties"]["kind"]["enum"] == ["tool"]:
+            branch["properties"]["serves_goal_ids"] = {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+            }
+            branch["required"].append("serves_goal_ids")
+    return schema
+
+
+STRUCTURED_NAVIGATION_ACTION_SCHEMA = _structured_navigation_schema()
 
 FINALIZATION_ACTION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -863,6 +888,22 @@ class PlannerUsage:
     stop_reason: str | None = None
 
 
+def _observed_lines(steps: Sequence[AgentStep]) -> dict[str, set[int]]:
+    observed: dict[str, set[int]] = {}
+    for step in steps:
+        observation = step.observation
+        result = observation.tool_result if observation is not None else None
+        if result is None or not result.success:
+            continue
+        for item in result.meta.get("evidence") or []:
+            if not isinstance(item, Mapping) or not isinstance(item.get("path"), str):
+                continue
+            observed.setdefault(str(item["path"]), set()).update(
+                int(line) for line in item.get("lines") or [] if isinstance(line, int)
+            )
+    return observed
+
+
 class BudgetedNavigationPlanner:
     allowed_tools = frozenset({"read_file", "grep", "list_files"})
 
@@ -874,16 +915,37 @@ class BudgetedNavigationPlanner:
         budget: NavigationBudget | None = None,
         temperature: float = 0.0,
         metadata: dict[str, Any] | None = None,
+        structured_navigation: bool = False,
     ) -> None:
         self.engine = engine
         self.tokenizer = tokenizer
         self.budget = budget or NavigationBudget()
         self.temperature = temperature
         self.metadata = dict(metadata or {})
+        self.structured_navigation = structured_navigation
         self.usage = PlannerUsage()
+        self.navigation_goals = seed_navigation_goals()
+
+    def reset_navigation_goals(self) -> None:
+        self.navigation_goals = seed_navigation_goals()
 
     def _user_prompt(self, context: AgentContext) -> str:
         parts = [f"Task:\n{context.task.goal}"]
+        if self.structured_navigation:
+            parts.append(
+                "Required navigation goals (return this complete ledger in "
+                "`navigation_goals` on every action):\n"
+                + json.dumps(
+                    [goal.as_dict() for goal in self.navigation_goals],
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            parts.append(
+                "A tool action must include `serves_goal_ids` naming open goals it "
+                "advances. Resolve a goal only with exact observed evidence. Do not "
+                "finalize while a goal is open; abandon only with an explicit reason."
+            )
         history_summary = dict(context.task.context.get("context_budget") or {}).get("history_summary")
         if history_summary:
             parts.append(f"Earlier bounded history:\n{history_summary}")
@@ -974,8 +1036,16 @@ class BudgetedNavigationPlanner:
                 messages=messages,
                 max_tokens=max_output,
                 temperature=self.temperature,
-                json_schema=NAVIGATION_ACTION_SCHEMA,
-                metadata={**self.metadata, "task_id": context.task.task_id},
+                json_schema=(
+                    STRUCTURED_NAVIGATION_ACTION_SCHEMA
+                    if self.structured_navigation
+                    else NAVIGATION_ACTION_SCHEMA
+                ),
+                metadata={
+                    **self.metadata,
+                    "task_id": context.task.task_id,
+                    "structured_navigation": self.structured_navigation,
+                },
             )
         )
         actual_input = response.usage.input_tokens
@@ -1013,7 +1083,41 @@ class BudgetedNavigationPlanner:
         validation_error = self._validate_payload(payload)
         if validation_error:
             return AgentAction.message_only(f"Rejected invalid action: {validation_error}", meta={"invalid_action": True})
+        if self.structured_navigation:
+            goal_error, proposed_goals = self._validate_goal_payload(payload, context)
+            if goal_error:
+                return AgentAction.message_only(
+                    f"Rejected invalid navigation goals: {goal_error}",
+                    meta={"invalid_action": True, "invalid_navigation_goals": True},
+                )
+            self.navigation_goals = proposed_goals
         return action_from_payload(payload, response=response, engine_role="planner")
+
+    def _validate_goal_payload(
+        self,
+        payload: Mapping[str, Any],
+        context: AgentContext,
+    ) -> tuple[str | None, tuple[NavigationGoal, ...]]:
+        raw_goals = payload.get("navigation_goals")
+        if not isinstance(raw_goals, list) or not all(
+            isinstance(item, Mapping) for item in raw_goals
+        ):
+            return "navigation_goals must be an array of objects", self.navigation_goals
+        try:
+            proposed = tuple(NavigationGoal.from_mapping(item) for item in raw_goals)
+        except (TypeError, ValueError) as exc:
+            return f"invalid navigation goal: {exc}", self.navigation_goals
+        serves = payload.get("serves_goal_ids") or []
+        if not isinstance(serves, list) or not all(isinstance(item, str) for item in serves):
+            return "serves_goal_ids must be an array of strings", self.navigation_goals
+        error = validate_goal_transition(
+            proposed,
+            previous=self.navigation_goals,
+            observed_lines=_observed_lines(context.steps),
+            action_kind=str(payload.get("kind") or ""),
+            serves_goal_ids=serves,
+        )
+        return error, proposed
 
     def finalize(
         self,
@@ -1146,13 +1250,18 @@ class NavigationRunHook(AgentRunLifecycleHook):
         self.planner = planner
 
     def on_start(self, task: AgentTask, *, max_steps: int, engine_roles: EngineRoles) -> None:
-        return None
+        self.planner.reset_navigation_goals()
 
     def on_step(self, task: AgentTask, context: AgentContext, step: AgentStep, run: AgentRun) -> None:
         return None
 
     def on_finish(self, run: AgentRun) -> None:
         run.meta["planner_usage"] = asdict(self.planner.usage)
+        if self.planner.structured_navigation:
+            run.meta["structured_navigation"] = {
+                "enabled": True,
+                "goals": [goal.as_dict() for goal in self.planner.navigation_goals],
+            }
         if self.planner.usage.stop_reason:
             run.status = "stopped"
             if self.planner.usage.stop_reason == "token_budget":
@@ -1169,6 +1278,7 @@ class NavigationHarness:
     tools: NavigationToolRuntime
     max_steps: int = 25
     action_guard_mode: str = "shadow"
+    structured_navigation: bool = False
 
     def run(self, question: str = LEAD_QUESTION, *, task_id: str = "nav-test-00") -> AgentRun:
         return self.runtime.run(AgentTask(task_id=task_id, goal=question, context={"navigation_root": str(self.root)}), max_steps=self.max_steps)
@@ -1185,15 +1295,27 @@ def build_navigation_harness(
     temperature: float = 0.0,
     metadata: dict[str, Any] | None = None,
     action_guard_mode: str = "shadow",
+    structured_navigation: bool = False,
 ) -> NavigationHarness:
     if max_steps < 1:
         raise NavigationConfigurationError("max_steps must be positive")
     if action_guard_mode not in {"off", "shadow", "enforce"}:
         raise NavigationConfigurationError("action_guard_mode must be one of: off, shadow, enforce")
+    if structured_navigation and action_guard_mode != "off":
+        raise NavigationConfigurationError(
+            "structured navigation requires action_guard_mode='off'"
+        )
     resolved_policy = policy or NavigationPolicy(Path(root))
     workspace = NavigationWorkspace(resolved_policy)
     tools = NavigationToolRuntime(workspace)
-    planner = BudgetedNavigationPlanner(engine=engine, tokenizer=tokenizer, budget=budget, temperature=temperature, metadata=metadata)
+    planner = BudgetedNavigationPlanner(
+        engine=engine,
+        tokenizer=tokenizer,
+        budget=budget,
+        temperature=temperature,
+        metadata=metadata,
+        structured_navigation=structured_navigation,
+    )
     control_hooks = (
         []
         if action_guard_mode == "off"
@@ -1214,6 +1336,7 @@ def build_navigation_harness(
         tools=tools,
         max_steps=max_steps,
         action_guard_mode=action_guard_mode,
+        structured_navigation=structured_navigation,
     )
 
 
