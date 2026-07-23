@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agent_lib.eval.relation_schema_probe import run_relation_schema_probe
+from agent_lib.eval.relation_schema_probe import (
+    replay_relation_schema_probe,
+    run_relation_schema_probe,
+)
 from llm_engines.contracts import ChatMessage, GenerationResponse, UsageStats
 
 
@@ -69,6 +72,11 @@ def test_formatter_probe_requires_schema_and_exact_relations() -> None:
                             {
                                 "path": "sample.py",
                                 "start_line": 8,
+                                "end_line": 8,
+                            },
+                            {
+                                "path": "sample.py",
+                                "start_line": 11,
                                 "end_line": 11,
                             }
                         ],
@@ -166,3 +174,86 @@ def test_formatter_probe_separates_schema_failure_from_relation_failure() -> Non
     assert result["trials"][0]["schema_valid"] is False
     assert result["trials"][1]["schema_valid"] is True
     assert result["trials"][1]["exact_relation_correct"] is False
+
+
+def test_saved_probe_can_be_rescored_without_model_call() -> None:
+    original = run_relation_schema_probe(
+        engine=ScriptedProbeModel(
+            [
+                {
+                    "relation_claims": [
+                        {
+                            "kind": "call_edge",
+                            "path": "sample.py",
+                            "symbol": "Pipeline._prepare",
+                            "target": "Pipeline._store_add",
+                            "path_symbols": [],
+                            "evidence": [
+                                {
+                                    "path": "sample.py",
+                                    "start_line": 11,
+                                    "end_line": 11,
+                                }
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "relation_claims": [
+                        {
+                            "kind": "call_path",
+                            "path": "sample.py",
+                            "symbol": "Pipeline.ingest",
+                            "target": "Pipeline._store_add",
+                            "path_symbols": [
+                                "Pipeline.ingest",
+                                "Pipeline._prepare",
+                                "Pipeline._store_add",
+                            ],
+                            "evidence": [
+                                {
+                                    "path": "sample.py",
+                                    "start_line": 8,
+                                    "end_line": 8,
+                                },
+                                {
+                                    "path": "sample.py",
+                                    "start_line": 11,
+                                    "end_line": 11,
+                                },
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "relation_claims": [
+                        {
+                            "kind": "mutation_target",
+                            "path": "sample.py",
+                            "symbol": "Pipeline._store_add",
+                            "target": "self.store.add(value)",
+                            "path_symbols": [],
+                            "evidence": [
+                                {
+                                    "path": "sample.py",
+                                    "start_line": 14,
+                                    "end_line": 14,
+                                }
+                            ],
+                        }
+                    ]
+                },
+            ]
+        ),
+        fixture_root=FIXTURE_ROOT,
+        task_set_path=FIXTURE_ROOT / "tasks.json",
+    )
+
+    replayed = replay_relation_schema_probe(
+        original,
+        fixture_root=FIXTURE_ROOT,
+        task_set_path=FIXTURE_ROOT / "tasks.json",
+    )
+
+    assert original["passed"] is True
+    assert replayed["passed"] is True

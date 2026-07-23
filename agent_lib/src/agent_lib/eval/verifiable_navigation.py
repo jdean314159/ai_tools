@@ -19,6 +19,7 @@ ClaimKind = Literal["definition", "call_edge", "call_path", "mutation_target"]
 
 VERIFIABLE_TASK_SCHEMA_VERSION = 1
 VERIFIABLE_PAIR_SCHEMA_VERSION = 1
+RELATION_CANONICALIZATION_VERSION = 1
 
 RELATION_CLAIMS_SCHEMA: dict[str, Any] = {
     "type": "array",
@@ -256,6 +257,7 @@ class StaticRelation:
     path_symbols: tuple[str, ...] = ()
     start_line: int = 0
     end_line: int = 0
+    required_lines: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,6 +266,8 @@ class VerifiableScore:
     expected: tuple[StaticRelation, ...]
     matched: tuple[StaticRelation, ...]
     unsupported_claims: tuple[dict[str, Any], ...]
+    normalized_claims: tuple[dict[str, Any], ...]
+    imprecise_claims: tuple[dict[str, Any], ...]
     errors: tuple[str, ...]
 
 
@@ -414,6 +418,7 @@ class PythonRelationOracle:
             symbol=definition.symbol,
             start_line=definition.start_line,
             end_line=definition.end_line,
+            required_lines=(definition.start_line,),
         )
 
     def direct_callers(self, *, path: str, symbol: str) -> tuple[StaticRelation, ...]:
@@ -426,6 +431,7 @@ class PythonRelationOracle:
                 target=callee,
                 start_line=call.line,
                 end_line=call.line,
+                required_lines=(call.line,),
             )
             for call in self.calls
             if self._call_matches(call.resolved_target, callee)
@@ -479,6 +485,7 @@ class PythonRelationOracle:
             path_symbols=paths[0],
             start_line=min(lines),
             end_line=max(lines),
+            required_lines=tuple(sorted(set(lines))),
         )
 
     def mutation_target(
@@ -507,6 +514,7 @@ class PythonRelationOracle:
             target=matches[0].target_text,
             start_line=line,
             end_line=line,
+            required_lines=(line,),
         )
 
     def expected(self, task: VerifiableTask) -> tuple[StaticRelation, ...]:
@@ -548,6 +556,90 @@ class PythonRelationOracle:
     @staticmethod
     def _call_matches(target: str, symbol: str) -> bool:
         return target == symbol or symbol.endswith(f".{target}")
+
+
+class RelationCanonicalizer:
+    """Versioned, deterministic normalization shared by claims and oracle output."""
+
+    version = RELATION_CANONICALIZATION_VERSION
+
+    def __init__(self, oracle: PythonRelationOracle) -> None:
+        self._full_to_canonical: dict[str, str] = {}
+        canonical_to_full: dict[str, str] = {}
+        for full, definition in oracle.definitions.items():
+            module = ".".join(Path(definition.path).with_suffix("").parts)
+            prefix = f"{module}."
+            canonical = full[len(prefix) :] if full.startswith(prefix) else full
+            other = canonical_to_full.get(canonical)
+            if other is not None and other != full:
+                raise VerifiableNavigationError(
+                    f"canonical symbol collision: {canonical} ({other}, {full})"
+                )
+            canonical_to_full[canonical] = full
+            self._full_to_canonical[full] = canonical
+        self._canonical_symbols = frozenset(canonical_to_full)
+
+    def symbol(self, value: str) -> str:
+        text = value.strip()
+        if text in self._full_to_canonical:
+            return self._full_to_canonical[text]
+        if text in self._canonical_symbols:
+            return text
+        return text
+
+    def callable(self, value: str) -> str:
+        text = value.strip()
+        try:
+            expression = ast.parse(text, mode="eval").body
+        except SyntaxError as exc:
+            raise VerifiableNavigationError(
+                f"invalid callable expression: {value!r}"
+            ) from exc
+        if isinstance(expression, ast.Call):
+            expression = expression.func
+        dotted = _dotted_name(expression)
+        if dotted is None:
+            raise VerifiableNavigationError(
+                f"dynamic callable expression is not canonicalizable: {value!r}"
+            )
+        return self.symbol(dotted)
+
+    def claim(self, claim: RelationClaim) -> RelationClaim:
+        target = claim.target
+        if claim.kind in {"call_edge", "call_path"}:
+            target = self.symbol(target)
+        elif claim.kind == "mutation_target":
+            target = self.callable(target)
+        return RelationClaim(
+            kind=claim.kind,
+            path=Path(claim.path).as_posix(),
+            symbol=self.symbol(claim.symbol),
+            target=target,
+            path_symbols=tuple(self.symbol(item) for item in claim.path_symbols),
+            evidence=tuple(
+                EvidenceRef(Path(ref.path).as_posix(), ref.start_line, ref.end_line)
+                for ref in claim.evidence
+            ),
+        )
+
+    def relation(self, relation: StaticRelation) -> StaticRelation:
+        target = relation.target
+        if relation.kind in {"call_edge", "call_path"}:
+            target = self.symbol(target)
+        elif relation.kind == "mutation_target":
+            target = self.callable(target)
+        return StaticRelation(
+            kind=relation.kind,
+            path=Path(relation.path).as_posix(),
+            symbol=self.symbol(relation.symbol),
+            target=target,
+            path_symbols=tuple(
+                self.symbol(item) for item in relation.path_symbols
+            ),
+            start_line=relation.start_line,
+            end_line=relation.end_line,
+            required_lines=relation.required_lines,
+        )
 
 
 def load_verifiable_task_set(
@@ -594,6 +686,7 @@ def load_verifiable_task_set(
     if len({task.task_id for task in tasks}) != len(tasks):
         raise VerifiableNavigationError("task ids must be unique")
     oracle = PythonRelationOracle(root)
+    RelationCanonicalizer(oracle)
     for task in tasks:
         if not oracle.expected(task):
             raise VerifiableNavigationError(
@@ -609,13 +702,24 @@ def score_verifiable_claims(
     oracle: PythonRelationOracle,
     observed_lines: Mapping[str, set[int]],
 ) -> VerifiableScore:
-    expected = oracle.expected(task)
+    canonicalizer = RelationCanonicalizer(oracle)
+    expected = tuple(
+        canonicalizer.relation(item) for item in oracle.expected(task)
+    )
     expected_by_key = {_relation_key(item): item for item in expected}
     matched: list[StaticRelation] = []
     unsupported: list[dict[str, Any]] = []
+    normalized: list[dict[str, Any]] = []
+    imprecise: list[dict[str, Any]] = []
     errors: list[str] = []
     seen: set[tuple[Any, ...]] = set()
-    for index, claim in enumerate(claims, start=1):
+    for index, raw_claim in enumerate(claims, start=1):
+        try:
+            claim = canonicalizer.claim(raw_claim)
+        except VerifiableNavigationError as exc:
+            errors.append(f"claim {index} cannot be canonicalized: {exc}")
+            continue
+        normalized.append(claim.as_dict())
         if not claim.evidence:
             errors.append(f"claim {index} has no evidence")
             continue
@@ -642,11 +746,19 @@ def score_verifiable_claims(
         )
         key = _relation_key(relation)
         expected_relation = expected_by_key.get(key)
-        if expected_relation is None or not lines.intersection(
-            range(expected_relation.start_line, expected_relation.end_line + 1)
-        ):
-            unsupported.append(claim.as_dict())
+        if expected_relation is None or not set(
+            expected_relation.required_lines
+        ).issubset(lines):
+            unsupported.append(raw_claim.as_dict())
             continue
+        extra_lines = sorted(lines - set(expected_relation.required_lines))
+        if extra_lines:
+            imprecise.append(
+                {
+                    "claim": raw_claim.as_dict(),
+                    "extra_lines": extra_lines,
+                }
+            )
         if key in seen:
             errors.append(f"claim {index} duplicates a relation")
             continue
@@ -655,6 +767,7 @@ def score_verifiable_claims(
     correct = (
         set(seen) == set(expected_by_key)
         and not unsupported
+        and not imprecise
         and not errors
     )
     return VerifiableScore(
@@ -662,6 +775,8 @@ def score_verifiable_claims(
         expected=expected,
         matched=tuple(sorted(matched, key=_relation_key)),
         unsupported_claims=tuple(unsupported),
+        normalized_claims=tuple(normalized),
+        imprecise_claims=tuple(imprecise),
         errors=tuple(errors),
     )
 

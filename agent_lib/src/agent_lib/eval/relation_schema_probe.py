@@ -6,7 +6,12 @@ import json
 from pathlib import Path
 from typing import Any, Protocol
 
-from llm_engines.contracts import ChatMessage, GenerationRequest, GenerationResponse
+from llm_engines.contracts import (
+    ChatMessage,
+    GenerationRequest,
+    GenerationResponse,
+    UsageStats,
+)
 
 from .verifiable_navigation import (
     RELATION_CLAIMS_SCHEMA,
@@ -89,6 +94,59 @@ def run_relation_schema_probe(
     }
 
 
+def replay_relation_schema_probe(
+    record: dict[str, Any],
+    *,
+    fixture_root: str | Path,
+    task_set_path: str | Path,
+) -> dict[str, Any]:
+    """Rescore saved response text without another model invocation."""
+
+    root = Path(fixture_root).resolve(strict=True)
+    tasks = {
+        task.task_id: task
+        for task in load_verifiable_task_set(task_set_path, source_root=root)
+    }
+    oracle = PythonRelationOracle(root)
+    observed_lines = {
+        path.relative_to(root).as_posix(): set(
+            range(1, len(path.read_text(encoding="utf-8").splitlines()) + 1)
+        )
+        for path in sorted(root.rglob("*.py"))
+    }
+    rescored: list[dict[str, Any]] = []
+    for saved in record.get("trials") or []:
+        task_id = str(saved.get("task_id") or "")
+        usage = saved.get("usage") if isinstance(saved.get("usage"), dict) else {}
+        response = GenerationResponse(
+            message=ChatMessage(
+                role="assistant",
+                content=str(saved.get("response_text") or ""),
+            ),
+            finish_reason=str(saved.get("finish_reason") or "unknown"),
+            usage=UsageStats(**usage),
+            model_name=str(saved.get("model") or "saved"),
+            backend=str(saved.get("backend") or "replay"),
+        )
+        rescored.append(
+            _score_probe_response(
+                task=tasks[task_id],
+                response=response,
+                oracle=oracle,
+                observed_lines=observed_lines,
+            )
+        )
+    return {
+        "schema_version": 1,
+        "track": "NAV-VERIFIABLE-00",
+        "probe": "relation-schema-formatter-replay",
+        "formatter_only": True,
+        "source_record_probe": record.get("probe"),
+        "trials": rescored,
+        "passed": all(bool(trial["passed"]) for trial in rescored),
+    }
+
+
 def _probe_messages(
     task: VerifiableTask,
     source_text: dict[str, str],
@@ -168,6 +226,8 @@ def _score_probe_response(
         "exact_relation_correct": score.correct,
         "errors": errors,
         "unsupported_claims": list(score.unsupported_claims),
+        "normalized_claims": list(score.normalized_claims),
+        "imprecise_claims": list(score.imprecise_claims),
         "response_text": raw,
         "usage": response.usage.model_dump(),
         "model": response.model_name,

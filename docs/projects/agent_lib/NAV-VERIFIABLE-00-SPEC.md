@@ -109,27 +109,30 @@ part of this gate.
 Implemented:
 
 - Versioned, source-hash-pinned task fixtures and all four task shapes
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 20–142 and
-  540–590).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 20–156 and
+  645–696).
 - Relation-aware claim schema and shape validation
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 23–234).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 24–248).
 - Conservative AST oracle for definitions, direct-call edges, unique paths,
   and named-site call expressions
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 275–538).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 292–559).
 - Exact evidence-aware relation scoring
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 592–654).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 698–782).
 - Paired-run manifest validation enforcing identical shared configuration and
   explicit alternating order
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 656–694).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 784–822).
+- Frozen, two-sided relation canonicalization with fixture-wide collision
+  rejection and raw/normalized audit output. See
+  `NAV-RELATION-CANONICALIZATION-V1.md` and
+  `agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 561–643.
+- Exact required-line evidence scoring for every path edge; broad ranges are
+  reported as imprecise and cannot pass exact correctness.
 - Deterministic fixtures and tests for aliases, same-named methods, nested
   functions, indirect helper calls, unobserved evidence, hash drift, and
   dynamically constructed calls.
 
 Still required before live use:
 
-- A user-visible canonicalization rule shared by tasks, relation claims, and
-  the AST oracle. The formatter probe showed that internal module prefixes and
-  callable-only versus full-call expressions are currently mismatched.
 - Planner output-schema adoption for `relation_claims`.
 - Task-specific goal seeding instead of the NAV-STRUCT-00 exhaustive ledger.
 - A paired executable that runs both modes and writes the manifest plus scores.
@@ -147,6 +150,7 @@ the literal call expression without asserting its runtime dispatch target.
   for multiple tasks of all four shapes.
 - Alternating run order is sufficient to control local engine cache/order
   effects for the first small campaign.
-- The model can emit structurally valid relation claims on the trivial fixture
-  (3/3 corrected formatter probes), but exact canonical representation remains
-  unresolved and must be fixed before planner adoption.
+- The model emitted structurally valid relation claims on the trivial fixture
+  (3/3 corrected formatter probes). Frozen canonicalization resolves the two
+  string-form differences offline. The remaining formatter miss is broad path
+  evidence (lines 7–14 instead of exact edge lines 8 and 11).

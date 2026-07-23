@@ -25,7 +25,7 @@ and indirect helper calls cannot satisfy a direct-edge claim.
 
 ## Deterministic result
 
-The `agent_lib` package gate passed with `128 passed`. Dedicated tests cover all
+The `agent_lib` package gate passed with `134 passed`. Dedicated tests cover all
 four task shapes, exact relation scoring, indirect-as-direct rejection,
 unobserved evidence, source hash drift, aliases, same-named methods, nested
 functions, dynamic calls, relation-claim shape, and paired configuration drift.
@@ -75,11 +75,10 @@ callable expression `self.store.add`, while the model returned the complete
 call expression `self.store.add(value)`. Both model forms are supported by the
 visible source and task wording.
 
-Therefore formatter feasibility passes, but the external canonicalization
-contract does not. No further prompt or live iteration was performed. Planner
-adoption and production task construction remain blocked until the claim
-contract chooses and deterministically normalizes one user-visible symbol and
-call-expression representation.
+Therefore formatter feasibility passed while the external canonicalization
+contract remained unresolved at that checkpoint. No further prompt or live
+iteration was performed; the deterministic scoring correction and offline
+replay below resolved the representation question.
 
 Artifacts:
 
@@ -87,3 +86,31 @@ Artifacts:
   `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-20260723.json`;
 - corrected protocol:
   `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-corrected-20260723.json`.
+
+## Frozen canonicalization and offline replay
+
+Canonicalization v1 was fixed before production task selection and is applied
+to both oracle relations and model claims. It removes only the source-derived
+module prefix, preserves structural qualification, and reduces AST call
+expressions to their callable while retaining raw claims for audit. Fixture
+admission rejects any symbol collision introduced by normalization. The full
+rules are in `NAV-RELATION-CANONICALIZATION-V1.md`.
+
+The scorer also now records the exact syntax-line set required by each
+relation. A path requires every component edge line, not overlap with the
+minimum-to-maximum enclosing span. Extra lines are reported as evidence
+imprecision and fail exact correctness.
+
+Replaying the saved corrected responses without another model call produced:
+
+- direct caller: exact pass after two-sided symbol normalization;
+- mutation target: exact pass after deterministic call-expression reduction;
+- call path: relation and required lines present, but exact failure because the
+  cited range 7–14 includes six non-edge lines around required lines 8 and 11.
+
+The frozen scorer therefore returns 2/3 exact passes, not the earlier 0/3 and
+not an overstated 3/3. Formatter feasibility remains established; minimal
+evidence precision remains unproven under live navigation.
+
+Replay artifact:
+`/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-canonical-v1-replay-20260723.json`.

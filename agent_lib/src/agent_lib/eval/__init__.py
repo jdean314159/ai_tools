@@ -3,7 +3,9 @@ from .navigation_claims import ClaimValidation, EvidenceRef, NAVIGATION_CLAIMS_S
 from .navigation_goals import NAV_TEST_00_GOALS, NAVIGATION_GOAL_STATE_SCHEMA, NavigationGoal, seed_navigation_goals, validate_goal_transition
 from .verifiable_navigation import (
     PythonRelationOracle,
+    RELATION_CANONICALIZATION_VERSION,
     RELATION_CLAIMS_SCHEMA,
+    RelationCanonicalizer,
     RelationClaim,
     StaticRelation,
     VerifiableNavigationError,
@@ -58,7 +60,9 @@ __all__ = [
     'validate_goal_transition',
     'validate_navigation_claims',
     'PythonRelationOracle',
+    'RELATION_CANONICALIZATION_VERSION',
     'RELATION_CLAIMS_SCHEMA',
+    'RelationCanonicalizer',
     'RelationClaim',
     'StaticRelation',
     'VerifiableNavigationError',

@@ -9,6 +9,7 @@ import pytest
 from agent_lib.eval.navigation_claims import EvidenceRef
 from agent_lib.eval.verifiable_navigation import (
     PythonRelationOracle,
+    RelationCanonicalizer,
     RelationClaim,
     VerifiableNavigationError,
     build_pair_manifest,
@@ -142,6 +143,106 @@ def test_exact_relation_scoring_rejects_indirect_call_as_direct(tmp_path) -> Non
     assert accepted.correct is True
     assert rejected.correct is False
     assert rejected.unsupported_claims == (indirect.as_dict(),)
+
+
+def test_two_sided_canonicalization_accepts_task_visible_symbols_and_calls(
+    tmp_path,
+) -> None:
+    fixture = tmp_path / "tasks.json"
+    _write_task_set(fixture)
+    tasks = load_verifiable_task_set(fixture, source_root=FIXTURE_ROOT)
+    oracle = PythonRelationOracle(FIXTURE_ROOT)
+    observed = {"sample.py": set(range(1, 15))}
+    caller_score = score_verifiable_claims(
+        tasks[1],
+        [
+            RelationClaim(
+                kind="call_edge",
+                path="sample.py",
+                symbol="Pipeline._prepare",
+                target="Pipeline._store_add",
+                evidence=(EvidenceRef("sample.py", 11, 11),),
+            )
+        ],
+        oracle=oracle,
+        observed_lines=observed,
+    )
+    mutation_score = score_verifiable_claims(
+        tasks[3],
+        [
+            RelationClaim(
+                kind="mutation_target",
+                path="sample.py",
+                symbol="Pipeline._store_add",
+                target="self.store.add(value)",
+                evidence=(EvidenceRef("sample.py", 14, 14),),
+            )
+        ],
+        oracle=oracle,
+        observed_lines=observed,
+    )
+
+    assert caller_score.correct is True
+    assert caller_score.normalized_claims[0]["symbol"] == "Pipeline._prepare"
+    assert mutation_score.correct is True
+    assert mutation_score.normalized_claims[0]["target"] == "self.store.add"
+
+
+def test_path_scoring_requires_every_edge_line_and_reports_extra_lines(
+    tmp_path,
+) -> None:
+    fixture = tmp_path / "tasks.json"
+    _write_task_set(fixture)
+    task = load_verifiable_task_set(fixture, source_root=FIXTURE_ROOT)[2]
+    oracle = PythonRelationOracle(FIXTURE_ROOT)
+    observed = {"sample.py": set(range(1, 15))}
+    missing_edge = RelationClaim(
+        kind="call_path",
+        path="sample.py",
+        symbol="Pipeline.ingest",
+        target="Pipeline._store_add",
+        path_symbols=(
+            "Pipeline.ingest",
+            "Pipeline._prepare",
+            "Pipeline._store_add",
+        ),
+        evidence=(EvidenceRef("sample.py", 8, 8),),
+    )
+    broad = RelationClaim(
+        kind="call_path",
+        path="sample.py",
+        symbol="Pipeline.ingest",
+        target="Pipeline._store_add",
+        path_symbols=missing_edge.path_symbols,
+        evidence=(EvidenceRef("sample.py", 7, 14),),
+    )
+    exact = RelationClaim(
+        kind="call_path",
+        path="sample.py",
+        symbol="Pipeline.ingest",
+        target="Pipeline._store_add",
+        path_symbols=missing_edge.path_symbols,
+        evidence=(
+            EvidenceRef("sample.py", 8, 8),
+            EvidenceRef("sample.py", 11, 11),
+        ),
+    )
+
+    missing_score = score_verifiable_claims(
+        task, [missing_edge], oracle=oracle, observed_lines=observed
+    )
+    broad_score = score_verifiable_claims(
+        task, [broad], oracle=oracle, observed_lines=observed
+    )
+    exact_score = score_verifiable_claims(
+        task, [exact], oracle=oracle, observed_lines=observed
+    )
+
+    assert missing_score.correct is False
+    assert missing_score.unsupported_claims == (missing_edge.as_dict(),)
+    assert broad_score.correct is False
+    assert broad_score.imprecise_claims[0]["extra_lines"] == [7, 9, 10, 12, 13, 14]
+    assert exact_score.correct is True
 
 
 def test_claim_requires_observed_relation_evidence(tmp_path) -> None:
@@ -341,6 +442,20 @@ def test_same_named_methods_require_a_qualified_symbol(tmp_path) -> None:
         oracle.definition(path="sample.py", symbol="Left.run").symbol
         == "sample.Left.run"
     )
+
+
+def test_canonicalizer_rejects_fixture_wide_symbol_collisions(tmp_path) -> None:
+    (tmp_path / "left.py").write_text(
+        "class Runner:\n    def run(self):\n        return None\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "right.py").write_text(
+        "class Runner:\n    def run(self):\n        return None\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(VerifiableNavigationError, match="canonical symbol collision"):
+        RelationCanonicalizer(PythonRelationOracle(tmp_path))
 
 
 def test_nested_function_calls_are_not_attributed_to_parent(tmp_path) -> None:
