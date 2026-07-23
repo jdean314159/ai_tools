@@ -104,6 +104,12 @@ The first live campaign requires deterministic scorer tests plus at least one
 autonomous/structured pair for every task shape. No 8B portability campaign is
 part of this gate.
 
+Campaign v1 further requires at least fourteen admitted tasks: four local, four
+intermediate, and six exploratory. The campaign is incomplete until every
+admitted task has both paired outcomes recorded. Exploratory results carry the
+primary termination-control hypothesis and cannot be pooled away by easier
+tiers.
+
 ## Must be built (does not exist yet)
 
 Implemented:
@@ -130,6 +136,11 @@ Implemented:
 - A source-only, hashed task-admission manifest with frozen local,
   intermediate, and exploratory tiers. See `NAV-TASK-ADMISSION-V1.md` and
   `agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 827–967.
+- A campaign-level admission and reporting policy requiring exploratory
+  diversity across three source snapshots, exact paired coverage, per-tier
+  reporting, and only a secondary equal-tier macro-average. See
+  `NAV-VERIFIABLE-CAMPAIGN-V1.md` and
+  `agent_lib/src/agent_lib/eval/verifiable_campaign.py`, lines 26–289.
 - Deterministic fixtures and tests for aliases, same-named methods, nested
   functions, indirect helper calls, unobserved evidence, hash drift, and
   dynamically constructed calls.

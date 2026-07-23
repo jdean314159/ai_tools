@@ -20,6 +20,12 @@ from .verifiable_navigation import (
     relation_claims_shape_error,
     score_verifiable_claims,
 )
+from .verifiable_campaign import (
+    CAMPAIGN_TIER_MINIMUMS,
+    VERIFIABLE_CAMPAIGN_SCHEMA_VERSION,
+    build_campaign_admission_manifest,
+    summarize_paired_campaign,
+)
 from .repo_navigation import (
     BudgetedNavigationPlanner,
     GroundTruthRegion,
@@ -80,6 +86,10 @@ __all__ = [
     'load_verifiable_task_set',
     'relation_claims_shape_error',
     'score_verifiable_claims',
+    'CAMPAIGN_TIER_MINIMUMS',
+    'VERIFIABLE_CAMPAIGN_SCHEMA_VERSION',
+    'build_campaign_admission_manifest',
+    'summarize_paired_campaign',
     'BudgetedNavigationPlanner',
     'GroundTruthRegion',
     'HuggingFaceModelTokenizer',

@@ -25,7 +25,7 @@ and indirect helper calls cannot satisfy a direct-edge claim.
 
 ## Deterministic result
 
-The `agent_lib` package gate passed with `136 passed`. Dedicated tests cover all
+The `agent_lib` package gate passed with `141 passed`. Dedicated tests cover all
 four task shapes, exact relation scoring, indirect-as-direct rejection,
 unobserved evidence, source hash drift, aliases, same-named methods, nested
 functions, dynamic calls, relation-claim shape, and paired configuration drift.
@@ -143,3 +143,20 @@ identify a calibration miss but cannot reclassify or remove a task.
 
 Decomposed replay artifact:
 `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-decomposed-v1-replay-20260723.json`.
+
+## Campaign policy gate
+
+Campaign schema v1 is frozen before production task construction. It requires
+at least four local, four intermediate, and six exploratory tasks. Exploratory
+tasks must span three source-hash-derived snapshots, no task shape may exceed
+half the tier, and both decoy-heavy and graph/multi-file subsets require at
+least three tasks.
+
+The paired summarizer reports every metric per tier, makes exploratory results
+primary, retains all individual token and tool-step deltas, and permits only an
+equal-tier macro-average as the secondary overall result. When supplied the
+campaign manifest, it rejects any missing, additional, duplicated, or re-tiered
+pair.
+
+This is deterministic infrastructure only. No production tasks were selected
+and no paired model runs were performed.
