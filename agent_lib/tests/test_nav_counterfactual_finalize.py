@@ -46,8 +46,8 @@ def _record() -> dict:
     }
 
 
-def test_observed_source_retains_matching_call_and_enclosing_symbols() -> None:
-    evidence = _MODULE._observed_source(_record(), 1, context_lines=0)
+def test_observed_source_uses_lossless_production_ledger() -> None:
+    evidence = _MODULE._observed_source(_record(), 1)
 
     assert "class ChromaStorage" in evidence
     assert "def add" in evidence

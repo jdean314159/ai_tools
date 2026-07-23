@@ -14,87 +14,33 @@ from agent_lib.eval.repo_navigation import (
     FINALIZATION_SYSTEM_PROMPT,
     LlamaServerClient,
 )
+from agent_lib.eval.evidence_finalization import build_evidence_ledger
 from agent_lib.llm_engines_adapter import extract_json_object
 from llm_engines.contracts import ChatMessage, GenerationRequest
 
 
-_SOURCE_LINE = re.compile(r"^(\d+): ?(.*)$")
 _PATH = re.compile(r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.py")
-_RELEVANCE_TERMS = (
-    "chroma",
-    "persistentclient",
-    "create_collection",
-    "get_or_create_collection",
-    ".upsert(",
-    ".delete(",
-    "delete_collection(",
-    "delete_by_source(",
-    "_store.add(",
-    "_store.prune(",
-    "_make_client(",
-)
 
 
-def _enclosing_headers(lines: dict[int, str], number: int) -> set[int]:
-    """Retain observable symbol names needed to classify a matched call."""
-
-    selected: set[int] = set()
-    hit_indent = len(lines[number]) - len(lines[number].lstrip())
-    method_indent = hit_indent
-    for candidate in sorted((line for line in lines if line < number), reverse=True):
-        text = lines[candidate]
-        stripped = text.lstrip()
-        indent = len(text) - len(stripped)
-        if stripped.startswith(("def ", "async def ")) and indent < method_indent:
-            selected.update({candidate - 1, candidate})
-            method_indent = indent
-            break
-    for candidate in sorted((line for line in lines if line < number), reverse=True):
-        text = lines[candidate]
-        stripped = text.lstrip()
-        indent = len(text) - len(stripped)
-        if stripped.startswith("class ") and indent < method_indent:
-            selected.update({candidate - 1, candidate})
-            break
-    return selected
-
-
-def _observed_source(record: dict[str, Any], action_cutoff: int, *, context_lines: int = 6) -> str:
-    files: dict[str, dict[int, str]] = {}
+def _steps_through_action(record: dict[str, Any], action_cutoff: int) -> list[dict[str, Any]]:
+    selected = []
     tool_actions = 0
     for step in record["run"]["steps"]:
+        selected.append(step)
         action = step["action"]
         call = action.get("tool_call")
         if action.get("kind") != "tool" or not isinstance(call, dict):
             continue
         tool_actions += 1
-        if tool_actions > action_cutoff:
+        if tool_actions == action_cutoff:
             break
-        observation = step.get("observation") or {}
-        result = observation.get("tool_result") or {}
-        if call.get("name") != "read_file" or not result.get("success"):
-            continue
-        path = str((call.get("arguments") or {}).get("path") or "")
-        parsed: dict[int, str] = {}
-        for raw_line in str(observation.get("text") or "").splitlines():
-            match = _SOURCE_LINE.match(raw_line)
-            if match:
-                parsed[int(match.group(1))] = match.group(2)
-        files.setdefault(path, {}).update(parsed)
+    return selected
 
-    sections: list[str] = []
-    for path, lines in sorted(files.items()):
-        selected: set[int] = set()
-        for number, text in lines.items():
-            if any(term in text.lower() for term in _RELEVANCE_TERMS):
-                selected.update(range(number - context_lines, number + context_lines + 1))
-                selected.update(_enclosing_headers(lines, number))
-        retained = sorted(number for number in selected if number in lines)
-        if not retained:
-            continue
-        rendered = [f"{number}: {lines[number]}" for number in retained]
-        sections.append(f"### {path}\n" + "\n".join(rendered))
-    return "\n\n".join(sections)
+
+def _observed_source(record: dict[str, Any], action_cutoff: int) -> str:
+    return build_evidence_ledger(
+        _steps_through_action(record, action_cutoff)
+    ).text
 
 
 def _cumulative_tokens(record: dict[str, Any], action_cutoff: int) -> int:

@@ -192,6 +192,35 @@ need structured, evidence-linked claims with deterministic validation, not
 another free-form prompt revision. Until then, forced budget-fraction
 finalization can only be described as experimental harness assistance.
 
+### Production-builder revalidation — failed
+
+The task-specific counterfactual compactor was not promoted into runtime. A
+de-oracled production candidate instead built a lossless ledger of every unique
+successful `(path, line, text)` observation, plus path-only evidence. It used no
+task keywords, answer-key fields, relevance ranking, or trajectory-prefix
+reconstruction. Overlapping reads collapsed to 1,061 unique observed source
+lines.
+
+At action 17 the exact prompt was 14,183 tokens. It fit within the remaining
+35,597-token cumulative budget and 40K context window, but the generated answer
+recovered only 10/11 surfaced regions (0.909 evidence-conditioned recall) and
+10/12 overall. It omitted the observed pipeline `ChromaStorage` construction
+and still described indirect `_embed_and_store` calls as mutation call sites.
+The finalization consumed 15,209 tokens, yielding approximately 16,615 tokens
+(14.3%) savings relative to the 116,227-token failed run.
+
+At action 19 the same 14,183-token prompt exceeded the 13,639 tokens remaining
+before even reserving output, so finalization correctly failed budget preflight.
+This also confirms that a novelty delay cannot safely accompany the lossless
+builder.
+
+Per the predeclared gate, the production port stopped before runtime-hook
+integration: answer quality materially regressed from the task-specific
+counterfactual's 11/11 surfaced recall, and semantic precision remained
+unvalidated. No `BudgetFractionFinalizationHook` was installed. The lossless
+ledger and counterfactual evaluator remain experimental research artifacts;
+NAV runtime defaults and enforcement behavior are unchanged.
+
 ## Scope and remaining risk
 
 This result supersedes the text n-gram detector for NAV-class failures. It does
