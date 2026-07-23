@@ -249,7 +249,14 @@ def main(argv: list[str] | None = None) -> int:
             )
     wall_time = time.perf_counter() - started
     post_digest = tree_content_digest(root)
-    score = score_navigation_run(run, harness.tools.telemetry, regions, budget, max_steps=args.max_steps)
+    score = score_navigation_run(
+        run,
+        harness.tools.telemetry,
+        regions,
+        budget,
+        max_steps=args.max_steps,
+        source_root=root,
+    )
     score["read_only_verified"] = pre_digest == post_digest
     score["passed"] = bool(score["passed"] and score["read_only_verified"])
     score["wall_time_seconds"] = wall_time

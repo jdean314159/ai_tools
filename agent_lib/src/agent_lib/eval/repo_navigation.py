@@ -1426,6 +1426,7 @@ def score_navigation_run(
     budget: NavigationBudget,
     *,
     max_steps: int = 25,
+    source_root: str | Path | None = None,
 ) -> dict[str, Any]:
     surfaced: set[str] = set()
     useful_calls = 0
@@ -1462,6 +1463,7 @@ def score_navigation_run(
         claims,
         telemetry_calls=telemetry.calls,
         regions=regions,
+        source_root=source_root,
     )
     correctly_named = set(claim_validation.matched_region_ids)
     known_paths = {region.path for region in regions}

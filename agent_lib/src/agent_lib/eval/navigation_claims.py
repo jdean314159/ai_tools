@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import ast
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 
@@ -150,8 +152,14 @@ def validate_navigation_claims(
     *,
     telemetry_calls: Sequence[Mapping[str, Any]],
     regions: Sequence[object],
+    source_root: str | Path | None = None,
 ) -> ClaimValidation:
-    """Validate claims against observed evidence and claim-local expectations."""
+    """Validate claims against observed evidence and claim-local expectations.
+
+    When ``source_root`` is supplied, Python claims also require their cited
+    lines to be enclosed by the claimed function or class. This is deliberately
+    syntactic: it does not prove call direction or other semantic relations.
+    """
 
     observed: dict[str, set[int]] = {}
     for call in telemetry_calls:
@@ -188,6 +196,13 @@ def validate_navigation_claims(
                 refs_valid = False
             claim_lines.update(referenced)
         if not refs_valid:
+            continue
+        if source_root is not None and not _symbol_encloses_evidence(
+            claim, source_root=Path(source_root)
+        ):
+            errors.append(
+                f"{prefix} symbol {claim.symbol!r} does not enclose its cited evidence"
+            )
             continue
 
         candidates = []
@@ -230,3 +245,50 @@ def _terms_are_claim_local(claim: NavigationClaim, terms: Sequence[str]) -> bool
         (claim.path, claim.symbol, claim.operation, claim.classification)
     ).lower()
     return all(str(term).lower() in haystack for term in terms)
+
+
+def _symbol_encloses_evidence(
+    claim: NavigationClaim,
+    *,
+    source_root: Path,
+) -> bool:
+    """Return whether a Python AST symbol encloses at least one cited line."""
+
+    if Path(claim.path).suffix != ".py":
+        return True
+    try:
+        resolved_root = source_root.resolve(strict=True)
+        source_path = (resolved_root / claim.path).resolve(strict=True)
+        source_path.relative_to(resolved_root)
+        source = source_path.read_text(encoding="utf-8")
+        tree = ast.parse(source)
+    except (OSError, SyntaxError, UnicodeError, ValueError):
+        return False
+
+    target = claim.symbol.split(".")
+    cited_lines = {
+        line
+        for ref in claim.evidence
+        for line in range(ref.start_line, ref.end_line + 1)
+    }
+
+    def visit(node: ast.AST, parents: tuple[str, ...] = ()) -> bool:
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                qualified = (*parents, child.name)
+                if (
+                    len(qualified) <= len(target)
+                    and target[-len(qualified) :] == list(qualified)
+                    and any(
+                        int(child.lineno) <= line <= int(child.end_lineno or child.lineno)
+                        for line in cited_lines
+                    )
+                ):
+                    return True
+                if visit(child, qualified):
+                    return True
+            elif visit(child, parents):
+                return True
+        return False
+
+    return visit(tree)

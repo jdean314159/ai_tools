@@ -68,6 +68,26 @@ It also renamed the observed `ChromaStorage.add` operation as
 `ChromaStorage.store_chunks` and reported indirect `_embed_and_store` helper
 invocations as direct storage-mutation call sites.
 
+This is a control-loop improvement despite the failed completeness gate. Unlike
+the budget-exhausting NAV failures, the structured run terminated with an
+answer, and unlike the earlier structured-claims control it could not finalize
+after inspecting only `chroma.py`. The deterministic ledger contract held:
+there were no malformed goal transitions, disappearing goals, unobserved goal
+evidence, or premature-finalization violations.
+
+The result is also a regression against the autonomous seed2 control, which
+completed with 12/12 evidence recall at 53,494 tokens. Structured seed2 used
+76,179 tokens (42.4% more) while surfacing only 9/12 regions. The ledger's
+control benefit therefore carries a measured exploration and token cost on the
+one trajectory where autonomous navigation succeeded.
+
+After this run, claim validation gained an optional source-backed syntactic
+check: cited Python lines must be enclosed by the claimed function or class.
+This rejects an invented enclosing symbol such as
+`ChromaStorage.store_chunks`. It intentionally does not validate semantic
+relations such as whether a call is direct or indirect; that requires an
+AST/call-graph relation scorer rather than identifier grounding.
+
 ## Conclusion
 
 Externalizing required goals improves control flow but does not make the
@@ -83,3 +103,8 @@ navigation and closer to a task-specific execution protocol.
 
 No additional prompt tuning, budget fallback, action-loop enforcement, or 8B
 portability run is justified until that evaluation target is explicitly chosen.
+
+The exhaustive-enumeration result remains a negative result under
+NAV-STRUCT-00. A separate `NAV-VERIFIABLE-00` track may evaluate the ledger on
+locally decidable goals, but must preserve an autonomous baseline on the exact
+same tasks and must not redefine NAV-TEST-00.

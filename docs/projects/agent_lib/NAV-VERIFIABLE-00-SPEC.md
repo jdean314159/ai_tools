@@ -1,0 +1,127 @@
+# NAV-VERIFIABLE-00 paired structured-navigation evaluation
+
+**Status:** Implementation-ready experiment specification; task fixtures and
+relation scorer are not built.
+
+## Purpose
+
+Measure whether an explicit information-goal ledger improves termination and
+evidence discipline on repository-navigation questions whose answers are
+decidable from local source structure.
+
+This is a separate track from:
+
+- `NAV-TEST-00`, the autonomous exhaustive-enumeration benchmark, whose failure
+  status remains unchanged;
+- `NAV-STRUCT-00`, the failed structured exhaustive-enumeration experiment.
+
+Results must be reported as harness-structured navigation, never as autonomous
+NAV performance.
+
+## Confirmed reusable surfaces
+
+The existing harness already provides:
+
+- the same read-only `read_file`, `grep`, and `list_files` tool surface for both
+  modes (`agent_lib/src/agent_lib/eval/repo_navigation.py`, lines 395–538);
+- an opt-in complete goal ledger with deterministic transition validation
+  (`agent_lib/src/agent_lib/eval/navigation_goals.py`, lines 70–169);
+- an opt-in structured planner mode while autonomous defaults remain unchanged
+  (`agent_lib/src/agent_lib/eval/repo_navigation.py`, lines 910–1120);
+- structured final claims with evidence references
+  (`agent_lib/src/agent_lib/eval/navigation_claims.py`, lines 12–147);
+- source-backed syntactic validation that a claimed Python symbol encloses its
+  cited evidence (`agent_lib/src/agent_lib/eval/navigation_claims.py`, lines
+  150–294);
+- cumulative token, step, tool-call, evidence, and claim telemetry in the
+  existing scorer (`agent_lib/src/agent_lib/eval/repo_navigation.py`, lines
+  1422–1518).
+
+These references establish reusable mechanics only. The existing
+ground-truth-region scorer does not establish exact caller or call-path
+relations.
+
+## Task shapes
+
+The initial set should contain multiple pinned Python fixtures for each shape:
+
+1. Locate a named definition.
+2. Identify the syntactically direct callers of a named callable.
+3. Trace one specified call path between named endpoints.
+4. Identify the callable invoked at a named mutation call site.
+
+Every task must have one exact structural answer derivable from the pinned
+source snapshot. Avoid repository-wide “all mutations” or other open-world
+completeness claims.
+
+## Paired protocol
+
+Each task is run twice against the same pinned source, model configuration,
+budget, question, and seed:
+
+1. autonomous baseline with structured navigation disabled;
+2. structured run with the ledger enabled.
+
+Run order must be recorded and alternated across tasks to expose order effects.
+Sampled trajectories mean a pair is a comparison unit, not proof that a seed
+pins generation.
+
+The planner receives the natural-language task in both modes. Structured mode
+may receive goal identifiers and requirements copied from that task, but never
+expected paths, symbols, line numbers, edges, or answer-key content.
+
+## Exact scoring
+
+The scorer runs outside planner context and compares structured claims with an
+AST-derived oracle from the pinned snapshot:
+
+- definition: exact qualified symbol and defining span;
+- direct caller: an AST call edge from the caller body to the named callee;
+- call path: the exact ordered edge sequence required by the task;
+- mutation target: the exact call expression at the named site.
+
+String presence is insufficient for relation scoring. Evidence references must
+be observed, must overlap the relevant syntax node, and must identify the
+correct enclosing symbol. Free-form prose is retained for audit but contributes
+nothing to correctness.
+
+## Metrics and decision gate
+
+Report per pair:
+
+- completed with an answer;
+- exact structural correctness;
+- unsupported claims and validation errors;
+- evidence precision and recall;
+- planner calls, tool calls, steps, and cumulative tokens;
+- structured-minus-autonomous deltas for every metric.
+
+Do not adopt the ledger unless it improves termination or exact correctness
+across the task set without a material aggregate correctness regression. Token
+cost is reported as a tradeoff, not hidden inside the aggregate.
+
+The first live campaign requires deterministic scorer tests plus at least one
+autonomous/structured pair for every task shape. No 8B portability campaign is
+part of this gate.
+
+## Must be built (does not exist yet)
+
+- A versioned `NAV-VERIFIABLE-00` task-fixture schema.
+- An AST oracle for exact definitions, direct-call edges, and specified paths.
+- Relation-aware structured claims; the current flat claim schema cannot encode
+  an ordered path or a caller→callee edge explicitly.
+- A paired runner that records shared configuration and run order.
+- Exact scorer tests covering aliases, same-named methods, nested functions,
+  indirect helper calls, and unresolved dynamic dispatch.
+
+Dynamic or ambiguous calls must make a fixture invalid at fixture-validation
+time; the v1 oracle must not guess.
+
+## Assumptions to verify
+
+- The selected source snapshots contain enough statically resolvable examples
+  for all four task shapes.
+- Alternating run order is sufficient to control local engine cache/order
+  effects for the first small campaign.
+- The existing model can reliably emit the future relation-aware claim schema;
+  deterministic contract tests must establish shape handling before live use.

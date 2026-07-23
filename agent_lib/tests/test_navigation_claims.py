@@ -64,6 +64,105 @@ def test_fabricated_symbol_is_an_unsupported_claim() -> None:
     assert result.unsupported_claims[0]["symbol"] == "RAGPipeline.ingest_file"
 
 
+def test_python_symbol_must_enclose_cited_evidence(tmp_path) -> None:
+    (tmp_path / "pipeline.py").write_text(
+        "\n" * 279
+        + "class RAGPipeline:\n"
+        + "    def ingest(self):\n"
+        + "        self._store.delete_by_source()\n"
+        + "\n" * 30,
+        encoding="utf-8",
+    )
+    telemetry = [
+        {
+            "success": True,
+            "evidence": [{"path": "pipeline.py", "lines": [281, 282]}],
+        }
+    ]
+    region = GroundTruthRegion(
+        id="GT-01",
+        path="pipeline.py",
+        start_line=281,
+        end_line=282,
+        classification="pipeline mutation",
+        required_answer_terms=("ingest", "delete_by_source"),
+        symbol="RAGPipeline.ingest",
+    )
+
+    valid = validate_navigation_claims(
+        [
+            NavigationClaim(
+                path="pipeline.py",
+                symbol="RAGPipeline.ingest",
+                operation="self._store.delete_by_source",
+                classification="pipeline mutation",
+                evidence=(EvidenceRef("pipeline.py", 281, 282),),
+            )
+        ],
+        telemetry_calls=telemetry,
+        regions=[region],
+        source_root=tmp_path,
+    )
+    invented = validate_navigation_claims(
+        [
+            NavigationClaim(
+                path="pipeline.py",
+                symbol="RAGPipeline.ingest_file",
+                operation="self._store.delete_by_source",
+                classification="pipeline mutation",
+                evidence=(EvidenceRef("pipeline.py", 281, 282),),
+            )
+        ],
+        telemetry_calls=telemetry,
+        regions=[region],
+        source_root=tmp_path,
+    )
+
+    assert valid.valid is True
+    assert invented.errors == (
+        "claim 1 symbol 'RAGPipeline.ingest_file' does not enclose its cited evidence",
+    )
+
+
+def test_symbol_grounding_does_not_claim_to_validate_call_relations(tmp_path) -> None:
+    (tmp_path / "pipeline.py").write_text(
+        "class RAGPipeline:\n"
+        "    def ingest(self):\n"
+        "        self._embed_and_store()\n",
+        encoding="utf-8",
+    )
+    claim = NavigationClaim(
+        path="pipeline.py",
+        symbol="RAGPipeline.ingest",
+        operation="self._embed_and_store",
+        classification="claimed direct mutation",
+        evidence=(EvidenceRef("pipeline.py", 2, 3),),
+    )
+    region = GroundTruthRegion(
+        id="GT-01",
+        path="pipeline.py",
+        start_line=2,
+        end_line=3,
+        classification="claimed direct mutation",
+        required_answer_terms=("ingest", "_embed_and_store"),
+        symbol="RAGPipeline.ingest",
+    )
+
+    result = validate_navigation_claims(
+        [claim],
+        telemetry_calls=[
+            {
+                "success": True,
+                "evidence": [{"path": "pipeline.py", "lines": [2, 3]}],
+            }
+        ],
+        regions=[region],
+        source_root=tmp_path,
+    )
+
+    assert result.valid is True
+
+
 def test_unobserved_line_reference_is_rejected() -> None:
     claim = NavigationClaim(
         path="pipeline.py",
