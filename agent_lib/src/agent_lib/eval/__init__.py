@@ -24,7 +24,16 @@ from .verifiable_campaign import (
     CAMPAIGN_TIER_MINIMUMS,
     VERIFIABLE_CAMPAIGN_SCHEMA_VERSION,
     build_campaign_admission_manifest,
+    build_shared_schema_pair_manifest,
+    decide_campaign,
     summarize_paired_campaign,
+)
+from .verifiable_selection import (
+    CANDIDATE_ORDER_SALT,
+    CANDIDATE_POOL_SCHEMA_VERSION,
+    CANDIDATE_SELECTION_SCHEMA_VERSION,
+    build_candidate_pool,
+    select_campaign_candidates,
 )
 from .repo_navigation import (
     BudgetedNavigationPlanner,
@@ -89,7 +98,14 @@ __all__ = [
     'CAMPAIGN_TIER_MINIMUMS',
     'VERIFIABLE_CAMPAIGN_SCHEMA_VERSION',
     'build_campaign_admission_manifest',
+    'build_shared_schema_pair_manifest',
+    'decide_campaign',
     'summarize_paired_campaign',
+    'CANDIDATE_ORDER_SALT',
+    'CANDIDATE_POOL_SCHEMA_VERSION',
+    'CANDIDATE_SELECTION_SCHEMA_VERSION',
+    'build_candidate_pool',
+    'select_campaign_candidates',
     'BudgetedNavigationPlanner',
     'GroundTruthRegion',
     'HuggingFaceModelTokenizer',

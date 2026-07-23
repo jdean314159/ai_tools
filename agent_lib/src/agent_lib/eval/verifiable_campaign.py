@@ -23,6 +23,84 @@ EXPLORATORY_MINIMUM_DECOY_TASKS = 3
 EXPLORATORY_MINIMUM_GRAPH_TASKS = 3
 
 
+def build_shared_schema_pair_manifest(
+    *,
+    pair_id: str,
+    task_id: str,
+    tier: str,
+    no_ledger_config: Mapping[str, Any],
+    ledger_config: Mapping[str, Any],
+    run_order: Sequence[str],
+) -> dict[str, Any]:
+    """Freeze the only admissible arm difference: per-step goal ledger state."""
+
+    if tuple(run_order) not in {
+        ("no_ledger", "ledger"),
+        ("ledger", "no_ledger"),
+    }:
+        raise VerifiableNavigationError(
+            "run_order must contain no_ledger and ledger exactly once"
+        )
+    if tier not in CAMPAIGN_TIER_MINIMUMS:
+        raise VerifiableNavigationError("pair requires a frozen valid tier")
+    ignored = {
+        "ledger_enabled",
+        "structured_navigation",
+        "navigation_goals_enabled",
+        "output_dir",
+        "run_label",
+    }
+    left = {
+        key: value for key, value in no_ledger_config.items() if key not in ignored
+    }
+    right = {
+        key: value for key, value in ledger_config.items() if key not in ignored
+    }
+    if left != right:
+        raise VerifiableNavigationError(
+            "paired arms must share task, model, schema, scorer, budget, and decoding"
+        )
+    required_shared = {
+        "relation_claims_required": True,
+        "scoring_mode": "ast_relation_claims",
+    }
+    for key, expected in required_shared.items():
+        if left.get(key) != expected:
+            raise VerifiableNavigationError(
+                f"paired arms require shared {key}={expected!r}"
+            )
+    if not left.get("relation_claim_schema_version"):
+        raise VerifiableNavigationError(
+            "paired arms require a relation claim schema version"
+        )
+    if (
+        no_ledger_config.get("ledger_enabled") is not False
+        or no_ledger_config.get("navigation_goals_enabled") is not False
+        or no_ledger_config.get("structured_navigation") is not False
+    ):
+        raise VerifiableNavigationError("no_ledger arm cannot enable goal ledger")
+    if (
+        ledger_config.get("ledger_enabled") is not True
+        or ledger_config.get("navigation_goals_enabled") is not True
+        or ledger_config.get("structured_navigation") is not True
+    ):
+        raise VerifiableNavigationError("ledger arm must enable goal ledger")
+    return {
+        "schema_version": 1,
+        "track": "NAV-VERIFIABLE-00",
+        "pair_id": pair_id,
+        "task_id": task_id,
+        "tier": tier,
+        "comparison": "shared relation schema: no ledger vs ledger",
+        "run_order": list(run_order),
+        "shared_config": left,
+        "arms": {
+            "no_ledger": dict(no_ledger_config),
+            "ledger": dict(ledger_config),
+        },
+    }
+
+
 def build_campaign_admission_manifest(
     admission_manifests: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
@@ -144,7 +222,7 @@ def summarize_paired_campaign(
             raise VerifiableNavigationError("paired records require unique task ids")
         if tier not in CAMPAIGN_TIER_MINIMUMS:
             raise VerifiableNavigationError("paired record has invalid tier")
-        for mode in ("autonomous", "structured"):
+        for mode in ("no_ledger", "ledger"):
             if not isinstance(pair.get(mode), Mapping):
                 raise VerifiableNavigationError(
                     f"paired record requires {mode} result"
@@ -174,16 +252,16 @@ def summarize_paired_campaign(
         for tier, records in sorted(by_tier.items())
     }
     rate_fields = (
-        "termination_rate_autonomous",
-        "termination_rate_structured",
-        "relation_rate_autonomous",
-        "relation_rate_structured",
-        "evidence_complete_rate_autonomous",
-        "evidence_complete_rate_structured",
-        "evidence_precise_rate_autonomous",
-        "evidence_precise_rate_structured",
-        "exact_rate_autonomous",
-        "exact_rate_structured",
+        "termination_rate_no_ledger",
+        "termination_rate_ledger",
+        "relation_rate_no_ledger",
+        "relation_rate_ledger",
+        "evidence_complete_rate_no_ledger",
+        "evidence_complete_rate_ledger",
+        "evidence_precise_rate_no_ledger",
+        "evidence_precise_rate_ledger",
+        "exact_rate_no_ledger",
+        "exact_rate_ledger",
     )
     macro = {
         field: statistics.fmean(
@@ -206,81 +284,174 @@ def summarize_paired_campaign(
     }
 
 
+def decide_campaign(summary: Mapping[str, Any]) -> dict[str, Any]:
+    """Apply the frozen exploratory-tier directional decision rule."""
+
+    exploratory = dict(dict(summary.get("tiers") or {}).get("exploratory") or {})
+    if int(exploratory.get("task_count") or 0) < 6:
+        return {
+            "decision": "incomplete",
+            "reason": "fewer than six exploratory pairs",
+        }
+    termination = dict(exploratory.get("paired_termination_outcomes") or {})
+    exact = dict(exploratory.get("paired_exact_outcomes") or {})
+    relation = dict(exploratory.get("paired_relation_outcomes") or {})
+    termination_net = int(termination.get("no_ledger_fail_ledger_pass") or 0) - int(
+        termination.get("no_ledger_pass_ledger_fail") or 0
+    )
+    exact_net = int(exact.get("no_ledger_fail_ledger_pass") or 0) - int(
+        exact.get("no_ledger_pass_ledger_fail") or 0
+    )
+    relation_net = int(relation.get("no_ledger_fail_ledger_pass") or 0) - int(
+        relation.get("no_ledger_pass_ledger_fail") or 0
+    )
+    no_ledger_tokens = float(exploratory.get("total_tokens_no_ledger") or 0)
+    ledger_tokens = float(exploratory.get("total_tokens_ledger") or 0)
+    token_ratio = (
+        ledger_tokens / no_ledger_tokens if no_ledger_tokens > 0 else float("inf")
+    )
+    median_overhead = exploratory.get(
+        "median_both_complete_ledger_token_overhead_fraction"
+    )
+
+    support = (
+        termination_net >= 2
+        and int(termination.get("no_ledger_pass_ledger_fail") or 0) <= 1
+        and exact_net >= 0
+        and relation_net >= 0
+        and token_ratio <= 1.0
+        and isinstance(median_overhead, (int, float))
+        and float(median_overhead) <= 0.25
+    )
+    reject = (
+        termination_net <= 0
+        or exact_net <= -2
+        or relation_net <= -2
+        or (token_ratio > 1.25 and exact_net <= 0)
+    )
+    return {
+        "decision": (
+            "support_broader_shadow"
+            if support
+            else "reject_ledger_direction"
+            if reject
+            else "inconclusive"
+        ),
+        "termination_net": termination_net,
+        "exact_net": exact_net,
+        "relation_net": relation_net,
+        "exploratory_token_ratio": token_ratio,
+        "median_both_complete_ledger_token_overhead_fraction": median_overhead,
+    }
+
+
 def _summarize_tier(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     count = len(records)
 
     def rate(mode: str, field: str) -> float:
         return sum(bool(dict(record[mode]).get(field)) for record in records) / count
 
-    outcomes = Counter()
+    exact_outcomes = Counter()
+    relation_outcomes = Counter()
+    termination_outcomes = Counter()
     token_deltas: list[float] = []
     step_deltas: list[float] = []
+    both_complete_overheads: list[float] = []
+    total_tokens = {"no_ledger": 0.0, "ledger": 0.0}
     for record in records:
-        autonomous = dict(record["autonomous"])
-        structured = dict(record["structured"])
-        autonomous_pass = bool(autonomous.get("exact_correct"))
-        structured_pass = bool(structured.get("exact_correct"))
-        outcomes[
-            (
-                "both_pass"
-                if autonomous_pass and structured_pass
-                else "autonomous_fail_structured_pass"
-                if structured_pass
-                else "autonomous_pass_structured_fail"
-                if autonomous_pass
-                else "both_fail"
-            )
-        ] += 1
-        if isinstance(autonomous.get("tokens"), (int, float)) and isinstance(
-            structured.get("tokens"), (int, float)
+        no_ledger = dict(record["no_ledger"])
+        ledger = dict(record["ledger"])
+        for field, counter in (
+            ("exact_correct", exact_outcomes),
+            ("relation_correct", relation_outcomes),
+            ("completed_with_answer", termination_outcomes),
         ):
+            counter[_paired_outcome(bool(no_ledger.get(field)), bool(ledger.get(field)))] += 1
+        if isinstance(no_ledger.get("tokens"), (int, float)) and isinstance(
+            ledger.get("tokens"), (int, float)
+        ):
+            total_tokens["no_ledger"] += float(no_ledger["tokens"])
+            total_tokens["ledger"] += float(ledger["tokens"])
             token_deltas.append(
-                float(structured["tokens"]) - float(autonomous["tokens"])
+                float(ledger["tokens"]) - float(no_ledger["tokens"])
             )
-        if isinstance(autonomous.get("tool_steps"), (int, float)) and isinstance(
-            structured.get("tool_steps"), (int, float)
+            if (
+                bool(no_ledger.get("completed_with_answer"))
+                and bool(ledger.get("completed_with_answer"))
+                and float(no_ledger["tokens"]) > 0
+            ):
+                both_complete_overheads.append(
+                    (float(ledger["tokens"]) - float(no_ledger["tokens"]))
+                    / float(no_ledger["tokens"])
+                )
+        if isinstance(no_ledger.get("tool_steps"), (int, float)) and isinstance(
+            ledger.get("tool_steps"), (int, float)
         ):
             step_deltas.append(
-                float(structured["tool_steps"])
-                - float(autonomous["tool_steps"])
+                float(ledger["tool_steps"]) - float(no_ledger["tool_steps"])
             )
     return {
         "task_count": count,
-        "termination_rate_autonomous": rate("autonomous", "completed_with_answer"),
-        "termination_rate_structured": rate("structured", "completed_with_answer"),
-        "relation_rate_autonomous": rate("autonomous", "relation_correct"),
-        "relation_rate_structured": rate("structured", "relation_correct"),
-        "evidence_complete_rate_autonomous": rate(
-            "autonomous", "evidence_complete"
+        "termination_rate_no_ledger": rate("no_ledger", "completed_with_answer"),
+        "termination_rate_ledger": rate("ledger", "completed_with_answer"),
+        "relation_rate_no_ledger": rate("no_ledger", "relation_correct"),
+        "relation_rate_ledger": rate("ledger", "relation_correct"),
+        "evidence_complete_rate_no_ledger": rate(
+            "no_ledger", "evidence_complete"
         ),
-        "evidence_complete_rate_structured": rate(
-            "structured", "evidence_complete"
+        "evidence_complete_rate_ledger": rate(
+            "ledger", "evidence_complete"
         ),
-        "evidence_precise_rate_autonomous": rate(
-            "autonomous", "evidence_precise"
+        "evidence_precise_rate_no_ledger": rate(
+            "no_ledger", "evidence_precise"
         ),
-        "evidence_precise_rate_structured": rate(
-            "structured", "evidence_precise"
+        "evidence_precise_rate_ledger": rate(
+            "ledger", "evidence_precise"
         ),
-        "exact_rate_autonomous": rate("autonomous", "exact_correct"),
-        "exact_rate_structured": rate("structured", "exact_correct"),
+        "exact_rate_no_ledger": rate("no_ledger", "exact_correct"),
+        "exact_rate_ledger": rate("ledger", "exact_correct"),
+        "paired_termination_outcomes": _ordered_outcomes(termination_outcomes),
+        "paired_relation_outcomes": _ordered_outcomes(relation_outcomes),
         "paired_exact_outcomes": {
-            key: outcomes[key]
-            for key in (
-                "autonomous_fail_structured_pass",
-                "autonomous_pass_structured_fail",
-                "both_pass",
-                "both_fail",
-            )
+            **_ordered_outcomes(exact_outcomes),
         },
-        "median_structured_minus_autonomous_tokens": (
+        "total_tokens_no_ledger": total_tokens["no_ledger"],
+        "total_tokens_ledger": total_tokens["ledger"],
+        "median_ledger_minus_no_ledger_tokens": (
             statistics.median(token_deltas) if token_deltas else None
         ),
         "individual_token_deltas": token_deltas,
-        "median_structured_minus_autonomous_tool_steps": (
+        "median_both_complete_ledger_token_overhead_fraction": (
+            statistics.median(both_complete_overheads)
+            if both_complete_overheads
+            else None
+        ),
+        "median_ledger_minus_no_ledger_tool_steps": (
             statistics.median(step_deltas) if step_deltas else None
         ),
         "individual_tool_step_deltas": step_deltas,
+    }
+
+
+def _paired_outcome(no_ledger: bool, ledger: bool) -> str:
+    if no_ledger and ledger:
+        return "both_pass"
+    if ledger:
+        return "no_ledger_fail_ledger_pass"
+    if no_ledger:
+        return "no_ledger_pass_ledger_fail"
+    return "both_fail"
+
+
+def _ordered_outcomes(counter: Counter[str]) -> dict[str, int]:
+    return {
+        key: counter[key]
+        for key in (
+            "no_ledger_fail_ledger_pass",
+            "no_ledger_pass_ledger_fail",
+            "both_pass",
+            "both_fail",
+        )
     }
 
 

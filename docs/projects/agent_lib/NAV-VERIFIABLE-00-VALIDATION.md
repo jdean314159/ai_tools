@@ -25,7 +25,7 @@ and indirect helper calls cannot satisfy a direct-edge claim.
 
 ## Deterministic result
 
-The `agent_lib` package gate passed with `141 passed`. Dedicated tests cover all
+The `agent_lib` package gate passed with `145 passed`. Dedicated tests cover all
 four task shapes, exact relation scoring, indirect-as-direct rejection,
 unobserved evidence, source hash drift, aliases, same-named methods, nested
 functions, dynamic calls, relation-claim shape, and paired configuration drift.
@@ -160,3 +160,24 @@ pair.
 
 This is deterministic infrastructure only. No production tasks were selected
 and no paired model runs were performed.
+
+## Arm, decision, and selection freeze
+
+The comparison now holds the final-answer instrument constant. Both arms must
+emit the same typed relation claims and use the same canonicalizer and AST
+scorer. The baseline is explicitly named `no_ledger`; only the comparison arm
+maintains per-step goal state. Free-form extraction and asymmetric scoring are
+rejected.
+
+The exploratory-tier adoption, rejection, and inconclusive boundaries are
+encoded in the deterministic campaign decision function. Cost is represented
+both by total exploratory tokens and median overhead where both arms complete.
+
+Candidate selection is also mechanical: enumerate all v1-oracle-resolvable
+task shapes, deduplicate normalized expected relations, hash the complete pool,
+and select by frozen coverage priorities plus a public salted hash order. An
+undersupplied stratum requires a new pinned snapshot and complete pool
+regeneration, not a hand-picked replacement.
+
+No candidate pool was built from production snapshots and no model run was
+performed in this checkpoint.
