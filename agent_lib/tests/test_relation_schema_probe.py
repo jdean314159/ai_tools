@@ -173,7 +173,8 @@ def test_formatter_probe_separates_schema_failure_from_relation_failure() -> Non
     assert result["passed"] is False
     assert result["trials"][0]["schema_valid"] is False
     assert result["trials"][1]["schema_valid"] is True
-    assert result["trials"][1]["exact_relation_correct"] is False
+    assert result["trials"][1]["relation_correct"] is False
+    assert result["trials"][1]["exact_correct"] is False
 
 
 def test_saved_probe_can_be_rescored_without_model_call() -> None:

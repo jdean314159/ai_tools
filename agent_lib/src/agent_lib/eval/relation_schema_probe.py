@@ -223,9 +223,13 @@ def _score_probe_response(
         "schema_valid": shape_error is None and not any(
             error.startswith("invalid JSON") for error in errors
         ),
-        "exact_relation_correct": score.correct,
+        "relation_correct": score.relation_correct,
+        "evidence_complete": score.evidence_complete,
+        "evidence_precise": score.evidence_precise,
+        "exact_correct": score.exact_correct,
         "errors": errors,
         "unsupported_claims": list(score.unsupported_claims),
+        "incomplete_evidence_claims": list(score.incomplete_evidence_claims),
         "normalized_claims": list(score.normalized_claims),
         "imprecise_claims": list(score.imprecise_claims),
         "response_text": raw,

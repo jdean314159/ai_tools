@@ -11,8 +11,11 @@ from agent_lib.eval.verifiable_navigation import (
     PythonRelationOracle,
     RelationCanonicalizer,
     RelationClaim,
+    VerifiableTask,
     VerifiableNavigationError,
+    build_task_admission_manifest,
     build_pair_manifest,
+    classify_task_difficulty,
     load_verifiable_task_set,
     relation_claims_shape_error,
     score_verifiable_claims,
@@ -239,10 +242,19 @@ def test_path_scoring_requires_every_edge_line_and_reports_extra_lines(
     )
 
     assert missing_score.correct is False
-    assert missing_score.unsupported_claims == (missing_edge.as_dict(),)
+    assert missing_score.relation_correct is True
+    assert missing_score.evidence_complete is False
+    assert missing_score.unsupported_claims == ()
+    assert missing_score.incomplete_evidence_claims[0]["missing_lines"] == [11]
     assert broad_score.correct is False
+    assert broad_score.relation_correct is True
+    assert broad_score.evidence_complete is True
+    assert broad_score.evidence_precise is False
     assert broad_score.imprecise_claims[0]["extra_lines"] == [7, 9, 10, 12, 13, 14]
     assert exact_score.correct is True
+    assert exact_score.relation_correct is True
+    assert exact_score.evidence_complete is True
+    assert exact_score.evidence_precise is True
 
 
 def test_claim_requires_observed_relation_evidence(tmp_path) -> None:
@@ -456,6 +468,64 @@ def test_canonicalizer_rejects_fixture_wide_symbol_collisions(tmp_path) -> None:
 
     with pytest.raises(VerifiableNavigationError, match="canonical symbol collision"):
         RelationCanonicalizer(PythonRelationOracle(tmp_path))
+
+
+def test_admission_manifest_freezes_structural_difficulty_before_runs(
+    tmp_path,
+) -> None:
+    (tmp_path / "main.py").write_text(
+        "class Pipeline:\n"
+        "    def start(self):\n"
+        "        return self._one()\n"
+        "    def _one(self):\n"
+        "        return self._two()\n"
+        "    def _two(self):\n"
+        "        return self.finish()\n"
+        "    def finish(self):\n"
+        "        return None\n",
+        encoding="utf-8",
+    )
+    for index in range(4):
+        (tmp_path / f"decoy_{index}.py").write_text(
+            f"class Decoy{index}:\n"
+            "    def finish(self):\n"
+            "        return None\n",
+            encoding="utf-8",
+        )
+    task = VerifiableTask(
+        task_id="exploratory_path",
+        kind="call_path",
+        question="Trace Pipeline.start to Pipeline.finish.",
+        path="main.py",
+        symbol="Pipeline.start",
+        endpoint="Pipeline.finish",
+        goal_requirements=(("trace", "Trace the specified path."),),
+    )
+    oracle = PythonRelationOracle(tmp_path)
+
+    difficulty = classify_task_difficulty(task, oracle=oracle)
+    manifest = build_task_admission_manifest([task], oracle=oracle)
+
+    assert difficulty.hop_count == 3
+    assert difficulty.candidate_file_count == 5
+    assert difficulty.decoy_count == 4
+    assert difficulty.tier == "exploratory"
+    assert manifest["tasks"][0]["difficulty"] == difficulty.as_dict()
+    assert len(manifest["admission_manifest_sha256"]) == 64
+
+
+def test_existing_direct_caller_fixture_is_predeclared_local() -> None:
+    task = load_verifiable_task_set(
+        FIXTURE_ROOT / "tasks.json", source_root=FIXTURE_ROOT
+    )[1]
+    oracle = PythonRelationOracle(FIXTURE_ROOT)
+
+    difficulty = classify_task_difficulty(task, oracle=oracle)
+
+    assert difficulty.tier == "local"
+    assert difficulty.hop_count == 1
+    assert difficulty.candidate_file_count == 1
+    assert difficulty.decoy_count == 0
 
 
 def test_nested_function_calls_are_not_attributed_to_parent(tmp_path) -> None:

@@ -109,24 +109,27 @@ part of this gate.
 Implemented:
 
 - Versioned, source-hash-pinned task fixtures and all four task shapes
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 20–156 and
-  645–696).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 22–159 and
+  676–727).
 - Relation-aware claim schema and shape validation
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 24–248).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 26–251).
 - Conservative AST oracle for definitions, direct-call edges, unique paths,
   and named-site call expressions
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 292–559).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 323–590).
 - Exact evidence-aware relation scoring
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 698–782).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 729–825).
 - Paired-run manifest validation enforcing identical shared configuration and
   explicit alternating order
-  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 784–822).
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 969–1007).
 - Frozen, two-sided relation canonicalization with fixture-wide collision
   rejection and raw/normalized audit output. See
   `NAV-RELATION-CANONICALIZATION-V1.md` and
-  `agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 561–643.
+  `agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 592–674.
 - Exact required-line evidence scoring for every path edge; broad ranges are
   reported as imprecise and cannot pass exact correctness.
+- A source-only, hashed task-admission manifest with frozen local,
+  intermediate, and exploratory tiers. See `NAV-TASK-ADMISSION-V1.md` and
+  `agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 827–967.
 - Deterministic fixtures and tests for aliases, same-named methods, nested
   functions, indirect helper calls, unobserved evidence, hash drift, and
   dynamically constructed calls.
@@ -138,6 +141,18 @@ Still required before live use:
 - A paired executable that runs both modes and writes the manifest plus scores.
 - Production task snapshots with multiple fixtures per task shape; the checked
   fixture is a deterministic contract proof, not an evaluation dataset.
+
+Scoring reports four independent booleans:
+
+- `relation_correct`;
+- `evidence_complete`;
+- `evidence_precise`;
+- `exact_correct`, requiring all three plus no validation errors.
+
+`unsupported_claims` is reserved for relations absent from the oracle.
+Relations with missing required syntax lines appear under
+`incomplete_evidence_claims`; over-cited relations appear under
+`imprecise_claims`.
 
 Aliases and dynamically constructed calls fail fixture validation. Ambiguous
 calls are excluded from edge resolution, so any edge or path task that depends
@@ -154,3 +169,7 @@ the literal call expression without asserting its runtime dispatch target.
   (3/3 corrected formatter probes). Frozen canonicalization resolves the two
   string-form differences offline. The remaining formatter miss is broad path
   evidence (lines 7–14 instead of exact edge lines 8 and 11).
+
+Difficulty is assigned before any run from hop count, answer-file count,
+candidate-file count, and decoy count. Autonomous cost validates the tier
+assignment but cannot alter it; calibration misses remain visible in reporting.

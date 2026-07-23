@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import re
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -20,6 +21,7 @@ ClaimKind = Literal["definition", "call_edge", "call_path", "mutation_target"]
 VERIFIABLE_TASK_SCHEMA_VERSION = 1
 VERIFIABLE_PAIR_SCHEMA_VERSION = 1
 RELATION_CANONICALIZATION_VERSION = 1
+VERIFIABLE_ADMISSION_SCHEMA_VERSION = 1
 
 RELATION_CLAIMS_SCHEMA: dict[str, Any] = {
     "type": "array",
@@ -54,6 +56,7 @@ RELATION_CLAIMS_SCHEMA: dict[str, Any] = {
             "evidence": {
                 "type": "array",
                 "minItems": 1,
+                "description": "Cite only the exact minimal syntax lines proving this relation; a call path needs one reference for every component edge.",
                 "items": {
                     "type": "object",
                     "additionalProperties": False,
@@ -262,13 +265,41 @@ class StaticRelation:
 
 @dataclass(frozen=True, slots=True)
 class VerifiableScore:
-    correct: bool
+    relation_correct: bool
+    evidence_complete: bool
+    evidence_precise: bool
+    exact_correct: bool
     expected: tuple[StaticRelation, ...]
     matched: tuple[StaticRelation, ...]
     unsupported_claims: tuple[dict[str, Any], ...]
+    incomplete_evidence_claims: tuple[dict[str, Any], ...]
     normalized_claims: tuple[dict[str, Any], ...]
     imprecise_claims: tuple[dict[str, Any], ...]
     errors: tuple[str, ...]
+
+    @property
+    def correct(self) -> bool:
+        """Backward-compatible alias for the strict exact-pass result."""
+
+        return self.exact_correct
+
+
+@dataclass(frozen=True, slots=True)
+class TaskDifficulty:
+    hop_count: int
+    answer_file_count: int
+    candidate_file_count: int
+    decoy_count: int
+    tier: Literal["local", "intermediate", "exploratory"]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "hop_count": self.hop_count,
+            "answer_file_count": self.answer_file_count,
+            "candidate_file_count": self.candidate_file_count,
+            "decoy_count": self.decoy_count,
+            "tier": self.tier,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -709,6 +740,7 @@ def score_verifiable_claims(
     expected_by_key = {_relation_key(item): item for item in expected}
     matched: list[StaticRelation] = []
     unsupported: list[dict[str, Any]] = []
+    incomplete: list[dict[str, Any]] = []
     normalized: list[dict[str, Any]] = []
     imprecise: list[dict[str, Any]] = []
     errors: list[str] = []
@@ -720,36 +752,45 @@ def score_verifiable_claims(
             errors.append(f"claim {index} cannot be canonicalized: {exc}")
             continue
         normalized.append(claim.as_dict())
-        if not claim.evidence:
-            errors.append(f"claim {index} has no evidence")
-            continue
-        lines: set[int] = set()
-        refs_valid = True
-        for ref in claim.evidence:
-            if ref.path != claim.path or not set(
-                range(ref.start_line, ref.end_line + 1)
-            ).issubset(observed_lines.get(ref.path, set())):
-                refs_valid = False
-        if not refs_valid:
-            errors.append(f"claim {index} references unobserved evidence")
-            continue
-        for ref in claim.evidence:
-            lines.update(range(ref.start_line, ref.end_line + 1))
         relation = StaticRelation(
             kind=claim.kind,
             path=claim.path,
             symbol=claim.symbol,
             target=claim.target,
             path_symbols=claim.path_symbols,
-            start_line=min(lines),
-            end_line=max(lines),
         )
         key = _relation_key(relation)
         expected_relation = expected_by_key.get(key)
-        if expected_relation is None or not set(
-            expected_relation.required_lines
-        ).issubset(lines):
+        if expected_relation is None:
             unsupported.append(raw_claim.as_dict())
+            continue
+        if key in seen:
+            errors.append(f"claim {index} duplicates a relation")
+            continue
+        seen.add(key)
+        matched.append(expected_relation)
+
+        lines: set[int] = set()
+        refs_valid = bool(claim.evidence)
+        for ref in claim.evidence:
+            referenced = set(range(ref.start_line, ref.end_line + 1))
+            if ref.path != claim.path or not referenced.issubset(
+                observed_lines.get(ref.path, set())
+            ):
+                refs_valid = False
+            lines.update(referenced)
+        if not claim.evidence:
+            errors.append(f"claim {index} has no evidence")
+        elif not refs_valid:
+            errors.append(f"claim {index} references unobserved evidence")
+        missing_lines = sorted(set(expected_relation.required_lines) - lines)
+        if missing_lines or not refs_valid:
+            incomplete.append(
+                {
+                    "claim": raw_claim.as_dict(),
+                    "missing_lines": missing_lines,
+                }
+            )
             continue
         extra_lines = sorted(lines - set(expected_relation.required_lines))
         if extra_lines:
@@ -759,26 +800,170 @@ def score_verifiable_claims(
                     "extra_lines": extra_lines,
                 }
             )
-        if key in seen:
-            errors.append(f"claim {index} duplicates a relation")
-            continue
-        seen.add(key)
-        matched.append(expected_relation)
-    correct = (
-        set(seen) == set(expected_by_key)
-        and not unsupported
-        and not imprecise
+    relation_correct = set(seen) == set(expected_by_key) and not unsupported
+    evidence_complete = relation_correct and not incomplete
+    evidence_precise = evidence_complete and not imprecise
+    exact_correct = (
+        relation_correct
+        and evidence_complete
+        and evidence_precise
         and not errors
     )
     return VerifiableScore(
-        correct=correct,
+        relation_correct=relation_correct,
+        evidence_complete=evidence_complete,
+        evidence_precise=evidence_precise,
+        exact_correct=exact_correct,
         expected=expected,
         matched=tuple(sorted(matched, key=_relation_key)),
         unsupported_claims=tuple(unsupported),
+        incomplete_evidence_claims=tuple(incomplete),
         normalized_claims=tuple(normalized),
         imprecise_claims=tuple(imprecise),
         errors=tuple(errors),
     )
+
+
+def classify_task_difficulty(
+    task: VerifiableTask,
+    *,
+    oracle: PythonRelationOracle,
+) -> TaskDifficulty:
+    """Classify a task from source structure only, before any model run."""
+
+    expected = oracle.expected(task)
+    answer_symbols: set[str] = set()
+    answer_files = {relation.path for relation in expected}
+    expected_calls: set[tuple[str, int]] = set()
+    hop_count = 0
+    for relation in expected:
+        answer_symbols.add(relation.symbol)
+        if relation.target:
+            answer_symbols.add(relation.target)
+        answer_symbols.update(relation.path_symbols)
+        if relation.kind in {"call_edge", "mutation_target"}:
+            hop_count = max(hop_count, 1)
+            expected_calls.add((relation.path, relation.start_line))
+        elif relation.kind == "call_path":
+            hop_count = max(hop_count, len(relation.path_symbols) - 1)
+            for line in relation.required_lines:
+                expected_calls.add((relation.path, line))
+    for symbol in answer_symbols:
+        definition = oracle.definitions.get(symbol)
+        if definition is not None:
+            answer_files.add(definition.path)
+
+    terminals = {task.symbol.rsplit(".", 1)[-1]}
+    if task.endpoint:
+        terminals.add(task.endpoint.rsplit(".", 1)[-1])
+    candidate_files = 0
+    for path in sorted(oracle.root.rglob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        if any(re.search(rf"\b{re.escape(term)}\b", text) for term in terminals):
+            candidate_files += 1
+
+    decoys = 0
+    for symbol in oracle.definitions:
+        if (
+            symbol.rsplit(".", 1)[-1] in terminals
+            and symbol not in answer_symbols
+        ):
+            decoys += 1
+    for call in oracle.calls:
+        if (
+            call.target_text.rsplit(".", 1)[-1] in terminals
+            and (call.path, call.line) not in expected_calls
+        ):
+            decoys += 1
+
+    exploratory_signals = sum(
+        (
+            candidate_files >= 5,
+            hop_count >= 3,
+            decoys >= 4,
+            len(answer_files) >= 3,
+        )
+    )
+    if candidate_files == 1 and hop_count <= 1 and decoys == 0:
+        tier: Literal["local", "intermediate", "exploratory"] = "local"
+    elif exploratory_signals >= 2:
+        tier = "exploratory"
+    else:
+        tier = "intermediate"
+    return TaskDifficulty(
+        hop_count=hop_count,
+        answer_file_count=len(answer_files),
+        candidate_file_count=candidate_files,
+        decoy_count=decoys,
+        tier=tier,
+    )
+
+
+def build_task_admission_manifest(
+    tasks: Sequence[VerifiableTask],
+    *,
+    oracle: PythonRelationOracle,
+) -> dict[str, Any]:
+    """Build the immutable, source-only admission record for candidate tasks."""
+
+    canonicalizer = RelationCanonicalizer(oracle)
+    source_hashes = {
+        path.relative_to(oracle.root).as_posix(): hashlib.sha256(
+            path.read_bytes()
+        ).hexdigest()
+        for path in sorted(oracle.root.rglob("*.py"))
+    }
+    task_records: list[dict[str, Any]] = []
+    for task in tasks:
+        expected = tuple(
+            canonicalizer.relation(item) for item in oracle.expected(task)
+        )
+        if not expected:
+            raise VerifiableNavigationError(
+                f"task {task.task_id} has no exact expected relations"
+            )
+        task_records.append(
+            {
+                "task_id": task.task_id,
+                "kind": task.kind,
+                "oracle_resolvable": True,
+                "canonical_symbols_unique": True,
+                "difficulty": classify_task_difficulty(
+                    task, oracle=oracle
+                ).as_dict(),
+                "expected_relations": [
+                    _static_relation_dict(item) for item in expected
+                ],
+            }
+        )
+    manifest: dict[str, Any] = {
+        "schema_version": VERIFIABLE_ADMISSION_SCHEMA_VERSION,
+        "track": "NAV-VERIFIABLE-00",
+        "difficulty_policy": {
+            "local": {
+                "candidate_file_count": 1,
+                "max_hop_count": 1,
+                "decoy_count": 0,
+            },
+            "exploratory": {
+                "minimum_satisfied_signals": 2,
+                "signals": {
+                    "candidate_file_count_gte": 5,
+                    "hop_count_gte": 3,
+                    "decoy_count_gte": 4,
+                    "answer_file_count_gte": 3,
+                },
+            },
+            "intermediate": "all admitted tasks not classified local or exploratory",
+        },
+        "source_hashes": source_hashes,
+        "tasks": task_records,
+    }
+    canonical = json.dumps(
+        manifest, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    manifest["admission_manifest_sha256"] = hashlib.sha256(canonical).hexdigest()
+    return manifest
 
 
 def build_pair_manifest(
@@ -838,3 +1023,14 @@ def _relation_key(relation: StaticRelation) -> tuple[Any, ...]:
         relation.target,
         relation.path_symbols,
     )
+
+
+def _static_relation_dict(relation: StaticRelation) -> dict[str, Any]:
+    return {
+        "kind": relation.kind,
+        "path": relation.path,
+        "symbol": relation.symbol,
+        "target": relation.target,
+        "path_symbols": list(relation.path_symbols),
+        "required_lines": list(relation.required_lines),
+    }

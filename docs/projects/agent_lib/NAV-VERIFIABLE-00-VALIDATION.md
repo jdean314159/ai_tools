@@ -25,7 +25,7 @@ and indirect helper calls cannot satisfy a direct-edge claim.
 
 ## Deterministic result
 
-The `agent_lib` package gate passed with `134 passed`. Dedicated tests cover all
+The `agent_lib` package gate passed with `136 passed`. Dedicated tests cover all
 four task shapes, exact relation scoring, indirect-as-direct rejection,
 unobserved evidence, source hash drift, aliases, same-named methods, nested
 functions, dynamic calls, relation-claim shape, and paired configuration drift.
@@ -114,3 +114,32 @@ evidence precision remains unproven under live navigation.
 
 Replay artifact:
 `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-canonical-v1-replay-20260723.json`.
+
+## Metric decomposition and admission gate
+
+Exact scoring is now factored into relation correctness, evidence completeness,
+and evidence precision. Unsupported relations, missing required evidence, and
+extra evidence are separate defect classes. `exact_correct` remains the strict
+conjunction, so the bar did not weaken.
+
+Replaying the same saved responses under the decomposed scorer yields:
+
+| Task | Relation | Evidence complete | Evidence precise | Exact |
+|---|---:|---:|---:|---:|
+| Direct caller | pass | pass | pass | pass |
+| Call path | pass | pass | fail | fail |
+| Mutation target | pass | pass | pass | pass |
+
+The shared JSON schema now states the minimal-line requirement explicitly. The
+path over-citation remains known model behavior because the corrected live
+prompt already contained the same requirement.
+
+Task-admission schema v1 is also frozen before production fixture
+construction. It records source hashes, oracle resolvability, canonical
+uniqueness, exact expected relations, and four structural difficulty features:
+hop count, answer-file count, candidate-file count, and decoy count. Tier
+classification uses only these source-derived values. Autonomous run cost may
+identify a calibration miss but cannot reclassify or remove a task.
+
+Decomposed replay artifact:
+`/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-decomposed-v1-replay-20260723.json`.
