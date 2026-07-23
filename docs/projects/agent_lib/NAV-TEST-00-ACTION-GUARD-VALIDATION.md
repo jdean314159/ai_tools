@@ -131,6 +131,33 @@ predict detector behavior on a newly generated trajectory, even with the same
 decoding seed. Calibration data must come from live shadow runs captured under
 the code and environment being evaluated.
 
+Two additional seed0 shadow runs on the exact same `b201b6c` commit and pinned
+server configuration produced identical canonical action streams, semantic
+planner outputs, per-call input/output token counts, final outputs, and guard
+decisions. Only latency metadata differed. Under this configuration, seed0 does
+pin the observed trajectory across repeated runs. The historical divergence
+therefore demonstrates input/environment drift across repository versions, not
+run-to-run sampling nondeterminism. Per-seed validation is meaningful only when
+the repository snapshot, prompt construction, model/server build, and decoding
+configuration are all held fixed.
+
+Prefix evidence scoring explains the live detector miss. Coverage reached
+7/12 regions at action 7, 9/12 at action 14, and 11/12 at action 17 (84,403
+cumulative tokens). Actions 18–20 added no ground-truth region while consuming
+31,824 more tokens. The missing region was `pipeline.py:766–794`, beyond the
+last successful read ending near line 696. Actions 10–17 were mostly genuinely
+high-novelty progressive reads, while the final three actions were heterogeneous:
+a zero-novelty listing, a failed whole-file read, and a zero-novelty bounded
+read. They never formed the two consecutive low-novelty near-duplicate actions
+required by the detector.
+
+This establishes live detection recall of 0/1 for the current failure and
+shows that threshold tuning alone cannot cover it. The current signal detects
+repetitive action loops; this trajectory instead exhibits continued heterogeneous
+navigation after evidence saturation. A separate experimental signal should
+model sustained evidence-coverage plateau plus budget consumption, without
+assuming that a loop signal alone proves evidence sufficiency.
+
 ## Scope and remaining risk
 
 This result supersedes the text n-gram detector for NAV-class failures. It does
