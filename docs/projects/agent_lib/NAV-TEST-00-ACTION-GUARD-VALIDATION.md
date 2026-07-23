@@ -250,6 +250,37 @@ answers, so no autonomous run can yet pass the structured-claim gate. Planner
 output-schema adoption and live validation are a separate next stage; per-step
 information-goal tracking remains later work.
 
+### Structured planner-output adoption — contract passed, live gate failed
+
+NAV planner and constrained-finalizer schemas now require
+`navigation_claims`. Claims survive payload conversion in final-action metadata,
+and malformed claim arrays fail validation. Deterministic contract tests pass.
+
+The first sampled seed2 live control demonstrated why exact evidence references
+matter. It completed at 40,462 tokens with 11/12 evidence recall, but only 7/12
+claims validated. Three claims cited whole method ranges after observing only
+sparse grep hits, and one used the fabricated symbol
+`RAGPipeline._store.add call site`. The scorer correctly rejected all four.
+
+The protocol was corrected once to require minimal exact references
+(single-line references for grep hits), exact visible enclosing symbols, and
+additional inspection rather than symbol invention. A second sampled seed2
+control emitted six clean, supported claims with no validation errors or
+unsupported claims, but prematurely finalized after inspecting only
+`chroma.py`: evidence recall was 7/12, claim correctness 6/12, 20,864 tokens,
+and all pipeline information goals remained unresolved. It also omitted the
+observed `ChromaStorage.__init__` initialization claim.
+
+Because these are sampled runs, their trajectories are not direct quality
+comparisons. Together they establish that the structured-output contract works
+and the corrected scorer detects the intended defect classes. They do not
+establish complete navigation. The live gate therefore fails at the next
+architectural boundary: the planner has no explicit required/open/resolved
+information-goal state and can terminate with entire requested categories
+unexamined. Further final-answer prompt tuning is stopped. Per-step goal-ledger
+work requires a separate structured-navigation specification and evaluation
+track; autonomous NAV-TEST-00 remains failed.
+
 ## Scope and remaining risk
 
 This result supersedes the text n-gram detector for NAV-class failures. It does
