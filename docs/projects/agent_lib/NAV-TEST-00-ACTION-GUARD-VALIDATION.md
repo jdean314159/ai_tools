@@ -158,6 +158,40 @@ navigation after evidence saturation. A separate experimental signal should
 model sustained evidence-coverage plateau plus budget consumption, without
 assuming that a loop signal alone proves evidence sufficiency.
 
+## Counterfactual evidence-centric finalization
+
+The recorded trajectory was finalized without tools at two cutoffs using the
+same deterministic evidence compactor and final-only schema:
+
+- action 17, the forced 70%-budget baseline: 84,403 tokens consumed and 35,597
+  remaining;
+- action 19, after two zero-novelty actions: 106,361 consumed and 13,639
+  remaining.
+
+The final evidence prompt was 5,130 tokens, so both cutoffs safely allowed the
+same 2,048-token output cap. Both produced the same deterministic answer. The
+novelty gate therefore suppressed the productive action 17 without making
+finalization budget-infeasible at action 19.
+
+Context construction materially affected the result. A first compact prompt
+omitted enclosing symbol headers and recovered 8/11 surfaced regions. Retaining
+observable enclosing class/function headers improved this to 10/11. One final
+prompt-only checklist recovered all 11 surfaced regions (evidence-conditioned
+recall 1.0), 11/12 full recall, and no unsupported path.
+
+The strict intervention gate nevertheless failed. The answer still included
+the explicitly excluded retrieval-only `get_collection` operation and inferred
+an unobserved `self._store.add` call site. Those are semantic precision failures
+that the path/required-term scorer does not capture. Prompt search stopped at
+this predeclared point rather than tuning further against the answer key.
+
+Conclusion: compact evidence-centric finalization is budget-feasible and can
+recover the surfaced answer set, but trustworthy claim precision is not yet
+validated. Detector enforcement must remain disabled. A future attempt would
+need structured, evidence-linked claims with deterministic validation, not
+another free-form prompt revision. Until then, forced budget-fraction
+finalization can only be described as experimental harness assistance.
+
 ## Scope and remaining risk
 
 This result supersedes the text n-gram detector for NAV-class failures. It does
