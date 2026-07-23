@@ -1,7 +1,7 @@
 # NAV-VERIFIABLE-00 paired structured-navigation evaluation
 
-**Status:** Deterministic foundation implemented; planner/runner adoption and
-live paired campaign not built.
+**Status:** Deterministic foundation and production task selection implemented;
+planner/runner adoption and live paired campaign not built.
 
 ## Purpose
 
@@ -149,7 +149,7 @@ Implemented:
   `agent_lib/src/agent_lib/eval/verifiable_campaign.py`, lines 26–472.
 - Mechanical candidate enumeration, normalized-relation deduplication, a
   source-hashed pool, and deterministic stratified selection. See
-  `NAV-CANDIDATE-SELECTION-V1.md` and
+  `NAV-CANDIDATE-SELECTION-V2.md` and
   `agent_lib/src/agent_lib/eval/verifiable_selection.py`, lines 27–298.
 - Deterministic fixtures and tests for aliases, same-named methods, nested
   functions, indirect helper calls, unobserved evidence, hash drift, and
@@ -160,8 +160,11 @@ Still required before live use:
 - Planner output-schema adoption for `relation_claims`.
 - Task-specific goal seeding instead of the NAV-STRUCT-00 exhaustive ledger.
 - A paired executable that runs both modes and writes the manifest plus scores.
-- Production task snapshots with multiple fixtures per task shape; the checked
-  fixture is a deterministic contract proof, not an evaluation dataset.
+
+Production task snapshots and the selected campaign now exist under
+`agent_lib/eval_snapshots/` and
+`agent_lib/eval_manifests/nav_verifiable_campaign_v1/`. The deterministic
+selection contains all four task shapes and the frozen 4/4/6 tier distribution.
 
 Scoring reports four independent booleans:
 

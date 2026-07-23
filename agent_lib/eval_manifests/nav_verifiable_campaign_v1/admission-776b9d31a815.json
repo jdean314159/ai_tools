@@ -1,0 +1,190 @@
+{
+  "admission_manifest_sha256": "ffc7edc3b45f3415f22ecf55169ef87ad44b449efed7c3e179f99bcb8a8ab2ea",
+  "difficulty_policy": {
+    "exploratory": {
+      "minimum_satisfied_signals": 2,
+      "signals": {
+        "answer_file_count_gte": 3,
+        "candidate_file_count_gte": 5,
+        "decoy_count_gte": 4,
+        "hop_count_gte": 3
+      }
+    },
+    "intermediate": "all admitted tasks not classified local or exploratory",
+    "local": {
+      "candidate_file_count": 1,
+      "decoy_count": 0,
+      "max_hop_count": 1
+    }
+  },
+  "schema_version": 1,
+  "source_hashes": {
+    "archive.py": "aedf5799e642338d76861ceb6449a1625e33d54f55bb475040c0e1e5ae7cfed9",
+    "cache.py": "be6f827189fc194004bdba159c18f0ec3ba02c5f929118e0b247284743257d9f",
+    "index.py": "22d2ddd83074f76accadab98d91d4ff53b523a33203befe2a3ebd21aef6fc63c",
+    "pipeline.py": "2d90c9d5e615cfd10fd3d8d4821923b4f54460e1618883d4303b66adcbc9415d",
+    "queue.py": "11832564c05b04e44ad88e22bf53b20c34f715d40b95cec00108ec2aa814c598"
+  },
+  "tasks": [
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 1,
+        "hop_count": 0,
+        "tier": "intermediate"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "pipeline.py",
+          "path_symbols": [],
+          "required_lines": [
+            8
+          ],
+          "symbol": "AlphaPipeline.validate",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-5e1bd4e9d63599bf"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 1,
+        "hop_count": 1,
+        "tier": "intermediate"
+      },
+      "expected_relations": [
+        {
+          "kind": "mutation_target",
+          "path": "pipeline.py",
+          "path_symbols": [],
+          "required_lines": [
+            6
+          ],
+          "symbol": "AlphaPipeline.prepare",
+          "target": "self.validate"
+        }
+      ],
+      "kind": "mutation_target",
+      "oracle_resolvable": true,
+      "task_id": "navv-8e85680180bbb042"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 1,
+        "hop_count": 0,
+        "tier": "intermediate"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "cache.py",
+          "path_symbols": [],
+          "required_lines": [
+            9
+          ],
+          "symbol": "cache_record",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-e83a71227e1a163a"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 5,
+        "decoy_count": 4,
+        "hop_count": 4,
+        "tier": "exploratory"
+      },
+      "expected_relations": [
+        {
+          "kind": "call_path",
+          "path": "pipeline.py",
+          "path_symbols": [
+            "AlphaPipeline.run",
+            "AlphaPipeline.prepare",
+            "AlphaPipeline.validate",
+            "AlphaPipeline.persist",
+            "write_record"
+          ],
+          "required_lines": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "symbol": "AlphaPipeline.run",
+          "target": "write_record"
+        }
+      ],
+      "kind": "call_path",
+      "oracle_resolvable": true,
+      "task_id": "navv-7fd07a3352353d60"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 5,
+        "decoy_count": 4,
+        "hop_count": 0,
+        "tier": "exploratory"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "queue.py",
+          "path_symbols": [],
+          "required_lines": [
+            2
+          ],
+          "symbol": "AlphaQueue.run",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-3b9157e52e6a98db"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 5,
+        "decoy_count": 4,
+        "hop_count": 0,
+        "tier": "exploratory"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "index.py",
+          "path_symbols": [],
+          "required_lines": [
+            2
+          ],
+          "symbol": "AlphaIndex.run",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-af3deacb88ed1e00"
+    }
+  ],
+  "track": "NAV-VERIFIABLE-00"
+}

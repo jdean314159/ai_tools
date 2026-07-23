@@ -1,8 +1,8 @@
-# NAV-VERIFIABLE-00 candidate selection v1
+# NAV-VERIFIABLE-00 candidate selection v2
 
 **Status:** Frozen before production snapshot selection  
-**Pool schema:** 1  
-**Selection schema:** 1
+**Pool schema:** 2  
+**Selection schema:** 2
 
 ## Candidate enumeration
 
@@ -24,6 +24,8 @@ The pool is hashed before selection.
 Local and intermediate candidates are selected by the fixed salted hash order.
 Exploratory selection is deterministic coverage-greedy, then hash-ordered:
 
+- gain credit for a task shape not already represented until definition,
+  direct-callers, call-path, and mutation-target tasks are all represented;
 - gain credit for a new source snapshot until three are represented;
 - gain credit for a decoy-threshold task until three are represented;
 - gain credit for a graph/multi-file task until three are represented;
@@ -40,7 +42,11 @@ observing model outcomes.
 ## Bias boundary
 
 The public ordering salt is:
-`NAV-VERIFIABLE-00-candidate-order-v1`.
+`NAV-VERIFIABLE-00-candidate-order-v2`.
 
 Changing enumeration, deduplication, the salt, or selection priority requires a
 new schema version before any new campaign outcomes are observed.
+
+Version 2 supersedes version 1 before any production model outcome. Version 1
+could satisfy tier and exploratory-diversity constraints while omitting one of
+the four task shapes required by the parent evaluation spec.

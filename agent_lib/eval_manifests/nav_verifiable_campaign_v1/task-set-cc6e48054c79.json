@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "mirror.py": "30e92cc398e27c2362db353b491cffb0dfad0c1d25e8655a4f0222021333338e",
+    "notifier.py": "8f61c233edf952b3bc2132056007d9de8c83a6af75358b930735b4fda0f97456",
+    "reporter.py": "78b92c3fc88037b0512035943e4f5b4bb5bc3b1faab481a628af73f4f0ddfde4",
+    "scheduler.py": "6146a71ca1234356072453b8619b4a1f20d369fc219d3f9d1eea7b697d328751",
+    "workflow.py": "388a9a9c109862806b989749f16d51019cac3716e3ccbd218d3d9391aef946ae"
+  },
+  "tasks": [
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "locate_definition",
+          "requirement": "Locate BetaMirror."
+        }
+      ],
+      "kind": "definition",
+      "path": "mirror.py",
+      "question": "Locate the definition of BetaMirror.",
+      "symbol": "BetaMirror",
+      "task_id": "navv-92d60ab025e42c12"
+    },
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "locate_definition",
+          "requirement": "Locate BetaWorkflow."
+        }
+      ],
+      "kind": "definition",
+      "path": "workflow.py",
+      "question": "Locate the definition of BetaWorkflow.",
+      "symbol": "BetaWorkflow",
+      "task_id": "navv-03bf2db64dc16bd0"
+    },
+    {
+      "endpoint": "emit_event",
+      "goal_requirements": [
+        {
+          "goal_id": "trace_call_path",
+          "requirement": "Trace BetaWorkflow.execute to emit_event."
+        }
+      ],
+      "kind": "call_path",
+      "path": "workflow.py",
+      "question": "Trace the call path from BetaWorkflow.execute to emit_event.",
+      "symbol": "BetaWorkflow.execute",
+      "task_id": "navv-1e449c1243c15310"
+    },
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "identify_named_site_target",
+          "requirement": "Identify the callable at BetaScheduler.publish line 6."
+        }
+      ],
+      "kind": "mutation_target",
+      "line": 6,
+      "path": "scheduler.py",
+      "question": "Identify the callable invoked by BetaScheduler.publish at line 6.",
+      "symbol": "BetaScheduler.publish",
+      "task_id": "navv-0da1ed5b57d3b8e9"
+    }
+  ],
+  "track": "NAV-VERIFIABLE-00"
+}

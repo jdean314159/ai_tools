@@ -1,0 +1,26 @@
+{
+  "campaign_manifest_sha256": "00dfcc508ddf18b330a2f9c9e9f32ffe92ae570e08f52f1bc165442cd30f8cb6",
+  "candidate_pool_sha256": "480f48928bc067926d44cf31b3e79571dd0af2912aaafbb7aec976c429399f4e",
+  "candidate_selection_sha256": "a7cd9f555843fe127e47229bcdd67b988e15a34467a20cf5b8533a7553121b39",
+  "task_sets": [
+    {
+      "admission": "admission-776b9d31a815.json",
+      "snapshot_id": "776b9d31a81504be4591051dc771a43739ad24d868381b9838b5027474027731",
+      "source_root": "agent_lib/eval_snapshots/nav_verifiable_alpha",
+      "task_set": "task-set-776b9d31a815.json"
+    },
+    {
+      "admission": "admission-ada8d63169f3.json",
+      "snapshot_id": "ada8d63169f3b4dc8342e54fc89e681efba9ef456187a6e4a00c9a0c5ec0b5fc",
+      "source_root": "agent_lib/eval_snapshots/nav_verifiable_gamma",
+      "task_set": "task-set-ada8d63169f3.json"
+    },
+    {
+      "admission": "admission-cc6e48054c79.json",
+      "snapshot_id": "cc6e48054c793db8d21f8108566133cad96f8b5f629a37c16ffa133ac7b7a5c8",
+      "source_root": "agent_lib/eval_snapshots/nav_verifiable_beta",
+      "task_set": "task-set-cc6e48054c79.json"
+    }
+  ],
+  "track": "NAV-VERIFIABLE-00"
+}

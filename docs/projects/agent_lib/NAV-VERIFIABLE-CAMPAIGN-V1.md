@@ -96,7 +96,7 @@ Replicated runs require a separate predeclared campaign. They may not be
 selectively added only to surprising tasks.
 
 Candidate enumeration and selection follow
-`NAV-CANDIDATE-SELECTION-V1.md`; hand-picked replacements are prohibited.
+`NAV-CANDIDATE-SELECTION-V2.md`; hand-picked replacements are prohibited.
 
 Changing this distribution, diversity rule, or summary policy requires campaign
 schema version 2 and must occur before observing new campaign outcomes.

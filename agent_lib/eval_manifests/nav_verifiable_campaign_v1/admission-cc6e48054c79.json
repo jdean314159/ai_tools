@@ -1,0 +1,140 @@
+{
+  "admission_manifest_sha256": "e087e1f47fa8034277a4fbcb6cc2dddcf4c6861dffb519a7e165e51f13a5c66b",
+  "difficulty_policy": {
+    "exploratory": {
+      "minimum_satisfied_signals": 2,
+      "signals": {
+        "answer_file_count_gte": 3,
+        "candidate_file_count_gte": 5,
+        "decoy_count_gte": 4,
+        "hop_count_gte": 3
+      }
+    },
+    "intermediate": "all admitted tasks not classified local or exploratory",
+    "local": {
+      "candidate_file_count": 1,
+      "decoy_count": 0,
+      "max_hop_count": 1
+    }
+  },
+  "schema_version": 1,
+  "source_hashes": {
+    "mirror.py": "30e92cc398e27c2362db353b491cffb0dfad0c1d25e8655a4f0222021333338e",
+    "notifier.py": "8f61c233edf952b3bc2132056007d9de8c83a6af75358b930735b4fda0f97456",
+    "reporter.py": "78b92c3fc88037b0512035943e4f5b4bb5bc3b1faab481a628af73f4f0ddfde4",
+    "scheduler.py": "6146a71ca1234356072453b8619b4a1f20d369fc219d3f9d1eea7b697d328751",
+    "workflow.py": "388a9a9c109862806b989749f16d51019cac3716e3ccbd218d3d9391aef946ae"
+  },
+  "tasks": [
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 0,
+        "hop_count": 0,
+        "tier": "local"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "mirror.py",
+          "path_symbols": [],
+          "required_lines": [
+            1
+          ],
+          "symbol": "BetaMirror",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-92d60ab025e42c12"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 0,
+        "hop_count": 0,
+        "tier": "local"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "workflow.py",
+          "path_symbols": [],
+          "required_lines": [
+            1
+          ],
+          "symbol": "BetaWorkflow",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-03bf2db64dc16bd0"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 5,
+        "decoy_count": 4,
+        "hop_count": 4,
+        "tier": "exploratory"
+      },
+      "expected_relations": [
+        {
+          "kind": "call_path",
+          "path": "workflow.py",
+          "path_symbols": [
+            "BetaWorkflow.execute",
+            "BetaWorkflow.transform",
+            "BetaWorkflow.approve",
+            "BetaWorkflow.publish",
+            "emit_event"
+          ],
+          "required_lines": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "symbol": "BetaWorkflow.execute",
+          "target": "emit_event"
+        }
+      ],
+      "kind": "call_path",
+      "oracle_resolvable": true,
+      "task_id": "navv-1e449c1243c15310"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 5,
+        "decoy_count": 9,
+        "hop_count": 1,
+        "tier": "exploratory"
+      },
+      "expected_relations": [
+        {
+          "kind": "mutation_target",
+          "path": "scheduler.py",
+          "path_symbols": [],
+          "required_lines": [
+            6
+          ],
+          "symbol": "BetaScheduler.publish",
+          "target": "schedule_event"
+        }
+      ],
+      "kind": "mutation_target",
+      "oracle_resolvable": true,
+      "task_id": "navv-0da1ed5b57d3b8e9"
+    }
+  ],
+  "track": "NAV-VERIFIABLE-00"
+}

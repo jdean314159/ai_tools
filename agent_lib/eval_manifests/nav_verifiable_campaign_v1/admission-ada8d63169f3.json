@@ -1,0 +1,138 @@
+{
+  "admission_manifest_sha256": "a99aaab6ca2558a10705d5276b35aa316f0b4bc70c3a54baeebc048f347a3c4b",
+  "difficulty_policy": {
+    "exploratory": {
+      "minimum_satisfied_signals": 2,
+      "signals": {
+        "answer_file_count_gte": 3,
+        "candidate_file_count_gte": 5,
+        "decoy_count_gte": 4,
+        "hop_count_gte": 3
+      }
+    },
+    "intermediate": "all admitted tasks not classified local or exploratory",
+    "local": {
+      "candidate_file_count": 1,
+      "decoy_count": 0,
+      "max_hop_count": 1
+    }
+  },
+  "schema_version": 1,
+  "source_hashes": {
+    "audit.py": "0301ba1f334406966825dee642bdac0ffd22c95fef6d3cd50c80b2fa2ef8bf7d",
+    "controller.py": "2c698becb8f01a96009bd88f7db68cff26ba790895f240477d4ecbc43cc58315",
+    "history.py": "240f4e0f9219876282b4ca38dac64454ae2613a310d8fe0df817e9b480e6aa5f",
+    "replica.py": "0de67832d2fd92ba42eb5f8760bdb6ab1c9f70db6ece266c6b9527e36e899fa6",
+    "transaction.py": "2099d8c5a1d19b99db70b5110588ecadf98ca78975eef0f0b52cdf8e53d46354"
+  },
+  "tasks": [
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 0,
+        "hop_count": 0,
+        "tier": "local"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "audit.py",
+          "path_symbols": [],
+          "required_lines": [
+            1
+          ],
+          "symbol": "GammaAudit",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-8dca44b918d2454b"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 0,
+        "hop_count": 1,
+        "tier": "local"
+      },
+      "expected_relations": [
+        {
+          "kind": "call_edge",
+          "path": "controller.py",
+          "path_symbols": [],
+          "required_lines": [
+            3
+          ],
+          "symbol": "GammaController.dispatch",
+          "target": "GammaController.route"
+        }
+      ],
+      "kind": "direct_callers",
+      "oracle_resolvable": true,
+      "task_id": "navv-b71a35ca039092cb"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 1,
+        "decoy_count": 1,
+        "hop_count": 0,
+        "tier": "intermediate"
+      },
+      "expected_relations": [
+        {
+          "kind": "definition",
+          "path": "history.py",
+          "path_symbols": [],
+          "required_lines": [
+            9
+          ],
+          "symbol": "history_change",
+          "target": ""
+        }
+      ],
+      "kind": "definition",
+      "oracle_resolvable": true,
+      "task_id": "navv-ed9cf117b0d5a468"
+    },
+    {
+      "canonical_symbols_unique": true,
+      "difficulty": {
+        "answer_file_count": 1,
+        "candidate_file_count": 5,
+        "decoy_count": 12,
+        "hop_count": 3,
+        "tier": "exploratory"
+      },
+      "expected_relations": [
+        {
+          "kind": "call_path",
+          "path": "controller.py",
+          "path_symbols": [
+            "GammaController.dispatch",
+            "GammaController.route",
+            "GammaController.authorize",
+            "GammaController.commit"
+          ],
+          "required_lines": [
+            3,
+            6,
+            9
+          ],
+          "symbol": "GammaController.dispatch",
+          "target": "GammaController.commit"
+        }
+      ],
+      "kind": "call_path",
+      "oracle_resolvable": true,
+      "task_id": "navv-4d484c98ef307134"
+    }
+  ],
+  "track": "NAV-VERIFIABLE-00"
+}

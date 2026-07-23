@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "archive.py": "aedf5799e642338d76861ceb6449a1625e33d54f55bb475040c0e1e5ae7cfed9",
+    "cache.py": "be6f827189fc194004bdba159c18f0ec3ba02c5f929118e0b247284743257d9f",
+    "index.py": "22d2ddd83074f76accadab98d91d4ff53b523a33203befe2a3ebd21aef6fc63c",
+    "pipeline.py": "2d90c9d5e615cfd10fd3d8d4821923b4f54460e1618883d4303b66adcbc9415d",
+    "queue.py": "11832564c05b04e44ad88e22bf53b20c34f715d40b95cec00108ec2aa814c598"
+  },
+  "tasks": [
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "locate_definition",
+          "requirement": "Locate AlphaPipeline.validate."
+        }
+      ],
+      "kind": "definition",
+      "path": "pipeline.py",
+      "question": "Locate the definition of AlphaPipeline.validate.",
+      "symbol": "AlphaPipeline.validate",
+      "task_id": "navv-5e1bd4e9d63599bf"
+    },
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "identify_named_site_target",
+          "requirement": "Identify the callable at AlphaPipeline.prepare line 6."
+        }
+      ],
+      "kind": "mutation_target",
+      "line": 6,
+      "path": "pipeline.py",
+      "question": "Identify the callable invoked by AlphaPipeline.prepare at line 6.",
+      "symbol": "AlphaPipeline.prepare",
+      "task_id": "navv-8e85680180bbb042"
+    },
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "locate_definition",
+          "requirement": "Locate cache_record."
+        }
+      ],
+      "kind": "definition",
+      "path": "cache.py",
+      "question": "Locate the definition of cache_record.",
+      "symbol": "cache_record",
+      "task_id": "navv-e83a71227e1a163a"
+    },
+    {
+      "endpoint": "write_record",
+      "goal_requirements": [
+        {
+          "goal_id": "trace_call_path",
+          "requirement": "Trace AlphaPipeline.run to write_record."
+        }
+      ],
+      "kind": "call_path",
+      "path": "pipeline.py",
+      "question": "Trace the call path from AlphaPipeline.run to write_record.",
+      "symbol": "AlphaPipeline.run",
+      "task_id": "navv-7fd07a3352353d60"
+    },
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "locate_definition",
+          "requirement": "Locate AlphaQueue.run."
+        }
+      ],
+      "kind": "definition",
+      "path": "queue.py",
+      "question": "Locate the definition of AlphaQueue.run.",
+      "symbol": "AlphaQueue.run",
+      "task_id": "navv-3b9157e52e6a98db"
+    },
+    {
+      "goal_requirements": [
+        {
+          "goal_id": "locate_definition",
+          "requirement": "Locate AlphaIndex.run."
+        }
+      ],
+      "kind": "definition",
+      "path": "index.py",
+      "question": "Locate the definition of AlphaIndex.run.",
+      "symbol": "AlphaIndex.run",
+      "task_id": "navv-af3deacb88ed1e00"
+    }
+  ],
+  "track": "NAV-VERIFIABLE-00"
+}

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from agent_lib.eval.verifiable_selection import (
     CANDIDATE_ORDER_SALT,
+    REQUIRED_TASK_KINDS,
     build_candidate_pool,
     select_campaign_candidates,
 )
@@ -138,4 +139,5 @@ def test_campaign_selection_is_deterministic_and_satisfies_frozen_counts() -> No
     ]
     assert len(exploratory) == 6
     assert len({item["snapshot_id"] for item in exploratory}) == 3
+    assert {item["kind"] for item in first["selected"]} == REQUIRED_TASK_KINDS
     assert first["candidate_selection_sha256"]

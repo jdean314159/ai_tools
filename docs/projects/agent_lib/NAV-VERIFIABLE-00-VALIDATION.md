@@ -1,7 +1,8 @@
 # NAV-VERIFIABLE-00 deterministic foundation validation
 
 **Date:** 2026-07-23  
-**Status:** Contract gate passed; no live model result.
+**Status:** Contract and production-task admission gates passed; no live model
+result.
 
 ## Implemented boundary
 
@@ -37,10 +38,9 @@ package-scoped gate was used.
 
 ## Not yet validated
 
-This checkpoint does not show that a model can emit the relation schema, that
-task-specific ledger goals work, or that the ledger improves any paired task.
-The production task set and paired executable do not exist. No live run was
-performed.
+This checkpoint does not show that task-specific ledger goals work or that the
+ledger improves any paired task. The production task set now exists; the paired
+executable does not. No production live run was performed.
 
 The next gate is model-facing adoption plus deterministic end-to-end tests:
 seed each task's user-visible goals, require `relation_claims` only for this
@@ -183,5 +183,30 @@ and select by frozen coverage priorities plus a public salted hash order. An
 undersupplied stratum requires a new pinned snapshot and complete pool
 regeneration, not a hand-picked replacement.
 
-No candidate pool was built from production snapshots and no model run was
-performed in this checkpoint.
+Selection schema v2 superseded v1 before any production model outcome because
+v1 could omit a task shape despite the parent spec requiring all four. The v2
+coverage priority requires definition, direct-callers, call-path, and
+mutation-target representation and uses a new public ordering salt. No
+candidate was substituted after selection.
+
+## Production candidate and admission result
+
+Three independently source-hashed, oracle-compatible evaluation snapshots were
+added under `agent_lib/eval_snapshots/`. Full schema-v2 enumeration produced
+204 candidates. Deterministic selection and admission produced exactly 14
+tasks: four local, four intermediate, and six exploratory, with all four task
+shapes represented and exploratory tasks spanning all three snapshots.
+
+Frozen identifiers:
+
+- candidate pool:
+  `480f48928bc067926d44cf31b3e79571dd0af2912aaafbb7aec976c429399f4e`;
+- candidate selection:
+  `a7cd9f555843fe127e47229bcdd67b988e15a34467a20cf5b8533a7553121b39`;
+- campaign admission:
+  `00dfcc508ddf18b330a2f9c9e9f32ffe92ae570e08f52f1bc165442cd30f8cb6`.
+
+The complete pool, selected tasks, per-snapshot task sets and admissions, and
+portable run plan are tracked in
+`agent_lib/eval_manifests/nav_verifiable_campaign_v1/`. These are pre-model
+artifacts; they contain no observed planner outcome.

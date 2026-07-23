@@ -19,9 +19,12 @@ from .verifiable_navigation import (
 )
 
 
-CANDIDATE_POOL_SCHEMA_VERSION = 1
-CANDIDATE_SELECTION_SCHEMA_VERSION = 1
-CANDIDATE_ORDER_SALT = "NAV-VERIFIABLE-00-candidate-order-v1"
+CANDIDATE_POOL_SCHEMA_VERSION = 2
+CANDIDATE_SELECTION_SCHEMA_VERSION = 2
+CANDIDATE_ORDER_SALT = "NAV-VERIFIABLE-00-candidate-order-v2"
+REQUIRED_TASK_KINDS = frozenset(
+    {"definition", "direct_callers", "call_path", "mutation_target"}
+)
 
 
 def build_candidate_pool(snapshot_roots: Sequence[str | Path]) -> dict[str, Any]:
@@ -141,9 +144,16 @@ def select_campaign_candidates(pool: Mapping[str, Any]) -> dict[str, Any]:
             "candidate pool does not supply local/intermediate minimums"
         )
     exploratory = _select_exploratory(
-        by_tier["exploratory"], CAMPAIGN_TIER_MINIMUMS["exploratory"]
+        by_tier["exploratory"],
+        CAMPAIGN_TIER_MINIMUMS["exploratory"],
+        covered_kinds={str(item["kind"]) for item in selected},
     )
     selected.extend(exploratory)
+    selected_kinds = {str(item["kind"]) for item in selected}
+    if selected_kinds != REQUIRED_TASK_KINDS:
+        raise VerifiableNavigationError(
+            "candidate pool cannot supply every required task shape"
+        )
     manifest: dict[str, Any] = {
         "schema_version": CANDIDATE_SELECTION_SCHEMA_VERSION,
         "track": "NAV-VERIFIABLE-00",
@@ -159,6 +169,8 @@ def select_campaign_candidates(pool: Mapping[str, Any]) -> dict[str, Any]:
 def _select_exploratory(
     candidates: Sequence[dict[str, Any]],
     count: int,
+    *,
+    covered_kinds: set[str],
 ) -> list[dict[str, Any]]:
     remaining = list(candidates)
     selected: list[dict[str, Any]] = []
@@ -189,12 +201,18 @@ def _select_exploratory(
                 or int(difficulty.get("answer_file_count") or 0) >= 3
             ):
                 gain += 1
+            if (
+                len(covered_kinds) < len(REQUIRED_TASK_KINDS)
+                and str(item.get("kind") or "") not in covered_kinds
+            ):
+                gain += 1
             return (-gain, str(item["selection_key"]))
 
         chosen = min(allowed, key=coverage)
         selected.append(chosen)
         remaining.remove(chosen)
         kind_counts[str(chosen.get("kind") or "")] += 1
+        covered_kinds.add(str(chosen.get("kind") or ""))
         snapshots.add(str(chosen.get("snapshot_id") or ""))
         difficulty = dict(chosen.get("difficulty") or {})
         decoy_tasks += int(int(difficulty.get("decoy_count") or 0) >= 4)
