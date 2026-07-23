@@ -1,7 +1,7 @@
 # NAV-VERIFIABLE-00 paired structured-navigation evaluation
 
-**Status:** Implementation-ready experiment specification; task fixtures and
-relation scorer are not built.
+**Status:** Deterministic foundation implemented; planner/runner adoption and
+live paired campaign not built.
 
 ## Purpose
 
@@ -106,22 +106,43 @@ part of this gate.
 
 ## Must be built (does not exist yet)
 
-- A versioned `NAV-VERIFIABLE-00` task-fixture schema.
-- An AST oracle for exact definitions, direct-call edges, and specified paths.
-- Relation-aware structured claims; the current flat claim schema cannot encode
-  an ordered path or a caller→callee edge explicitly.
-- A paired runner that records shared configuration and run order.
-- Exact scorer tests covering aliases, same-named methods, nested functions,
-  indirect helper calls, and unresolved dynamic dispatch.
+Implemented:
 
-Dynamic or ambiguous calls must make a fixture invalid at fixture-validation
-time; the v1 oracle must not guess.
+- Versioned, source-hash-pinned task fixtures and all four task shapes
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 20–142 and
+  540–590).
+- Relation-aware claim schema and shape validation
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 23–234).
+- Conservative AST oracle for definitions, direct-call edges, unique paths,
+  and named-site call expressions
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 275–538).
+- Exact evidence-aware relation scoring
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 592–654).
+- Paired-run manifest validation enforcing identical shared configuration and
+  explicit alternating order
+  (`agent_lib/src/agent_lib/eval/verifiable_navigation.py`, lines 656–694).
+- Deterministic fixtures and tests for aliases, same-named methods, nested
+  functions, indirect helper calls, unobserved evidence, hash drift, and
+  dynamically constructed calls.
+
+Still required before live use:
+
+- Planner output-schema adoption for `relation_claims`.
+- Task-specific goal seeding instead of the NAV-STRUCT-00 exhaustive ledger.
+- A paired executable that runs both modes and writes the manifest plus scores.
+- Production task snapshots with multiple fixtures per task shape; the checked
+  fixture is a deterministic contract proof, not an evaluation dataset.
+
+Aliases and dynamically constructed calls fail fixture validation. Ambiguous
+calls are excluded from edge resolution, so any edge or path task that depends
+on them fails to resolve exactly. A named-site mutation task may still identify
+the literal call expression without asserting its runtime dispatch target.
 
 ## Assumptions to verify
 
-- The selected source snapshots contain enough statically resolvable examples
-  for all four task shapes.
+- Production source snapshots contain enough statically resolvable examples
+  for multiple tasks of all four shapes.
 - Alternating run order is sufficient to control local engine cache/order
   effects for the first small campaign.
-- The existing model can reliably emit the future relation-aware claim schema;
-  deterministic contract tests must establish shape handling before live use.
+- The existing model can reliably emit the relation-aware claim schema once it
+  is added to the planner contract.

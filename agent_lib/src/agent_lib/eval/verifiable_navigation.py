@@ -1,0 +1,712 @@
+"""Exact, AST-backed contracts for the NAV-VERIFIABLE-00 evaluation track."""
+
+from __future__ import annotations
+
+import ast
+import hashlib
+import json
+from collections import defaultdict
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Literal
+
+from .navigation_claims import EvidenceRef
+
+
+TaskKind = Literal["definition", "direct_callers", "call_path", "mutation_target"]
+ClaimKind = Literal["definition", "call_edge", "call_path", "mutation_target"]
+
+VERIFIABLE_TASK_SCHEMA_VERSION = 1
+VERIFIABLE_PAIR_SCHEMA_VERSION = 1
+
+RELATION_CLAIMS_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "kind": {
+                "type": "string",
+                "enum": ["definition", "call_edge", "call_path", "mutation_target"],
+            },
+            "path": {"type": "string", "minLength": 1},
+            "symbol": {"type": "string", "minLength": 1},
+            "target": {"type": "string"},
+            "path_symbols": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+            },
+            "evidence": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "path": {"type": "string", "minLength": 1},
+                        "start_line": {"type": "integer", "minimum": 1},
+                        "end_line": {"type": "integer", "minimum": 1},
+                    },
+                    "required": ["path", "start_line", "end_line"],
+                },
+            },
+        },
+        "required": [
+            "kind",
+            "path",
+            "symbol",
+            "target",
+            "path_symbols",
+            "evidence",
+        ],
+    },
+}
+
+
+class VerifiableNavigationError(ValueError):
+    """Raised when a task fixture or static relation is not exactly decidable."""
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiableTask:
+    task_id: str
+    kind: TaskKind
+    question: str
+    path: str
+    symbol: str
+    endpoint: str = ""
+    line: int | None = None
+    goal_requirements: tuple[tuple[str, str], ...] = ()
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "VerifiableTask":
+        goals = value.get("goal_requirements")
+        if not isinstance(goals, list):
+            raise VerifiableNavigationError("goal_requirements must be an array")
+        parsed_goals: list[tuple[str, str]] = []
+        for goal in goals:
+            if not isinstance(goal, Mapping):
+                raise VerifiableNavigationError("goal requirement must be an object")
+            goal_id = str(goal.get("goal_id") or "").strip()
+            requirement = str(goal.get("requirement") or "").strip()
+            if not goal_id or not requirement:
+                raise VerifiableNavigationError(
+                    "goal requirement needs goal_id and requirement"
+                )
+            parsed_goals.append((goal_id, requirement))
+        raw_line = value.get("line")
+        return cls(
+            task_id=str(value.get("task_id") or "").strip(),
+            kind=str(value.get("kind") or "").strip(),  # type: ignore[arg-type]
+            question=str(value.get("question") or "").strip(),
+            path=str(value.get("path") or "").strip(),
+            symbol=str(value.get("symbol") or "").strip(),
+            endpoint=str(value.get("endpoint") or "").strip(),
+            line=(
+                int(raw_line)
+                if isinstance(raw_line, int) and not isinstance(raw_line, bool)
+                else None
+            ),
+            goal_requirements=tuple(parsed_goals),
+        )
+
+    def validate(self) -> None:
+        if not self.task_id or not self.question or not self.path or not self.symbol:
+            raise VerifiableNavigationError(
+                "task_id, question, path, and symbol are required"
+            )
+        if not self.goal_requirements:
+            raise VerifiableNavigationError(
+                "task requires at least one user-visible goal"
+            )
+        if self.kind not in {
+            "definition",
+            "direct_callers",
+            "call_path",
+            "mutation_target",
+        }:
+            raise VerifiableNavigationError(f"unsupported task kind: {self.kind}")
+        if self.kind == "call_path" and not self.endpoint:
+            raise VerifiableNavigationError("call_path requires endpoint")
+        if self.kind == "mutation_target" and (
+            self.line is None or self.line < 1
+        ):
+            raise VerifiableNavigationError(
+                "mutation_target requires a positive line"
+            )
+        if len({goal_id for goal_id, _ in self.goal_requirements}) != len(
+            self.goal_requirements
+        ):
+            raise VerifiableNavigationError("goal ids must be unique")
+
+
+@dataclass(frozen=True, slots=True)
+class RelationClaim:
+    kind: ClaimKind
+    path: str
+    symbol: str
+    target: str = ""
+    path_symbols: tuple[str, ...] = ()
+    evidence: tuple[EvidenceRef, ...] = ()
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "RelationClaim":
+        raw_path = value.get("path_symbols")
+        raw_evidence = value.get("evidence")
+        return cls(
+            kind=str(value.get("kind") or "").strip(),  # type: ignore[arg-type]
+            path=str(value.get("path") or "").strip(),
+            symbol=str(value.get("symbol") or "").strip(),
+            target=str(value.get("target") or "").strip(),
+            path_symbols=tuple(
+                str(item).strip()
+                for item in raw_path
+                if isinstance(item, str) and item.strip()
+            )
+            if isinstance(raw_path, list)
+            else (),
+            evidence=tuple(
+                EvidenceRef.from_mapping(item)
+                for item in raw_evidence
+                if isinstance(item, Mapping)
+            )
+            if isinstance(raw_evidence, list)
+            else (),
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "kind": self.kind,
+            "path": self.path,
+            "symbol": self.symbol,
+            "target": self.target,
+            "path_symbols": list(self.path_symbols),
+            "evidence": [
+                {
+                    "path": ref.path,
+                    "start_line": ref.start_line,
+                    "end_line": ref.end_line,
+                }
+                for ref in self.evidence
+            ],
+        }
+
+
+def relation_claims_shape_error(value: object) -> str | None:
+    if not isinstance(value, list):
+        return "relation_claims must be an array"
+    for index, raw in enumerate(value, start=1):
+        if not isinstance(raw, Mapping):
+            return f"relation claim {index} must be an object"
+        try:
+            claim = RelationClaim.from_mapping(raw)
+        except (TypeError, ValueError):
+            return f"relation claim {index} is malformed"
+        if claim.kind not in {
+            "definition",
+            "call_edge",
+            "call_path",
+            "mutation_target",
+        }:
+            return f"relation claim {index} has invalid kind"
+        if not claim.path or not claim.symbol or not claim.evidence:
+            return f"relation claim {index} requires path, symbol, and evidence"
+        if any(
+            ref.path != claim.path
+            or ref.start_line < 1
+            or ref.end_line < ref.start_line
+            for ref in claim.evidence
+        ):
+            return f"relation claim {index} has invalid evidence"
+        if claim.kind in {"call_edge", "mutation_target"} and not claim.target:
+            return f"relation claim {index} requires target"
+        if claim.kind == "call_path":
+            if (
+                not claim.target
+                or len(claim.path_symbols) < 2
+                or claim.path_symbols[0] != claim.symbol
+                or claim.path_symbols[-1] != claim.target
+            ):
+                return f"relation claim {index} has invalid path_symbols"
+        elif claim.path_symbols:
+            return f"relation claim {index} cannot include path_symbols"
+    return None
+
+
+@dataclass(frozen=True, slots=True)
+class StaticRelation:
+    kind: ClaimKind
+    path: str
+    symbol: str
+    target: str = ""
+    path_symbols: tuple[str, ...] = ()
+    start_line: int = 0
+    end_line: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiableScore:
+    correct: bool
+    expected: tuple[StaticRelation, ...]
+    matched: tuple[StaticRelation, ...]
+    unsupported_claims: tuple[dict[str, Any], ...]
+    errors: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _Definition:
+    path: str
+    symbol: str
+    start_line: int
+    end_line: int
+    node: ast.AST
+
+
+@dataclass(frozen=True, slots=True)
+class _Call:
+    path: str
+    caller: str
+    target_text: str
+    resolved_target: str
+    line: int
+
+
+class PythonRelationOracle:
+    """Conservative static oracle for pinned Python fixtures.
+
+    Only lexically resolvable calls are accepted. Imports, aliases, inheritance,
+    decorators, and dynamic dispatch are intentionally outside the v1 oracle.
+    """
+
+    def __init__(self, root: str | Path) -> None:
+        self.root = Path(root).resolve(strict=True)
+        self.definitions: dict[str, _Definition] = {}
+        self.calls: list[_Call] = []
+        self._index()
+
+    def _index(self) -> None:
+        for path in sorted(self.root.rglob("*.py")):
+            relative = path.relative_to(self.root).as_posix()
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=relative)
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.Import, ast.ImportFrom)) and any(
+                    alias.asname for alias in node.names
+                ):
+                    raise VerifiableNavigationError(
+                        f"import alias is outside the v1 oracle: {relative}:{node.lineno}"
+                    )
+                if (
+                    isinstance(node, (ast.Assign, ast.AnnAssign))
+                    and isinstance(node.value, (ast.Name, ast.Attribute))
+                ):
+                    raise VerifiableNavigationError(
+                        f"assignment alias is outside the v1 oracle: {relative}:{node.lineno}"
+                    )
+            module = ".".join(Path(relative).with_suffix("").parts)
+            self._visit_definitions(tree, relative, module, ())
+
+    def _visit_definitions(
+        self,
+        node: ast.AST,
+        path: str,
+        module: str,
+        parents: tuple[str, ...],
+    ) -> None:
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                local = (*parents, child.name)
+                symbol = ".".join((module, *local))
+                if symbol in self.definitions:
+                    raise VerifiableNavigationError(f"duplicate symbol: {symbol}")
+                definition = _Definition(
+                    path=path,
+                    symbol=symbol,
+                    start_line=int(child.lineno),
+                    end_line=int(child.end_lineno or child.lineno),
+                    node=child,
+                )
+                self.definitions[symbol] = definition
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    self._collect_calls(definition, module, parents)
+                self._visit_definitions(child, path, module, local)
+            else:
+                self._visit_definitions(child, path, module, parents)
+
+    def _collect_calls(
+        self,
+        definition: _Definition,
+        module: str,
+        class_parents: tuple[str, ...],
+    ) -> None:
+        calls: list[ast.Call] = []
+
+        class CallVisitor(ast.NodeVisitor):
+            def visit_Call(self, node: ast.Call) -> None:
+                calls.append(node)
+                self.generic_visit(node)
+
+            def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+                if node is definition.node:
+                    self.generic_visit(node)
+
+            def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+                if node is definition.node:
+                    self.generic_visit(node)
+
+            def visit_ClassDef(self, node: ast.ClassDef) -> None:
+                return None
+
+        CallVisitor().visit(definition.node)
+        for node in calls:
+            target = _dotted_name(node.func)
+            if target is None:
+                raise VerifiableNavigationError(
+                    f"dynamic call in {definition.symbol}:{node.lineno}"
+                )
+            resolved = self._resolve_call_text(
+                target, module=module, class_parents=class_parents
+            )
+            self.calls.append(
+                _Call(
+                    path=definition.path,
+                    caller=definition.symbol,
+                    target_text=target,
+                    resolved_target=resolved,
+                    line=int(node.lineno),
+                )
+            )
+
+    @staticmethod
+    def _resolve_call_text(
+        target: str,
+        *,
+        module: str,
+        class_parents: tuple[str, ...],
+    ) -> str:
+        parts = target.split(".")
+        if parts[0] in {"self", "cls"} and class_parents and len(parts) == 2:
+            return ".".join((module, *class_parents, *parts[1:]))
+        if len(parts) == 1:
+            return f"{module}.{target}"
+        if parts[0][:1].isupper():
+            return target
+        return ""
+
+    def definition(self, *, path: str, symbol: str) -> StaticRelation:
+        definition = self._unique_symbol(path=path, symbol=symbol)
+        return StaticRelation(
+            kind="definition",
+            path=definition.path,
+            symbol=definition.symbol,
+            start_line=definition.start_line,
+            end_line=definition.end_line,
+        )
+
+    def direct_callers(self, *, path: str, symbol: str) -> tuple[StaticRelation, ...]:
+        callee = self._unique_symbol(path=path, symbol=symbol).symbol
+        relations = [
+            StaticRelation(
+                kind="call_edge",
+                path=call.path,
+                symbol=call.caller,
+                target=callee,
+                start_line=call.line,
+                end_line=call.line,
+            )
+            for call in self.calls
+            if self._call_matches(call.resolved_target, callee)
+        ]
+        return tuple(sorted(relations, key=_relation_key))
+
+    def unique_call_path(
+        self,
+        *,
+        path: str,
+        symbol: str,
+        endpoint: str,
+    ) -> StaticRelation:
+        start = self._unique_symbol(path=path, symbol=symbol).symbol
+        end = self._unique_symbol(path=path, symbol=endpoint).symbol
+        adjacency: dict[str, set[str]] = defaultdict(set)
+        for call in self.calls:
+            matches = [
+                candidate
+                for candidate in self.definitions
+                if self._call_matches(call.resolved_target, candidate)
+            ]
+            if len(matches) == 1:
+                adjacency[call.caller].add(matches[0])
+        paths: list[tuple[str, ...]] = []
+
+        def walk(current: str, route: tuple[str, ...]) -> None:
+            if current == end:
+                paths.append(route)
+                return
+            for target in sorted(adjacency.get(current, ())):
+                if target not in route:
+                    walk(target, (*route, target))
+
+        walk(start, (start,))
+        if len(paths) != 1:
+            raise VerifiableNavigationError(
+                f"call path must be unique; found {len(paths)} paths"
+            )
+        lines = [
+            call.line
+            for left, right in zip(paths[0], paths[0][1:])
+            for call in self.calls
+            if call.caller == left and self._call_matches(call.resolved_target, right)
+        ]
+        return StaticRelation(
+            kind="call_path",
+            path=path,
+            symbol=start,
+            target=end,
+            path_symbols=paths[0],
+            start_line=min(lines),
+            end_line=max(lines),
+        )
+
+    def mutation_target(
+        self,
+        *,
+        path: str,
+        symbol: str,
+        line: int,
+    ) -> StaticRelation:
+        enclosing = self._unique_symbol(path=path, symbol=symbol)
+        matches = [
+            call
+            for call in self.calls
+            if call.path == enclosing.path
+            and call.caller == enclosing.symbol
+            and call.line == line
+        ]
+        if len(matches) != 1:
+            raise VerifiableNavigationError(
+                f"mutation site must contain exactly one call; found {len(matches)}"
+            )
+        return StaticRelation(
+            kind="mutation_target",
+            path=enclosing.path,
+            symbol=enclosing.symbol,
+            target=matches[0].target_text,
+            start_line=line,
+            end_line=line,
+        )
+
+    def expected(self, task: VerifiableTask) -> tuple[StaticRelation, ...]:
+        task.validate()
+        if task.kind == "definition":
+            return (self.definition(path=task.path, symbol=task.symbol),)
+        if task.kind == "direct_callers":
+            return self.direct_callers(path=task.path, symbol=task.symbol)
+        if task.kind == "call_path":
+            return (
+                self.unique_call_path(
+                    path=task.path,
+                    symbol=task.symbol,
+                    endpoint=task.endpoint,
+                ),
+            )
+        assert task.line is not None
+        return (
+            self.mutation_target(
+                path=task.path,
+                symbol=task.symbol,
+                line=task.line,
+            ),
+        )
+
+    def _unique_symbol(self, *, path: str, symbol: str) -> _Definition:
+        matches = [
+            definition
+            for candidate, definition in self.definitions.items()
+            if definition.path == path
+            and (candidate == symbol or candidate.endswith(f".{symbol}"))
+        ]
+        if len(matches) != 1:
+            raise VerifiableNavigationError(
+                f"symbol must resolve exactly once: {path}:{symbol} ({len(matches)})"
+            )
+        return matches[0]
+
+    @staticmethod
+    def _call_matches(target: str, symbol: str) -> bool:
+        return target == symbol or symbol.endswith(f".{target}")
+
+
+def load_verifiable_task_set(
+    path: str | Path,
+    *,
+    source_root: str | Path,
+) -> tuple[VerifiableTask, ...]:
+    fixture_path = Path(path)
+    payload = json.loads(fixture_path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != VERIFIABLE_TASK_SCHEMA_VERSION:
+        raise VerifiableNavigationError("unsupported task schema version")
+    if payload.get("track") != "NAV-VERIFIABLE-00":
+        raise VerifiableNavigationError("unexpected task track")
+    root = Path(source_root).resolve(strict=True)
+    expected_sources = payload.get("sources")
+    if not isinstance(expected_sources, Mapping) or not expected_sources:
+        raise VerifiableNavigationError("task set requires pinned sources")
+    pinned_paths = {str(raw_path) for raw_path in expected_sources}
+    discovered_paths = {
+        path.relative_to(root).as_posix() for path in root.rglob("*.py")
+    }
+    if pinned_paths != discovered_paths:
+        raise VerifiableNavigationError(
+            "pinned sources must exactly match the Python fixture snapshot"
+        )
+    for raw_path, expected_hash in expected_sources.items():
+        source = (root / str(raw_path)).resolve(strict=True)
+        source.relative_to(root)
+        actual = hashlib.sha256(source.read_bytes()).hexdigest()
+        if actual != str(expected_hash):
+            raise VerifiableNavigationError(
+                f"source hash mismatch for {raw_path}"
+            )
+    raw_tasks = payload.get("tasks")
+    if not isinstance(raw_tasks, list) or not raw_tasks:
+        raise VerifiableNavigationError("task set requires tasks")
+    tasks = tuple(
+        VerifiableTask.from_mapping(item)
+        for item in raw_tasks
+        if isinstance(item, Mapping)
+    )
+    if len(tasks) != len(raw_tasks):
+        raise VerifiableNavigationError("every task must be an object")
+    if len({task.task_id for task in tasks}) != len(tasks):
+        raise VerifiableNavigationError("task ids must be unique")
+    oracle = PythonRelationOracle(root)
+    for task in tasks:
+        if not oracle.expected(task):
+            raise VerifiableNavigationError(
+                f"task {task.task_id} has no exact expected relations"
+            )
+    return tasks
+
+
+def score_verifiable_claims(
+    task: VerifiableTask,
+    claims: Sequence[RelationClaim],
+    *,
+    oracle: PythonRelationOracle,
+    observed_lines: Mapping[str, set[int]],
+) -> VerifiableScore:
+    expected = oracle.expected(task)
+    expected_by_key = {_relation_key(item): item for item in expected}
+    matched: list[StaticRelation] = []
+    unsupported: list[dict[str, Any]] = []
+    errors: list[str] = []
+    seen: set[tuple[Any, ...]] = set()
+    for index, claim in enumerate(claims, start=1):
+        if not claim.evidence:
+            errors.append(f"claim {index} has no evidence")
+            continue
+        lines: set[int] = set()
+        refs_valid = True
+        for ref in claim.evidence:
+            if ref.path != claim.path or not set(
+                range(ref.start_line, ref.end_line + 1)
+            ).issubset(observed_lines.get(ref.path, set())):
+                refs_valid = False
+        if not refs_valid:
+            errors.append(f"claim {index} references unobserved evidence")
+            continue
+        for ref in claim.evidence:
+            lines.update(range(ref.start_line, ref.end_line + 1))
+        relation = StaticRelation(
+            kind=claim.kind,
+            path=claim.path,
+            symbol=claim.symbol,
+            target=claim.target,
+            path_symbols=claim.path_symbols,
+            start_line=min(lines),
+            end_line=max(lines),
+        )
+        key = _relation_key(relation)
+        expected_relation = expected_by_key.get(key)
+        if expected_relation is None or not lines.intersection(
+            range(expected_relation.start_line, expected_relation.end_line + 1)
+        ):
+            unsupported.append(claim.as_dict())
+            continue
+        if key in seen:
+            errors.append(f"claim {index} duplicates a relation")
+            continue
+        seen.add(key)
+        matched.append(expected_relation)
+    correct = (
+        set(seen) == set(expected_by_key)
+        and not unsupported
+        and not errors
+    )
+    return VerifiableScore(
+        correct=correct,
+        expected=expected,
+        matched=tuple(sorted(matched, key=_relation_key)),
+        unsupported_claims=tuple(unsupported),
+        errors=tuple(errors),
+    )
+
+
+def build_pair_manifest(
+    *,
+    pair_id: str,
+    task: VerifiableTask,
+    autonomous_config: Mapping[str, Any],
+    structured_config: Mapping[str, Any],
+    run_order: Sequence[str],
+) -> dict[str, Any]:
+    if tuple(run_order) not in {
+        ("autonomous", "structured"),
+        ("structured", "autonomous"),
+    }:
+        raise VerifiableNavigationError(
+            "run_order must contain autonomous and structured exactly once"
+        )
+    ignored = {"structured_navigation", "output_dir", "run_label"}
+    left = {key: value for key, value in autonomous_config.items() if key not in ignored}
+    right = {key: value for key, value in structured_config.items() if key not in ignored}
+    if left != right:
+        raise VerifiableNavigationError(
+            "paired runs must share model, task, seed, budget, and decoding configuration"
+        )
+    if autonomous_config.get("structured_navigation") not in {False, None}:
+        raise VerifiableNavigationError("autonomous run cannot enable the ledger")
+    if structured_config.get("structured_navigation") is not True:
+        raise VerifiableNavigationError("structured run must enable the ledger")
+    return {
+        "schema_version": VERIFIABLE_PAIR_SCHEMA_VERSION,
+        "track": "NAV-VERIFIABLE-00",
+        "pair_id": pair_id,
+        "task_id": task.task_id,
+        "run_order": list(run_order),
+        "shared_config": left,
+        "runs": {
+            "autonomous": dict(autonomous_config),
+            "structured": dict(structured_config),
+        },
+    }
+
+
+def _dotted_name(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        parent = _dotted_name(node.value)
+        return f"{parent}.{node.attr}" if parent else None
+    return None
+
+
+def _relation_key(relation: StaticRelation) -> tuple[Any, ...]:
+    return (
+        relation.kind,
+        relation.path,
+        relation.symbol,
+        relation.target,
+        relation.path_symbols,
+    )

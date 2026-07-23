@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "track": "NAV-VERIFIABLE-00",
+  "sources": {
+    "sample.py": "5caef61a44a9832de1dd8d5a0933ae8f8516e47bfa76b3902b4b70633c5220a1"
+  },
+  "tasks": [
+    {
+      "task_id": "definition",
+      "kind": "definition",
+      "question": "Locate Store.add.",
+      "path": "sample.py",
+      "symbol": "Store.add",
+      "goal_requirements": [
+        {
+          "goal_id": "locate_definition",
+          "requirement": "Locate the Store.add definition."
+        }
+      ]
+    },
+    {
+      "task_id": "direct_callers",
+      "kind": "direct_callers",
+      "question": "Find direct callers of Pipeline._store_add.",
+      "path": "sample.py",
+      "symbol": "Pipeline._store_add",
+      "goal_requirements": [
+        {
+          "goal_id": "find_callers",
+          "requirement": "Find direct callers of Pipeline._store_add."
+        }
+      ]
+    },
+    {
+      "task_id": "call_path",
+      "kind": "call_path",
+      "question": "Trace Pipeline.ingest to Pipeline._store_add.",
+      "path": "sample.py",
+      "symbol": "Pipeline.ingest",
+      "endpoint": "Pipeline._store_add",
+      "goal_requirements": [
+        {
+          "goal_id": "trace_path",
+          "requirement": "Trace the specified call path."
+        }
+      ]
+    },
+    {
+      "task_id": "mutation_target",
+      "kind": "mutation_target",
+      "question": "Identify the call at Pipeline._store_add line 14.",
+      "path": "sample.py",
+      "symbol": "Pipeline._store_add",
+      "line": 14,
+      "goal_requirements": [
+        {
+          "goal_id": "identify_target",
+          "requirement": "Identify the callable at the named site."
+        }
+      ]
+    }
+  ]
+}

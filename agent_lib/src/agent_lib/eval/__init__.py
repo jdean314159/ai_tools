@@ -1,6 +1,19 @@
 from .agent_red_team_lab import AgentRedTeamScenario, DEFAULT_SCENARIOS, ScenarioRun, run_scenario, render_scenario, evaluate_lab
 from .navigation_claims import ClaimValidation, EvidenceRef, NAVIGATION_CLAIMS_SCHEMA, NavigationClaim, navigation_claims_shape_error, validate_navigation_claims
 from .navigation_goals import NAV_TEST_00_GOALS, NAVIGATION_GOAL_STATE_SCHEMA, NavigationGoal, seed_navigation_goals, validate_goal_transition
+from .verifiable_navigation import (
+    PythonRelationOracle,
+    RELATION_CLAIMS_SCHEMA,
+    RelationClaim,
+    StaticRelation,
+    VerifiableNavigationError,
+    VerifiableScore,
+    VerifiableTask,
+    build_pair_manifest,
+    load_verifiable_task_set,
+    relation_claims_shape_error,
+    score_verifiable_claims,
+)
 from .repo_navigation import (
     BudgetedNavigationPlanner,
     GroundTruthRegion,
@@ -44,6 +57,17 @@ __all__ = [
     'seed_navigation_goals',
     'validate_goal_transition',
     'validate_navigation_claims',
+    'PythonRelationOracle',
+    'RELATION_CLAIMS_SCHEMA',
+    'RelationClaim',
+    'StaticRelation',
+    'VerifiableNavigationError',
+    'VerifiableScore',
+    'VerifiableTask',
+    'build_pair_manifest',
+    'load_verifiable_task_set',
+    'relation_claims_shape_error',
+    'score_verifiable_claims',
     'BudgetedNavigationPlanner',
     'GroundTruthRegion',
     'HuggingFaceModelTokenizer',
