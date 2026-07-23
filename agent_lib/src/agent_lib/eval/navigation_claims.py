@@ -25,8 +25,16 @@ NAVIGATION_CLAIMS_SCHEMA: dict[str, Any] = {
                     "additionalProperties": False,
                     "properties": {
                         "path": {"type": "string", "minLength": 1},
-                        "start_line": {"type": "integer", "minimum": 1},
-                        "end_line": {"type": "integer", "minimum": 1},
+                        "start_line": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "First line actually returned by a successful tool result.",
+                        },
+                        "end_line": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "Last contiguous returned line; equal start_line for a grep hit.",
+                        },
                     },
                     "required": ["path", "start_line", "end_line"],
                 },

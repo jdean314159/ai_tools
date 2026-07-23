@@ -73,7 +73,11 @@ context to classify each result, and finish when the requested set is complete. 
 list only qualifying locations; do not name excluded candidate paths. For every location, state the
 symbol or operation and its requested classification. Every final claim must cite line ranges
 actually returned by a successful tool result. Use an empty navigation_claims list only when the
-evidence proves there are no qualifying locations.
+evidence proves there are no qualifying locations. For grep evidence cite each matching line as a
+single-line range (start_line equals end_line); never expand a sparse hit into an unread method
+range. The symbol must be an exact enclosing class/function name visible in evidence. If a call's
+enclosing symbol is not visible, inspect it before finalizing rather than inventing a symbol. Report
+only direct storage mutation call sites, not indirect helper invocations.
 
 Tool rules:
 - `glob` is a filename pattern such as `*.py`; put directories in `path`, never in `glob`.
@@ -88,7 +92,9 @@ not request another search or file read. Return exactly one JSON object with thi
 surrounding text: {"kind":"final","final_output":"Evidence-grounded answer.","navigation_claims":[{"path":"relative/file.py","symbol":"Class.method","operation":"exact observed operation","classification":"requested category","evidence":[{"path":"relative/file.py","start_line":10,"end_line":12}]}]}
 
 The final answer must identify qualifying file paths, symbols or operations, and their requested
-classification. Do not invent evidence and do not mention excluded candidates."""
+classification. Cite only contiguous lines actually present in the supplied history; use a
+single-line reference for a sparse grep hit. Use exact enclosing symbols visible in evidence.
+Do not invent evidence, infer indirect call sites, or mention excluded candidates."""
 
 NAVIGATION_ACTION_SCHEMA: dict[str, Any] = {
     "oneOf": [
@@ -1335,11 +1341,12 @@ def score_navigation_run(
         regions=regions,
     )
     correctly_named = set(claim_validation.matched_region_ids)
+    known_paths = {region.path for region in regions}
     false_positive_paths = sorted(
         {
             str(claim.get("path") or "")
             for claim in claim_validation.unsupported_claims
-            if claim.get("path")
+            if claim.get("path") and claim.get("path") not in known_paths
         }
     )
     claim_errors = [*claim_parse_errors, *claim_validation.errors]
