@@ -221,6 +221,35 @@ unvalidated. No `BudgetFractionFinalizationHook` was installed. The lossless
 ledger and counterfactual evaluator remain experimental research artifacts;
 NAV runtime defaults and enforcement behavior are unchanged.
 
+## Structured-claim measurement correction
+
+The original NAV answer scorer is retired as a trusted correctness instrument.
+It searched each region's required terms across the entire free-form answer, so
+terms from unrelated paragraphs could validate a region and a fabricated symbol
+such as `RAGPipeline.ingest_file` could escape detection.
+
+NAV now defines structured `NavigationClaim` and `EvidenceRef` contracts. The
+claim-aware scorer requires, per claim:
+
+- an exact expected path and symbol;
+- non-empty operation and classification;
+- line references wholly contained in successful observed tool evidence;
+- region overlap at those referenced lines;
+- required answer terms within that claim only, not elsewhere in the answer;
+- exactly one matched ground-truth region and no duplicate claims.
+
+Unsupported, duplicate, malformed, and unobserved-evidence claims are reported
+separately. A run without structured claims receives a
+`missing structured navigation claims` validation error and cannot pass, though
+its legacy prose remains stored and readable. This intentionally means existing
+historical run scores are legacy measurements, not retroactively trusted claim
+scores.
+
+This change corrects measurement only. The planner still emits free-form final
+answers, so no autonomous run can yet pass the structured-claim gate. Planner
+output-schema adoption and live validation are a separate next stage; per-step
+information-goal tracking remains later work.
+
 ## Scope and remaining risk
 
 This result supersedes the text n-gram detector for NAV-class failures. It does

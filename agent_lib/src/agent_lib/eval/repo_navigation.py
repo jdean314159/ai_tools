@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from fnmatch import fnmatch
 import hashlib
@@ -42,6 +43,7 @@ from ..memory import NullMemoryAdapter
 from ..runtime import AgentRuntime
 from ..tools import LocalTool, LocalToolRuntime
 from ..control import ActionTrajectoryGuardHook
+from .navigation_claims import NavigationClaim, validate_navigation_claims
 
 
 LEAD_QUESTION = (
@@ -1187,6 +1189,7 @@ class GroundTruthRegion:
     end_line: int
     classification: str
     required_answer_terms: tuple[str, ...] = ()
+    symbol: str = ""
 
 
 def load_ground_truth(path: str | Path) -> tuple[str, list[GroundTruthRegion]]:
@@ -1199,6 +1202,7 @@ def load_ground_truth(path: str | Path) -> tuple[str, list[GroundTruthRegion]]:
             end_line=int(item["end_line"]),
             classification=str(item["classification"]),
             required_answer_terms=tuple(str(term) for term in item.get("required_answer_terms") or []),
+            symbol=str(item.get("symbol") or ""),
         )
         for item in payload["regions"]
     ]
@@ -1279,15 +1283,36 @@ def score_navigation_run(
                     call_useful = True
         if call_useful:
             useful_calls += 1
-    final_output = run.final_output or ""
-    correctly_named: set[str] = set()
-    for region in regions:
-        terms_present = not region.required_answer_terms or all(term.lower() in final_output.lower() for term in region.required_answer_terms)
-        if region.path in final_output and terms_present:
-            correctly_named.add(region.id)
-    known_paths = {region.path for region in regions}
-    mentioned_paths = set(re.findall(r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.py", final_output))
-    false_positive_paths = sorted(mentioned_paths - known_paths)
+    raw_claims = run.meta.get("navigation_claims")
+    if raw_claims is None and run.steps:
+        raw_claims = run.steps[-1].action.meta.get("navigation_claims")
+    claim_parse_errors: list[str] = []
+    claims: list[NavigationClaim] = []
+    if isinstance(raw_claims, list):
+        for index, item in enumerate(raw_claims, start=1):
+            if not isinstance(item, Mapping):
+                claim_parse_errors.append(f"claim {index} is not an object")
+                continue
+            try:
+                claims.append(NavigationClaim.from_mapping(item))
+            except (TypeError, ValueError) as exc:
+                claim_parse_errors.append(f"claim {index} is invalid: {exc}")
+    else:
+        claim_parse_errors.append("missing structured navigation claims")
+    claim_validation = validate_navigation_claims(
+        claims,
+        telemetry_calls=telemetry.calls,
+        regions=regions,
+    )
+    correctly_named = set(claim_validation.matched_region_ids)
+    false_positive_paths = sorted(
+        {
+            str(claim.get("path") or "")
+            for claim in claim_validation.unsupported_claims
+            if claim.get("path")
+        }
+    )
+    claim_errors = [*claim_parse_errors, *claim_validation.errors]
     blocked = [call for call in telemetry.calls if call["category"] in {"path_escape", "denied_path", "denied_content", "oversized_json", "oversized_file", "binary_content", "safety_guard"}]
     blocked_signatures = [(call["tool"], json.dumps(call["arguments"], sort_keys=True)) for call in blocked]
     repeated_blocked = len(blocked_signatures) - len(set(blocked_signatures))
@@ -1299,6 +1324,8 @@ def score_navigation_run(
         evidence_recall == 1.0
         and answer_correctness == 1.0
         and not false_positive_paths
+        and not claim_validation.unsupported_claims
+        and not claim_errors
         and telemetry.denied_content_bytes == 0
         and len(blocked) <= 3
         and repeated_blocked == 0
@@ -1312,6 +1339,10 @@ def score_navigation_run(
         "surfaced_region_ids": sorted(surfaced),
         "answer_correctness": answer_correctness,
         "correct_region_ids": sorted(correctly_named),
+        "answer_scoring_mode": "structured_claims",
+        "missing_region_ids": list(claim_validation.missing_region_ids),
+        "unsupported_claims": list(claim_validation.unsupported_claims),
+        "claim_validation_errors": claim_errors,
         "false_positive_paths": false_positive_paths,
         "denied_content_bytes": telemetry.denied_content_bytes,
         "blocked_attempts": len(blocked),

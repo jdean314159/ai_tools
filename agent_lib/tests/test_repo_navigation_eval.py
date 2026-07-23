@@ -600,6 +600,7 @@ def test_ground_truth_loading_scoring_and_run_record(repo: Path, tmp_path: Path)
                         "path": "rag_lib/src/chroma.py",
                         "start_line": 1,
                         "end_line": 3,
+                        "symbol": "ChromaStorage._make_client",
                         "classification": "client initialization",
                         "anchors": ["PersistentClient"],
                         "required_answer_terms": ["PersistentClient"],
@@ -630,7 +631,24 @@ def test_ground_truth_loading_scoring_and_run_record(repo: Path, tmp_path: Path)
         status="completed",
         stop_reason="completed",
         final_output="rag_lib/src/chroma.py initializes PersistentClient.",
-        meta={"planner_usage": {"cumulative_actual_tokens": 50}},
+        meta={
+            "planner_usage": {"cumulative_actual_tokens": 50},
+            "navigation_claims": [
+                {
+                    "path": "rag_lib/src/chroma.py",
+                    "symbol": "ChromaStorage._make_client",
+                    "operation": "PersistentClient initialization",
+                    "classification": "client initialization",
+                    "evidence": [
+                        {
+                            "path": "rag_lib/src/chroma.py",
+                            "start_line": 1,
+                            "end_line": 1,
+                        }
+                    ],
+                }
+            ],
+        },
     )
     run.steps.append(AgentStep(1, AgentAction.final(run.final_output)))
     budget = NavigationBudget(cumulative_token_limit=100)
