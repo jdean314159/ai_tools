@@ -1,5 +1,5 @@
 from .agent_red_team_lab import AgentRedTeamScenario, DEFAULT_SCENARIOS, ScenarioRun, run_scenario, render_scenario, evaluate_lab
-from .navigation_claims import ClaimValidation, EvidenceRef, NAVIGATION_CLAIMS_SCHEMA, NavigationClaim, validate_navigation_claims
+from .navigation_claims import ClaimValidation, EvidenceRef, NAVIGATION_CLAIMS_SCHEMA, NavigationClaim, navigation_claims_shape_error, validate_navigation_claims
 from .repo_navigation import (
     BudgetedNavigationPlanner,
     GroundTruthRegion,
@@ -36,6 +36,7 @@ __all__ = [
     'EvidenceRef',
     'NavigationClaim',
     'NAVIGATION_CLAIMS_SCHEMA',
+    'navigation_claims_shape_error',
     'validate_navigation_claims',
     'BudgetedNavigationPlanner',
     'GroundTruthRegion',

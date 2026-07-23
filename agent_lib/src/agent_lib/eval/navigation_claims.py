@@ -37,6 +37,37 @@ NAVIGATION_CLAIMS_SCHEMA: dict[str, Any] = {
 }
 
 
+def navigation_claims_shape_error(value: object) -> str | None:
+    if not isinstance(value, list):
+        return "navigation_claims must be an array"
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, Mapping):
+            return f"navigation claim {index} must be an object"
+        for field in ("path", "symbol", "operation", "classification"):
+            if not isinstance(item.get(field), str) or not str(item[field]).strip():
+                return f"navigation claim {index} requires non-empty {field}"
+        evidence = item.get("evidence")
+        if not isinstance(evidence, list) or not evidence:
+            return f"navigation claim {index} requires evidence"
+        for ref_index, ref in enumerate(evidence, start=1):
+            if not isinstance(ref, Mapping):
+                return f"navigation claim {index} evidence {ref_index} must be an object"
+            if not isinstance(ref.get("path"), str) or not str(ref["path"]).strip():
+                return f"navigation claim {index} evidence {ref_index} requires path"
+            start = ref.get("start_line")
+            end = ref.get("end_line")
+            if (
+                not isinstance(start, int)
+                or isinstance(start, bool)
+                or not isinstance(end, int)
+                or isinstance(end, bool)
+                or start < 1
+                or end < start
+            ):
+                return f"navigation claim {index} evidence {ref_index} has invalid lines"
+    return None
+
+
 @dataclass(frozen=True, slots=True)
 class EvidenceRef:
     path: str

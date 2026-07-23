@@ -12,6 +12,7 @@ from agent_lib import AgentContext, AgentStep, AgentTask, EngineRoles, ToolCall
 from agent_lib.contracts import AgentAction, AgentObservation, AgentRun, ToolResult
 from agent_lib.eval.repo_navigation import (
     BudgetedNavigationPlanner,
+    FINALIZATION_ACTION_SCHEMA,
     GroundTruthRegion,
     LlamaServerClient,
     ModelTokenizer,
@@ -90,7 +91,7 @@ class FakeLlamaServerClient(LlamaServerClient):
             return {"tokens": [1, 2, 3]}
         if path == "/completion":
             return {
-                "content": '{"kind":"final","final_output":"done"}',
+                "content": '{"kind":"final","final_output":"done","navigation_claims":[]}',
                 "model": "qwen3.6-27b",
                 "stop_type": "eos",
                 "tokens_evaluated": 3,
@@ -281,7 +282,10 @@ def test_budgeted_planner_validates_action_and_records_actual_usage() -> None:
     assert planner.usage.calls[0]["backend_reported"] is True
     assert "cache_prompt" not in engine.requests[0].metadata
     assert engine.requests[0].json_schema is not None
-    assert engine.requests[0].json_schema["properties"]["kind"]["enum"] == ["tool", "final"]
+    assert [
+        branch["properties"]["kind"]["enum"]
+        for branch in engine.requests[0].json_schema["oneOf"]
+    ] == [["tool"], ["final"]]
 
 
 def test_llama_server_client_uses_exact_template_tokenizer_and_disables_cache() -> None:
@@ -324,7 +328,7 @@ def test_llama_server_client_rejects_unverified_or_reused_prompt_cache(client: F
     [(10, 10_000, "token_budget"), (10_000, 10, "context_limit")],
 )
 def test_budget_stops_before_invocation(limit: int, context_window: int, reason: str) -> None:
-    engine = RecordingEngine(['{"kind":"final","final_output":"unused"}'])
+    engine = RecordingEngine(['{"kind":"final","final_output":"unused","navigation_claims":[]}'])
     planner = BudgetedNavigationPlanner(
         engine=engine,
         tokenizer=WordTokenizer(),
@@ -352,11 +356,45 @@ def test_invalid_model_tool_is_rejected_before_tool_runtime(repo: Path) -> None:
     assert action.meta["invalid_action"] is True
 
 
+def test_budgeted_planner_preserves_structured_final_claims() -> None:
+    claims = [
+        {
+            "path": "pkg/module.py",
+            "symbol": "Thing.run",
+            "operation": "store.delete",
+            "classification": "mutation",
+            "evidence": [
+                {"path": "pkg/module.py", "start_line": 10, "end_line": 11}
+            ],
+        }
+    ]
+    engine = RecordingEngine(
+        [json.dumps({"kind": "final", "final_output": "Done.", "navigation_claims": claims})]
+    )
+    planner = BudgetedNavigationPlanner(
+        engine=engine,
+        tokenizer=WordTokenizer(),
+        budget=NavigationBudget(
+            cumulative_token_limit=10_000,
+            context_window=2_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
+    )
+
+    action = planner.plan(
+        AgentContext(task=AgentTask(task_id="claims", goal="find mutations"), steps=[])
+    )
+
+    assert action.kind == "final"
+    assert action.meta["navigation_claims"] == claims
+
+
 def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:
     engine = RecordingEngine(
         [
             '{"kind":"tool","tool_name":"grep","arguments":{"pattern":"PersistentClient","path":"rag_lib/src"}}',
-            '{"kind":"final","final_output":"rag_lib/src/chroma.py initializes PersistentClient."}',
+            '{"kind":"final","final_output":"rag_lib/src/chroma.py initializes PersistentClient.","navigation_claims":[]}',
         ]
     )
     harness = build_navigation_harness(
@@ -382,7 +420,7 @@ def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:
 
 
 def test_harness_exposes_token_budget_stop_reason(repo: Path) -> None:
-    engine = RecordingEngine(['{"kind":"final","final_output":"unused"}'])
+    engine = RecordingEngine(['{"kind":"final","final_output":"unused","navigation_claims":[]}'])
     harness = build_navigation_harness(
         root=repo,
         engine=engine,
@@ -425,7 +463,7 @@ def _guard_triggering_responses(final_response: str) -> list[str]:
 def test_action_guard_uses_one_tool_free_finalization_call(repo: Path) -> None:
     engine = RecordingEngine(
         _guard_triggering_responses(
-            '{"kind":"final","final_output":"short.py:1 is the relevant evidence."}'
+            '{"kind":"final","final_output":"short.py:1 is the relevant evidence.","navigation_claims":[]}'
         )
     )
     harness = build_navigation_harness(
@@ -449,15 +487,7 @@ def test_action_guard_uses_one_tool_free_finalization_call(repo: Path) -> None:
     final_request = engine.requests[-1]
     assert final_request.metadata["phase"] == "guard_finalization"
     assert final_request.metadata["tools_enabled"] is False
-    assert final_request.json_schema == {
-        "type": "object",
-        "additionalProperties": False,
-        "properties": {
-            "kind": {"type": "string", "enum": ["final"]},
-            "final_output": {"type": "string", "minLength": 1},
-        },
-        "required": ["kind", "final_output"],
-    }
+    assert final_request.json_schema == FINALIZATION_ACTION_SCHEMA
     assert "Available actions" not in (final_request.messages[0].content or "")
     assert run.meta["action_guard"]["finalization_outcome"] == "success"
     assert run.meta["action_guard"]["discarded_context_range"] == [8, 10]
@@ -496,7 +526,7 @@ def test_action_guard_stops_after_one_non_final_response(repo: Path) -> None:
 
 def test_action_guard_shadow_mode_records_without_intervening(repo: Path) -> None:
     responses = _guard_triggering_responses(
-        '{"kind":"final","final_output":"Normal planner final answer."}'
+        '{"kind":"final","final_output":"Normal planner final answer.","navigation_claims":[]}'
     )
     engine = RecordingEngine(responses)
     harness = build_navigation_harness(
@@ -528,7 +558,7 @@ def test_action_guard_shadow_mode_records_without_intervening(repo: Path) -> Non
 
 
 def test_action_guard_off_mode_records_no_guard_telemetry(repo: Path) -> None:
-    engine = RecordingEngine(['{"kind":"final","final_output":"done"}'])
+    engine = RecordingEngine(['{"kind":"final","final_output":"done","navigation_claims":[]}'])
     harness = build_navigation_harness(
         root=repo,
         engine=engine,
@@ -543,7 +573,7 @@ def test_action_guard_off_mode_records_no_guard_telemetry(repo: Path) -> None:
 
 
 def test_finalizer_budget_unavailable_does_not_call_engine() -> None:
-    engine = RecordingEngine(['{"kind":"final","final_output":"must not be used"}'])
+    engine = RecordingEngine(['{"kind":"final","final_output":"must not be used","navigation_claims":[]}'])
     planner = BudgetedNavigationPlanner(
         engine=engine,
         tokenizer=WordTokenizer(),

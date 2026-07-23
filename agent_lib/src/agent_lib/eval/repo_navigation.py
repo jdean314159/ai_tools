@@ -43,7 +43,12 @@ from ..memory import NullMemoryAdapter
 from ..runtime import AgentRuntime
 from ..tools import LocalTool, LocalToolRuntime
 from ..control import ActionTrajectoryGuardHook
-from .navigation_claims import NavigationClaim, validate_navigation_claims
+from .navigation_claims import (
+    NAVIGATION_CLAIMS_SCHEMA,
+    NavigationClaim,
+    navigation_claims_shape_error,
+    validate_navigation_claims,
+)
 
 
 LEAD_QUESTION = (
@@ -61,12 +66,14 @@ Available actions:
 1. {"kind":"tool","tool_name":"list_files","arguments":{"path":".","glob":"*.py","max_results":200},"message":"..."}
 2. {"kind":"tool","tool_name":"grep","arguments":{"pattern":"...","path":".","glob":"*.py","max_matches":50},"message":"..."}
 3. {"kind":"tool","tool_name":"read_file","arguments":{"path":"...","start_line":1,"line_count":200,"full":false},"message":"..."}
-4. {"kind":"final","final_output":"Evidence-grounded answer with file paths, symbols, and classifications."}
+4. {"kind":"final","final_output":"Evidence-grounded answer.","navigation_claims":[{"path":"relative/file.py","symbol":"Class.method","operation":"exact observed operation","classification":"requested category","evidence":[{"path":"relative/file.py","start_line":10,"end_line":12}]}]}
 
 Never request a write or execute operation. Do not guess locations. Search narrowly, inspect enough
 context to classify each result, and finish when the requested set is complete. In the final answer,
 list only qualifying locations; do not name excluded candidate paths. For every location, state the
-symbol or operation and its requested classification.
+symbol or operation and its requested classification. Every final claim must cite line ranges
+actually returned by a successful tool result. Use an empty navigation_claims list only when the
+evidence proves there are no qualifying locations.
 
 Tool rules:
 - `glob` is a filename pattern such as `*.py`; put directories in `path`, never in `glob`.
@@ -78,22 +85,35 @@ Tool rules:
 FINALIZATION_SYSTEM_PROMPT = """You are finalizing a read-only repository navigation task.
 Use only the evidence already present in the supplied history. No tools are available and you must
 not request another search or file read. Return exactly one JSON object with this shape and no
-surrounding text: {"kind":"final","final_output":"Evidence-grounded answer."}
+surrounding text: {"kind":"final","final_output":"Evidence-grounded answer.","navigation_claims":[{"path":"relative/file.py","symbol":"Class.method","operation":"exact observed operation","classification":"requested category","evidence":[{"path":"relative/file.py","start_line":10,"end_line":12}]}]}
 
 The final answer must identify qualifying file paths, symbols or operations, and their requested
 classification. Do not invent evidence and do not mention excluded candidates."""
 
 NAVIGATION_ACTION_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "additionalProperties": False,
-    "properties": {
-        "kind": {"type": "string", "enum": ["tool", "final"]},
-        "tool_name": {"type": "string", "enum": ["read_file", "grep", "list_files"]},
-        "arguments": {"type": "object"},
-        "message": {"type": "string"},
-        "final_output": {"type": "string"},
-    },
-    "required": ["kind"],
+    "oneOf": [
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "kind": {"type": "string", "enum": ["tool"]},
+                "tool_name": {"type": "string", "enum": ["read_file", "grep", "list_files"]},
+                "arguments": {"type": "object"},
+                "message": {"type": "string"},
+            },
+            "required": ["kind", "tool_name", "arguments"],
+        },
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "kind": {"type": "string", "enum": ["final"]},
+                "final_output": {"type": "string", "minLength": 1},
+                "navigation_claims": NAVIGATION_CLAIMS_SCHEMA,
+            },
+            "required": ["kind", "final_output", "navigation_claims"],
+        },
+    ]
 }
 
 FINALIZATION_ACTION_SCHEMA: dict[str, Any] = {
@@ -102,8 +122,9 @@ FINALIZATION_ACTION_SCHEMA: dict[str, Any] = {
     "properties": {
         "kind": {"type": "string", "enum": ["final"]},
         "final_output": {"type": "string", "minLength": 1},
+        "navigation_claims": NAVIGATION_CLAIMS_SCHEMA,
     },
-    "required": ["kind", "final_output"],
+    "required": ["kind", "final_output", "navigation_claims"],
 }
 
 NAVIGATION_TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
@@ -904,6 +925,9 @@ class BudgetedNavigationPlanner:
         if kind == "final":
             if not str(payload.get("final_output") or payload.get("output") or payload.get("message") or "").strip():
                 return "final_output must be non-empty"
+            claim_error = navigation_claims_shape_error(payload.get("navigation_claims"))
+            if claim_error:
+                return claim_error
             return None
         if kind != "tool":
             return "kind must be tool or final"
@@ -1085,7 +1109,7 @@ class BudgetedNavigationPlanner:
                 f"Constrained finalization returned invalid JSON: {exc}",
                 meta={"finalization_outcome": "no_answer", **telemetry},
             )
-        if set(payload) - {"kind", "final_output"}:
+        if set(payload) - {"kind", "final_output", "navigation_claims"}:
             return AgentAction.message_only(
                 "Constrained finalization returned unsupported fields.",
                 meta={"finalization_outcome": "no_answer", **telemetry},
@@ -1099,6 +1123,12 @@ class BudgetedNavigationPlanner:
         if not output:
             return AgentAction.message_only(
                 "Constrained finalization returned an empty answer.",
+                meta={"finalization_outcome": "no_answer", **telemetry},
+            )
+        claim_error = navigation_claims_shape_error(payload.get("navigation_claims"))
+        if claim_error:
+            return AgentAction.message_only(
+                f"Constrained finalization returned invalid claims: {claim_error}.",
                 meta={"finalization_outcome": "no_answer", **telemetry},
             )
         action = action_from_payload(payload, response=response, engine_role="planner")
