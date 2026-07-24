@@ -5,7 +5,11 @@ from typing import Callable
 
 from agent_lib import AgentContext, AgentTask, EngineRoles
 from agent_lib.examples import run_programming_demo
-from agent_lib.llm_engines_adapter import LLMActionPlanner, RoleEngineSet
+from agent_lib.llm_engines_adapter import (
+    LLMActionPlanner,
+    RoleEngineSet,
+    action_from_payload,
+)
 from llm_engines.contracts import ChatMessage, EngineCapabilities, GenerationRequest, GenerationResponse, UsageStats
 
 
@@ -52,6 +56,27 @@ def test_llm_action_planner_invokes_planner_role_engine() -> None:
     assert action.tool_call.name == "add"
     assert action.meta["model_name"] == "mentor-mock"
     assert action.meta["engine_role"] == "planner"
+
+
+def test_action_adapter_preserves_relation_claims_on_final_action() -> None:
+    claim = {
+        "kind": "definition",
+        "path": "sample.py",
+        "symbol": "Pipeline",
+        "target": "",
+        "path_symbols": [],
+        "evidence": [{"path": "sample.py", "start_line": 1, "end_line": 1}],
+    }
+
+    action = action_from_payload(
+        {
+            "kind": "final",
+            "final_output": "Located Pipeline.",
+            "relation_claims": [claim],
+        }
+    )
+
+    assert action.meta["relation_claims"] == [claim]
 
 
 def test_programming_demo_can_use_llm_engines_for_mentor_and_worker(tmp_path) -> None:

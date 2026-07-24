@@ -1,0 +1,37 @@
+{
+  "campaign_complete": true,
+  "decision": {
+    "decision": "inconclusive",
+    "exact_net": 0,
+    "exploratory_token_ratio": 0.7971633368918712,
+    "median_both_complete_ledger_token_overhead_fraction": null,
+    "relation_net": 2,
+    "termination_ceiling": false,
+    "termination_net": 3
+  },
+  "exploratory": {
+    "evidence_complete_rate_ledger": 0.3333333333333333,
+    "evidence_complete_rate_no_ledger": 0.0,
+    "evidence_precise_rate_ledger": 0.0,
+    "evidence_precise_rate_no_ledger": 0.0,
+    "exact_rate_ledger": 0.0,
+    "exact_rate_no_ledger": 0.0,
+    "relation_rate_ledger": 0.3333333333333333,
+    "relation_rate_no_ledger": 0.0,
+    "task_count": 6,
+    "termination_rate_ledger": 0.5,
+    "termination_rate_no_ledger": 0.0,
+    "total_tokens_ledger": 99313,
+    "total_tokens_no_ledger": 124583
+  },
+  "external_artifacts": {
+    "decision.json": "63524de4e6e7ad9fadd4b1eb8fc41cec2d0511d57d0adb4065613779cbb8929b",
+    "pairs.json": "92920f0696f061f651265534adf2950a12e2feb47942c8854307ae5e33469283",
+    "summary.json": "ce066fdc71348a21009638c0e64dfabc5eb8b984fe3c2ea87ef2b4edeb72d7c5"
+  },
+  "model": "Qwen3.6-27B-Q4_K_M",
+  "protocol_note": "One selected-task smoke was excluded before the symmetric nonempty-claim and observed-evidence contract was fixed; see validation document.",
+  "seed": 0,
+  "temperature": 0.0,
+  "track": "NAV-VERIFIABLE-00"
+}

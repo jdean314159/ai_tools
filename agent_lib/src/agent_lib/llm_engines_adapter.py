@@ -103,6 +103,8 @@ def action_from_payload(
         output = str(payload.get('final_output') or payload.get('output') or payload.get('message') or '')
         if isinstance(payload.get('navigation_claims'), list):
             meta['navigation_claims'] = list(payload['navigation_claims'])
+        if isinstance(payload.get('relation_claims'), list):
+            meta['relation_claims'] = list(payload['relation_claims'])
         return AgentAction.final(output, meta=meta)
     if kind == 'message':
         return AgentAction.message_only(str(payload.get('message') or ''), meta=meta)

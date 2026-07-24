@@ -33,6 +33,10 @@ from agent_lib.eval.repo_navigation import (
     PlannerUsage,
 )
 from agent_lib.eval.navigation_goals import seed_navigation_goals
+from agent_lib.eval.verifiable_navigation import (
+    RELATION_CLAIMS_SCHEMA,
+    relation_claims_shape_error,
+)
 from agent_lib.memory import NullMemoryAdapter
 from llm_engines.contracts import ChatMessage, EngineCapabilities, GenerationRequest, GenerationResponse, UsageStats
 from llm_engines.contracts import GenerationError
@@ -129,6 +133,29 @@ class FakeLlamaServerClient(LlamaServerClient):
                 "timings": {"cache_n": self.reused_prompt_tokens},
             }
         raise AssertionError(path)
+
+
+def test_planner_accepts_task_specific_goals_and_relation_claim_schema() -> None:
+    planner = BudgetedNavigationPlanner(
+        engine=RecordingEngine(responses=[]),
+        tokenizer=WordTokenizer(),
+        structured_navigation=True,
+        navigation_goal_definitions=(("find_edge", "Find the requested edge."),),
+        final_claim_name="relation_claims",
+        final_claim_schema=RELATION_CLAIMS_SCHEMA,
+        final_claim_validator=relation_claims_shape_error,
+        require_observed_evidence_before_final=True,
+    )
+
+    assert [goal.goal_id for goal in planner.navigation_goals] == ["find_edge"]
+    final_branch = next(
+        branch
+        for branch in planner.action_schema["oneOf"]
+        if branch["properties"]["kind"]["enum"] == ["final"]
+    )
+    assert "relation_claims" in final_branch["required"]
+    assert "navigation_claims" not in final_branch["properties"]
+    assert planner.require_observed_evidence_before_final is True
 
 
 @pytest.fixture

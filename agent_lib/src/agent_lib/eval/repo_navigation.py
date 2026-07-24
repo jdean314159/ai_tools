@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 import subprocess
 import time
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 import urllib.error
 import urllib.request
 
@@ -146,6 +146,36 @@ def _structured_navigation_schema() -> dict[str, Any]:
 
 
 STRUCTURED_NAVIGATION_ACTION_SCHEMA = _structured_navigation_schema()
+
+
+def navigation_action_schema(
+    *,
+    claim_name: str = "navigation_claims",
+    claim_schema: Mapping[str, Any] = NAVIGATION_CLAIMS_SCHEMA,
+    structured_navigation: bool = False,
+) -> dict[str, Any]:
+    """Build an action schema with one caller-selected final claim contract."""
+
+    schema = copy.deepcopy(NAVIGATION_ACTION_SCHEMA)
+    for branch in schema["oneOf"]:
+        if branch["properties"]["kind"]["enum"] == ["final"]:
+            branch["properties"].pop("navigation_claims")
+            branch["required"].remove("navigation_claims")
+            branch["properties"][claim_name] = copy.deepcopy(dict(claim_schema))
+            branch["required"].append(claim_name)
+        if structured_navigation:
+            branch["properties"]["navigation_goals"] = copy.deepcopy(
+                NAVIGATION_GOAL_STATE_SCHEMA
+            )
+            branch["required"].append("navigation_goals")
+            if branch["properties"]["kind"]["enum"] == ["tool"]:
+                branch["properties"]["serves_goal_ids"] = {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {"type": "string", "minLength": 1},
+                }
+                branch["required"].append("serves_goal_ids")
+    return schema
 
 FINALIZATION_ACTION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -916,6 +946,12 @@ class BudgetedNavigationPlanner:
         temperature: float = 0.0,
         metadata: dict[str, Any] | None = None,
         structured_navigation: bool = False,
+        navigation_goal_definitions: Sequence[tuple[str, str]] | None = None,
+        system_prompt: str = SYSTEM_PROMPT,
+        final_claim_name: str = "navigation_claims",
+        final_claim_schema: Mapping[str, Any] = NAVIGATION_CLAIMS_SCHEMA,
+        final_claim_validator: Callable[[object], str | None] = navigation_claims_shape_error,
+        require_observed_evidence_before_final: bool = False,
     ) -> None:
         self.engine = engine
         self.tokenizer = tokenizer
@@ -923,11 +959,31 @@ class BudgetedNavigationPlanner:
         self.temperature = temperature
         self.metadata = dict(metadata or {})
         self.structured_navigation = structured_navigation
+        self.navigation_goal_definitions = navigation_goal_definitions
+        self.system_prompt = system_prompt
+        self.final_claim_name = final_claim_name
+        self.final_claim_validator = final_claim_validator
+        self.require_observed_evidence_before_final = (
+            require_observed_evidence_before_final
+        )
+        self.action_schema = navigation_action_schema(
+            claim_name=final_claim_name,
+            claim_schema=final_claim_schema,
+            structured_navigation=structured_navigation,
+        )
         self.usage = PlannerUsage()
-        self.navigation_goals = seed_navigation_goals()
+        self.navigation_goals = (
+            seed_navigation_goals(navigation_goal_definitions)
+            if navigation_goal_definitions is not None
+            else seed_navigation_goals()
+        )
 
     def reset_navigation_goals(self) -> None:
-        self.navigation_goals = seed_navigation_goals()
+        self.navigation_goals = (
+            seed_navigation_goals(self.navigation_goal_definitions)
+            if self.navigation_goal_definitions is not None
+            else seed_navigation_goals()
+        )
 
     def _user_prompt(self, context: AgentContext) -> str:
         parts = [f"Task:\n{context.task.goal}"]
@@ -993,7 +1049,9 @@ class BudgetedNavigationPlanner:
         if kind == "final":
             if not str(payload.get("final_output") or payload.get("output") or payload.get("message") or "").strip():
                 return "final_output must be non-empty"
-            claim_error = navigation_claims_shape_error(payload.get("navigation_claims"))
+            claim_error = self.final_claim_validator(
+                payload.get(self.final_claim_name)
+            )
             if claim_error:
                 return claim_error
             return None
@@ -1023,7 +1081,7 @@ class BudgetedNavigationPlanner:
         return None
 
     def plan(self, context: AgentContext) -> AgentAction:
-        messages = [ChatMessage(role="system", content=SYSTEM_PROMPT), ChatMessage(role="user", content=self._user_prompt(context))]
+        messages = [ChatMessage(role="system", content=self.system_prompt), ChatMessage(role="user", content=self._user_prompt(context))]
         prompt_tokens = self.tokenizer.count_messages(messages)
         remaining_cumulative = self.budget.cumulative_token_limit - self.usage.cumulative_actual_tokens
         if prompt_tokens + self.budget.minimum_output_reserve > remaining_cumulative:
@@ -1036,11 +1094,7 @@ class BudgetedNavigationPlanner:
                 messages=messages,
                 max_tokens=max_output,
                 temperature=self.temperature,
-                json_schema=(
-                    STRUCTURED_NAVIGATION_ACTION_SCHEMA
-                    if self.structured_navigation
-                    else NAVIGATION_ACTION_SCHEMA
-                ),
+                json_schema=self.action_schema,
                 metadata={
                     **self.metadata,
                     "task_id": context.task.task_id,
@@ -1061,7 +1115,7 @@ class BudgetedNavigationPlanner:
             self.usage.fallback_usage_calls += 1
         self.usage.calls.append(
             {
-                "system_prompt": SYSTEM_PROMPT,
+                "system_prompt": self.system_prompt,
                 "user_prompt": messages[1].content or "",
                 "prompt_tokens_pre_call": prompt_tokens,
                 "requested_max_output_tokens": max_output,
@@ -1083,6 +1137,15 @@ class BudgetedNavigationPlanner:
         validation_error = self._validate_payload(payload)
         if validation_error:
             return AgentAction.message_only(f"Rejected invalid action: {validation_error}", meta={"invalid_action": True})
+        if (
+            self.require_observed_evidence_before_final
+            and str(payload.get("kind") or "").strip().lower() == "final"
+            and not _observed_lines(context.steps)
+        ):
+            return AgentAction.message_only(
+                "Rejected final action before any source evidence was observed.",
+                meta={"invalid_action": True, "missing_observed_evidence": True},
+            )
         if self.structured_navigation:
             goal_error, proposed_goals = self._validate_goal_payload(payload, context)
             if goal_error:
@@ -1296,6 +1359,12 @@ def build_navigation_harness(
     metadata: dict[str, Any] | None = None,
     action_guard_mode: str = "shadow",
     structured_navigation: bool = False,
+    navigation_goal_definitions: Sequence[tuple[str, str]] | None = None,
+    system_prompt: str = SYSTEM_PROMPT,
+    final_claim_name: str = "navigation_claims",
+    final_claim_schema: Mapping[str, Any] = NAVIGATION_CLAIMS_SCHEMA,
+    final_claim_validator: Callable[[object], str | None] = navigation_claims_shape_error,
+    require_observed_evidence_before_final: bool = False,
 ) -> NavigationHarness:
     if max_steps < 1:
         raise NavigationConfigurationError("max_steps must be positive")
@@ -1315,6 +1384,12 @@ def build_navigation_harness(
         temperature=temperature,
         metadata=metadata,
         structured_navigation=structured_navigation,
+        navigation_goal_definitions=navigation_goal_definitions,
+        system_prompt=system_prompt,
+        final_claim_name=final_claim_name,
+        final_claim_schema=final_claim_schema,
+        final_claim_validator=final_claim_validator,
+        require_observed_evidence_before_final=require_observed_evidence_before_final,
     )
     control_hooks = (
         []

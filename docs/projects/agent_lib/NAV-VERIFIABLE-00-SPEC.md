@@ -1,7 +1,6 @@
 # NAV-VERIFIABLE-00 paired structured-navigation evaluation
 
-**Status:** Deterministic foundation and production task selection implemented;
-planner/runner adoption and live paired campaign not built.
+**Status:** First live paired campaign complete; frozen verdict inconclusive.
 
 ## Purpose
 
@@ -157,14 +156,19 @@ Implemented:
 
 Still required before live use:
 
-- Planner output-schema adoption for `relation_claims`.
-- Task-specific goal seeding instead of the NAV-STRUCT-00 exhaustive ledger.
-- A paired executable that runs both modes and writes the manifest plus scores.
+- No live-use requirement remains; this is an evaluation track, not a shipping
+  runtime feature.
+- A replicated campaign requires a separately predeclared protocol.
 
 Production task snapshots and the selected campaign now exist under
 `agent_lib/eval_snapshots/` and
 `agent_lib/eval_manifests/nav_verifiable_campaign_v1/`. The deterministic
 selection contains all four task shapes and the frozen 4/4/6 tier distribution.
+The paired executable is
+`agent_lib/examples/nav_verifiable_campaign.py`; it uses task-specific goals
+only in the ledger arm, uses the same `relation_claims` schema in both arms,
+alternates arm order, scores with the external AST oracle, and writes each arm
+record before campaign aggregation.
 
 Scoring reports four independent booleans:
 
