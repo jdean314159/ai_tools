@@ -1,15 +1,53 @@
 # Repo Status
 
-Last updated: 2026-07-11
+Last updated: 2026-07-24
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: MAIL-02 MVP COMPLETE; mail-assistant adoption observation closed.
-Neural memory remains parked and output-isolated;
-NAV-TEST-00 is available; knowledge-curation MVP remains complete.**
+**Phase: no active implementation campaign. NAV-VERIFIABLE-00 is complete
+with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
+navigation failure. Mail-assistant adoption is closed, and neural memory
+remains parked and output-isolated.**
+
+For a fresh Claude thread, read
+`docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file.
+
+### Latest completed work — NAV-VERIFIABLE-00
+
+The repository-navigation control investigation is closed at `abcc2f0`.
+Wrapper-level text repetition, duplicate-action, and observable-saturation
+signals did not provide a reliable model-independent stopping criterion. The
+investigation moved the missing information into an explicit task-goal ledger
+and evaluated it on mechanically selected, AST-verifiable tasks.
+
+The paired campaign held the final relation schema and scorer constant and
+varied only per-step ledger state. On the six exploratory tasks:
+
+- no-ledger terminated 0/6; ledger terminated 3/6;
+- no-ledger was relation-correct 0/6; ledger was relation-correct 2/6;
+- exact correctness was 0/6 in both arms;
+- aggregate tokens were 124,583 no-ledger versus 99,313 ledger.
+
+The formal predeclared verdict is `inconclusive`, not support: no exploratory
+pair completed in both arms, so the paired completion-overhead condition was
+unevaluable, and no exploratory answer passed exact evidence scoring. The
+relation-correct ledger answers over-cited evidence. Do not alter the frozen
+rule or scorer post hoc. See
+`docs/projects/agent_lib/NAV-VERIFIABLE-00-VALIDATION.md`.
+
+Current `agent_lib` checkpoint: `150 passed` at `abcc2f0`. This is a recorded
+checkpoint, not a claim about later untested edits.
+
+### Current project boundary
+
+No successor project is selected. Choose the next direction from a concrete
+user need and predeclared validation gate. Reasonable options are ROADMAP Phase
+4 workbench reliability, Phase 5 reference-application modernization, fresh
+clone/documentation verification, or a separately scoped evidence-grounding
+experiment. Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
 reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates

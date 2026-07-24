@@ -93,6 +93,7 @@ The repo should treat the following as first-class engineering artifacts:
   - `docs/design/VISION.md`
   - `docs/internal/STATUS.md`
   - `docs/internal/ROADMAP.md`
+  - `docs/internal/CLAUDE_THREAD_HANDOFF.md`
   - `ADR_INDEX.md`
 - repo-local and package-local `AGENT.md` files
 - JSON task/progress manifests that agents and humans can both read

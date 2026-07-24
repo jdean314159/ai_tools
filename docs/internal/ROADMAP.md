@@ -5,7 +5,9 @@
 ## Current state
 
 See `STATUS.md` for the authoritative current state, active work priority list,
-and current test gate baseline. The checkpoint blocks below are historical.
+and current test gate baseline. NAV-VERIFIABLE-00 is complete with an
+`inconclusive` frozen verdict; it is not an active tuning campaign. No successor
+project is selected. The checkpoint blocks below are historical.
 
 <!-- AI_TOOLS_STATUS_END -->
 
@@ -13,7 +15,10 @@ and current test gate baseline. The checkpoint blocks below are historical.
 
 This is the ordered execution plan for the `ai_tools` monorepo.
 
-For the next thread, fresh-clone verification and optional-dependency validation take precedence over new feature work.
+For the next thread, first choose a concrete user-visible goal. If no new
+product mandate exists, fresh-clone verification, documentation reconciliation,
+and Phase 4 workbench reliability take precedence over speculative agent or
+memory mechanisms.
 
 ## Planning assumptions
 

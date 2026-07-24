@@ -1,8 +1,12 @@
-# ai_tools — Session Handoff (for new thread / Codex)
+# ai_tools — Session Handoff (historical log)
 
-**Date:** 2026-07-11
-**Read order for any new thread:** `docs/internal/STATUS.md` first, then this
-file. For a neural-memory thread also read ADR-016 and
+**Latest standing handoff:** `docs/internal/CLAUDE_THREAD_HANDOFF.md`
+**This file:** historical session log; do not read it end-to-end for a fresh
+thread.
+
+**Read order for any new thread:** `AGENTS.md`, `docs/design/VISION.md`,
+`docs/internal/STATUS.md`, then
+`docs/internal/CLAUDE_THREAD_HANDOFF.md`. For a neural-memory thread also read ADR-016 and
 `docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`. For mail_lib: this file →
 `docs/projects/mail_lib/mail_lib_status_v0.1.md` →
 `docs/projects/mail_lib/mail_lib_system_parameters.md` →
@@ -10,11 +14,25 @@ file. For a neural-memory thread also read ADR-016 and
 `docs/projects/mail_lib/SPEC-MAIL-01-personal-rules.md` →
 `docs/projects/mail_lib/SPEC-MAIL-00-triage.md` →
 `docs/projects/mail_lib/mail_lib_scoping_note.md`.
-STATUS.md is the standing state; this file is "what just happened and the next action."
+STATUS.md is the standing state. The Claude handoff records the latest completed
+campaign and next-decision boundary. Entries below predate that handoff and are
+retained only as historical context.
 
 ---
 
 ## TL;DR
+
+## Update — 2026-07-24 (NAV campaign closed)
+
+NAV-VERIFIABLE-00 is complete at `abcc2f0`. Its frozen verdict is
+`inconclusive`: the task-goal ledger improved exploratory termination from 0/6
+to 3/6 and relation correctness from 0/6 to 2/6 while reducing aggregate
+tokens, but exact correctness remained 0/6 in both arms. Over-citation was the
+repeated residual defect. Do not extend or reinterpret the frozen campaign.
+
+Fresh threads should stop here and continue with
+`docs/internal/CLAUDE_THREAD_HANDOFF.md`; the older updates below are superseded
+as current-state guidance.
 
 ## Update — 2026-07-11 (MAIL assistant closed)
 
