@@ -21,17 +21,17 @@ that domain applications are examples rather than reusable library packages.
 ## Validation
 
 ```text
-reference-app tests:       106 passed, 45 skipped
+reference-app tests:       126 passed, 25 skipped
 notebook 07 default path:  passed
 wheel-installed course:    passed (11 notebooks)
-full repository pytest:    1086 passed, 305 skipped
+full repository pytest:    1106 passed, 285 skipped
 ```
 
-The skips are explicit residual test debt rather than supported-path evidence:
-the recovered synchronous route suite needs migration to the current HTTPX
-transport, the optional voice subprocess suite needs bounded subprocess tests,
-and live Ollama remains opt-in. None is exercised by notebook 07's default
-reference-stack walkthrough.
+The live synchronous route suite now runs through HTTPX's ASGI transport: all
+20 tests pass without a server or deprecated Starlette `TestClient`. The
+remaining skips are explicit optional-path debt: the voice subprocess suite
+needs bounded subprocess tests, and live Ollama remains opt-in. Neither is
+exercised by notebook 07's default reference-stack walkthrough.
 
 ## Deferred
 

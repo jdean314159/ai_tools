@@ -3,7 +3,7 @@ test_routes_conversation.py
 
 FastAPI route-level tests for /api/conversation/*.
 
-Uses httpx TestClient (starlette) so no actual server is started.
+Uses HTTPX's ASGI transport so no actual server is started.
 All session state is injected directly into active_sessions.
 No live LLM calls — sessions carry FakeEngine instances.
 
@@ -30,13 +30,7 @@ import pytest
 from pydantic import BaseModel
 
 pytest.importorskip("fastapi", reason="fastapi required for route tests")
-pytest.importorskip("httpx", reason="httpx required for TestClient")
-
-pytestmark = pytest.mark.skip(
-    reason="legacy synchronous TestClient suite is incompatible with the current httpx transport"
-)
-
-from fastapi.testclient import TestClient  # noqa: E402
+httpx = pytest.importorskip("httpx", reason="httpx required for ASGI route tests")
 
 from language_tutor.app import app  # noqa: E402
 from language_tutor.engine_manager import EngineManager  # noqa: E402
@@ -74,10 +68,30 @@ class _FakeEngine:
         return max(1, len(text.split()))
 
 
+class _ASGIClient:
+    """Small synchronous test facade over HTTPX's async-only ASGI transport."""
+
+    def request(self, method: str, url: str, **kwargs: Any):
+        async def send():
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(
+                transport=transport,
+                base_url="http://testserver",
+            ) as async_client:
+                return await async_client.request(method, url, **kwargs)
+
+        return asyncio.run(send())
+
+    def get(self, url: str, **kwargs: Any):
+        return self.request("GET", url, **kwargs)
+
+    def post(self, url: str, **kwargs: Any):
+        return self.request("POST", url, **kwargs)
+
+
 @pytest.fixture
 def client():
-    with TestClient(app) as test_client:
-        yield test_client
+    return _ASGIClient()
 
 
 @pytest.fixture

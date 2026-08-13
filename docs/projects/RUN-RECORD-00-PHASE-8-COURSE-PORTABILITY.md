@@ -81,9 +81,9 @@ moved as expected.
 ```text
 wheel-installed portability gate: passed (11 extraction notebooks)
 course fixture tests:     4 passed
-reference tutor tests:    106 passed, 45 skipped
+reference tutor tests:    126 passed, 25 skipped
 notebook 07 code path:    passed (all default code cells)
 teaching-artifact check:  passed
-default pytest gate:      1086 passed, 305 skipped
+default pytest gate:      1106 passed, 285 skipped
 Ruff and diff checks:     passed
 ```
