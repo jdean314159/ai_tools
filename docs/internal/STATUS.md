@@ -7,8 +7,8 @@ first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: RUN-RECORD-00 Phase 3 generation/agent cross-kind proof is complete;
-the next bounded consumer capability has not been selected. NAV-VERIFIABLE-00 remains complete
+**Phase: RUN-RECORD-00 Phase 4 Inspector consumption slice is complete; the
+next bounded capability has not been selected. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
 remains parked and output-isolated.**
@@ -39,6 +39,11 @@ privacy-safe Ollama acceptance run. See
 leading next option, but it is not yet selected. Experiment, RAG, photo, and
 course migrations remain deferred.
 
+Phase 4 adds library/CLI artifact loading and separate generation/agent
+summaries to `llm_inspector`, including unsupported-version handling and
+comparisons that never promote matching labels to model identity. See
+`docs/projects/RUN-RECORD-00-PHASE-4-INSPECTOR.md`. No UI work was included.
+
 ### Latest completed work — NAV-VERIFIABLE-00
 
 The repository-navigation control investigation is closed at `abcc2f0`.
@@ -67,8 +72,8 @@ checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
 
-RUN-RECORD-00 Phase 3 is complete without rewriting legacy producers or engine
-backends. Select the next bounded consumer capability before implementation.
+RUN-RECORD-00 Phase 4 is complete without UI changes or broader producer
+migration. Select the next bounded capability before implementation.
 Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
@@ -146,8 +151,8 @@ NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `c95b8ab` as a
 confined, read-only Qwen3.6 repository-navigation evaluation with external
 ground truth and result storage.
 
-Next project: select a bounded post-Phase-3 consumer capability; inspector
-loading and kind-specific summaries are the leading option.
+Next project: select a bounded post-Phase-4 capability. Experiment/campaign
+records are the leading architectural option but are not yet selected.
 Standing backlog (none gate-blocking): course-repo extraction, TOPOLOGY-01
 conversion (ADR-015), and neural reactivation only under a new mandate.
 

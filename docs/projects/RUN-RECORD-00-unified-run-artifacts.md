@@ -1,8 +1,9 @@
 # RUN-RECORD-00 — Unified, versioned run artifacts
 
-**Status:** Phases 0–3 complete. Accepted ADR-021 semantics and ADR-022
+**Status:** Phases 0–4 complete. Accepted ADR-021 semantics and ADR-022
 ownership/public API govern the implementation. The common envelope has passed
-the NAV/ASC agent compatibility gate and the generation/agent cross-kind gate.
+the NAV/ASC compatibility gate, generation/agent cross-kind gate, and first
+Inspector consumption gate.
 **Prepared:** 2026-08-12
 
 ## Purpose
@@ -154,6 +155,6 @@ failure, redaction tests, and two producer adapters pass.
 
 ## Current action
 
-Select the next bounded consumer capability. Inspector loading and
-kind-specific summaries are the leading option. Do not infer authorization for
-experiment, RAG, photo, or course migrations from Phase 3 completion.
+Select the next bounded capability. Experiment/campaign records are the leading
+architectural option, but no successor is selected. Do not infer authorization
+for UI, RAG, photo, or course migrations from Phase 4 completion.

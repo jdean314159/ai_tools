@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import json
 from collections import Counter
 from pathlib import Path
 import logging
@@ -16,6 +17,14 @@ from llm_inspector.inspectors.bundle import build_bundle
 from llm_inspector.inspectors.diff import diff_traces
 from llm_inspector.renderers import render_comparison
 from llm_inspector.renderers.diff_console import render_diff
+from llm_inspector.artifacts import (
+    artifact_comparison_to_dict,
+    artifact_inspection_to_dict,
+    compare_artifact_files,
+    inspect_artifact_file,
+    render_artifact_comparison,
+    render_artifact_inspection,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -59,6 +68,17 @@ def _build_parser() -> argparse.ArgumentParser:
     bun_p.add_argument("--engram-profile", default="default_local")
     bun_p.add_argument("--engram-project-type", default="programming_assistant")
 
+    # --- durable run artifacts ---
+    artifact_p = sub.add_parser("artifact", help="Inspect durable run artifacts.")
+    artifact_sub = artifact_p.add_subparsers(dest="artifact_cmd", required=True)
+    artifact_show = artifact_sub.add_parser("show", help="Validate and summarize one artifact.")
+    artifact_show.add_argument("path", type=Path)
+    artifact_show.add_argument("--format", choices=("text", "json"), default="text")
+    artifact_compare = artifact_sub.add_parser("compare", help="Compare defensible common artifact facts.")
+    artifact_compare.add_argument("left", type=Path)
+    artifact_compare.add_argument("right", type=Path)
+    artifact_compare.add_argument("--format", choices=("text", "json"), default="text")
+
     return p
 
 
@@ -91,6 +111,22 @@ def _parse_adapter_list(spec: str) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
+    if args.cmd == "artifact":
+        if args.artifact_cmd == "show":
+            inspection = inspect_artifact_file(args.path)
+            if args.format == "json":
+                print(json.dumps(artifact_inspection_to_dict(inspection), indent=2, sort_keys=True))
+            else:
+                print(render_artifact_inspection(inspection))
+            return 0
+        if args.artifact_cmd == "compare":
+            comparison = compare_artifact_files(args.left, args.right)
+            if args.format == "json":
+                print(json.dumps(artifact_comparison_to_dict(comparison), indent=2, sort_keys=True))
+            else:
+                print(render_artifact_comparison(comparison))
+            return 0
+        return 2
     reg = _build_registry()
 
     if args.cmd == "compare":

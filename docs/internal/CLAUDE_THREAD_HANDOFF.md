@@ -28,7 +28,7 @@ start by reading the historical sections of `SESSION_HANDOFF.md`.
 
 ## Current posture
 
-RUN-RECORD-00 Phase 3 is complete under accepted ADR-021 and ADR-022. The next
+RUN-RECORD-00 Phase 4 is complete under accepted ADR-021 and ADR-022. The next
 bounded consumer slice is unselected. The most recent completed
 empirical campaign, NAV-VERIFIABLE-00, remains closed and must not be extended
 by silently changing its frozen protocol.
@@ -44,8 +44,9 @@ Relevant historical commits:
 - `8a4fd71` — added the shared-schema ceiling verdict;
 - `364fed6` / `a0e5189` — froze arm, selection, and campaign policy before data.
 
-Phase 3 passed 209 engine tests with 12 skipped and two cross-kind integration
-tests, in addition to the Phase 2 core/agent regression gates.
+Phase 4 Inspector artifact and integration gates pass. Its full suite has one
+unrelated optional-tokenizer-dependent Engram golden mismatch, documented in
+`RUN-RECORD-00-PHASE-4-INSPECTOR.md`.
 
 ## RUN-RECORD-00 — what the next thread must understand
 
@@ -62,8 +63,10 @@ Phase 0 inventoried ASC, `GenerationResponse`, inspector `Trace`, and campaign
 outputs. Phase 2 added the dependency-free core envelope plus lossless NAV-v1
 and ASC adapters. Phase 3 added a generation recorder, MockEngine cross-kind
 fixtures, common-reader semantic checks, and a privacy-safe live Ollama
-acceptance run. Read `RUN-RECORD-00-PHASE-3-VALIDATION.md` before selecting the
-next slice.
+acceptance run. Phase 4 added Inspector library/CLI loading, separate
+generation/agent summaries, unsupported-version behavior, and comparison that
+does not infer model identity from labels. Read the Phase 4 report before
+selecting the next slice.
 
 ## What the NAV investigation established
 
@@ -130,7 +133,7 @@ campaign is not a pristine first-contact dataset. Preserve that caveat.
   direction.
 - Do not prompt-tune or schema-tune against the completed NAV campaign.
 
-## Work after the completed Phase 3 gate
+## Work after the completed Phase 4 gate
 
 Workbench reliability, reference-application modernization, grounded-claims
 work, and fresh-clone verification remain legitimate later projects. They do

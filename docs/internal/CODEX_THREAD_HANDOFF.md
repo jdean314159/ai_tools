@@ -2,7 +2,7 @@
 
 - Prepared: 2026-08-12
 - Repository: `/home/cybernaif/repos/ai_tools`
-- Selected project: RUN-RECORD-00 Phase 3 complete; next slice unselected
+- Selected project: RUN-RECORD-00 Phase 4 complete; next slice unselected
 
 ## Read order
 
@@ -18,10 +18,9 @@ Do not read `SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## First assignment
 
-Review `RUN-RECORD-00-PHASE-3-VALIDATION.md` and select one bounded consumer
-capability before implementing it. Inspector loading and kind-specific
-summaries are the leading option. Do not pull RAG, photo, experiment migration,
-or course fixtures into that slice.
+Review `RUN-RECORD-00-PHASE-4-INSPECTOR.md` and select one bounded capability
+before implementing it. Experiment/campaign records are the leading
+architectural option. Do not pull UI, RAG, photo, or course fixtures into it.
 
 ## Critical factual correction
 
@@ -32,7 +31,8 @@ This project is not greenfield. The existing NAV schema-v1 producer is
 ADR-021 and ADR-022 govern the shared semantics and ownership. Phase 2
 implemented the dependency-free core envelope plus lossless NAV-v1 and ASC
 adapters. Phase 3 added generation recording, cross-kind tests, and a live
-Ollama acceptance run.
+Ollama acceptance run. Phase 4 added Inspector library/CLI consumption,
+separate generation/agent summaries, and conservative comparisons.
 
 ## Working-tree posture
 
@@ -42,7 +42,9 @@ any newer work.
 
 ## Verification posture
 
-Phase 3 checkpoints include `209 passed, 12 skipped` for `llm_engines`, two
-cross-kind integration tests, and the Phase 2 regression gates. Invoke root pytest as `python -m pytest`; the bare
+Phase 4 focused and integration gates pass. The full Inspector suite has one
+unrelated environment-sensitive Engram golden mismatch when optional
+`tiktoken` is absent; see the Phase 4 report. Invoke root pytest as
+`python -m pytest`; the bare
 `pytest` console script does not preserve the repository root early enough for
 the centralized example-package bootstrap.

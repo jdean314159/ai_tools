@@ -54,6 +54,30 @@ Its job is to normalize what happened across engines, memory augmentation, retri
 This is a **core** package, actively maintained. Tier: **beta** (API mostly
 settled; see the suite tier definitions in the root README).
 
+## Inspecting durable run artifacts
+
+`llm_inspector` can validate and explain the unified artifacts produced by
+`llm_engines` or adapted by `agent_lib`:
+
+```python
+from llm_inspector import inspect_artifact_file, render_artifact_inspection
+
+inspection = inspect_artifact_file("generation-record.json")
+print(render_artifact_inspection(inspection))
+```
+
+The CLI exposes the same library surface:
+
+```bash
+llm-inspect artifact show generation-record.json
+llm-inspect artifact compare before.json after.json --format json
+```
+
+Supported bodies currently include generation v1 and the NAV/ASC agent-run v1
+profiles. Unknown body/profile versions remain envelope-readable but are not
+interpreted. Comparisons report label equality separately and never infer that
+two records used an identical model without stronger artifact/runtime facts.
+
 ## Responsibilities
 
 - trace normalization

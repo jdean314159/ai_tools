@@ -13,8 +13,16 @@ def describe_inspector(component: object | None = None) -> CapabilityDescriptor:
         component=component_name,
         version="0.1.0",
         summary="Observability and comparison workflows for augmentation traces.",
-        features=("compare", "diff", "bundle", "trace_export", "console_rendering"),
-        input_types=("trace", "comparison_report"),
+        features=(
+            "compare",
+            "diff",
+            "bundle",
+            "trace_export",
+            "console_rendering",
+            "run_artifact_inspection",
+            "run_artifact_comparison",
+        ),
+        input_types=("trace", "comparison_report", "run_artifact"),
         output_types=("operation_result", "trace_event[]", "json_report"),
         metadata={},
     )

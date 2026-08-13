@@ -65,6 +65,19 @@ from llm_inspector.interop import (
 )
 from llm_inspector.protocols import AugmentRequest, ContextAugmenter
 from llm_inspector.renderers import render_comparison, render_diff
+from llm_inspector.artifacts import (
+    SUPPORTED_BODY_CONTRACTS,
+    ArtifactComparison,
+    ArtifactInspection,
+    compare_artifact_files,
+    compare_artifacts,
+    artifact_comparison_to_dict,
+    artifact_inspection_to_dict,
+    inspect_artifact,
+    inspect_artifact_file,
+    render_artifact_comparison,
+    render_artifact_inspection,
+)
 
 __version__ = "0.1.0"
 
@@ -121,6 +134,18 @@ __all__ = [
     "bundle_to_json",
     "render_comparison",
     "render_diff",
+    # Durable run artifacts
+    "SUPPORTED_BODY_CONTRACTS",
+    "ArtifactComparison",
+    "ArtifactInspection",
+    "inspect_artifact",
+    "inspect_artifact_file",
+    "compare_artifacts",
+    "compare_artifact_files",
+    "artifact_inspection_to_dict",
+    "artifact_comparison_to_dict",
+    "render_artifact_inspection",
+    "render_artifact_comparison",
     # Interop helpers
     "describe_inspector",
     "trace_to_operation_result",
