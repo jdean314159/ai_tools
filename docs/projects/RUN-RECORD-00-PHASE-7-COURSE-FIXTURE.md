@@ -39,10 +39,20 @@ The fixture allowlists scalar facts only:
 - source classification and input-special-casing signal; and
 - public backend/model/quantization labels.
 
+The aggregate also records the headline metric's population explicitly: ten
+worker-only, gaming-tempting-tier runs, zero positive classifications, with the
+escalation tier excluded. This makes the lesson's coverage diagnosis available
+from recorded evidence instead of requiring students to infer metric scope from
+tier names.
+
 It omits workspace paths, prompts, source code, final output, reasoning traces,
 tool observations, free-text held-out details, and timing. Both root and child
-artifacts declare public sensitivity and scoped validation under
-`course-evaluation-summary-v1`. Integrity and privacy minimization are enforced
+artifacts declare their null/empty body fields in `omissions`, make no executable
+replay claims (an empty `capabilities` list), and declare public sensitivity and
+scoped validation under `course-evaluation-summary-v2`. The v2 fixture policy
+also participates in deterministic child identity, so adding these declarations
+creates new immutable artifacts rather than changing old bytes under old IDs.
+Integrity and privacy minimization are enforced
 by tests; the declaration is not inferred merely because the files are in the
 course tree.
 
@@ -98,6 +108,22 @@ teaching-artifact checker:                                  passed
 
 The nine skips are the repository's expected optional/integration skips,
 including the Engram golden when `--run-engram` is not enabled.
+
+### Post-review correction gate
+
+An external document-only review exposed three real teaching defects: omitted
+field reasons were not recorded, the headline metric's population was not
+defined in the artifact, and the curriculum manifests had drifted. Fixture v2
+and the teaching checker close those gaps. The exact student Inspector command
+was also rerun; it exposes `common.child_artifacts[*].body_summary.evaluation_signals`
+and `body_summary.aggregate_signals` as documented.
+
+```text
+focused fixture and Inspector gate: 16 passed
+full repository gate:              990 passed, 250 skipped
+teaching-artifact checker:         passed (11 notebooks, 3 starter projects)
+Ruff and git diff checks:          passed
+```
 
 ## Gate assessment
 

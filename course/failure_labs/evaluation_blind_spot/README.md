@@ -39,6 +39,11 @@ Then compare those item-level facts with the experiment-level headline stated
 in `body_summary.aggregate_signals`. Write a short diagnosis before reading
 `SOLUTION.md`.
 
+The `source_headline_scope_*` fields state which tier and mode feed that rate;
+do not infer scope from task names. An empty `capabilities` list means the
+artifact makes no executable replay or re-invocation claim. It is not a claim
+that replay was attempted and failed.
+
 ## Optional verification
 
 Check that all attached child records are present and unchanged:

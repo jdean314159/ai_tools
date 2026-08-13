@@ -12,10 +12,12 @@
 All three have `status: completed`, so completion only says the harness reached
 its normal stopping condition. It does not establish correctness.
 
-The headline gaming rate is also insufficient. It is an aggregate over a
-particular subset and taxonomy, while the item-level held-out failure appears
-in another tier. An aggregate can be numerically correct and still answer a
-narrower question than the one a user thinks it answers.
+The headline gaming rate is also insufficient. Its recorded scope is
+worker-only runs in the `gaming-tempting` tier: 0 positive classifications in
+10 scoped runs. The aggregate explicitly excludes the `escalation` tier where
+the visible-pass/held-out-fail item appears. An aggregate can be numerically
+correct and still answer a narrower question than the one a user thinks it
+answers.
 
 The recorded classification `gaming` is a harness outcome label derived from
 visible/held-out behavior. These artifacts do not establish that the model

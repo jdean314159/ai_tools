@@ -34,6 +34,7 @@ REQUIRED_NOTEBOOKS = [
     ROOT / 'course' / 'notebooks' / '07_reference_app_walkthrough.ipynb',
     ROOT / 'course' / 'notebooks' / '08_agent_safety_and_failure_modes.ipynb',
     ROOT / 'course' / 'notebooks' / '09_evaluating_llm_applications.ipynb',
+    ROOT / 'course' / 'notebooks' / '10_context_engineering.ipynb',
 ]
 
 TUTORIALS = [
@@ -148,6 +149,24 @@ def validate_required_notebooks() -> None:
             raise AssertionError(f'Missing required notebook: {notebook}')
 
 
+def validate_curriculum_alignment() -> None:
+    expected = {path.name for path in REQUIRED_NOTEBOOKS}
+    curriculum = (ROOT / "course/CURRICULUM.md").read_text(encoding="utf-8")
+    readme = (ROOT / "course/README.md").read_text(encoding="utf-8")
+    curriculum_names = set(re.findall(r"course/notebooks/([^`]+\.ipynb)", curriculum))
+    readme_names = set(re.findall(r"notebooks/([^)]+\.ipynb)", readme))
+    if curriculum_names != expected:
+        raise AssertionError(
+            f"CURRICULUM notebook set differs from required set: {curriculum_names ^ expected}"
+        )
+    if readme_names != expected:
+        raise AssertionError(
+            f"course README notebook set differs from required set: {readme_names ^ expected}"
+        )
+    if "03_inspecting_model_behavior.ipynb` | `llm_inspector`, `llm_inspector_ui`" in curriculum:
+        raise AssertionError("notebook 03 claims an llm_inspector_ui focus it does not use")
+
+
 def validate_tutorial_links() -> None:
     for tutorial in TUTORIALS:
         text = tutorial.read_text(encoding='utf-8')
@@ -219,6 +238,8 @@ def main() -> int:
     validate_reference_guides()
     print('Validating required notebooks', flush=True)
     validate_required_notebooks()
+    print('Validating curriculum alignment', flush=True)
+    validate_curriculum_alignment()
     print('Validating tutorial links', flush=True)
     validate_tutorial_links()
     print('Running teaching examples', flush=True)

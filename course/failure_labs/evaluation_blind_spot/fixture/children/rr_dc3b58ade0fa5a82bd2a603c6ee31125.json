@@ -17,7 +17,7 @@
     },
     "profile_data": {
       "escalations": 0,
-      "fixture_policy": "course-evaluation-summary-v1",
+      "fixture_policy": "course-evaluation-summary-v2",
       "mode": "worker-only",
       "seed": 0
     },
@@ -36,7 +36,7 @@
         "actor_id": "recorder",
         "name": "course.evaluation_blind_spot_fixture",
         "role": "recorder",
-        "version": "1"
+        "version": "2"
       }
     ],
     "attachments": [],
@@ -50,7 +50,28 @@
     },
     "kind": "agent_run",
     "lifecycle": "final",
-    "omissions": [],
+    "omissions": [
+      {
+        "field_path": "/body/elapsed_seconds",
+        "reason": "intentionally_not_recorded"
+      },
+      {
+        "field_path": "/body/steps",
+        "reason": "intentionally_not_recorded"
+      },
+      {
+        "field_path": "/body/final_output",
+        "reason": "intentionally_not_recorded"
+      },
+      {
+        "field_path": "/time/execution_started_at",
+        "reason": "absent_in_source_format"
+      },
+      {
+        "field_path": "/time/execution_finished_at",
+        "reason": "absent_in_source_format"
+      }
+    ],
     "privacy": {
       "body_bytes_sensitivity": "public",
       "declared_content_categories": [
@@ -62,13 +83,13 @@
       "transformations_applied": [
         {
           "description": "allowlisted scalar outcome fields only; workspace paths, prompts, reasoning, tool payloads, source code, and free-text details omitted",
-          "policy_id": "course-evaluation-summary-v1",
-          "policy_version": "1"
+          "policy_id": "course-evaluation-summary-v2",
+          "policy_version": "2"
         }
       ],
       "validation": {
-        "policy_id": "course-evaluation-summary-v1",
-        "policy_version": "1",
+        "policy_id": "course-evaluation-summary-v2",
+        "policy_version": "2",
         "scope": [
           "allowlisted scalar body fields",
           "omission of source free text and filesystem paths"
@@ -80,7 +101,7 @@
     },
     "profile": "agent_lib.asc",
     "profile_version": 1,
-    "record_id": "rr_cdd32c88fab85e6ab0e28c7e52ef0d34",
+    "record_id": "rr_dc3b58ade0fa5a82bd2a603c6ee31125",
     "relationships": [
       {
         "relation_type": "derived_from",

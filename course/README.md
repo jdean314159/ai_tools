@@ -22,7 +22,7 @@ local-first development using open-weight models.
 | Any browser | Colab T4 (15 GB) | Primary path for students without a GPU |
 | 8 GB VRAM | `qwen3.5:9b`, `gemma3:4b` | Laptop discrete GPU |
 | 16 GB VRAM | `qwen3.6:35b-a3b` | MoE, efficient on 16 GB |
-| 24 GB VRAM | `qwen3.6:27b` (when available via Ollama) | RTX 3090/4090 |
+| 24 GB VRAM | `qwen3.6:27b` | RTX 3090/4090 |
 
 All exercises include a Colab fallback. Local Ollama is a one-line swap.
 
@@ -35,6 +35,8 @@ All exercises include a Colab fallback. Local Ollama is a one-line swap.
 ## Course Structure
 
 `CURRICULUM.md` is the canonical manifest for notebook order and status.
+`REPO_SPLIT_DEPENDENCIES.md` inventories monorepo file references that must be
+resolved before extracting the course into its own repository.
 
 
 | Notebook | Topic | Week | Toolkit |

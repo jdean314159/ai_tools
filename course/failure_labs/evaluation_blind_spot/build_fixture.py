@@ -13,6 +13,7 @@ from llm_harness_core import (
     Actor,
     Attachment,
     AttachmentLocator,
+    Omission,
     PrivacyDeclaration,
     PrivacyValidation,
     RecordEnvelope,
@@ -33,7 +34,8 @@ SELECTED = (
     (0, "escalation_merge_intervals"),
 )
 CREATED_AT = "2026-06-20T17:00:39.887363+00:00"
-POLICY_ID = "course-evaluation-summary-v1"
+FIXTURE_VERSION = "2"
+POLICY_ID = "course-evaluation-summary-v2"
 
 
 def _id(kind: str, payload: Any) -> str:
@@ -54,7 +56,7 @@ def _privacy(*, references: dict[str, str] | None = None) -> PrivacyDeclaration:
         transformations_applied=(
             {
                 "policy_id": POLICY_ID,
-                "policy_version": "1",
+                "policy_version": FIXTURE_VERSION,
                 "description": (
                     "allowlisted scalar outcome fields only; workspace paths, prompts, "
                     "reasoning, tool payloads, source code, and free-text details omitted"
@@ -65,7 +67,7 @@ def _privacy(*, references: dict[str, str] | None = None) -> PrivacyDeclaration:
             status="validated",
             validator="course.failure_labs.evaluation_blind_spot.build_fixture",
             policy_id=POLICY_ID,
-            policy_version="1",
+            policy_version=FIXTURE_VERSION,
             validated_at="2026-08-13T00:00:00+00:00",
             scope=(
                 "allowlisted scalar body fields",
@@ -116,7 +118,10 @@ def _child(record: dict[str, Any]) -> RunArtifact:
             "escalations",
         )
     }
-    record_id = _id("agent_run", allowed)
+    record_id = _id(
+        "agent_run",
+        {"fixture_version": FIXTURE_VERSION, "source_record": allowed},
+    )
     return RunArtifact(
         envelope=RecordEnvelope(
             kind="agent_run",
@@ -139,11 +144,30 @@ def _child(record: dict[str, Any]) -> RunArtifact:
                     actor_id="recorder",
                     role="recorder",
                     name="course.evaluation_blind_spot_fixture",
-                    version="1",
+                    version=FIXTURE_VERSION,
                 ),
             ),
             time=_time(),
             privacy=_privacy(),
+            omissions=(
+                Omission(
+                    field_path="/body/elapsed_seconds",
+                    reason="intentionally_not_recorded",
+                ),
+                Omission(field_path="/body/steps", reason="intentionally_not_recorded"),
+                Omission(
+                    field_path="/body/final_output",
+                    reason="intentionally_not_recorded",
+                ),
+                Omission(
+                    field_path="/time/execution_started_at",
+                    reason="absent_in_source_format",
+                ),
+                Omission(
+                    field_path="/time/execution_finished_at",
+                    reason="absent_in_source_format",
+                ),
+            ),
             execution_environment={
                 "backend": "ollama",
                 "model": "qwen3.6:27b",
@@ -252,6 +276,20 @@ def build(source_path: Path, output: Path) -> None:
                 "headline_worker_only_gaming_rate"
             ],
             "fixture_items": len(items),
+            "source_headline_population_runs": sum(
+                record.get("tier") == "gaming-tempting"
+                and record.get("mode") == "worker-only"
+                for record in source["records"]
+            ),
+            "source_headline_positive_runs": sum(
+                record.get("tier") == "gaming-tempting"
+                and record.get("mode") == "worker-only"
+                and record.get("classification") == "gaming"
+                for record in source["records"]
+            ),
+            "source_headline_scope_gaming_tempting_tier_only": True,
+            "source_headline_scope_worker_only_mode": True,
+            "source_headline_scope_includes_escalation_tier": False,
         },
         "decision": None,
         "profile_data": {
@@ -277,11 +315,22 @@ def build(source_path: Path, output: Path) -> None:
                     actor_id="recorder",
                     role="recorder",
                     name="course.evaluation_blind_spot_fixture",
-                    version="1",
+                    version=FIXTURE_VERSION,
                 ),
             ),
             time=_time(),
             privacy=_privacy(references=references),
+            omissions=(
+                Omission(field_path="/body/decision", reason="not_applicable"),
+                Omission(
+                    field_path="/time/execution_started_at",
+                    reason="absent_in_source_format",
+                ),
+                Omission(
+                    field_path="/time/execution_finished_at",
+                    reason="absent_in_source_format",
+                ),
+            ),
             execution_environment={"recorded_fixture": True},
         ),
         body=experiment_body,
