@@ -1,9 +1,9 @@
 # RUN-RECORD-00 — Unified, versioned run artifacts
 
-**Status:** Phases 0–4 complete. Accepted ADR-021 semantics and ADR-022
+**Status:** Phases 0–5 complete. Accepted ADR-021 semantics and ADR-022
 ownership/public API govern the implementation. The common envelope has passed
-the NAV/ASC compatibility gate, generation/agent cross-kind gate, and first
-Inspector consumption gate.
+the NAV/ASC compatibility gate, generation/agent cross-kind gate, first
+Inspector consumption gate, and ASC/NAV experiment-campaign gate.
 **Prepared:** 2026-08-12
 
 ## Purpose
@@ -155,6 +155,9 @@ failure, redaction tests, and two producer adapters pass.
 
 ## Current action
 
-Select the next bounded capability. Experiment/campaign records are the leading
-architectural option, but no successor is selected. Do not infer authorization
-for UI, RAG, photo, or course migrations from Phase 4 completion.
+Phase 5 experiment/campaign records are complete. Select the next bounded
+capability: portable attachment/bundle resolution is the leading architectural
+follow-up if copied experiment artifacts must carry their child records.
+Alternatively, validate a separate producer or course fixture without bundling
+it into this slice. Do not infer authorization for UI, RAG, photo, or broad
+course migration from Phase 5 completion.

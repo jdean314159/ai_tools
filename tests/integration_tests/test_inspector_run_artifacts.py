@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from agent_lib.eval import adapt_asc_record, adapt_nav_v1
+from agent_lib.eval import adapt_asc_campaign, adapt_asc_record, adapt_nav_v1
 from llm_engines import GenerationRecordingPolicy, build_generation_artifact
 from llm_engines.backends.mock import MockEngine
 from llm_engines.contracts import ChatMessage, GenerationRequest
@@ -67,3 +67,21 @@ def test_inspector_explains_generation_nav_and_asc_real_adapters() -> None:
     assert inspections[2].body_summary["profile"] == "agent_lib.asc"
     assert inspections[1].common["privacy"]["validation_status"] == "not_validated"
     assert inspections[2].common["privacy"]["validation_status"] == "not_validated"
+
+
+def test_inspector_explains_real_asc_campaign_adapter_without_flattening_children() -> None:
+    report = {
+        "generated_at": "2026-08-13T12:00:00+00:00",
+        "summary": {"runs": 1, "completed": 1, "timeouts": 0},
+        "records": [_asc_record()],
+    }
+
+    adapted = adapt_asc_campaign(report, lifecycle="final")
+    inspection = inspect_artifact(adapted.experiment)
+
+    assert inspection.body_support == "supported"
+    assert inspection.body_summary["record_type"] == "experiment"
+    assert inspection.body_summary["item_count"] == 1
+    assert inspection.body_summary["child_record_count"] == 1
+    assert len(adapted.children) == 1
+    assert adapted.experiment.body["items"][0]["child_record_id"] == adapted.children[0].envelope.record_id

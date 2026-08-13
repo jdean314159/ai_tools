@@ -7,9 +7,9 @@
 See `STATUS.md` for the authoritative current state, active work priority list,
 and current test gate baseline. NAV-VERIFIABLE-00 is complete with an
 `inconclusive` frozen verdict; it is not an active tuning campaign.
-RUN-RECORD-00 Phase 4 Inspector consumption is complete under ADR-021/022. The
-next bounded capability has not been selected. The checkpoint blocks below are
-historical.
+RUN-RECORD-00 Phase 5 experiment/campaign artifacts are complete under
+ADR-021/022. The next bounded capability has not been selected. The checkpoint
+blocks below are historical.
 
 <!-- AI_TOOLS_STATUS_END -->
 
@@ -17,9 +17,10 @@ historical.
 
 This is the ordered execution plan for the `ai_tools` monorepo.
 
-For the next thread, review the Phase 4 Inspector validation and select one
-bounded capability. Experiment/campaign records are the leading architectural
-option; do not bundle UI or later producer migrations into that choice.
+For the next thread, review the Phase 5 experiment validation and select one
+bounded capability. Portable attachment/bundle resolution is the leading
+architectural option; do not bundle UI or later producer migrations into that
+choice.
 
 ## Planning assumptions
 
@@ -112,7 +113,7 @@ Make `llm_inspector_ui` a reliable teaching and diagnostic workbench.
 
 A new user can launch the workbench and inspect baseline, memory-augmented, and retrieval-augmented runs.
 
-## Phase 4A — RUN-RECORD-00 unified artifacts — PHASE 4 COMPLETE
+## Phase 4A — RUN-RECORD-00 unified artifacts — PHASE 5 COMPLETE
 
 ### Goal
 
@@ -131,7 +132,10 @@ into one schema shape.
   maintainer acceptance run.
 - Completed: Phase 4 Inspector library/CLI loading, kind-specific summaries,
   unsupported-version behavior, and conservative comparison.
-- Candidate next slice: experiment/campaign records.
+- Completed: Phase 5 shared experiment body, ASC/NAV campaign adapters, honest
+  checkpoint/final lifecycles and child-run relationships, and Inspector
+  experiment summaries.
+- Candidate next slice: portable attachment/bundle resolution.
 
 ### Done when
 

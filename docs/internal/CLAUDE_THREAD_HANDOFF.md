@@ -28,7 +28,7 @@ start by reading the historical sections of `SESSION_HANDOFF.md`.
 
 ## Current posture
 
-RUN-RECORD-00 Phase 4 is complete under accepted ADR-021 and ADR-022. The next
+RUN-RECORD-00 Phase 5 is complete under accepted ADR-021 and ADR-022. The next
 bounded consumer slice is unselected. The most recent completed
 empirical campaign, NAV-VERIFIABLE-00, remains closed and must not be extended
 by silently changing its frozen protocol.
@@ -65,8 +65,13 @@ and ASC adapters. Phase 3 added a generation recorder, MockEngine cross-kind
 fixtures, common-reader semantic checks, and a privacy-safe live Ollama
 acceptance run. Phase 4 added Inspector library/CLI loading, separate
 generation/agent summaries, unsupported-version behavior, and comparison that
-does not infer model identity from labels. Read the Phase 4 report before
-selecting the next slice.
+does not infer model identity from labels.
+
+Phase 5 added a shared experiment body plus adapters for ASC's mutable aggregate
+report and NAV's paired campaign files. Completed child runs remain separate
+artifacts linked by ID; ASC timeout rows remain aggregate items, not fabricated
+runs. Inspector now summarizes both experiment profiles. Read
+`RUN-RECORD-00-PHASE-5-EXPERIMENTS.md` before selecting the next slice.
 
 ## What the NAV investigation established
 

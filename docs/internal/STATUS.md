@@ -7,7 +7,7 @@ first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: RUN-RECORD-00 Phase 4 Inspector consumption slice is complete; the
+**Phase: RUN-RECORD-00 Phase 5 experiment/campaign slice is complete; the
 next bounded capability has not been selected. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
@@ -44,6 +44,12 @@ summaries to `llm_inspector`, including unsupported-version handling and
 comparisons that never promote matching labels to model identity. See
 `docs/projects/RUN-RECORD-00-PHASE-4-INSPECTOR.md`. No UI work was included.
 
+Phase 5 adds one shared experiment body, adapters for the mutable ASC report
+and paired NAV campaign outputs, separately addressable published child runs,
+and Inspector experiment summaries. It does not fabricate standalone ASC
+timeout records or claim portable bundling/recomputation. See
+`docs/projects/RUN-RECORD-00-PHASE-5-EXPERIMENTS.md`.
+
 ### Latest completed work — NAV-VERIFIABLE-00
 
 The repository-navigation control investigation is closed at `abcc2f0`.
@@ -72,8 +78,9 @@ checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
 
-RUN-RECORD-00 Phase 4 is complete without UI changes or broader producer
-migration. Select the next bounded capability before implementation.
+RUN-RECORD-00 Phase 5 is complete without UI changes or broader producer
+migration. Select the next bounded capability before implementation; portable
+attachment/bundle resolution is the leading architectural option.
 Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird

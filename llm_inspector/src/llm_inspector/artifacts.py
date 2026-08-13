@@ -19,6 +19,18 @@ from llm_harness_core import (
 SUPPORTED_BODY_CONTRACTS = (
     SupportedBodyContract(kind="generation", body_version=1),
     SupportedBodyContract(
+        kind="experiment",
+        body_version=1,
+        profile="agent_lib.asc_campaign",
+        profile_version=1,
+    ),
+    SupportedBodyContract(
+        kind="experiment",
+        body_version=1,
+        profile="agent_lib.nav_verifiable_campaign",
+        profile_version=1,
+    ),
+    SupportedBodyContract(
         kind="agent_run",
         body_version=1,
         profile="agent_lib.nav",
@@ -142,6 +154,28 @@ def _agent_summary(artifact: RunArtifact) -> dict[str, Any]:
     }
 
 
+def _experiment_summary(artifact: RunArtifact) -> dict[str, Any]:
+    body = artifact.body
+    campaign = body.get("campaign") if isinstance(body.get("campaign"), Mapping) else {}
+    items = body.get("items") if isinstance(body.get("items"), list) else []
+    aggregate = body.get("aggregate")
+    decision = body.get("decision")
+    child_ids: set[str] = set()
+    for relationship in artifact.envelope.relationships:
+        if relationship.relation_type == "contains" and relationship.target_kind == "agent_run":
+            child_ids.add(relationship.target_id)
+    return {
+        "record_type": "experiment",
+        "profile": artifact.envelope.profile,
+        "campaign_name": campaign.get("name"),
+        "lifecycle": artifact.envelope.lifecycle,
+        "item_count": len(items),
+        "child_record_count": len(child_ids),
+        "has_aggregate": isinstance(aggregate, Mapping),
+        "has_decision": isinstance(decision, Mapping),
+    }
+
+
 def inspect_artifact(artifact: RunArtifact) -> ArtifactInspection:
     """Inspect common metadata and dispatch only supported body contracts."""
 
@@ -167,6 +201,8 @@ def inspect_artifact(artifact: RunArtifact) -> ArtifactInspection:
         body_summary = _generation_summary(artifact.body)
     elif artifact.envelope.kind == "agent_run":
         body_summary = _agent_summary(artifact)
+    elif artifact.envelope.kind == "experiment":
+        body_summary = _experiment_summary(artifact)
     else:  # guarded by SUPPORTED_BODY_CONTRACTS
         body_summary = None
     return ArtifactInspection(

@@ -2,7 +2,7 @@
 
 - Prepared: 2026-08-12
 - Repository: `/home/cybernaif/repos/ai_tools`
-- Selected project: RUN-RECORD-00 Phase 4 complete; next slice unselected
+- Selected project: RUN-RECORD-00 Phase 5 complete; next slice unselected
 
 ## Read order
 
@@ -18,8 +18,8 @@ Do not read `SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## First assignment
 
-Review `RUN-RECORD-00-PHASE-4-INSPECTOR.md` and select one bounded capability
-before implementing it. Experiment/campaign records are the leading
+Review `RUN-RECORD-00-PHASE-5-EXPERIMENTS.md` and select one bounded capability
+before implementing it. Portable attachment/bundle resolution is the leading
 architectural option. Do not pull UI, RAG, photo, or course fixtures into it.
 
 ## Critical factual correction
@@ -33,6 +33,8 @@ implemented the dependency-free core envelope plus lossless NAV-v1 and ASC
 adapters. Phase 3 added generation recording, cross-kind tests, and a live
 Ollama acceptance run. Phase 4 added Inspector library/CLI consumption,
 separate generation/agent summaries, and conservative comparisons.
+Phase 5 added ASC/NAV experiment adapters, honest checkpoint/final semantics,
+separate published child artifacts, and Inspector experiment summaries.
 
 ## Working-tree posture
 

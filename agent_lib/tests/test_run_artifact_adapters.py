@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from llm_harness_core import artifact_from_dict, artifact_to_dict
 
-from agent_lib.eval.run_artifact_adapters import adapt_asc_record, adapt_nav_v1, restore_asc_record, restore_nav_v1
+from agent_lib.eval.run_artifact_adapters import (
+    adapt_asc_campaign,
+    adapt_asc_record,
+    adapt_nav_campaign,
+    adapt_nav_v1,
+    restore_asc_record,
+    restore_nav_v1,
+)
 
 
 def _nav_record() -> dict:
@@ -61,3 +68,115 @@ def test_legacy_privacy_is_conservative() -> None:
     artifact = adapt_nav_v1(_nav_record())
     assert artifact.envelope.privacy.body_bytes_sensitivity == "unknown"
     assert artifact.envelope.privacy.validation.status == "not_validated"
+
+
+def test_asc_campaign_separates_published_children_from_timeout_items() -> None:
+    completed = _asc_record()
+    timeout = {
+        **_asc_record(),
+        "task_id": "timeout_task",
+        "status": "timeout",
+        "classification": "timeout",
+        "step_observations": [],
+    }
+    report = {
+        "generated_at": "2026-08-13T12:00:00+00:00",
+        "summary": {"runs": 2, "completed": 1, "timeouts": 1},
+        "records": [completed, timeout],
+    }
+
+    adapted = adapt_asc_campaign(report, lifecycle="checkpoint")
+
+    assert adapted.experiment.envelope.kind == "experiment"
+    assert adapted.experiment.envelope.lifecycle == "checkpoint"
+    assert len(adapted.children) == 1
+    assert len(adapted.experiment.body["items"]) == 2
+    timeout_item = adapted.experiment.body["items"][1]
+    assert timeout_item["status"] == "timeout"
+    assert timeout_item["child_record_id"] is None
+    assert "step_observations" not in timeout_item
+    child_id = adapted.children[0].envelope.record_id
+    assert adapted.experiment.body["items"][0]["child_record_id"] == child_id
+    assert any(r.target_id == child_id for r in adapted.experiment.envelope.relationships)
+    assert artifact_from_dict(artifact_to_dict(adapted.experiment)) == adapted.experiment
+
+
+def test_asc_campaign_requires_caller_to_declare_lifecycle() -> None:
+    report = {"summary": {"runs": 0}, "records": []}
+
+    try:
+        adapt_asc_campaign(report, lifecycle="inferred")
+    except ValueError as exc:
+        assert "lifecycle" in str(exc)
+    else:
+        raise AssertionError("invalid lifecycle was accepted")
+
+
+def test_nav_campaign_checkpoint_and_final_have_honest_child_references() -> None:
+    pairs = [
+        {
+            "task_id": "fixture-task",
+            "tier": "local",
+            "no_ledger": {"exact_correct": False, "tokens": 10},
+            "ledger": {"exact_correct": True, "tokens": 12},
+        }
+    ]
+    no_ledger = _nav_record()
+    no_ledger["config"]["mode"] = "no_ledger"
+    ledger = _nav_record()
+    ledger["config"]["mode"] = "ledger"
+
+    checkpoint = adapt_nav_campaign(pairs)
+    final = adapt_nav_campaign(
+        pairs,
+        summary={"pair_count": 1},
+        decision={"verdict": "continue"},
+        arm_records={
+            ("fixture-task", "no_ledger"): no_ledger,
+            ("fixture-task", "ledger"): ledger,
+        },
+    )
+
+    assert checkpoint.experiment.envelope.lifecycle == "checkpoint"
+    assert checkpoint.children == ()
+    assert final.experiment.envelope.lifecycle == "final"
+    assert len(final.children) == 2
+    assert final.experiment.body["aggregate"] == {"pair_count": 1}
+    assert final.experiment.body["decision"] == {"verdict": "continue"}
+    arm_summaries = final.experiment.body["items"][0]["arms"]
+    assert arm_summaries["no_ledger"]["child_record_id"]
+    assert arm_summaries["ledger"]["child_record_id"]
+    assert "run" not in arm_summaries["ledger"]
+    assert final.experiment.envelope.record_id != checkpoint.experiment.envelope.record_id
+
+
+def test_nav_campaign_rejects_half_final_state() -> None:
+    try:
+        adapt_nav_campaign([], summary={"pair_count": 0})
+    except ValueError as exc:
+        assert "together" in str(exc)
+    else:
+        raise AssertionError("half-final campaign was accepted")
+
+
+def test_campaign_adapters_reject_ambiguous_or_unrelated_children() -> None:
+    asc_record = _asc_record()
+    try:
+        adapt_asc_campaign(
+            {"summary": {"runs": 2}, "records": [asc_record, asc_record]},
+            lifecycle="checkpoint",
+        )
+    except ValueError as exc:
+        assert "duplicate ASC" in str(exc)
+    else:
+        raise AssertionError("duplicate ASC campaign item was accepted")
+
+    try:
+        adapt_nav_campaign(
+            [],
+            arm_records={("not-in-campaign", "ledger"): _nav_record()},
+        )
+    except ValueError as exc:
+        assert "do not belong" in str(exc)
+    else:
+        raise AssertionError("unrelated NAV arm artifact was accepted")

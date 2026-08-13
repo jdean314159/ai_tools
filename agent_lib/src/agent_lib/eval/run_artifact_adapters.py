@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass
 import hashlib
 import json
 from typing import Any, Mapping
@@ -25,6 +26,14 @@ from llm_harness_core import (
 
 
 ADAPTER_VERSION = "1"
+
+
+@dataclass(frozen=True)
+class ExperimentAdaptation:
+    """An experiment artifact plus any published child artifacts it references."""
+
+    experiment: RunArtifact
+    children: tuple[RunArtifact, ...]
 
 
 def _canonical_source(record: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
@@ -91,6 +100,69 @@ def _base_envelope(
         omissions=omissions,
         capabilities=capabilities,
         execution_environment=dict(execution_environment or {}),
+    )
+
+
+def _experiment_envelope(
+    *,
+    profile: str,
+    digest: str,
+    lifecycle: str,
+    relationships: tuple[Relationship, ...],
+    privacy_categories: tuple[str, ...],
+    artifact_created_at: str | None = None,
+) -> RecordEnvelope:
+    time = TimeDeclaration(
+        execution_started_at=TimeValue(status="unknown"),
+        execution_finished_at=TimeValue(status="unknown"),
+        artifact_created_at=(
+            TimeValue(status="value", value=artifact_created_at, source="legacy campaign report")
+            if artifact_created_at
+            else None
+        ),
+        adapted_at=(
+            None
+            if artifact_created_at
+            else TimeValue(
+                status="unknown",
+                source="legacy adapter did not retain wall-clock adaptation time",
+            )
+        ),
+    )
+    return RecordEnvelope(
+        kind="experiment",
+        envelope_schema_version=1,
+        body_version=1,
+        profile=profile,
+        profile_version=1,
+        record_id=_identity(profile, digest),
+        lifecycle=lifecycle,
+        relationships=(
+            Relationship(
+                relation_type="derived_from",
+                target_kind=f"legacy_experiment.{profile}",
+                target_id=f"sha256:{digest}",
+            ),
+            *relationships,
+        ),
+        attachments=(),
+        actors=(
+            Actor(
+                actor_id="adapter",
+                role="adapter",
+                name=f"agent_lib.{profile}_legacy_adapter",
+                version=ADAPTER_VERSION,
+            ),
+        ),
+        time=time,
+        privacy=_legacy_privacy(privacy_categories),
+        omissions=(
+            Omission(field_path="/time/execution_started_at", reason="absent_in_source_format"),
+            Omission(field_path="/time/execution_finished_at", reason="absent_in_source_format"),
+            Omission(field_path="/actors/original_producer", reason="absent_in_source_format"),
+        ),
+        capabilities=(),
+        execution_environment={},
     )
 
 
@@ -258,3 +330,199 @@ def restore_asc_record(artifact: RunArtifact) -> dict[str, Any]:
         "step_observations": deepcopy(list(body.get("steps") or [])),
     }
     return result
+
+
+def adapt_asc_campaign(
+    report: Mapping[str, Any],
+    *,
+    lifecycle: str,
+) -> ExperimentAdaptation:
+    """Adapt an ASC aggregate report without treating timeout rows as run artifacts.
+
+    ``live_probe_results.json`` is rewritten throughout a probe and does not encode
+    whether the requested matrix is complete. The caller must therefore declare
+    whether the captured report is a checkpoint or a final result.
+    """
+
+    if lifecycle not in {"checkpoint", "final", "aborted"}:
+        raise ValueError(f"invalid campaign lifecycle: {lifecycle}")
+    source, digest = _canonical_source(report)
+    records = source.get("records")
+    summary = source.get("summary")
+    if not isinstance(records, list) or not isinstance(summary, Mapping):
+        raise ValueError("expected an ASC campaign report with records and summary")
+
+    children: list[RunArtifact] = []
+    items: list[dict[str, Any]] = []
+    relationships: list[Relationship] = []
+    item_ids: set[str] = set()
+    for index, raw in enumerate(records):
+        if not isinstance(raw, Mapping):
+            raise ValueError(f"ASC campaign record {index} is not an object")
+        record = dict(raw)
+        child: RunArtifact | None = None
+        if record.get("status") == "completed":
+            child = adapt_asc_record(record)
+            children.append(child)
+            relationships.append(
+                Relationship(
+                    relation_type="contains",
+                    target_kind="agent_run",
+                    target_id=child.envelope.record_id,
+                )
+            )
+        item_id = f"{record.get('mode')}:{record.get('seed')}:{record.get('task_id')}"
+        if item_id in item_ids:
+            raise ValueError(f"duplicate ASC campaign item: {item_id}")
+        item_ids.add(item_id)
+        items.append(
+            {
+                "item_id": item_id,
+                "child_record_id": child.envelope.record_id if child else None,
+                "task_id": record.get("task_id"),
+                "tier": record.get("tier"),
+                "mode": record.get("mode"),
+                "seed": record.get("seed"),
+                "status": record.get("status"),
+                "classification": record.get("classification"),
+                "visible_pass": record.get("visible_pass"),
+                "held_out_pass": record.get("held_out_pass"),
+                "escalations": record.get("escalations"),
+                "tamper_attempt_count": len(record.get("tamper_attempts") or []),
+                "input_special_casing": record.get("input_special_casing"),
+            }
+        )
+
+    body = {
+        "campaign": {"name": "ASC live-model integrity probe"},
+        "configuration": {},
+        "items": items,
+        "aggregate": deepcopy(dict(summary)),
+        "decision": None,
+        "profile_data": {"generated_at": source.get("generated_at")},
+    }
+    experiment = RunArtifact(
+        envelope=_experiment_envelope(
+            profile="agent_lib.asc_campaign",
+            digest=digest,
+            lifecycle=lifecycle,
+            relationships=tuple(relationships),
+            privacy_categories=(
+                "experiment_configuration",
+                "evaluation_detail",
+                "child_run_identity",
+            ),
+            artifact_created_at=(
+                str(source["generated_at"]) if source.get("generated_at") else None
+            ),
+        ),
+        body=body,
+    )
+    return ExperimentAdaptation(experiment=experiment, children=tuple(children))
+
+
+def adapt_nav_campaign(
+    pairs: list[Mapping[str, Any]],
+    *,
+    summary: Mapping[str, Any] | None = None,
+    decision: Mapping[str, Any] | None = None,
+    arm_records: Mapping[tuple[str, str], Mapping[str, Any]] | None = None,
+) -> ExperimentAdaptation:
+    """Adapt a NAV paired campaign checkpoint or completed result.
+
+    A campaign is final only when both its separately written summary and
+    decision are supplied. Published arm records are optional; when supplied,
+    they become separately addressable child artifacts rather than embedded
+    copies in the experiment body.
+    """
+
+    if (summary is None) != (decision is None):
+        raise ValueError("NAV summary and decision must be supplied together")
+    normalized_arm_records = dict(arm_records or {})
+    arm_record_digests = {
+        f"{task_id}:{mode}": _canonical_source(record)[1]
+        for (task_id, mode), record in sorted(normalized_arm_records.items())
+    }
+    combined = {
+        "pairs": deepcopy(list(pairs)),
+        "summary": deepcopy(dict(summary)) if summary is not None else None,
+        "decision": deepcopy(dict(decision)) if decision is not None else None,
+        "arm_record_digests": arm_record_digests,
+    }
+    source, digest = _canonical_source(combined)
+    children: list[RunArtifact] = []
+    relationships: list[Relationship] = []
+    child_ids: dict[tuple[str, str], str] = {}
+    for key, raw_record in sorted(normalized_arm_records.items()):
+        task_id, mode = key
+        if mode not in {"no_ledger", "ledger"}:
+            raise ValueError(f"invalid NAV campaign arm mode: {mode}")
+        child = adapt_nav_v1(raw_record)
+        children.append(child)
+        child_ids[(str(task_id), mode)] = child.envelope.record_id
+        relationships.append(
+            Relationship(
+                relation_type="contains",
+                target_kind="agent_run",
+                target_id=child.envelope.record_id,
+            )
+        )
+
+    items: list[dict[str, Any]] = []
+    task_ids: set[str] = set()
+    for index, raw_pair in enumerate(source["pairs"]):
+        if not isinstance(raw_pair, Mapping):
+            raise ValueError(f"NAV campaign pair {index} is not an object")
+        pair = dict(raw_pair)
+        task_id = str(pair.get("task_id") or "")
+        if not task_id or not isinstance(pair.get("no_ledger"), Mapping) or not isinstance(pair.get("ledger"), Mapping):
+            raise ValueError("NAV campaign pairs require task_id and both arm outcomes")
+        if task_id in task_ids:
+            raise ValueError(f"duplicate NAV campaign task: {task_id}")
+        task_ids.add(task_id)
+        items.append(
+            {
+                "item_id": task_id,
+                "task_id": task_id,
+                "tier": pair.get("tier"),
+                "arms": {
+                    mode: {
+                        "child_record_id": child_ids.get((task_id, mode)),
+                        "outcome": deepcopy(dict(pair[mode])),
+                    }
+                    for mode in ("no_ledger", "ledger")
+                },
+            }
+        )
+
+    extra_arm_keys = set(child_ids) - {
+        (task_id, mode)
+        for task_id in task_ids
+        for mode in ("no_ledger", "ledger")
+    }
+    if extra_arm_keys:
+        raise ValueError(f"NAV arm records do not belong to a campaign pair: {sorted(extra_arm_keys)}")
+
+    body = {
+        "campaign": {"name": "NAV-VERIFIABLE-00", "design": "paired"},
+        "configuration": {},
+        "items": items,
+        "aggregate": source["summary"],
+        "decision": source["decision"],
+        "profile_data": {},
+    }
+    experiment = RunArtifact(
+        envelope=_experiment_envelope(
+            profile="agent_lib.nav_verifiable_campaign",
+            digest=digest,
+            lifecycle="final" if summary is not None else "checkpoint",
+            relationships=tuple(relationships),
+            privacy_categories=(
+                "experiment_configuration",
+                "evaluation_detail",
+                "child_run_identity",
+            ),
+        ),
+        body=body,
+    )
+    return ExperimentAdaptation(experiment=experiment, children=tuple(children))

@@ -60,7 +60,10 @@ from .repo_navigation import (
     validate_ground_truth_snapshot,
 )
 from .run_artifact_adapters import (
+    ExperimentAdaptation,
+    adapt_asc_campaign,
     adapt_asc_record,
+    adapt_nav_campaign,
     adapt_nav_v1,
     restore_asc_record,
     restore_nav_v1,
@@ -135,7 +138,10 @@ __all__ = [
     'tree_content_digest',
     'validate_ground_truth_snapshot',
     'adapt_asc_record',
+    'adapt_asc_campaign',
     'adapt_nav_v1',
+    'adapt_nav_campaign',
+    'ExperimentAdaptation',
     'restore_asc_record',
     'restore_nav_v1',
 ]

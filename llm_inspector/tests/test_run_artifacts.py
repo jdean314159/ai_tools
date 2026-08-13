@@ -86,6 +86,21 @@ def _agent(profile="agent_lib.nav") -> RunArtifact:
     )
 
 
+def _experiment(profile="agent_lib.asc_campaign") -> RunArtifact:
+    envelope = _envelope(kind="experiment", profile=profile, profile_version=1)
+    return RunArtifact(
+        envelope=replace(envelope, lifecycle="checkpoint"),
+        body={
+            "campaign": {"name": "fixture campaign"},
+            "configuration": {},
+            "items": [{"item_id": "one"}, {"item_id": "two"}],
+            "aggregate": {"runs": 2},
+            "decision": None,
+            "profile_data": {},
+        },
+    )
+
+
 def test_generation_and_agent_dispatch_to_different_summaries() -> None:
     generation = inspect_artifact(_generation())
     agent = inspect_artifact(_agent())
@@ -96,6 +111,22 @@ def test_generation_and_agent_dispatch_to_different_summaries() -> None:
     assert agent.body_support == "supported"
     assert agent.body_summary["record_type"] == "agent_run"
     assert agent.body_summary["step_count"] == 2
+
+
+def test_experiment_dispatch_preserves_campaign_semantics() -> None:
+    inspection = inspect_artifact(_experiment())
+
+    assert inspection.body_support == "supported"
+    assert inspection.body_summary == {
+        "record_type": "experiment",
+        "profile": "agent_lib.asc_campaign",
+        "campaign_name": "fixture campaign",
+        "lifecycle": "checkpoint",
+        "item_count": 2,
+        "child_record_count": 0,
+        "has_aggregate": True,
+        "has_decision": False,
+    }
 
 
 def test_unsupported_profile_keeps_envelope_and_refuses_body_interpretation() -> None:
