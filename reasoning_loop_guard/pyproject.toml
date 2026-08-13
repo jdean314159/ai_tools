@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Engine-neutral reasoning-loop detection and redirect advice."
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
 dependencies = []
 
 [project.optional-dependencies]

@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Production RAG library: document-type-aware chunking, hybrid retrieval, and RAGAS evaluation"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "Apache-2.0"}
+license = {text = "MIT"}
 
 dependencies = [
     "chromadb>=0.5",

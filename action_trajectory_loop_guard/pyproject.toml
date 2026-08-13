@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Pure loop detection over typed agent tool-action trajectories."
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
 dependencies = []
 
 [project.optional-dependencies]

@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Interactive chat and inspection UI for llm_inspector, llm_engines, and engram"
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
 dependencies = [
   "streamlit",
   "engram",

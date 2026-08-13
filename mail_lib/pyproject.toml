@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Deterministic local Thunderbird mail reading, indexing, rules, and triage helpers."
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
 dependencies = []
 
 [project.optional-dependencies]

@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Inspect and compare LLM context augmentation (memory, retrieval, prompt assembly)."
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
 dependencies = ["llm-harness-core"]
 
 [project.optional-dependencies]

@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Inspectable agent orchestration built on the ai_tools stack."
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
 dependencies = [
   "llm_inspector",
   "engram",
