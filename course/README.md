@@ -48,7 +48,6 @@ resolved before extracting the course into its own repository.
 | [04](notebooks/04_memory_with_engram.ipynb) | Memory | 5–6 | `engram` |
 | [05](notebooks/05_rag_with_rag_lib.ipynb) | RAG Fundamentals | 7 | `rag_lib` |
 | [06](notebooks/06_advanced_rag_and_evaluation.ipynb) | Advanced RAG + Evaluation | 8 | `rag_lib`, `llm_inspector` |
-| [07](notebooks/07_reference_app_walkthrough.ipynb) | Reference App Walkthrough | 9 | all |
 | [08](notebooks/08_agent_safety_and_failure_modes.ipynb) | Agent Safety + Failure Modes | 9 | `agent_lib` |
 | [09](notebooks/09_evaluating_llm_applications.ipynb) | Evaluation + Capstone | 10 | `llm_harness_core` |
 | [10](notebooks/10_context_engineering.ipynb) | Context Engineering + Inference Optimisation | 10–11 | `llm_engines`, `rag_lib`, `engram` |
@@ -72,17 +71,22 @@ bundle. Students use Inspector to discover that completed runs and a healthy
 headline metric conceal both a false-negative visible oracle and a
 visible-pass/held-out-fail evaluation gap.
 
+[`failure_labs/generation_provenance_gap/`](failure_labs/generation_provenance_gap/)
+uses a privacy-safe real Ollama generation to show why a correct output and a
+matching model label do not establish model identity or deterministic replay.
+
 ## Getting Started
 
 ```bash
-# Install all packages into the shared venv
-cd ~/ai_tools
-make install
-
-# Launch Jupyter
-source ~/ai-env/bin/activate
-pip install jupyter
-jupyter notebook course/notebooks/00_llm_fundamentals.ipynb
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip install jupyter
+jupyter notebook notebooks/00_llm_fundamentals.ipynb
 ```
+
+The version pins describe the compatible package set. Until those distributions
+are published, maintainers can satisfy the same versions with wheels or editable
+installs from an adjacent `ai_tools` checkout.
 
 For Colab: open any notebook and click the Colab badge at the top of the cell.

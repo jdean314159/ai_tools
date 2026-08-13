@@ -1,0 +1,81 @@
+{
+  "body": {
+    "model_identity": {
+      "backend": "ollama",
+      "reported_label": "qwen3:8b",
+      "requested_label": "qwen3:8b"
+    },
+    "outcome": "completed",
+    "provenance": {
+      "/request": {"method": "copied", "supplied_by": "recorder"},
+      "/response/usage": {"method": "measured", "supplied_by": "engine"}
+    },
+    "request": {
+      "json_schema": null,
+      "max_tokens": 32,
+      "messages": [{"content": "Reply with exactly: RUN_RECORD_LIVE_OK", "name": null, "role": "user", "tool_call_id": null, "tool_calls": []}],
+      "metadata": {"acceptance": "RUN-RECORD-00-phase-3"},
+      "optimizations": null,
+      "session_id": null,
+      "stop": [],
+      "temperature": 0.0
+    },
+    "response": {
+      "active_optimizations": [],
+      "backend": "ollama",
+      "cache_stats": {"cache_key": null, "prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 0},
+      "finish_reason": "stop",
+      "message": {"content": "RUN_RECORD_LIVE_OK", "name": null, "role": "assistant", "tool_call_id": null, "tool_calls": []},
+      "model_name": "qwen3:8b",
+      "usage": {"input_tokens": 25, "latency_ms": 2685.416, "output_tokens": 6, "total_tokens": 31}
+    }
+  },
+  "envelope": {
+    "actors": [
+      {"actor_id": "engine", "name": "ollama", "role": "original_producer", "version": null},
+      {"actor_id": "recorder", "name": "llm_engines.generation_artifacts", "role": "recorder", "version": "1"}
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [],
+    "envelope_schema_version": 1,
+    "execution_environment": {"backend": "ollama", "engine_class": "llm_engines.backends.ollama.OllamaEngine"},
+    "kind": "generation",
+    "lifecycle": "final",
+    "omissions": [
+      {"field_path": "/body/response/cache_stats", "reason": "not_reported_by_backend"},
+      {"field_path": "/body/model_identity/digest", "reason": "not_reported_by_backend"},
+      {"field_path": "/body/model_identity/quantization", "reason": "not_reported_by_backend"},
+      {"field_path": "/envelope/execution_environment/runtime_build", "reason": "not_reported_by_backend"},
+      {"field_path": "/envelope/execution_environment/tokenizer", "reason": "not_reported_by_backend"},
+      {"field_path": "/envelope/execution_environment/chat_template", "reason": "not_reported_by_backend"},
+      {"field_path": "/body/response/usage/queue_ms", "reason": "not_reported_by_backend"},
+      {"field_path": "/body/response/usage/prefill_ms", "reason": "not_reported_by_backend"},
+      {"field_path": "/body/response/raw_provider_payload", "reason": "not_reported_by_backend"}
+    ],
+    "privacy": {
+      "body_bytes_sensitivity": "public",
+      "declared_content_categories": ["synthetic_acceptance_prompt", "model_output"],
+      "reference_sensitivity": {},
+      "transformations_applied": [],
+      "validation": {
+        "policy_id": "synthetic-fixed-prompt",
+        "policy_version": "1",
+        "scope": ["request messages", "response message", "raw payload omission"],
+        "status": "validated",
+        "validated_at": "2026-08-13T20:04:19.845403Z",
+        "validator": "RUN-RECORD-00-maintainer-acceptance"
+      }
+    },
+    "profile": null,
+    "profile_version": null,
+    "record_id": "rr_245158bec992497fa83eb2f7fd9d6ae6",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {"precision": "microsecond", "source": "llm_engines.generation_artifacts", "status": "value", "value": "2026-08-13T20:04:22.530937Z"},
+      "execution_finished_at": {"precision": "microsecond", "source": "llm_engines.generation_artifacts", "status": "value", "value": "2026-08-13T20:04:22.530937Z"},
+      "execution_started_at": {"precision": "microsecond", "source": "llm_engines.generation_artifacts", "status": "value", "value": "2026-08-13T20:04:19.845425Z"}
+    }
+  }
+}

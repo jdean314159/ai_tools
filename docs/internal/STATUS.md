@@ -7,8 +7,10 @@ first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: RUN-RECORD-00 Phase 7 offline course-fixture pilot is complete; the
-next bounded capability has not been selected. NAV-VERIFIABLE-00 remains complete
+**Phase: RUN-RECORD-00 Phase 8 course extraction readiness is complete. The
+course has an isolated portability gate and two offline RunRecord labs, but the
+repository split remains blocked on package distribution and replacement of
+the legacy reference-app notebook. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
 remains parked and output-isolated.**
@@ -61,6 +63,12 @@ evaluation/aggregate signals to Inspector because the original Phase 6 view
 could not answer the lesson's frozen diagnostic question. See
 `docs/projects/RUN-RECORD-00-PHASE-7-COURSE-FIXTURE.md`.
 
+Phase 8 removes student-facing monorepo file dependencies, pins the compatible
+package set, adds an isolated copied-course gate, and records a real local
+generation provenance lab. It also proves notebook 07 targets a retired
+application API and excludes it from the extraction set rather than porting it.
+See `docs/projects/RUN-RECORD-00-PHASE-8-COURSE-PORTABILITY.md`.
+
 ### Latest completed work — NAV-VERIFIABLE-00
 
 The repository-navigation control investigation is closed at `abcc2f0`.
@@ -89,9 +97,10 @@ checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
 
-RUN-RECORD-00 Phase 7 is complete without UI changes, a course-repository
-split, or broader producer migration. Select the next project or bounded
-capability from a concrete consumer need.
+RUN-RECORD-00 Phase 8 is complete without UI changes or a course-repository
+split. The next course action is a release decision: publish/build a wheelhouse
+for the pinned packages, then rebuild notebook 07 against public APIs before
+creating the separate repository.
 Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird

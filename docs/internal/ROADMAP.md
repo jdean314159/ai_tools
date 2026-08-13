@@ -7,8 +7,9 @@
 See `STATUS.md` for the authoritative current state, active work priority list,
 and current test gate baseline. NAV-VERIFIABLE-00 is complete with an
 `inconclusive` frozen verdict; it is not an active tuning campaign.
-RUN-RECORD-00 Phase 7 offline course-fixture validation is complete under
-ADR-021/022. The next bounded capability has not been selected. The checkpoint
+RUN-RECORD-00 Phase 8 course portability validation is complete under
+ADR-021/022. Package distribution and a public-API replacement for legacy
+notebook 07 remain before the repository split. The checkpoint
 blocks below are historical.
 
 <!-- AI_TOOLS_STATUS_END -->
@@ -17,9 +18,9 @@ blocks below are historical.
 
 This is the ordered execution plan for the `ai_tools` monorepo.
 
-For the next thread, review the Phase 7 course-fixture validation and select the
-next project or one bounded capability from a concrete consumer need. Do not
-infer a broad curriculum rewrite from the single successful pilot.
+For the next thread, decide how the pinned ai_tools distributions will be
+published or supplied, then rebuild the reference-app lesson against public
+APIs. Do not copy the retired application integration into the new course.
 
 ## Planning assumptions
 
@@ -139,8 +140,11 @@ into one schema shape.
   bundle loading.
 - Completed: Phase 7 privacy-safe offline course fixture, resolved-child
   Inspector summaries, deterministic rebuild, and no-GPU diagnosis gate.
-- Candidate next step: select the curriculum-repository project or another
-  concrete consumer; do not extend RunRecord speculatively.
+- Completed: Phase 8 copied-course portability gate, removal of student-facing
+  monorepo file dependencies, exact package pins, and a real generation-level
+  provenance lab.
+- Next gate: make the pinned distributions independently installable and
+  replace the excluded legacy reference-app notebook before repository creation.
 
 ### Done when
 

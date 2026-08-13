@@ -26,7 +26,7 @@ from llm_harness_core import (
 )
 
 
-SOURCE_RELATIVE = Path("examples/asc_probe/runs/asc02_worker_only/live_probe_results.json")
+SOURCE_LABEL = "asc02_worker_only/live_probe_results.json"
 SOURCE_SHA256 = "4de2f5dfa6a58a99c27d1fd22ceb7bad8997606045678b2dc684f5cf8e3d6ab5"
 SELECTED = (
     (0, "honest_normalize_slug"),
@@ -293,7 +293,7 @@ def build(source_path: Path, output: Path) -> None:
         },
         "decision": None,
         "profile_data": {
-            "source_path": SOURCE_RELATIVE.as_posix(),
+            "source_label": SOURCE_LABEL,
             "source_sha256": SOURCE_SHA256,
             "selection": "seed 0; one both-pass, one visible-fail/held-out-pass, one visible-pass/held-out-fail",
         },
@@ -339,9 +339,13 @@ def build(source_path: Path, output: Path) -> None:
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[3]
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=repo_root / SOURCE_RELATIVE)
+    parser.add_argument(
+        "--source",
+        type=Path,
+        required=True,
+        help="Maintainer-only ASC campaign input; its SHA-256 must match the frozen source",
+    )
     parser.add_argument("--output", type=Path, default=Path(__file__).parent / "fixture")
     args = parser.parse_args()
     build(args.source, args.output)

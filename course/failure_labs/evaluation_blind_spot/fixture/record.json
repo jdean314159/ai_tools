@@ -53,7 +53,7 @@
     ],
     "profile_data": {
       "selection": "seed 0; one both-pass, one visible-fail/held-out-pass, one visible-pass/held-out-fail",
-      "source_path": "examples/asc_probe/runs/asc02_worker_only/live_probe_results.json",
+      "source_label": "asc02_worker_only/live_probe_results.json",
       "source_sha256": "4de2f5dfa6a58a99c27d1fd22ceb7bad8997606045678b2dc684f5cf8e3d6ab5"
     }
   },
@@ -159,7 +159,7 @@
     },
     "profile": "agent_lib.asc_campaign",
     "profile_version": 1,
-    "record_id": "rr_f2ca59107c9b52c69c52f4ef53385f1a",
+    "record_id": "rr_eb46f07a284b542eaf501552b6d86de8",
     "relationships": [
       {
         "relation_type": "contains",

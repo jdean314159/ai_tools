@@ -21,11 +21,11 @@ recorded evidence supports.
 
 ## Inspect the bundle
 
-From the repository root after installing `llm_inspector`:
+From the course repository root after installing `llm_inspector`:
 
 ```bash
 llm-inspect artifact show \
-  course/failure_labs/evaluation_blind_spot/fixture \
+  failure_labs/evaluation_blind_spot/fixture \
   --format json
 ```
 
@@ -63,9 +63,12 @@ campaign and allowlists scalar outcome facts. It omits workspace paths, source
 code, prompts, final output, reasoning traces, tool payloads, free-text test
 details, and timing. The source SHA-256 is frozen in `build_fixture.py`.
 
-To rebuild into a new empty directory:
+Students do not need the private provenance input to use the committed bundle.
+Maintainers with the frozen ASC campaign source can rebuild into a new empty
+directory by supplying it explicitly:
 
 ```bash
-python course/failure_labs/evaluation_blind_spot/build_fixture.py \
+python failure_labs/evaluation_blind_spot/build_fixture.py \
+  --source /path/to/asc02_worker_only/live_probe_results.json \
   --output /tmp/evaluation-blind-spot-fixture
 ```

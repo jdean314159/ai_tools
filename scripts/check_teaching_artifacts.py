@@ -44,6 +44,10 @@ TUTORIALS = [
 ]
 
 EXAMPLE_COMMAND_SPECS = [
+    {
+        "cmd": [sys.executable, str(ROOT / "course/check_portability.py")],
+        "expect": "Course portability gate passed",
+    },
     {"cmd": [sys.executable, str(ROOT / 'rag_lib' / 'examples' / 'broken_rag_lab.py')], "expect": 'Evaluation summary'},
     {"cmd": [sys.executable, str(ROOT / 'engram' / 'examples' / 'memory_contamination_lab.py')], "expect": '=== Scenario:'},
     {"cmd": [sys.executable, str(ROOT / 'agent_lib' / 'examples' / 'agent_red_team_lab.py')], "expect": '=== Scenario:'},
@@ -60,6 +64,19 @@ EXAMPLE_COMMAND_SPECS = [
             "json",
         ],
         "expect": '"evaluation_signals"',
+    },
+    {
+        "cmd": [
+            sys.executable,
+            "-m",
+            "llm_inspector.cli",
+            "artifact",
+            "show",
+            str(ROOT / "course/failure_labs/generation_provenance_gap/record.json"),
+            "--format",
+            "json",
+        ],
+        "expect": '"field_path": "/body/model_identity/digest"',
     },
 ]
 
@@ -153,15 +170,17 @@ def validate_curriculum_alignment() -> None:
     expected = {path.name for path in REQUIRED_NOTEBOOKS}
     curriculum = (ROOT / "course/CURRICULUM.md").read_text(encoding="utf-8")
     readme = (ROOT / "course/README.md").read_text(encoding="utf-8")
-    curriculum_names = set(re.findall(r"course/notebooks/([^`]+\.ipynb)", curriculum))
+    curriculum_names = set(re.findall(r"(?:course/)?notebooks/([^`]+\.ipynb)", curriculum))
     readme_names = set(re.findall(r"notebooks/([^)]+\.ipynb)", readme))
+    excluded = {"07_reference_app_walkthrough.ipynb"}
     if curriculum_names != expected:
         raise AssertionError(
             f"CURRICULUM notebook set differs from required set: {curriculum_names ^ expected}"
         )
-    if readme_names != expected:
+    if readme_names != expected - excluded:
         raise AssertionError(
-            f"course README notebook set differs from required set: {readme_names ^ expected}"
+            "course README notebook set differs from extraction set: "
+            f"{readme_names ^ (expected - excluded)}"
         )
     if "03_inspecting_model_behavior.ipynb` | `llm_inspector`, `llm_inspector_ui`" in curriculum:
         raise AssertionError("notebook 03 claims an llm_inspector_ui focus it does not use")
