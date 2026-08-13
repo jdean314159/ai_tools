@@ -61,12 +61,15 @@ from .repo_navigation import (
 )
 from .run_artifact_adapters import (
     ExperimentAdaptation,
+    PreparedExperimentBundle,
     adapt_asc_campaign,
     adapt_asc_record,
     adapt_nav_campaign,
     adapt_nav_v1,
     restore_asc_record,
     restore_nav_v1,
+    prepare_experiment_bundle,
+    write_experiment_bundle,
 )
 
 __all__ = [
@@ -142,6 +145,9 @@ __all__ = [
     'adapt_nav_v1',
     'adapt_nav_campaign',
     'ExperimentAdaptation',
+    'PreparedExperimentBundle',
+    'prepare_experiment_bundle',
     'restore_asc_record',
     'restore_nav_v1',
+    'write_experiment_bundle',
 ]

@@ -7,7 +7,7 @@ first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: RUN-RECORD-00 Phase 5 experiment/campaign slice is complete; the
+**Phase: RUN-RECORD-00 Phase 6 portable-bundle slice is complete; the
 next bounded capability has not been selected. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
@@ -50,6 +50,11 @@ and Inspector experiment summaries. It does not fabricate standalone ASC
 timeout records or claim portable bundling/recomputation. See
 `docs/projects/RUN-RECORD-00-PHASE-5-EXPERIMENTS.md`.
 
+Phase 6 adds atomic local-directory bundle writing, exact-byte SHA-256
+attachments, confined resolution and tamper detection, derived experiment
+bundle identities, and Inspector directory loading. See
+`docs/projects/RUN-RECORD-00-PHASE-6-BUNDLES.md`.
+
 ### Latest completed work — NAV-VERIFIABLE-00
 
 The repository-navigation control investigation is closed at `abcc2f0`.
@@ -78,9 +83,9 @@ checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
 
-RUN-RECORD-00 Phase 5 is complete without UI changes or broader producer
-migration. Select the next bounded capability before implementation; portable
-attachment/bundle resolution is the leading architectural option.
+RUN-RECORD-00 Phase 6 is complete without UI changes or broader producer
+migration. Select the next bounded capability from a concrete consumer need;
+course fixtures are now viable.
 Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird

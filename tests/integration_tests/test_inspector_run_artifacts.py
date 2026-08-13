@@ -2,11 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from agent_lib.eval import adapt_asc_campaign, adapt_asc_record, adapt_nav_v1
+from agent_lib.eval import (
+    adapt_asc_campaign,
+    adapt_asc_record,
+    adapt_nav_v1,
+    write_experiment_bundle,
+)
 from llm_engines import GenerationRecordingPolicy, build_generation_artifact
 from llm_engines.backends.mock import MockEngine
 from llm_engines.contracts import ChatMessage, GenerationRequest
-from llm_inspector import inspect_artifact
+from llm_inspector import inspect_artifact, inspect_artifact_path
 
 
 def _nav_record() -> dict:
@@ -85,3 +90,21 @@ def test_inspector_explains_real_asc_campaign_adapter_without_flattening_childre
     assert inspection.body_summary["child_record_count"] == 1
     assert len(adapted.children) == 1
     assert adapted.experiment.body["items"][0]["child_record_id"] == adapted.children[0].envelope.record_id
+
+
+def test_asc_campaign_bundle_resolves_through_inspector(tmp_path) -> None:
+    report = {
+        "generated_at": "2026-08-13T12:00:00+00:00",
+        "summary": {"runs": 1, "completed": 1, "timeouts": 0},
+        "records": [_asc_record()],
+    }
+    adapted = adapt_asc_campaign(report, lifecycle="final")
+    root = tmp_path / "bundle"
+
+    written = write_experiment_bundle(adapted, root)
+    inspection = inspect_artifact_path(root)
+
+    assert written.artifact.envelope.record_id != adapted.experiment.envelope.record_id
+    assert inspection.body_summary["record_type"] == "experiment"
+    assert inspection.common["attachment_resolutions"][0]["status"] == "resolved"
+    assert not any("unresolved" in notice for notice in inspection.notices)

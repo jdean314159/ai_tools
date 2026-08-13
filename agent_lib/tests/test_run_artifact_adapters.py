@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from llm_harness_core import artifact_from_dict, artifact_to_dict
+from llm_harness_core import artifact_from_dict, artifact_to_dict, load_artifact_bundle
 
 from agent_lib.eval.run_artifact_adapters import (
     adapt_asc_campaign,
     adapt_asc_record,
     adapt_nav_campaign,
     adapt_nav_v1,
+    prepare_experiment_bundle,
     restore_asc_record,
     restore_nav_v1,
+    write_experiment_bundle,
 )
 
 
@@ -180,3 +182,46 @@ def test_campaign_adapters_reject_ambiguous_or_unrelated_children() -> None:
         assert "do not belong" in str(exc)
     else:
         raise AssertionError("unrelated NAV arm artifact was accepted")
+
+
+def test_experiment_bundle_is_a_new_derived_snapshot_with_exact_child_bytes() -> None:
+    report = {
+        "summary": {"runs": 1, "completed": 1},
+        "records": [_asc_record()],
+    }
+    adaptation = adapt_asc_campaign(report, lifecycle="final")
+
+    prepared = prepare_experiment_bundle(adaptation)
+
+    assert prepared.artifact.envelope.record_id != adaptation.experiment.envelope.record_id
+    assert adaptation.experiment.envelope.attachments == ()
+    assert len(prepared.artifact.envelope.attachments) == 1
+    attachment = prepared.artifact.envelope.attachments[0]
+    assert attachment.logical_role == "child_run_artifact"
+    assert attachment.declared_inclusion == "bundled"
+    assert attachment.requirement == "optional"
+    assert attachment.locator.value.startswith("children/")
+    assert attachment.attachment_id in prepared.attachment_bytes
+    assert prepared.artifact.envelope.privacy.reference_sensitivity[attachment.attachment_id] == "unknown"
+    assert any(
+        relationship.relation_type == "derived_from"
+        and relationship.target_id == adaptation.experiment.envelope.record_id
+        for relationship in prepared.artifact.envelope.relationships
+    )
+
+
+def test_write_experiment_bundle_resolves_then_detects_tampering(tmp_path) -> None:
+    adaptation = adapt_asc_campaign(
+        {"summary": {"runs": 1}, "records": [_asc_record()]},
+        lifecycle="final",
+    )
+    root = tmp_path / "campaign-bundle"
+
+    bundle = write_experiment_bundle(adaptation, str(root))
+
+    assert bundle.artifact.envelope.kind == "experiment"
+    assert [result.status for result in bundle.resolutions] == ["resolved"]
+    child_path = root / bundle.artifact.envelope.attachments[0].locator.value
+    child_path.write_text("tampered", encoding="utf-8")
+    reloaded = load_artifact_bundle(root)
+    assert [result.status for result in reloaded.resolutions] == ["digest_mismatch"]

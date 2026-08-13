@@ -28,7 +28,7 @@ start by reading the historical sections of `SESSION_HANDOFF.md`.
 
 ## Current posture
 
-RUN-RECORD-00 Phase 5 is complete under accepted ADR-021 and ADR-022. The next
+RUN-RECORD-00 Phase 6 is complete under accepted ADR-021 and ADR-022. The next
 bounded consumer slice is unselected. The most recent completed
 empirical campaign, NAV-VERIFIABLE-00, remains closed and must not be extended
 by silently changing its frozen protocol.
@@ -72,6 +72,11 @@ report and NAV's paired campaign files. Completed child runs remain separate
 artifacts linked by ID; ASC timeout rows remain aggregate items, not fabricated
 runs. Inspector now summarizes both experiment profiles. Read
 `RUN-RECORD-00-PHASE-5-EXPERIMENTS.md` before selecting the next slice.
+
+Phase 6 added atomic portable local-directory bundles, exact-byte SHA-256 child
+attachments, confined resolution and tamper detection, a new derived identity
+for bundled experiment snapshots, and Inspector bundle-directory loading. Read
+`RUN-RECORD-00-PHASE-6-BUNDLES.md` before selecting the next slice.
 
 ## What the NAV investigation established
 

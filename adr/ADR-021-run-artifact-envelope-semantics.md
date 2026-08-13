@@ -263,3 +263,11 @@ Deferred:
 - generation recording and live-engine acceptance (Phase 3);
 - inspector comparison, broader campaigns, RAG, photo artifacts, and course
   fixtures (Phase 4+).
+
+## Implementation note — Phase 6
+
+Phase 6 selected SHA-256 over the exact stored attachment bytes for portable
+local-directory bundles. Artifact JSON uses deterministic sorted-key, indented
+UTF-8 with a trailing newline. Resolution remains reader-computed; bundle
+writing creates a new derived artifact when attachment declarations are added
+rather than changing declarations under an existing record identity.

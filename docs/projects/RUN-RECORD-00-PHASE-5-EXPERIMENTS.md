@@ -100,6 +100,5 @@ trace construction or token accounting.
 Phase 5 proves that the common envelope and a shared experiment body can
 represent two materially different campaign producers while preserving their
 lifecycle and child-record semantics. The result deliberately stops before
-portable bundling. The next architectural question is attachment/bundle
-resolution if copied experiments must carry their children; otherwise the
-project can move to a separate producer or course-fixture validation slice.
+portable bundling. Phase 6 subsequently implemented local-directory attachment
+and bundle resolution; see `RUN-RECORD-00-PHASE-6-BUNDLES.md`.

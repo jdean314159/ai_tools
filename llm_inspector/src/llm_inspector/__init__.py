@@ -75,6 +75,7 @@ from llm_inspector.artifacts import (
     artifact_inspection_to_dict,
     inspect_artifact,
     inspect_artifact_file,
+    inspect_artifact_path,
     render_artifact_comparison,
     render_artifact_inspection,
 )
@@ -140,6 +141,7 @@ __all__ = [
     "ArtifactInspection",
     "inspect_artifact",
     "inspect_artifact_file",
+    "inspect_artifact_path",
     "compare_artifacts",
     "compare_artifact_files",
     "artifact_inspection_to_dict",

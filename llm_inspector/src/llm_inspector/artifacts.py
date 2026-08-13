@@ -8,10 +8,12 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from llm_harness_core import (
+    AttachmentResolution,
     RunArtifact,
     SupportedBodyContract,
     body_support_status,
     load_artifact,
+    load_artifact_bundle,
     summarize_artifact,
 )
 
@@ -176,17 +178,38 @@ def _experiment_summary(artifact: RunArtifact) -> dict[str, Any]:
     }
 
 
-def inspect_artifact(artifact: RunArtifact) -> ArtifactInspection:
+def inspect_artifact(
+    artifact: RunArtifact,
+    *,
+    attachment_resolutions: tuple[AttachmentResolution, ...] = (),
+) -> ArtifactInspection:
     """Inspect common metadata and dispatch only supported body contracts."""
 
     support = body_support_status(artifact, SUPPORTED_BODY_CONTRACTS)
     common = _common(artifact)
+    common["attachment_resolutions"] = [
+        {
+            "attachment_id": resolution.attachment_id,
+            "status": resolution.status,
+            "declared_inclusion": resolution.declared_inclusion,
+            "requirement": resolution.requirement,
+            "detail": resolution.detail,
+        }
+        for resolution in attachment_resolutions
+    ]
     common["body_interpretation"] = support
     notices: list[str] = []
     if artifact.envelope.privacy.validation.status != "validated":
         notices.append("privacy declaration is not validated")
     if artifact.envelope.omissions:
         notices.append(f"artifact declares {len(artifact.envelope.omissions)} omitted fields")
+    for resolution in attachment_resolutions:
+        if resolution.status == "digest_mismatch":
+            notices.append(f"attachment {resolution.attachment_id} has a digest mismatch")
+        elif resolution.status == "unresolved" and resolution.declared_inclusion == "bundled":
+            notices.append(f"bundled attachment {resolution.attachment_id} is unresolved")
+        elif resolution.status == "unresolved" and resolution.requirement == "required":
+            notices.append(f"required attachment {resolution.attachment_id} is detached")
     if support == "unsupported":
         notices.append(
             "body/profile version is unsupported; body-dependent privacy claims are unvalidated"
@@ -215,6 +238,19 @@ def inspect_artifact(artifact: RunArtifact) -> ArtifactInspection:
 
 def inspect_artifact_file(path: str | Path) -> ArtifactInspection:
     return inspect_artifact(load_artifact(path))
+
+
+def inspect_artifact_path(path: str | Path) -> ArtifactInspection:
+    """Inspect either an artifact JSON file or a portable bundle directory."""
+
+    candidate = Path(path)
+    if candidate.is_dir():
+        bundle = load_artifact_bundle(candidate)
+        return inspect_artifact(
+            bundle.artifact,
+            attachment_resolutions=bundle.resolutions,
+        )
+    return inspect_artifact_file(candidate)
 
 
 def _model_labels(inspection: ArtifactInspection) -> dict[str, Any]:

@@ -1,9 +1,10 @@
 # RUN-RECORD-00 — Unified, versioned run artifacts
 
-**Status:** Phases 0–5 complete. Accepted ADR-021 semantics and ADR-022
+**Status:** Phases 0–6 complete. Accepted ADR-021 semantics and ADR-022
 ownership/public API govern the implementation. The common envelope has passed
 the NAV/ASC compatibility gate, generation/agent cross-kind gate, first
-Inspector consumption gate, and ASC/NAV experiment-campaign gate.
+Inspector consumption gate, ASC/NAV experiment-campaign gate, and portable
+local-bundle gate.
 **Prepared:** 2026-08-12
 
 ## Purpose
@@ -155,9 +156,8 @@ failure, redaction tests, and two producer adapters pass.
 
 ## Current action
 
-Phase 5 experiment/campaign records are complete. Select the next bounded
-capability: portable attachment/bundle resolution is the leading architectural
-follow-up if copied experiment artifacts must carry their child records.
-Alternatively, validate a separate producer or course fixture without bundling
-it into this slice. Do not infer authorization for UI, RAG, photo, or broad
-course migration from Phase 5 completion.
+Phase 6 portable local bundles are complete. Select the next bounded capability
+from a concrete consumer need. Course fixtures are now a viable validation
+slice; archive/signing/export-policy and remote-resolver work remain deferred
+until an actual exchange boundary requires them. Do not infer authorization for
+UI, RAG, photo, or broad course migration from Phase 6 completion.

@@ -235,6 +235,16 @@ This path is intentionally small. It is meant to support mailbox/session-based o
 
 ---
 
+## Experiment artifact adapters
+
+`agent_lib.eval` adapts existing ASC and NAV campaign outputs into the shared
+experiment artifact body. `write_experiment_bundle(...)` creates a new derived
+experiment snapshot and packages its published child agent-run artifacts under
+confined, digest-checked paths. Timeout or aggregate-only campaign items are not
+promoted into fabricated standalone run records.
+
+---
+
 ## Qwen repository-navigation evaluation
 
 `agent_lib.eval.repo_navigation` implements the read-only NAV-TEST-00 harness. It composes the

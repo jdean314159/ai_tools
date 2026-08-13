@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
 from pathlib import Path
 
 from llm_harness_core import (
     Actor,
+    Attachment,
+    AttachmentLocator,
     Omission,
     PrivacyDeclaration,
     PrivacyValidation,
@@ -13,10 +16,12 @@ from llm_harness_core import (
     TimeDeclaration,
     TimeValue,
     dump_artifact,
+    write_artifact_bundle,
 )
 from llm_inspector.artifacts import (
     compare_artifacts,
     inspect_artifact,
+    inspect_artifact_path,
     render_artifact_comparison,
     render_artifact_inspection,
 )
@@ -191,3 +196,61 @@ def test_artifact_cli_show_and_compare(tmp_path: Path, capsys) -> None:
     compared = capsys.readouterr().out
     assert "same_kind: false" in compared
     assert "model_identity_equal: \"not_determined\"" in compared
+
+
+def _bundled_experiment(data: bytes) -> RunArtifact:
+    attachment = Attachment(
+        attachment_id="child",
+        logical_role="child_run_artifact",
+        locator=AttachmentLocator(
+            type="bundled-file",
+            value="children/child.json",
+            digest=hashlib.sha256(data).hexdigest(),
+            digest_algorithm="sha256",
+        ),
+        declared_inclusion="bundled",
+        requirement="optional",
+    )
+    artifact = _experiment()
+    return replace(
+        artifact,
+        envelope=replace(
+            artifact.envelope,
+            attachments=(attachment,),
+            privacy=replace(
+                artifact.envelope.privacy,
+                reference_sensitivity={"child": "public"},
+            ),
+        ),
+    )
+
+
+def test_bundle_inspection_surfaces_resolution_without_printing_local_path(tmp_path: Path) -> None:
+    data = b"child artifact bytes"
+    root = tmp_path / "bundle"
+    write_artifact_bundle(_bundled_experiment(data), root, {"child": data})
+
+    inspection = inspect_artifact_path(root)
+
+    assert inspection.common["attachment_resolutions"] == [
+        {
+            "attachment_id": "child",
+            "status": "resolved",
+            "declared_inclusion": "bundled",
+            "requirement": "optional",
+            "detail": None,
+        }
+    ]
+    assert str(tmp_path) not in render_artifact_inspection(inspection)
+
+
+def test_bundle_cli_reports_digest_mismatch(tmp_path: Path, capsys) -> None:
+    data = b"child artifact bytes"
+    root = tmp_path / "bundle"
+    write_artifact_bundle(_bundled_experiment(data), root, {"child": data})
+    (root / "children/child.json").write_bytes(b"tampered")
+
+    assert main(["artifact", "show", str(root), "--format", "json"]) == 0
+    shown = capsys.readouterr().out
+    assert '"status": "digest_mismatch"' in shown
+    assert "has a digest mismatch" in shown

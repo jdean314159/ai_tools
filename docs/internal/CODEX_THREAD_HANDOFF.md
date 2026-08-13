@@ -2,7 +2,7 @@
 
 - Prepared: 2026-08-12
 - Repository: `/home/cybernaif/repos/ai_tools`
-- Selected project: RUN-RECORD-00 Phase 5 complete; next slice unselected
+- Selected project: RUN-RECORD-00 Phase 6 complete; next slice unselected
 
 ## Read order
 
@@ -18,9 +18,10 @@ Do not read `SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## First assignment
 
-Review `RUN-RECORD-00-PHASE-5-EXPERIMENTS.md` and select one bounded capability
-before implementing it. Portable attachment/bundle resolution is the leading
-architectural option. Do not pull UI, RAG, photo, or course fixtures into it.
+Review `RUN-RECORD-00-PHASE-6-BUNDLES.md` and select one bounded capability
+before implementing it. Course fixtures are viable, but no successor is
+selected. Do not pull UI, RAG, or photo producers into it without a concrete
+need.
 
 ## Critical factual correction
 
@@ -35,6 +36,8 @@ Ollama acceptance run. Phase 4 added Inspector library/CLI consumption,
 separate generation/agent summaries, and conservative comparisons.
 Phase 5 added ASC/NAV experiment adapters, honest checkpoint/final semantics,
 separate published child artifacts, and Inspector experiment summaries.
+Phase 6 added portable local-directory bundles, exact-byte integrity, confined
+resolution, experiment-child packaging, and Inspector bundle loading.
 
 ## Working-tree posture
 

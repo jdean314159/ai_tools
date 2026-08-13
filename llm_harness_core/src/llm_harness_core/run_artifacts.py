@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, fields
+import hashlib
 import json
+import os
 from pathlib import Path
+import shutil
+import tempfile
 from typing import Any, Literal, Mapping
 
 
@@ -236,6 +240,27 @@ class RunArtifact:
 
 
 @dataclass(frozen=True)
+class AttachmentResolution:
+    """Reader-computed state for one attachment in a particular bundle copy."""
+
+    attachment_id: str
+    status: Literal["resolved", "unresolved", "digest_mismatch"]
+    declared_inclusion: Literal["bundled", "detached"]
+    requirement: Literal["required", "optional"]
+    resolved_path: str | None = None
+    detail: str | None = None
+
+
+@dataclass(frozen=True)
+class ArtifactBundle:
+    """A loaded root artifact and attachment observations for one bundle path."""
+
+    artifact: RunArtifact
+    resolutions: tuple[AttachmentResolution, ...]
+    root: Path
+
+
+@dataclass(frozen=True)
 class SupportedBodyContract:
     kind: str
     body_version: int
@@ -265,6 +290,14 @@ def artifact_to_dict(artifact: RunArtifact) -> dict[str, Any]:
     """Return a JSON-compatible representation of an artifact."""
 
     return asdict(artifact)
+
+
+def artifact_to_json_bytes(artifact: RunArtifact) -> bytes:
+    """Serialize the exact UTF-8 byte representation used by bundle digests."""
+
+    return (
+        json.dumps(artifact_to_dict(artifact), indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
 
 
 def _construct(cls: type[Any], payload: Mapping[str, Any], **overrides: Any) -> Any:
@@ -364,10 +397,228 @@ def load_artifact(path: str | Path) -> RunArtifact:
 
 
 def dump_artifact(artifact: RunArtifact, path: str | Path) -> None:
-    Path(path).write_text(
-        json.dumps(artifact_to_dict(artifact), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    Path(path).write_bytes(artifact_to_json_bytes(artifact))
+
+
+def _digest_bytes(data: bytes, algorithm: str) -> str:
+    if algorithm != "sha256":
+        raise ArtifactValidationError(f"unsupported attachment digest algorithm: {algorithm}")
+    return hashlib.sha256(data).hexdigest()
+
+
+def _digest_file(path: Path, algorithm: str) -> str:
+    if algorithm != "sha256":
+        raise ArtifactValidationError(f"unsupported attachment digest algorithm: {algorithm}")
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _confined_bundle_path(root: Path, relative: str, *, label: str) -> Path:
+    candidate = Path(relative)
+    if candidate == Path(".") or candidate.is_absolute() or ".." in candidate.parts:
+        raise ArtifactValidationError(f"{label} must be a confined bundle-relative path")
+    resolved = (root / candidate).resolve(strict=False)
+    try:
+        resolved.relative_to(root.resolve())
+    except ValueError as exc:
+        raise ArtifactValidationError(f"{label} escapes the bundle root") from exc
+    return resolved
+
+
+def resolve_artifact_attachments(
+    artifact: RunArtifact,
+    bundle_root: str | Path,
+) -> tuple[AttachmentResolution, ...]:
+    """Resolve bundled-file attachments without allowing bundle-root escape."""
+
+    root = Path(bundle_root).resolve()
+    resolutions: list[AttachmentResolution] = []
+    for attachment in artifact.envelope.attachments:
+        locator = attachment.locator
+        if attachment.declared_inclusion == "detached":
+            resolutions.append(
+                AttachmentResolution(
+                    attachment_id=attachment.attachment_id,
+                    status="unresolved",
+                    declared_inclusion="detached",
+                    requirement=attachment.requirement,
+                    detail="intentionally detached from this bundle copy",
+                )
+            )
+            continue
+        if locator.type != "bundled-file" or locator.value is None:
+            resolutions.append(
+                AttachmentResolution(
+                    attachment_id=attachment.attachment_id,
+                    status="unresolved",
+                    declared_inclusion=attachment.declared_inclusion,
+                    requirement=attachment.requirement,
+                    detail="attachment has no bundle-file locator",
+                )
+            )
+            continue
+        try:
+            resolved = _confined_bundle_path(
+                root,
+                locator.value,
+                label="bundle-file locator",
+            )
+        except ArtifactValidationError:
+            resolutions.append(
+                AttachmentResolution(
+                    attachment_id=attachment.attachment_id,
+                    status="unresolved",
+                    declared_inclusion=attachment.declared_inclusion,
+                    requirement=attachment.requirement,
+                    detail="bundle-file locator escapes through a symbolic link",
+                )
+            )
+            continue
+        if not resolved.is_file():
+            resolutions.append(
+                AttachmentResolution(
+                    attachment_id=attachment.attachment_id,
+                    status="unresolved",
+                    declared_inclusion=attachment.declared_inclusion,
+                    requirement=attachment.requirement,
+                    resolved_path=str(resolved),
+                    detail="bundled file is absent or is not a regular file",
+                )
+            )
+            continue
+        try:
+            actual_digest = _digest_file(resolved, locator.digest_algorithm)
+        except ArtifactValidationError as exc:
+            resolutions.append(
+                AttachmentResolution(
+                    attachment_id=attachment.attachment_id,
+                    status="unresolved",
+                    declared_inclusion=attachment.declared_inclusion,
+                    requirement=attachment.requirement,
+                    resolved_path=str(resolved),
+                    detail=str(exc),
+                )
+            )
+            continue
+        if actual_digest != locator.digest:
+            resolutions.append(
+                AttachmentResolution(
+                    attachment_id=attachment.attachment_id,
+                    status="digest_mismatch",
+                    declared_inclusion=attachment.declared_inclusion,
+                    requirement=attachment.requirement,
+                    resolved_path=str(resolved),
+                    detail=f"expected {locator.digest_algorithm}:{locator.digest}",
+                )
+            )
+            continue
+        resolutions.append(
+            AttachmentResolution(
+                attachment_id=attachment.attachment_id,
+                status="resolved",
+                declared_inclusion=attachment.declared_inclusion,
+                requirement=attachment.requirement,
+                resolved_path=str(resolved),
+            )
+        )
+    return tuple(resolutions)
+
+
+def load_artifact_bundle(
+    bundle_root: str | Path,
+    *,
+    artifact_filename: str = "record.json",
+) -> ArtifactBundle:
+    root = Path(bundle_root).resolve()
+    artifact_path = _confined_bundle_path(
+        root,
+        artifact_filename,
+        label="artifact filename",
     )
+    artifact = load_artifact(artifact_path)
+    return ArtifactBundle(
+        artifact=artifact,
+        resolutions=resolve_artifact_attachments(artifact, root),
+        root=root,
+    )
+
+
+def write_artifact_bundle(
+    artifact: RunArtifact,
+    bundle_root: str | Path,
+    attachment_bytes: Mapping[str, bytes],
+    *,
+    artifact_filename: str = "record.json",
+) -> ArtifactBundle:
+    """Atomically create a new confined bundle after validating exact bytes."""
+
+    target = Path(bundle_root)
+    if target.exists():
+        raise FileExistsError(f"bundle target already exists: {target}")
+    _confined_bundle_path(target.resolve(strict=False), artifact_filename, label="artifact filename")
+    attachment_id_list = [item.attachment_id for item in artifact.envelope.attachments]
+    attachment_ids = set(attachment_id_list)
+    if len(attachment_id_list) != len(attachment_ids):
+        raise ArtifactValidationError("attachment IDs must be unique for bundling")
+    bundled_paths = [
+        item.locator.value
+        for item in artifact.envelope.attachments
+        if item.declared_inclusion == "bundled"
+    ]
+    if len(bundled_paths) != len(set(bundled_paths)):
+        raise ArtifactValidationError("bundled attachment paths must be unique")
+    sensitivity_ids = set(artifact.envelope.privacy.reference_sensitivity)
+    if sensitivity_ids != attachment_ids:
+        raise ArtifactValidationError(
+            "attachment IDs and privacy reference-sensitivity IDs must match for bundling"
+        )
+    extras = set(attachment_bytes) - attachment_ids
+    if extras:
+        raise ArtifactValidationError(f"bytes supplied for unknown attachments: {sorted(extras)}")
+
+    parent = target.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f".{target.name}.tmp-", dir=parent))
+    try:
+        (temporary / artifact_filename).parent.mkdir(parents=True, exist_ok=True)
+        (temporary / artifact_filename).write_bytes(artifact_to_json_bytes(artifact))
+        for attachment in artifact.envelope.attachments:
+            if attachment.declared_inclusion == "detached":
+                if attachment.attachment_id in attachment_bytes:
+                    raise ArtifactValidationError(
+                        f"bytes supplied for detached attachment: {attachment.attachment_id}"
+                    )
+                continue
+            data = attachment_bytes.get(attachment.attachment_id)
+            if data is None:
+                raise ArtifactValidationError(
+                    f"bundled attachment bytes are missing: {attachment.attachment_id}"
+                )
+            locator = attachment.locator
+            if locator.type != "bundled-file" or locator.value is None:
+                raise ArtifactValidationError(
+                    f"bundled attachment requires a bundled-file locator: {attachment.attachment_id}"
+                )
+            if locator.value == artifact_filename:
+                raise ArtifactValidationError(
+                    f"attachment collides with root artifact file: {attachment.attachment_id}"
+                )
+            actual_digest = _digest_bytes(data, locator.digest_algorithm)
+            if actual_digest != locator.digest:
+                raise ArtifactValidationError(
+                    f"attachment digest mismatch before write: {attachment.attachment_id}"
+                )
+            destination = temporary / str(locator.value)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(data)
+        os.replace(temporary, target)
+    except BaseException:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    return load_artifact_bundle(target, artifact_filename=artifact_filename)
 
 
 def summarize_artifact(artifact: RunArtifact) -> dict[str, Any]:

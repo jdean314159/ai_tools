@@ -21,7 +21,7 @@ from llm_inspector.artifacts import (
     artifact_comparison_to_dict,
     artifact_inspection_to_dict,
     compare_artifact_files,
-    inspect_artifact_file,
+    inspect_artifact_path,
     render_artifact_comparison,
     render_artifact_inspection,
 )
@@ -113,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     if args.cmd == "artifact":
         if args.artifact_cmd == "show":
-            inspection = inspect_artifact_file(args.path)
+            inspection = inspect_artifact_path(args.path)
             if args.format == "json":
                 print(json.dumps(artifact_inspection_to_dict(inspection), indent=2, sort_keys=True))
             else:

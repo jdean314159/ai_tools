@@ -60,9 +60,9 @@ settled; see the suite tier definitions in the root README).
 `llm_engines` or adapted by `agent_lib`:
 
 ```python
-from llm_inspector import inspect_artifact_file, render_artifact_inspection
+from llm_inspector import inspect_artifact_path, render_artifact_inspection
 
-inspection = inspect_artifact_file("generation-record.json")
+inspection = inspect_artifact_path("generation-record.json")  # or a bundle directory
 print(render_artifact_inspection(inspection))
 ```
 
@@ -70,13 +70,16 @@ The CLI exposes the same library surface:
 
 ```bash
 llm-inspect artifact show generation-record.json
+llm-inspect artifact show campaign-bundle/
 llm-inspect artifact compare before.json after.json --format json
 ```
 
-Supported bodies currently include generation v1 and the NAV/ASC agent-run v1
-profiles. Unknown body/profile versions remain envelope-readable but are not
-interpreted. Comparisons report label equality separately and never infer that
-two records used an identical model without stronger artifact/runtime facts.
+Supported bodies currently include generation v1, the NAV/ASC agent-run v1
+profiles, and the ASC/NAV experiment v1 profiles. Bundle inspection surfaces
+missing or modified attachments without printing resolved absolute paths.
+Unknown body/profile versions remain envelope-readable but are not interpreted.
+Comparisons report label equality separately and never infer that two records
+used an identical model without stronger artifact/runtime facts.
 
 ## Responsibilities
 

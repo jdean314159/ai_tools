@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
+from pathlib import Path
 from typing import Any, Mapping
 from uuid import NAMESPACE_URL, uuid5
 
 from llm_harness_core import (
     Actor,
+    ArtifactBundle,
+    Attachment,
+    AttachmentLocator,
     CapabilityClaim,
     CapabilityRequirement,
     DeterminismClaim,
@@ -22,6 +26,8 @@ from llm_harness_core import (
     RunArtifact,
     TimeDeclaration,
     TimeValue,
+    artifact_to_json_bytes,
+    write_artifact_bundle,
 )
 
 
@@ -34,6 +40,14 @@ class ExperimentAdaptation:
 
     experiment: RunArtifact
     children: tuple[RunArtifact, ...]
+
+
+@dataclass(frozen=True)
+class PreparedExperimentBundle:
+    """A derived experiment artifact and the exact attachment bytes it declares."""
+
+    artifact: RunArtifact
+    attachment_bytes: Mapping[str, bytes]
 
 
 def _canonical_source(record: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
@@ -526,3 +540,110 @@ def adapt_nav_campaign(
         body=body,
     )
     return ExperimentAdaptation(experiment=experiment, children=tuple(children))
+
+
+def prepare_experiment_bundle(
+    adaptation: ExperimentAdaptation,
+) -> PreparedExperimentBundle:
+    """Prepare a new derived experiment snapshot with bundled child artifacts."""
+
+    experiment = adaptation.experiment
+    if experiment.envelope.kind != "experiment":
+        raise ValueError("experiment bundle preparation requires an experiment artifact")
+    children_by_id = {child.envelope.record_id: child for child in adaptation.children}
+    if len(children_by_id) != len(adaptation.children):
+        raise ValueError("experiment children must have unique record IDs")
+    related_child_ids = {
+        relationship.target_id
+        for relationship in experiment.envelope.relationships
+        if relationship.relation_type == "contains"
+        and relationship.target_kind == "agent_run"
+    }
+    if set(children_by_id) != related_child_ids:
+        raise ValueError(
+            "published experiment children must exactly match contains relationships"
+        )
+
+    attachments: list[Attachment] = []
+    attachment_bytes: dict[str, bytes] = {}
+    reference_sensitivity = dict(experiment.envelope.privacy.reference_sensitivity)
+    digest_inputs: list[dict[str, str]] = []
+    for record_id, child in sorted(children_by_id.items()):
+        data = artifact_to_json_bytes(child)
+        digest = hashlib.sha256(data).hexdigest()
+        attachment_id = f"child-{record_id}"
+        relative_path = f"children/{record_id}.json"
+        attachments.append(
+            Attachment(
+                attachment_id=attachment_id,
+                logical_role="child_run_artifact",
+                locator=AttachmentLocator(
+                    type="bundled-file",
+                    value=relative_path,
+                    digest=digest,
+                    digest_algorithm="sha256",
+                ),
+                declared_inclusion="bundled",
+                requirement="optional",
+            )
+        )
+        attachment_bytes[attachment_id] = data
+        reference_sensitivity[attachment_id] = "unknown"
+        digest_inputs.append(
+            {"record_id": record_id, "path": relative_path, "sha256": digest}
+        )
+
+    _, bundle_digest = _canonical_source(
+        {
+            "source_record_id": experiment.envelope.record_id,
+            "children": digest_inputs,
+        }
+    )
+    bundle_record_id = _identity(
+        f"{experiment.envelope.profile}.bundle",
+        bundle_digest,
+    )
+    bundled_envelope = replace(
+        experiment.envelope,
+        record_id=bundle_record_id,
+        relationships=(
+            Relationship(
+                relation_type="derived_from",
+                target_kind="experiment",
+                target_id=experiment.envelope.record_id,
+            ),
+            *experiment.envelope.relationships,
+        ),
+        attachments=tuple(attachments),
+        actors=(
+            *experiment.envelope.actors,
+            Actor(
+                actor_id="bundle_writer",
+                role="recorder",
+                name="agent_lib.experiment_bundle_writer",
+                version=ADAPTER_VERSION,
+            ),
+        ),
+        privacy=replace(
+            experiment.envelope.privacy,
+            reference_sensitivity=reference_sensitivity,
+        ),
+    )
+    return PreparedExperimentBundle(
+        artifact=RunArtifact(envelope=bundled_envelope, body=deepcopy(experiment.body)),
+        attachment_bytes=attachment_bytes,
+    )
+
+
+def write_experiment_bundle(
+    adaptation: ExperimentAdaptation,
+    bundle_root: str | Path,
+) -> ArtifactBundle:
+    """Write a new portable experiment bundle to a previously absent directory."""
+
+    prepared = prepare_experiment_bundle(adaptation)
+    return write_artifact_bundle(
+        prepared.artifact,
+        bundle_root,
+        prepared.attachment_bytes,
+    )

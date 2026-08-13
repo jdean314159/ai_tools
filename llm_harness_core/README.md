@@ -70,6 +70,19 @@ or profile version. Use `body_support_status(...)` with the contracts supported
 by the consuming application before interpreting body fields. Privacy metadata
 is a declaration for downstream policy, never an export authorization.
 
+Portable local-directory bundles use `write_artifact_bundle(...)` and
+`load_artifact_bundle(...)`. The writer creates a previously absent directory,
+verifies SHA-256 over the exact attachment bytes, and refuses path escape or
+overwrite. Loading computes attachment resolution without mutating the stored
+record:
+
+```python
+from llm_harness_core import load_artifact_bundle
+
+bundle = load_artifact_bundle("campaign-bundle")
+print([item.status for item in bundle.resolutions])
+```
+
 ## Current support status
 
 This is a **core** package and an **authoritative** source for shared contracts.
