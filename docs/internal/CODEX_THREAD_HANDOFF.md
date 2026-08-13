@@ -2,7 +2,7 @@
 
 - Prepared: 2026-08-12
 - Repository: `/home/cybernaif/repos/ai_tools`
-- Selected project: RUN-RECORD-00 Phase 6 complete; next slice unselected
+- Selected project: RUN-RECORD-00 Phase 7 complete; next project unselected
 
 ## Read order
 
@@ -18,10 +18,9 @@ Do not read `SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## First assignment
 
-Review `RUN-RECORD-00-PHASE-6-BUNDLES.md` and select one bounded capability
-before implementing it. Course fixtures are viable, but no successor is
-selected. Do not pull UI, RAG, or photo producers into it without a concrete
-need.
+Review `RUN-RECORD-00-PHASE-7-COURSE-FIXTURE.md` and select the next project or
+one bounded capability before implementation. The pilot supports a separate
+curriculum project but does not authorize a broad course rewrite by itself.
 
 ## Critical factual correction
 
@@ -38,6 +37,8 @@ Phase 5 added ASC/NAV experiment adapters, honest checkpoint/final semantics,
 separate published child artifacts, and Inspector experiment summaries.
 Phase 6 added portable local-directory bundles, exact-byte integrity, confined
 resolution, experiment-child packaging, and Inspector bundle loading.
+Phase 7 added one minimized ASC teaching fixture and the generic resolved-child
+Inspector summaries it forced.
 
 ## Working-tree posture
 

@@ -6,7 +6,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Iterable
 
@@ -48,6 +47,19 @@ EXAMPLE_COMMAND_SPECS = [
     {"cmd": [sys.executable, str(ROOT / 'engram' / 'examples' / 'memory_contamination_lab.py')], "expect": '=== Scenario:'},
     {"cmd": [sys.executable, str(ROOT / 'agent_lib' / 'examples' / 'agent_red_team_lab.py')], "expect": '=== Scenario:'},
     {"cmd": [sys.executable, str(ROOT / 'course' / 'starter_projects' / 'source_grounded_qa' / 'eval.py')], "expect": 'Evaluation summary'},
+    {
+        "cmd": [
+            sys.executable,
+            "-m",
+            "llm_inspector.cli",
+            "artifact",
+            "show",
+            str(ROOT / "course/failure_labs/evaluation_blind_spot/fixture"),
+            "--format",
+            "json",
+        ],
+        "expect": '"evaluation_signals"',
+    },
 ]
 
 PYTHONPATH = ':'.join([

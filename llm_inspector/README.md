@@ -77,6 +77,9 @@ llm-inspect artifact compare before.json after.json --format json
 Supported bodies currently include generation v1, the NAV/ASC agent-run v1
 profiles, and the ASC/NAV experiment v1 profiles. Bundle inspection surfaces
 missing or modified attachments without printing resolved absolute paths.
+Resolved child-run attachments receive separate sanitized summaries, including
+explicit scalar evaluation signals when present; prompts, reasoning, tool
+payloads, source, and final output are not printed.
 Unknown body/profile versions remain envelope-readable but are not interpreted.
 Comparisons report label equality separately and never infer that two records
 used an identical model without stronger artifact/runtime facts.

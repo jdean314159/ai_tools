@@ -1,6 +1,6 @@
 # RUN-RECORD-00 — Unified, versioned run artifacts
 
-**Status:** Phases 0–6 complete under ADR-021 and ADR-022.
+**Status:** Phases 0–7 complete under ADR-021 and ADR-022.
 **Last updated:** 2026-08-13.
 
 ## Outcome
@@ -49,6 +49,7 @@ re-execution are explicit capability claims, never inferred from record kind.
 | 4 | Inspector loading, kind-specific summaries, unsupported-version behavior, and conservative comparison | `RUN-RECORD-00-PHASE-4-INSPECTOR.md` |
 | 5 | Shared experiment body and ASC/NAV campaign adapters | `RUN-RECORD-00-PHASE-5-EXPERIMENTS.md` |
 | 6 | Exact-byte local bundles, confined resolution, tamper detection, and child-run packaging | `RUN-RECORD-00-PHASE-6-BUNDLES.md` |
+| 7 | Privacy-safe offline course fixture and resolved-child Inspector diagnosis | `RUN-RECORD-00-PHASE-7-COURSE-FIXTURE.md` |
 
 ## Settled decisions
 
@@ -94,11 +95,12 @@ re-execution are explicit capability claims, never inferred from record kind.
   tokenizer/template/runtime identity without leaking host-specific details.
 - Whether a concrete exchange boundary requires signing, encryption, export
   policy, archive packaging, or remote attachment resolution.
-- Which concrete consumer should validate the format next. Course fixtures are
-  viable now, but are not authorized merely by completion of this project.
+- Which additional concrete consumer, if any, should validate the format after
+  the successful single-fixture course pilot.
 
 ## Current action
 
-Select the next bounded capability from a concrete consumer need. Do not reopen
+The bounded course-fixture pilot passes. Select the next project or capability
+from a concrete consumer need. Do not reopen
 the settled ownership, layering, identity, replay, or local-bundle decisions
 without a forcing failure from a real producer or consumer.

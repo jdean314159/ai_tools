@@ -133,6 +133,10 @@ python course/starter_projects/source_grounded_qa/eval.py
 
 This shows an important idea early: **LLM applications should be compared and evaluated, not just admired when they produce text.**
 
+For a no-GPU example using a recorded real local-model campaign, continue with
+`course/failure_labs/evaluation_blind_spot/README.md`. It demonstrates why a
+completed run and a green headline metric can still hide an evaluation failure.
+
 ### 5. Read the learning path before choosing packages
 
 Open:

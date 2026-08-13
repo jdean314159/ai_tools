@@ -116,6 +116,7 @@ def test_generation_and_agent_dispatch_to_different_summaries() -> None:
     assert agent.body_support == "supported"
     assert agent.body_summary["record_type"] == "agent_run"
     assert agent.body_summary["step_count"] == 2
+    assert agent.body_summary["evaluation_signals"] == {}
 
 
 def test_experiment_dispatch_preserves_campaign_semantics() -> None:
@@ -131,6 +132,8 @@ def test_experiment_dispatch_preserves_campaign_semantics() -> None:
         "child_record_count": 0,
         "has_aggregate": True,
         "has_decision": False,
+        "aggregate_signals": {"runs": 2},
+        "decision_signals": {},
     }
 
 

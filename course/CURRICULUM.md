@@ -15,4 +15,8 @@ This file is the canonical notebook sequence for the teaching layer. Keep `START
 | 08 | `course/notebooks/08_agent_safety_and_failure_modes.ipynb` | `agent_lib` | scaffolded |
 | 09 | `course/notebooks/09_evaluating_llm_applications.ipynb` | `llm_harness_core`, integration evaluation | scaffolded |
 
+The recorded failure lab at
+`course/failure_labs/evaluation_blind_spot/` supplements notebooks 03 and 09.
+It is an offline exercise, not an additional notebook in the ordered sequence.
+
 `engram` is the default teaching memory layer. Full `engram` is the advanced path for learners who need richer persistent memory behavior and are ready for the additional dependency and policy surface.

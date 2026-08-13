@@ -28,7 +28,7 @@ start by reading the historical sections of `SESSION_HANDOFF.md`.
 
 ## Current posture
 
-RUN-RECORD-00 Phase 6 is complete under accepted ADR-021 and ADR-022. The next
+RUN-RECORD-00 Phase 7 is complete under accepted ADR-021 and ADR-022. The next
 bounded consumer slice is unselected. The most recent completed
 empirical campaign, NAV-VERIFIABLE-00, remains closed and must not be extended
 by silently changing its frozen protocol.
@@ -77,6 +77,13 @@ Phase 6 added atomic portable local-directory bundles, exact-byte SHA-256 child
 attachments, confined resolution and tamper detection, a new derived identity
 for bundled experiment snapshots, and Inspector bundle-directory loading. Read
 `RUN-RECORD-00-PHASE-6-BUNDLES.md` before selecting the next slice.
+
+Phase 7 added a single privacy-safe, no-GPU course fixture from the ASC
+worker-only campaign. It forced generic Inspector traversal and sanitized
+summaries for resolved child artifacts. The student can diagnose the visible
+oracle false negative and false positive using Inspector output alone. Read
+`RUN-RECORD-00-PHASE-7-COURSE-FIXTURE.md`; do not infer a full curriculum
+rewrite from this bounded pilot.
 
 ## What the NAV investigation established
 

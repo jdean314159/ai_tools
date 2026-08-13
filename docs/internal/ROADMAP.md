@@ -7,7 +7,7 @@
 See `STATUS.md` for the authoritative current state, active work priority list,
 and current test gate baseline. NAV-VERIFIABLE-00 is complete with an
 `inconclusive` frozen verdict; it is not an active tuning campaign.
-RUN-RECORD-00 Phase 6 portable local bundles are complete under
+RUN-RECORD-00 Phase 7 offline course-fixture validation is complete under
 ADR-021/022. The next bounded capability has not been selected. The checkpoint
 blocks below are historical.
 
@@ -17,9 +17,9 @@ blocks below are historical.
 
 This is the ordered execution plan for the `ai_tools` monorepo.
 
-For the next thread, review the Phase 6 bundle validation and select one bounded
-capability from a concrete consumer need. Course fixtures are viable; do not
-bundle UI or later producer migrations into that choice.
+For the next thread, review the Phase 7 course-fixture validation and select the
+next project or one bounded capability from a concrete consumer need. Do not
+infer a broad curriculum rewrite from the single successful pilot.
 
 ## Planning assumptions
 
@@ -112,7 +112,7 @@ Make `llm_inspector_ui` a reliable teaching and diagnostic workbench.
 
 A new user can launch the workbench and inspect baseline, memory-augmented, and retrieval-augmented runs.
 
-## Phase 4A — RUN-RECORD-00 unified artifacts — PHASE 6 COMPLETE
+## Phase 4A — RUN-RECORD-00 unified artifacts — PHASE 7 COMPLETE
 
 ### Goal
 
@@ -137,7 +137,10 @@ into one schema shape.
 - Completed: Phase 6 exact-byte bundle writing, confined resolution,
   experiment-child packaging, privacy-reference enforcement, and Inspector
   bundle loading.
-- Candidate next slice: course fixtures or another concrete consumer.
+- Completed: Phase 7 privacy-safe offline course fixture, resolved-child
+  Inspector summaries, deterministic rebuild, and no-GPU diagnosis gate.
+- Candidate next step: select the curriculum-repository project or another
+  concrete consumer; do not extend RunRecord speculatively.
 
 ### Done when
 

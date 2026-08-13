@@ -62,6 +62,14 @@ Three minimal scaffolds for independent work after the notebooks:
 - [`starter_projects/source_grounded_qa/`](starter_projects/source_grounded_qa/) —
   retrieval-backed Q&A with `rag_lib`
 
+## Recorded failure labs
+
+[`failure_labs/evaluation_blind_spot/`](failure_labs/evaluation_blind_spot/)
+is an offline, no-GPU exercise built from a privacy-safe portable RunRecord
+bundle. Students use Inspector to discover that completed runs and a healthy
+headline metric conceal both a false-negative visible oracle and a
+visible-pass/held-out-fail evaluation gap.
+
 ## Getting Started
 
 ```bash

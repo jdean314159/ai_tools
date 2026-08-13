@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from llm_harness_core import (
+    ArtifactValidationError,
     AttachmentResolution,
     RunArtifact,
     SupportedBodyContract,
@@ -142,6 +143,19 @@ def _agent_summary(artifact: RunArtifact) -> dict[str, Any]:
     body = artifact.body
     task = body.get("task") if isinstance(body.get("task"), Mapping) else {}
     evaluation = body.get("evaluation")
+    evaluation_signals = {}
+    if isinstance(evaluation, Mapping):
+        for key in (
+            "classification",
+            "visible_pass",
+            "held_out_pass",
+            "input_special_casing",
+        ):
+            if key not in evaluation:
+                continue
+            value = evaluation[key]
+            if isinstance(value, (str, bool, int, float)) or value is None:
+                evaluation_signals[key] = value
     return {
         "record_type": "agent_run",
         "profile": artifact.envelope.profile,
@@ -152,6 +166,7 @@ def _agent_summary(artifact: RunArtifact) -> dict[str, Any]:
         "step_count": body.get("step_count"),
         "has_final_output": bool(body.get("final_output")),
         "has_evaluation": evaluation is not None,
+        "evaluation_signals": evaluation_signals,
         "model_roles": sorted((body.get("model_roles") or {}).keys()),
     }
 
@@ -162,6 +177,17 @@ def _experiment_summary(artifact: RunArtifact) -> dict[str, Any]:
     items = body.get("items") if isinstance(body.get("items"), list) else []
     aggregate = body.get("aggregate")
     decision = body.get("decision")
+    aggregate_signals = {
+        str(key): value
+        for key, value in (aggregate.items() if isinstance(aggregate, Mapping) else ())
+        if isinstance(value, (bool, int, float)) or value is None
+    }
+    decision_signals = {
+        str(key): value
+        for key, value in (decision.items() if isinstance(decision, Mapping) else ())
+        if key in {"decision", "verdict", "status"}
+        and (isinstance(value, (str, bool, int, float)) or value is None)
+    }
     child_ids: set[str] = set()
     for relationship in artifact.envelope.relationships:
         if relationship.relation_type == "contains" and relationship.target_kind == "agent_run":
@@ -175,6 +201,8 @@ def _experiment_summary(artifact: RunArtifact) -> dict[str, Any]:
         "child_record_count": len(child_ids),
         "has_aggregate": isinstance(aggregate, Mapping),
         "has_decision": isinstance(decision, Mapping),
+        "aggregate_signals": aggregate_signals,
+        "decision_signals": decision_signals,
     }
 
 
@@ -246,10 +274,41 @@ def inspect_artifact_path(path: str | Path) -> ArtifactInspection:
     candidate = Path(path)
     if candidate.is_dir():
         bundle = load_artifact_bundle(candidate)
-        return inspect_artifact(
+        inspection = inspect_artifact(
             bundle.artifact,
             attachment_resolutions=bundle.resolutions,
         )
+        child_artifacts: list[dict[str, Any]] = []
+        resolutions = {item.attachment_id: item for item in bundle.resolutions}
+        for attachment in bundle.artifact.envelope.attachments:
+            if attachment.logical_role != "child_run_artifact":
+                continue
+            resolution = resolutions.get(attachment.attachment_id)
+            if resolution is None or resolution.status != "resolved" or not resolution.resolved_path:
+                continue
+            try:
+                child = inspect_artifact(load_artifact(resolution.resolved_path))
+            except (OSError, json.JSONDecodeError, ArtifactValidationError) as exc:
+                child_artifacts.append(
+                    {
+                        "attachment_id": attachment.attachment_id,
+                        "body_support": "invalid",
+                        "error": str(exc),
+                    }
+                )
+                continue
+            child_artifacts.append(
+                {
+                    "record_id": child.common["record_id"],
+                    "kind": child.common["kind"],
+                    "profile": child.common.get("profile"),
+                    "body_support": child.body_support,
+                    "body_summary": child.body_summary,
+                    "notices": list(child.notices),
+                }
+            )
+        inspection.common["child_artifacts"] = child_artifacts
+        return inspection
     return inspect_artifact_file(candidate)
 
 
