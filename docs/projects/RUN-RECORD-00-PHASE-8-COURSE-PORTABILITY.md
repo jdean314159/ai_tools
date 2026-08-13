@@ -34,14 +34,21 @@ not machinery forced by the portability failure. It closes the already-recorded
 no-GPU coverage gap for notebooks 02–03; it is not cited as evidence that the
 portability architecture needed another feature.
 
-## Falsification found
+## Falsification and subsequent recovery
 
-Notebook 07 is not portable. Its cells import an earlier `language_tutor`
-application API, while the current distribution exposes
-`examples.language_tutor` with a different shape. The notebook is retained as
-monorepo source material but excluded from the split. This follows the repo's
-“harvest, not port” rule; rebuilding the reference-app lesson against public
-APIs is separate work.
+The initial tree did not contain the application API notebook 07 imported, so
+the notebook was correctly excluded rather than force-ported. The older full
+implementation was subsequently recovered. Its application logic was retained,
+but obsolete `engram.engine`, `engram_lite`, and dual-memory assumptions were
+removed. It now lives as the full reference example under
+`examples/language_tutor_reference_app`, builds the `language-tutor==0.1.0`
+wheel, and exposes a dependency-light public `build_reference_stack()` API.
+Notebook 07's complete default code path executes without a live model and is
+restored to the extraction set.
+
+This does not replace the smaller `examples/language_tutor` public-API example;
+the two have different distribution and module names. Consolidating their
+teaching roles is future cleanup, not a prerequisite for course extraction.
 
 ## Remaining external prerequisites
 
@@ -63,17 +70,20 @@ Changing the experiment body's provenance field from `source_path` to
 that transition explicit and mints new root and child IDs. No v2 identity is
 reused for changed bytes.
 
-The identical `990 passed, 250 skipped` Phase 7/8 figures are real but narrowly
-named below: root `pytest.ini` excludes `tests/integration_tests`, so neither
-phase's focused course tests affect the default pytest collection. They are
-reported separately rather than implied to be part of that count.
+The identical pre-recovery `990 passed, 250 skipped` Phase 7/8 figures were
+real: root `pytest.ini` excludes `tests/integration_tests`, so those phases'
+focused course tests did not affect the default collection. Recovering the
+reference application did add collected tests, so the post-recovery count
+moved as expected.
 
 ## Validation
 
 ```text
-wheel-installed portability gate: passed (10 extraction notebooks; NB07 excluded)
+wheel-installed portability gate: passed (11 extraction notebooks)
 course fixture tests:     4 passed
+reference tutor tests:    106 passed, 45 skipped
+notebook 07 code path:    passed (all default code cells)
 teaching-artifact check:  passed
-default pytest gate:      990 passed, 250 skipped
+default pytest gate:      1086 passed, 305 skipped
 Ruff and diff checks:     passed
 ```

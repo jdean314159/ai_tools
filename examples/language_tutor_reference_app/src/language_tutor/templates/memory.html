@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Viewer — Language Tutor</title>
+    <style>
+        :root {
+            --brand: #667eea;
+            --bg: #f7fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #2d3748;
+            --muted: #718096;
+            --green: #276749;
+            --red: #c53030;
+            --radius: 10px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 24px;
+            font-size: 14px;
+        }
+        h1 { font-size: 1.4rem; color: var(--brand); margin-bottom: 4px; }
+        .subtitle { color: var(--muted); margin-bottom: 24px; font-size: 0.85rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media(max-width:900px){ .grid { grid-template-columns: 1fr; } }
+        .full-width { grid-column: 1 / -1; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+        .card h2 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge {
+            background: var(--brand);
+            color: #fff;
+            border-radius: 20px;
+            padding: 1px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .scroll-box {
+            max-height: 320px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        /* Working memory turns */
+        .turn { padding: 8px 10px; border-radius: 6px; line-height: 1.45; }
+        .turn.user      { background: #ebf4ff; border-left: 3px solid var(--brand); }
+        .turn.assistant { background: #f0fff4; border-left: 3px solid #48bb78; }
+        .turn .role     { font-weight: 700; font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; }
+        .turn .content  { white-space: pre-wrap; word-break: break-word; }
+        /* Episodes */
+        .episode {
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: #fffbeb;
+            border-left: 3px solid #f6ad55;
+            line-height: 1.45;
+        }
+        .episode .meta { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; padding: 6px 8px; background: var(--bg);
+             color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--border); }
+        td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+        .pill {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #ebf4ff;
+            color: var(--brand);
+        }
+        .pill.beginner     { background: #f0fff4; color: var(--green); }
+        .pill.intermediate { background: #fffbeb; color: #92400e; }
+        .pill.advanced     { background: #fff5f5; color: var(--red); }
+        /* Stats bar */
+        .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .stat-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 18px;
+            min-width: 120px;
+            text-align: center;
+        }
+        .stat-box .num  { font-size: 1.6rem; font-weight: 700; color: var(--brand); }
+        .stat-box .lbl  { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+        /* Controls */
+        .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+        .btn {
+            padding: 7px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-primary { background: var(--brand); color: #fff; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text); }
+        .btn-ghost:hover { background: var(--bg); }
+        .status { color: var(--muted); font-size: 0.82rem; }
+        /* Error / empty */
+        .empty { color: var(--muted); font-style: italic; padding: 8px 0; }
+        .error-msg { color: var(--red); padding: 8px; }
+        /* Scrollbar */
+        .scroll-box::-webkit-scrollbar { width: 5px; }
+        .scroll-box::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>🧠 Engram Memory Viewer</h1>
+<p class="subtitle" id="page-subtitle">Loading…</p>
+
+<div class="controls">
+    <button class="btn btn-primary" onclick="loadMemory()">🔄 Refresh</button>
+    <button class="btn btn-ghost" onclick="window.close()">✕ Close</button>
+    <span class="status" id="status-text"></span>
+</div>
+
+<!-- Layer stats -->
+<div class="stats-row" id="stats-row"></div>
+
+<div class="grid">
+
+    <!-- Working Memory -->
+    <div class="card full-width">
+        <h2>💬 Working Memory <span class="badge" id="turns-count">0</span></h2>
+        <div class="scroll-box" id="working-turns">
+            <p class="empty">No turns yet.</p>
+        </div>
+    </div>
+
+    <!-- Vocabulary -->
+    <div class="card">
+        <h2>📖 Vocabulary (Unmastered) <span class="badge" id="vocab-count">0</span></h2>
+        <div class="scroll-box">
+            <table id="vocab-table">
+                <thead><tr><th>Word</th><th>Translation</th><th>Level</th></tr></thead>
+                <tbody id="vocab-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mistakes -->
+    <div class="card">
+        <h2>✏️ Mistake Nodes <span class="badge" id="mistakes-count">0</span></h2>
+        <div class="scroll-box">
+            <table id="mistakes-table">
+                <thead><tr><th>Error</th><th>Correct</th><th>Type</th><th>#</th></tr></thead>
+                <tbody id="mistakes-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Episodes -->
+    <div class="card">
+        <h2>📚 Episodic Memory <span class="badge" id="episodes-count">0</span></h2>
+        <div class="scroll-box" id="episodes-list">
+            <p class="empty">No episodes yet.</p>
+        </div>
+    </div>
+
+    <!-- SM-2 Vocab Mastery -->
+    <div class="card">
+        <h2>🗓️ SM-2 Words Due <span class="badge" id="due-count">0</span></h2>
+        <div class="scroll-box">
+            <table>
+                <thead><tr><th>Word</th><th>Translation</th><th>Level</th><th>Overdue</th></tr></thead>
+                <tbody id="due-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+'use strict';
+
+// Session ID is passed as a URL query param: /memory?session_id=xxx
+const params     = new URLSearchParams(location.search);
+const sessionId  = params.get('session_id') || '';
+
+function esc(s) {
+    return String(s || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setStatus(msg) {
+    document.getElementById('status-text').textContent = msg;
+}
+
+async function loadMemory() {
+    if (!sessionId) {
+        document.getElementById('page-subtitle').textContent =
+            'No session_id in URL. Open this page from the 🧠 button in the tutor.';
+        return;
+    }
+
+    setStatus('Loading…');
+    try {
+        const res = await fetch(`/api/session/memory/${sessionId}`);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({detail: res.statusText}));
+            throw new Error(err.detail || res.statusText);
+        }
+        const d = await res.json();
+        render(d);
+        setStatus(`Updated ${new Date().toLocaleTimeString()}`);
+    } catch(e) {
+        setStatus('Error: ' + e.message);
+    }
+}
+
+function render(d) {
+    document.getElementById('page-subtitle').textContent =
+        `Session: ${d.session_id} · Language: ${d.language}`;
+
+    // Layer stats
+    renderStats(d.layer_stats, d.mastery_stats);
+
+    // Working turns
+    const turnsEl = document.getElementById('working-turns');
+    const turns   = d.working_turns || [];
+    document.getElementById('turns-count').textContent = turns.length;
+    if (turns.length === 0) {
+        turnsEl.innerHTML = '<p class="empty">No turns yet.</p>';
+    } else {
+        turnsEl.innerHTML = turns.map(t => `
+            <div class="turn ${esc(t.role)}">
+                <div class="role">${esc(t.role).toUpperCase()}</div>
+                <div class="content">${esc(t.content)}</div>
+            </div>`).join('');
+        // Scroll to bottom
+        turnsEl.scrollTop = turnsEl.scrollHeight;
+    }
+
+    // Vocabulary
+    const vocabBody = document.getElementById('vocab-body');
+    const vocab     = d.vocabulary || [];
+    document.getElementById('vocab-count').textContent = vocab.length;
+    vocabBody.innerHTML = vocab.length === 0
+        ? '<tr><td colspan="3" class="empty">None yet.</td></tr>'
+        : vocab.map(v => `
+            <tr>
+                <td><strong>${esc(v.word)}</strong></td>
+                <td>${esc(v.translation)}</td>
+                <td><span class="pill ${esc(v.difficulty)}">${esc(v.difficulty)}</span></td>
+            </tr>`).join('');
+
+    // Mistakes
+    const mistakesBody = document.getElementById('mistakes-body');
+    const mistakes     = d.mistakes || [];
+    document.getElementById('mistakes-count').textContent = mistakes.length;
+    mistakesBody.innerHTML = mistakes.length === 0
+        ? '<tr><td colspan="4" class="empty">No mistakes recorded yet.</td></tr>'
+        : mistakes.map(m => `
+            <tr>
+                <td style="color:#c53030">${esc(m.incorrect)}</td>
+                <td style="color:#276749">${esc(m.correct)}</td>
+                <td><span class="pill">${esc(m.error_type || '')}</span></td>
+                <td>${esc(m.frequency ?? '')}</td>
+            </tr>`).join('');
+
+    // Episodes
+    const episodesEl = document.getElementById('episodes-list');
+    const episodes   = d.episodes || [];
+    document.getElementById('episodes-count').textContent = episodes.length;
+    episodesEl.innerHTML = episodes.length === 0
+        ? '<p class="empty">No episodes yet.</p>'
+        : episodes.map(ep => `
+            <div class="episode">
+                <div>${esc(ep.text)}</div>
+                <div class="meta">
+                    ${ep.importance != null ? `importance: ${Number(ep.importance).toFixed(2)}` : ''}
+                    ${ep.timestamp ? ` · ${esc(ep.timestamp.slice(0,19))}` : ''}
+                </div>
+            </div>`).join('');
+
+    // SM-2 due words
+    const dueBody = document.getElementById('due-body');
+    const due     = d.due_words || [];
+    document.getElementById('due-count').textContent = due.length;
+    dueBody.innerHTML = due.length === 0
+        ? '<tr><td colspan="4" class="empty">Nothing due.</td></tr>'
+        : due.map(w => `
+            <tr>
+                <td><strong>${esc(w.word)}</strong></td>
+                <td>${esc(w.translation)}</td>
+                <td>${esc(w.mastery_level)}/5</td>
+                <td>${w.days_overdue > 0 ? `${w.days_overdue}d` : 'today'}</td>
+            </tr>`).join('');
+}
+
+function renderStats(layerStats, masteryStats) {
+    const row  = document.getElementById('stats-row');
+    const boxes = [];
+
+    // Working layer
+    const wk = (layerStats || {}).working || {};
+    boxes.push({ num: wk.message_count ?? '—', lbl: 'Working turns' });
+    boxes.push({ num: wk.token_count   ?? '—', lbl: 'Working tokens' });
+
+    // Episodic layer
+    const ep = (layerStats || {}).episodic || {};
+    if (ep.enabled !== false) {
+        boxes.push({ num: ep.total_episodes ?? '—', lbl: 'Episodes stored' });
+    }
+
+    // Semantic layer
+    const sem = (layerStats || {}).semantic || {};
+    const nodes = sem.node_counts || {};
+    const nodeTotal = Object.values(nodes).reduce((a,b) => a + (b||0), 0);
+    if (nodeTotal > 0) {
+        boxes.push({ num: nodeTotal, lbl: 'Semantic nodes' });
+    }
+
+    // Mastery
+    if (masteryStats) {
+        boxes.push({ num: masteryStats.total         ?? 0, lbl: 'Vocab tracked' });
+        boxes.push({ num: masteryStats.due_for_review ?? 0, lbl: 'Due for review' });
+        boxes.push({ num: masteryStats.mastered       ?? 0, lbl: 'Mastered' });
+    }
+
+    row.innerHTML = boxes.map(b => `
+        <div class="stat-box">
+            <div class="num">${esc(String(b.num))}</div>
+            <div class="lbl">${esc(b.lbl)}</div>
+        </div>`).join('');
+}
+
+// Auto-load on open
+loadMemory();
+
+// Auto-refresh every 30 seconds
+setInterval(loadMemory, 30000);
+</script>
+</body>
+</html>

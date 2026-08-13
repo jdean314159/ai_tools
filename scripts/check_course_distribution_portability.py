@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import shutil
+import site
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,8 @@ PACKAGE_DIRS = (
     "rag_lib",
     "llm_inspector_ui",
     "agent_lib",
+    "action_trajectory_loop_guard",
+    "examples/language_tutor_reference_app",
 )
 
 
@@ -42,7 +45,22 @@ def main() -> int:
         base = Path(temp)
         wheels = base / "wheels"
         wheels.mkdir()
+        sources = base / "sources"
+        sources.mkdir()
         for package_dir in PACKAGE_DIRS:
+            source_copy = sources / package_dir
+            source_copy.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(
+                ROOT / package_dir,
+                source_copy,
+                ignore=shutil.ignore_patterns(
+                    "__pycache__",
+                    "*.egg-info",
+                    "build",
+                    ".pytest_cache",
+                    ".ruff_cache",
+                ),
+            )
             _run(
                 [
                     sys.executable,
@@ -53,17 +71,24 @@ def main() -> int:
                     "--no-build-isolation",
                     "--wheel-dir",
                     str(wheels),
-                    str(ROOT / package_dir),
+                    str(source_copy),
                 ],
-                cwd=ROOT,
+                cwd=sources,
             )
 
         environment = base / "venv"
+        base_python = str(getattr(sys, "_base_executable", sys.executable))
         _run(
-            [sys.executable, "-m", "venv", "--system-site-packages", str(environment)],
+            [base_python, "-m", "venv", "--system-site-packages", str(environment)],
             cwd=ROOT,
         )
         python = environment / "bin" / "python"
+        inner_site = environment / "lib" / f"python{sys.version_info.major}.{sys.version_info.minor}" / "site-packages"
+        outer_site = Path(site.getsitepackages()[0]).resolve()
+        (inner_site / "third_party_test_dependencies.pth").write_text(
+            f"{outer_site}\n",
+            encoding="utf-8",
+        )
         wheel_paths = [str(path) for path in sorted(wheels.glob("*.whl"))]
         _run(
             [

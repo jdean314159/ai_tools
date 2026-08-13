@@ -48,6 +48,7 @@ resolved before extracting the course into its own repository.
 | [04](notebooks/04_memory_with_engram.ipynb) | Memory | 5–6 | `engram` |
 | [05](notebooks/05_rag_with_rag_lib.ipynb) | RAG Fundamentals | 7 | `rag_lib` |
 | [06](notebooks/06_advanced_rag_and_evaluation.ipynb) | Advanced RAG + Evaluation | 8 | `rag_lib`, `llm_inspector` |
+| [07](notebooks/07_reference_app_walkthrough.ipynb) | Reference App Walkthrough | 9 | `language_tutor` |
 | [08](notebooks/08_agent_safety_and_failure_modes.ipynb) | Agent Safety + Failure Modes | 9 | `agent_lib` |
 | [09](notebooks/09_evaluating_llm_applications.ipynb) | Evaluation + Capstone | 10 | `llm_harness_core` |
 | [10](notebooks/10_context_engineering.ipynb) | Context Engineering + Inference Optimisation | 10–11 | `llm_engines`, `rag_lib`, `engram` |

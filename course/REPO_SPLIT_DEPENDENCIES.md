@@ -21,11 +21,11 @@ link decision.
 student-facing course content. The fixture builder now requires an explicit
 maintainer-only source path and the committed bundle remains usable without it.
 
-**Open — replacement lesson:** Notebook 07 exposed a larger issue than a file
-reference: its imports target a
-retired `language_tutor` application shape, while the current installable
-example exposes `examples.language_tutor`. It is retained as source material
-but explicitly excluded from the split rather than falsely declared portable.
+**Resolved:** the recovered full application was harvested into
+`examples/language_tutor_reference_app`, with its engine discovery, memory
+backend, and reference-stack seams rebuilt against current public APIs. Its
+`language-tutor==0.1.0` wheel now passes the non-editable portability gate and
+notebook 07 is back in the extraction set.
 
 **Resolved locally; external release prerequisite remains:** Notebook 01 now
 installs the exact versions in `requirements.txt`, with a temporary
@@ -36,8 +36,9 @@ required for a clean network install.
 ## Runtime package dependencies
 
 The notebooks import `llm_harness_core`, `llm_engines`, `llm_inspector`,
-`llm_inspector_ui`, `engram`, `rag_lib`, and `agent_lib`. These are package
-dependencies, not files to copy. The split project must freeze compatible
+`llm_inspector_ui`, `engram`, `rag_lib`, and `agent_lib`. Notebook 07 also
+imports `language_tutor`. These are package dependencies, not files to copy.
+The split project must freeze compatible
 versions and test installation without the monorepo on `PYTHONPATH`.
 
 ## Gate for the eventual split

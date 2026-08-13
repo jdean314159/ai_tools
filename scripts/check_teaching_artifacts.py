@@ -175,7 +175,7 @@ def validate_curriculum_alignment() -> None:
     readme = (ROOT / "course/README.md").read_text(encoding="utf-8")
     curriculum_names = set(re.findall(r"(?:course/)?notebooks/([^`]+\.ipynb)", curriculum))
     readme_names = set(re.findall(r"notebooks/([^)]+\.ipynb)", readme))
-    excluded = {"07_reference_app_walkthrough.ipynb"}
+    excluded: set[str] = set()
     if curriculum_names != expected:
         raise AssertionError(
             f"CURRICULUM notebook set differs from required set: {curriculum_names ^ expected}"

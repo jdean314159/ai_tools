@@ -8,8 +8,8 @@ See `STATUS.md` for the authoritative current state, active work priority list,
 and current test gate baseline. NAV-VERIFIABLE-00 is complete with an
 `inconclusive` frozen verdict; it is not an active tuning campaign.
 RUN-RECORD-00 Phase 8 course portability validation is complete under
-ADR-021/022. Package distribution and a public-API replacement for legacy
-notebook 07 remain before the repository split. The checkpoint
+ADR-021/022. The recovered reference application restored notebook 07;
+package distribution remains before the repository split. The checkpoint
 blocks below are historical.
 
 <!-- AI_TOOLS_STATUS_END -->
@@ -19,8 +19,7 @@ blocks below are historical.
 This is the ordered execution plan for the `ai_tools` monorepo.
 
 For the next thread, decide how the pinned ai_tools distributions will be
-published or supplied, then rebuild the reference-app lesson against public
-APIs. Do not copy the retired application integration into the new course.
+published or supplied before creating the course repository.
 
 ## Planning assumptions
 
@@ -143,8 +142,10 @@ into one schema shape.
 - Completed: Phase 8 wheel-installed copied-course portability gate, removal of
   student-facing monorepo file dependencies, exact package pins, and a real generation-level
   provenance lab.
-- Next gate: make the pinned distributions independently installable and
-  replace the excluded legacy reference-app notebook before repository creation.
+- Completed: recovered/modernized full language-tutor wheel and restored
+  notebook 07 extraction path.
+- Next gate: make the pinned distributions independently available before
+  repository creation.
 
 ### Done when
 

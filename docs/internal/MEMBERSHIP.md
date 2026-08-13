@@ -80,7 +80,7 @@ If they must read source to use it, the public API or quickstart is not done.
 | `llm_inspector` | block | beta | trace / inspection API | Value gated by trace-taxonomy work. |
 | `llm_inspector_ui` | tool | beta | run as workbench | General dev tool. Add chat panel (ADR-010). |
 | `agent_lib` | block | **experimental** | coordination primitives | Mark experimental loudly. Do not oversell. |
-| `language_tutor` | example (rebuild) | — | n/a | Freeze as reference source; rebuild in `examples/`. |
+| `language_tutor` | example | — | `examples/language_tutor_reference_app` | Recovered full app harvested against current public APIs; smaller public-API example remains separate pending later consolidation. |
 | `diagnostics_agent` | example (campaign) | — | n/a | Built with the blocks; code in `examples/`, campaign docs in `docs/projects/`. |
 | `netflow_behavior_lab` | out | — | n/a | Extracted 2026-06-20 to sibling repo `../netflow_behavior_lab` because it is a deterministic network-analysis research project with zero `ai_tools` coupling. |
 | `engram_ui` | out | — | n/a | Archive (ADR-010). |

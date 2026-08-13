@@ -13,7 +13,7 @@ Keep `README.md` and the teaching checks aligned with this list.
 | 04 | `notebooks/04_memory_with_engram.ipynb` | `engram` | active |
 | 05 | `notebooks/05_rag_with_rag_lib.ipynb` | `rag_lib` | scaffolded |
 | 06 | `notebooks/06_advanced_rag_and_evaluation.ipynb` | `rag_lib`, `llm_inspector` | active |
-| 07 | `notebooks/07_reference_app_walkthrough.ipynb` | legacy `language_tutor` API | excluded from split |
+| 07 | `notebooks/07_reference_app_walkthrough.ipynb` | `language_tutor` reference app | active |
 | 08 | `notebooks/08_agent_safety_and_failure_modes.ipynb` | `agent_lib` | scaffolded |
 | 09 | `notebooks/09_evaluating_llm_applications.ipynb` | `llm_harness_core`, integration evaluation | scaffolded |
 | 10 | `notebooks/10_context_engineering.ipynb` | `llm_engines`, `rag_lib`, `engram` | active |
@@ -26,9 +26,7 @@ It is an offline exercise, not an additional notebook in the ordered sequence.
 a privacy-safe real local generation and an evidence-bounded reproducibility
 exercise.
 
-Notebook 07 is retained in the monorepo as source material but is not part of
-the extraction set: its imports target an earlier application API that the
-current `language-tutor-example` distribution does not expose. A replacement
-must be rebuilt against public package APIs rather than ported as-is.
+Notebook 07 uses the recovered `language-tutor` distribution after its engine,
+memory, and reference-stack seams were rebuilt against current public APIs.
 
 `engram` is the default teaching memory layer. Full `engram` is the advanced path for learners who need richer persistent memory behavior and are ready for the additional dependency and policy surface.

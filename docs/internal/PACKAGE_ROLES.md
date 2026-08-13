@@ -29,7 +29,7 @@ See `STATUS.md` for the authoritative current baseline and active work list.
 | `llm_inspector_ui` | Interactive workbench for trace inspection and debugging. | Active. | Do not add direct engine/runtime dependencies here; consume engines via `llm_engines`. |
 | `rag_lib` | RAG building blocks, labs, and evaluation utilities. | Default retrieval path. | Keep examples runnable without live model access where practical. |
 | `agent_lib` | Agent abstractions and coordination primitives. | Experimental/advanced. | Owns NAV schema v1 plus the lossless NAV/ASC unified-artifact adapters. Legacy producers and replay consumers remain compatible. |
-| `language_tutor` | Reference app using engines, memory, and optional richer features. | Active. Engine imports migrated to llm_engines. | Default memory path is `engram`. |
+| `language_tutor` | Full reference example using engines, memory, and optional richer features. | Active under `examples/language_tutor_reference_app`; recovered and modernized for course notebook 07. | Memory path is `engram` behind `TutorMemoryBackend`; distinct from the smaller `examples/language_tutor` package. |
 | `mail_lib` | Deterministic Thunderbird reading, indexing, personal rules, triage, and digest primitives. | Active lightweight package. | Thunderbird profile access is read-only; server mutation belongs to the separately configured mail-assistant IMAP action. |
 | `mail_assistant` | Local FastAPI/Jinja/HTMX mail application. | Completed case study; not an active product direction. | Retained for deterministic local-mail and reviewed-mutation lessons; do not expand into a general mail client. |
 

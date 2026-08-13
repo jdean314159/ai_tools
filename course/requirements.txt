@@ -8,3 +8,4 @@ llm-inspector==0.1.0
 rag-lib==0.1.0
 llm-inspector-ui==0.1.0
 agent-lib==0.1.0
+language-tutor==0.1.0

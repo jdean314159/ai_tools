@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 COURSE_ROOT = Path(__file__).resolve().parent
-EXCLUDED_NOTEBOOKS = {"07_reference_app_walkthrough.ipynb"}
+EXCLUDED_NOTEBOOKS: set[str] = set()
 FORBIDDEN_REFERENCES = (
     "docs/tutorials/",
     "examples/asc_probe/",
@@ -25,6 +25,15 @@ FORBIDDEN_REFERENCES = (
     "repo's `STATUS.md`",
 )
 RUNTIME_COMMANDS = (
+    (
+        [
+            "-c",
+            "from language_tutor import build_reference_stack; "
+            "assert build_reference_stack().memory_backend == 'engram'; "
+            "print('language-tutor-reference-stack-ok')",
+        ],
+        "language-tutor-reference-stack-ok",
+    ),
     (["starter_projects/source_grounded_qa/eval.py"], "Evaluation summary"),
     (
         [
@@ -141,12 +150,23 @@ def _run_isolated_copy() -> None:
                 )
 
 
+def _execute_reference_notebook() -> None:
+    notebook = COURSE_ROOT / "notebooks/07_reference_app_walkthrough.ipynb"
+    data = json.loads(notebook.read_text(encoding="utf-8"))
+    namespace: dict[str, object] = {"__name__": "__course_notebook__"}
+    for index, cell in enumerate(data["cells"]):
+        if cell.get("cell_type") != "code":
+            continue
+        source = "".join(cell.get("source", ()))
+        exec(compile(source, f"{notebook}:cell-{index}", "exec"), namespace)
+
+
 def main() -> int:
     _validate_requirements()
     _validate_student_files()
+    _execute_reference_notebook()
     _run_isolated_copy()
     print(f"Course portability gate passed: {len(_active_notebooks())} extraction notebooks")
-    print("Excluded legacy notebook: 07_reference_app_walkthrough.ipynb")
     return 0
 
 
