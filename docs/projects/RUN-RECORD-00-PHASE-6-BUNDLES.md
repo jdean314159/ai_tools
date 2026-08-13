@@ -40,9 +40,10 @@ unbundled experiment snapshot. It retains semantic `contains` relationships to
 the child runs and adds one optional `child_run_artifact` attachment per
 published child.
 
-This avoids changing durable attachment declarations while preserving the old
-`record_id`. Repeating preparation from identical source and child bytes yields
-the same derived identity; different child bytes or membership change it.
+This avoids the invalid alternative of changing durable attachment declarations
+while retaining the source artifact's `record_id`. Repeating preparation from
+identical source and child bytes yields the same derived identity; different
+child bytes or membership change it.
 
 ## Digest scope
 
@@ -96,7 +97,7 @@ llm-inspect artifact show /path/to/bundle [--format text|json]
 
 ```text
 focused core/adapter/Inspector/integration/API gate: 53 passed
-agent_lib + core + Inspector (known golden omitted): 238 passed, 8 skipped
+agent_lib + core + Inspector (historical known golden omitted): 238 passed, 8 skipped
 committed ASC campaign acceptance: 15/15 child attachments resolved
 ```
 
@@ -105,8 +106,9 @@ mismatch, detached optional material, root-artifact traversal, attachment
 path/symlink escape, privacy-reference alignment, new derived identity,
 tampering detection, Inspector sanitization, and CLI directory loading.
 
-The omitted Inspector golden is the pre-existing optional-tokenizer-dependent
-Engram mismatch documented in Phase 4.
+This historical gate omitted the optional-tokenizer-dependent Engram golden
+documented in Phase 4. That test now carries a strict conditional `xfail` when
+`tiktoken` is absent.
 
 ## Gate assessment
 

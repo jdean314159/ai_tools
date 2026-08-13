@@ -87,13 +87,13 @@ Validation results:
 
 ```text
 focused adapters/core/Inspector/import/public API: 43 passed
-agent_lib + core + Inspector (known golden omitted): 225 passed, 8 skipped
+agent_lib + core + Inspector (historical known golden omitted): 225 passed, 8 skipped
 committed ASC campaign acceptance: 15 items, 15 child artifacts, supported
 ```
 
-The omitted Inspector golden is the pre-existing optional-tokenizer-dependent
-Engram mismatch documented in the Phase 4 report; this slice does not touch its
-trace construction or token accounting.
+This historical gate omitted the optional-tokenizer-dependent Engram golden
+documented in Phase 4. That test now carries a strict conditional `xfail` when
+`tiktoken` is absent.
 
 ## Gate assessment
 

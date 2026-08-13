@@ -1,163 +1,104 @@
 # RUN-RECORD-00 — Unified, versioned run artifacts
 
-**Status:** Phases 0–6 complete. Accepted ADR-021 semantics and ADR-022
-ownership/public API govern the implementation. The common envelope has passed
-the NAV/ASC compatibility gate, generation/agent cross-kind gate, first
-Inspector consumption gate, ASC/NAV experiment-campaign gate, and portable
-local-bundle gate.
-**Prepared:** 2026-08-12
+**Status:** Phases 0–6 complete under ADR-021 and ADR-022.
+**Last updated:** 2026-08-13.
 
-## Purpose
+## Outcome
 
-Define a stable public artifact surface for recording, comparing, and replaying
-LLM work across `ai_tools`. This is not a proposal for one enormous object that
-forces a single generation, an agent trajectory, and a multi-item experiment
-into the same sparse schema. The likely shape is a small common envelope plus
-typed record kinds and adapters.
+`ai_tools` now has a dependency-free, cross-package artifact surface rather
+than one giant schema or a greenfield replacement for existing records.
+`llm_harness_core` owns the envelope, serialization, validation, and local
+bundle mechanics. Producer packages own body construction and legacy adapters;
+`llm_inspector` owns interpretation and comparison.
 
-## Correction to the project premise
+The implementation supports three distinct body kinds:
 
-This is not greenfield work. `agent_lib` already has a substantial navigation
-run-record prototype:
+- `generation`: normalized request/response, outcome, model/backend facts,
+  usage, omissions, and field provenance;
+- `agent_run`: task, trajectory, termination, model roles, evaluation, and
+  producer-profile data; and
+- `experiment`: campaign configuration, compact items, aggregate results,
+  decisions, and references to separately published child runs.
 
-- `agent_lib/src/agent_lib/eval/repo_navigation.py:1672` defines
-  `render_run_record()` and emits schema version 1;
-- that record contains configuration, environment identity, repository
-  digests, complete agent steps, planner usage, tool telemetry, and scores
-  (`repo_navigation.py:1682-1713`);
-- `agent_lib/examples/repo_navigation_eval.py:266-277` writes
-  `environment-manifest.json` and `run-record.json`;
-- `agent_lib/examples/nav_counterfactual_finalize.py:178-202` consumes a stored
-  run record for a counterfactual evaluation.
+The common envelope carries identity, lifecycle, versions, relationships,
+actors, time, privacy declarations, omissions, capabilities, attachments, and
+execution-environment facts. It is materially richer than either legacy NAV or
+ASC headers, but both adapters populate it directly without a supporting
+metadata subsystem or new runtime dependency.
 
-There are also incompatible specialized artifacts:
+## Corrected project premise
 
-- `examples/asc_probe/live_probe.py:420-452` writes an ASC-specific
-  `record.json`;
-- `llm_engines/src/llm_engines/contracts/engine.py:250-279` defines the
-  request/response contract for a single generation;
-- `llm_inspector/src/llm_inspector/core/trace.py:96-160` defines inspector
-  trace objects over the shared event type in
-  `llm_harness_core/src/llm_harness_core/events.py:10-22`;
-- evaluation campaigns and application-specific harnesses write additional
-  JSON, JSONL, and CSV formats.
+This project was never greenfield. NAV already emitted schema-v1
+`run-record.json` through `agent_lib.eval.repo_navigation.render_run_record()`
+and the counterfactual finalizer consumed that shape. ASC, generation engines,
+Inspector traces, and evaluation campaigns used other representations. The
+project consolidated artifact boundaries while keeping NAV-v1 authoritative
+and readable by its existing consumers.
 
-The problem is therefore incompatible artifact boundaries, not absence of run
-records.
+Programs produce artifacts; artifacts are not commands. Replay and
+re-execution are explicit capability claims, never inferred from record kind.
 
-## Goals
+## Completed phases
 
-1. Give new producers one documented, versioned public recording surface.
-2. Preserve enough provenance to compare runs and determine what configuration,
-   context, model, code, and environment produced an outcome.
-3. Keep existing NAV artifacts readable and replayable.
-4. Allow inspector tooling to load supported records without knowing each
-   producer's private schema.
-5. Make redaction and raw-provider-payload handling explicit rather than
-   accidentally persisting sensitive data.
+| Phase | Result | Report |
+|---|---|---|
+| 0 | Producer/consumer inventory and multi-axis field crosswalk | `RUN-RECORD-00-PHASE-0-INVENTORY.md` |
+| 1 | Envelope semantics and ownership decisions | `adr/ADR-021-run-artifact-envelope-semantics.md`, `adr/ADR-022-run-artifact-ownership-and-public-api.md` |
+| 2 | Dependency-free core plus lossless NAV-v1 and ASC agent adapters | `RUN-RECORD-00-PHASE-2-COMPATIBILITY.md` |
+| 3 | Generation recorder, cross-kind proof, MockEngine fixtures, and live Ollama acceptance | `RUN-RECORD-00-PHASE-3-VALIDATION.md` |
+| 4 | Inspector loading, kind-specific summaries, unsupported-version behavior, and conservative comparison | `RUN-RECORD-00-PHASE-4-INSPECTOR.md` |
+| 5 | Shared experiment body and ASC/NAV campaign adapters | `RUN-RECORD-00-PHASE-5-EXPERIMENTS.md` |
+| 6 | Exact-byte local bundles, confined resolution, tamper detection, and child-run packaging | `RUN-RECORD-00-PHASE-6-BUNDLES.md` |
 
-## Non-goals for the first project
+## Settled decisions
 
-- Rewriting every producer at once.
-- Replacing `GenerationRequest`, `GenerationResponse`, `TraceEvent`, or
-  `AgentRun` as runtime contracts.
-- Treating a record as an executable command. Programs produce records;
-  validators, viewers, and replay adapters consume them.
-- Promising deterministic replay when a backend, model, seed, or environment
-  cannot provide it.
-- Folding large per-item datasets such as photo classification into one giant
-  agent-style trajectory.
+- Ownership: common contracts and generic IO live in `llm_harness_core`;
+  producer semantics do not.
+- Shape: one common envelope with separate generation, agent-run, and
+  experiment bodies; no sparse union body.
+- Identity: published artifacts are immutable snapshots. Adaptation and adding
+  bundle declarations create new identities with `derived_from` relationships.
+- Generation/agent composition: semantic relationships identify membership;
+  separately addressable bytes use attachments. A relationship does not
+  manufacture a missing attachment.
+- Versioning: envelope, body, and optional profile versions are distinct.
+- Replay: structured capability claims specify requirements, execution mode,
+  effects, determinism evidence, and implementation version. NAV
+  counterfactual finalization is a conditional live-model call, not structural
+  replay.
+- Privacy: artifacts declare content, transformations, reference sensitivity,
+  and scoped validation evidence. Export authorization remains downstream.
+- Bundles: SHA-256 covers exact stored bytes. Resolution is reader-computed and
+  never persisted. Local paths are confined and omitted from Inspector output.
+- Model identity: labels are comparable facts but never proof of identical
+  model artifacts.
 
-## Accepted semantic direction
+## Compatibility and scope boundaries
 
-ADR-021 accepts this layered direction, validated by the narrow Phase 2
-compatibility slice:
+- NAV-v1 and ASC legacy records remain authoritative; adapters do not rewrite
+  source files.
+- Unknown envelope versions fail. Unknown body/profile versions retain common
+  envelope visibility but are not interpreted.
+- Raw provider payloads and error text remain default-off for generation
+  recording.
+- ASC timeout rows remain experiment items, not fabricated standalone runs.
+- Local bundles are directories, not zip/tar archives, signed exports, remote
+  resolver registries, encrypted containers, or redaction machinery.
+- Photo, RAG, UI, and broad course migrations were not pulled into this work.
 
-- a common envelope: schema identity/version, record ID and kind, timestamps,
-  producer identity/version, parent/child links, environment/provenance,
-  privacy/redaction declaration, and extension fields;
-- a generation record: request, normalized response, model/backend identity,
-  usage, timings, cache/optimization data, and optional protected raw payload;
-- an agent-run record: task, steps, actions, observations, tool calls/results,
-  traces, cumulative budgets, termination, and final output;
-- an experiment record: configuration and immutable manifest plus references
-  to child generation/agent/item records, metrics, scorer identity, and frozen
-  decision protocol.
+## Remaining decisions
 
-The semantic distinctions are accepted; concrete types, serialization, and
-package ownership remain to be decided and tested.
-
-## Phase 0 — inventory and samples
-
-Before drafting field-level contracts:
-
-1. Catalogue every current producer and consumer of durable run/evaluation
-   artifacts.
-2. Select committed or synthetic, privacy-safe examples for at least:
-   - one `GenerationResponse`-level call;
-   - one NAV `run-record.json`;
-   - one ASC `record.json`;
-   - one inspector `Trace`;
-   - one multi-run campaign summary.
-3. Produce a field crosswalk: shared concepts, producer-only data, missing
-   provenance, sensitive/raw fields, and replay dependencies.
-4. State which artifacts are records, manifests, traces, scores, or datasets;
-   do not rename all of them “RunRecord.”
-
-**Gate:** inventory and crosswalk reviewed against real producers and consumers.
-
-## Phase 1 — ADR and compatibility contract
-
-Write an ADR that decides:
-
-- record kinds and ownership package;
-- schema identifier and version-evolution rules;
-- JSON serialization and validation rules;
-- nesting versus references between records;
-- required provenance and reproducibility claims;
-- redaction, raw payload, path, prompt, and evidence policy;
-- adapter and deprecation strategy;
-- forward/backward compatibility and unknown-field behavior.
-
-The ADR must explicitly compare extending the NAV schema with introducing a
-common envelope. It must not assume a new package is necessary.
-
-**Gate:** representative existing artifacts can be losslessly mapped or their
-intentional losses are enumerated and accepted.
-
-## Phase 2 — narrow implementation
-
-Only after the ADR:
-
-1. Implement schema models and JSON validation in the selected existing core
-   package unless the ADR proves a new package boundary is needed.
-2. Add an adapter for NAV schema v1 and preserve the counterfactual consumer.
-3. Convert one second producer (recommended: ASC) to prove the surface is not
-   NAV-specific.
-4. Add a CLI validator/summary command; do not call the record itself a CLI.
-5. Add inspector loading only after the first two producers validate.
-
-**Gate:** golden round trips, NAV replay compatibility, unknown-version
-failure, redaction tests, and two producer adapters pass.
-
-## Open decisions
-
-- Whether generation records are embedded in agent steps or stored as child
-  records referenced by ID.
-- Whether the owning package is `llm_harness_core`, `llm_inspector`, or an
-  existing package-specific surface. Dependency direction must decide this,
-  not naming preference.
-- Minimum environment capture that is useful without making records
-  host-specific or leaking paths.
-- Whether raw prompts, evidence text, and provider payloads are default-off,
-  redacted, encrypted, or stored in a separate restricted artifact.
-- Definition of “replay”: structural replay, tool-trajectory replay,
-  counterfactual continuation, or model re-execution.
+- Model digest scope when a backend actually exposes one: model file,
+  provider-reported manifest, deployment composite, or another typed scope.
+- The minimum portable execution-environment facts for backends that expose
+  tokenizer/template/runtime identity without leaking host-specific details.
+- Whether a concrete exchange boundary requires signing, encryption, export
+  policy, archive packaging, or remote attachment resolution.
+- Which concrete consumer should validate the format next. Course fixtures are
+  viable now, but are not authorized merely by completion of this project.
 
 ## Current action
 
-Phase 6 portable local bundles are complete. Select the next bounded capability
-from a concrete consumer need. Course fixtures are now a viable validation
-slice; archive/signing/export-policy and remote-resolver work remain deferred
-until an actual exchange boundary requires them. Do not infer authorization for
-UI, RAG, photo, or broad course migration from Phase 6 completion.
+Select the next bounded capability from a concrete consumer need. Do not reopen
+the settled ownership, layering, identity, replay, or local-bundle decisions
+without a forcing failure from a real producer or consumer.

@@ -30,10 +30,10 @@ four task shapes, exact relation scoring, indirect-as-direct rejection,
 unobserved evidence, source hash drift, aliases, same-named methods, nested
 functions, dynamic calls, relation-claim shape, and paired configuration drift.
 
-The repository-root pytest command remains unavailable because the root
-`conftest.py` imports a missing `examples._repo_bootstrap` module before test
-collection. This is pre-existing and outside the NAV change; the supported
-package-scoped gate was used.
+At this historical checkpoint, repository-root collection failed before the
+package gate. `examples._repo_bootstrap` now exists; current root tests use
+`python -m pytest` because the bare `pytest` console script can resolve the
+repository root too late for centralized example bootstrapping.
 
 ## Remaining validation boundary
 

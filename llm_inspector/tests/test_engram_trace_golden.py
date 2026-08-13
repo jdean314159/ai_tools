@@ -14,6 +14,7 @@ from llm_inspector.core import Turn
 
 pytestmark = pytest.mark.engram
 GOLDEN = Path(__file__).parent / "golden_engram_trace.json"
+_TIKTOKEN_AVAILABLE = importlib.util.find_spec("tiktoken") is not None
 
 
 def _engram_runtime_available() -> bool:
@@ -44,6 +45,14 @@ def _stable_payload(payload: str) -> str:
     return json.dumps(_normalize(json.loads(payload)), indent=2)
 
 
+@pytest.mark.xfail(
+    not _TIKTOKEN_AVAILABLE,
+    reason=(
+        "golden uses tiktoken accounting; the documented word-count fallback "
+        "produces different token totals"
+    ),
+    strict=True,
+)
 def test_engram_trace_sections_order_golden(tmp_path: Path):
     if not _engram_runtime_available():
         pytest.skip("engram not importable with its runtime dependencies")

@@ -44,8 +44,10 @@ omissions through the same envelope. Their bodies remain different:
 - generation body: request, response, outcome, model identity, and field-level
   provenance.
 
-No kind-specific conditional was added to `RecordEnvelope`. The cross-kind
-implementation therefore did not falsify the small-envelope hypothesis.
+No kind-specific conditional or supporting metadata subsystem was added to
+`RecordEnvelope`; both producers populate its common fields directly. This is
+evidence that the envelope is operationally shared, not proof that every future
+kind will fit or that the envelope is minimal.
 
 Generation-to-agent membership is represented as a semantic relationship. A
 generation copied without its parent retains the relationship but does not

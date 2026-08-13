@@ -73,8 +73,10 @@ adaptation of identical source mappings byte-stable and identity-stable.
 
 ## Validation
 
-Package-local tests avoid the repository root's currently broken
-`examples._repo_bootstrap` import path.
+At this historical checkpoint, package-local tests avoided a repository-root
+bootstrap failure. `examples._repo_bootstrap` now exists; current root tests
+must be invoked as `python -m pytest` because the bare `pytest` console script
+can resolve the repository root too late for centralized example bootstrapping.
 
 ```text
 llm_harness_core: 17 passed

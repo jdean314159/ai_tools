@@ -47,9 +47,8 @@ any newer work.
 
 ## Verification posture
 
-Phase 4 focused and integration gates pass. The full Inspector suite has one
-unrelated environment-sensitive Engram golden mismatch when optional
-`tiktoken` is absent; see the Phase 4 report. Invoke root pytest as
-`python -m pytest`; the bare
+Phase 4 focused and integration gates pass. The environment-sensitive Engram
+golden is now a strict conditional `xfail` when optional `tiktoken` is absent;
+see the Phase 4 report. Invoke root pytest as `python -m pytest`; the bare
 `pytest` console script does not preserve the repository root early enough for
 the centralized example-package bootstrap.

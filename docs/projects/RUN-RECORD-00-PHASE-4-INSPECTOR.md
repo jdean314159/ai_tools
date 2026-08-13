@@ -96,10 +96,12 @@ root public/import plus artifact tests:       16 passed
 Inspector suite excluding known golden:      58 passed
 ```
 
-The complete Inspector suite has one unrelated environment-sensitive failure:
-`test_engram_trace_sections_order_golden` expects token count 9, while the
-optional-`tiktoken`-absent word-count fallback produces 7. The artifact tests do
-not touch Engram trace construction or token accounting.
+At this checkpoint the complete Inspector suite had one unrelated
+environment-sensitive failure: `test_engram_trace_sections_order_golden`
+expected token count 9, while the optional-`tiktoken`-absent word-count fallback
+produced 7. The test now carries a strict conditional `xfail`, so this known
+environment distinction lives in the suite rather than requiring prose-only
+omission from later gates.
 
 ## Gate assessment
 
