@@ -13,6 +13,8 @@ from llm_harness_core import (
     ToolInvocation,
     TraceEvent,
     SyntheticDataConfig,
+    RunArtifact,
+    artifact_from_dict,
     generate_synthetic_bundle,
 )
 
@@ -55,3 +57,5 @@ def test_core_public_api_smoke() -> None:
     assert judge_result.ok is True
     assert len(bundle.memory_records) == 2
     assert len(bundle.retrieved_documents) == 2
+    assert RunArtifact is not None
+    assert artifact_from_dict is not None

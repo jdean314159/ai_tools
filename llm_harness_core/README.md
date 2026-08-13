@@ -46,6 +46,30 @@ event = TraceEvent(
 
 This package should stay small, dependency-light, and stable so the rest of the suite can compose around it.
 
+## Durable run artifacts
+
+The package owns the dependency-free common envelope for durable generation,
+agent-run, and experiment artifacts. Producer-specific bodies and adapters stay
+in their producer packages.
+
+```python
+from llm_harness_core import load_artifact, summarize_artifact
+
+artifact = load_artifact("unified-run-record.json")
+print(summarize_artifact(artifact))
+```
+
+Validate and summarize a JSON artifact without importing its producer:
+
+```bash
+python -m llm_harness_core.run_artifacts unified-run-record.json
+```
+
+Envelope validation does not imply that the reader understands an unknown body
+or profile version. Use `body_support_status(...)` with the contracts supported
+by the consuming application before interpreting body fields. Privacy metadata
+is a declaration for downstream policy, never an export authorization.
+
 ## Current support status
 
 This is a **core** package and an **authoritative** source for shared contracts.

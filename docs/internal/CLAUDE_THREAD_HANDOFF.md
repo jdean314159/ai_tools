@@ -1,9 +1,10 @@
 # Fresh Claude thread handoff
 
-- Prepared: 2026-07-24
+- Prepared: 2026-08-13
 - Repository: `/home/cybernaif/repos/ai_tools`
 - Branch: `main`
-- Current implementation checkpoint: `abcc2f0`
+- Current repository checkpoint: inspect `git log -1`; RUN-RECORD-00 Phase 2
+  is complete and included in the latest cleanup checkpoint.
 
 This is the shortest reliable entry point for a fresh Claude thread. Treat the
 repository as authoritative; chat summaries are secondary.
@@ -15,7 +16,9 @@ repository as authoritative; chat summaries are secondary.
 3. `docs/internal/STATUS.md` — current package and project posture.
 4. `docs/internal/ROADMAP.md` — current planning boundary.
 5. This file.
-6. For the most recent agent-navigation work:
+6. `docs/projects/RUN-RECORD-00-unified-run-artifacts.md` and
+   `RUN-RECORD-00-PHASE-2-COMPATIBILITY.md` — active project and completed gate.
+7. For the relevant prior agent-navigation implementation:
    - `docs/projects/agent_lib/NAV-VERIFIABLE-00-VALIDATION.md`
    - `docs/projects/agent_lib/NAV-VERIFIABLE-00-SPEC.md`
    - `docs/projects/agent_lib/NAV-VERIFIABLE-CAMPAIGN-V1.md`
@@ -25,23 +28,42 @@ start by reading the historical sections of `SESSION_HANDOFF.md`.
 
 ## Current posture
 
-There is no active implementation campaign. The most recent campaign,
-`NAV-VERIFIABLE-00`, is complete and should not be extended by silently
-changing its frozen protocol.
+RUN-RECORD-00 Phase 2 is complete under accepted ADR-021 and ADR-022. Phase 3,
+the generation/agent cross-kind proof, is next. The most recent completed
+empirical campaign, NAV-VERIFIABLE-00, remains closed and must not be extended
+by silently changing its frozen protocol.
 
 `ai_tools` remains a modular, local-first LLM harness and inspection laboratory.
 The package spine is stable enough for package-scoped work; `agent_lib` and both
 loop-guard packages remain experimental.
 
-Recent commits:
+Relevant historical commits:
 
 - `abcc2f0` — ran and recorded the NAV verifiable paired campaign;
 - `dd8c7f2` — built its mechanically selected candidate campaign;
 - `8a4fd71` — added the shared-schema ceiling verdict;
 - `364fed6` / `a0e5189` — froze arm, selection, and campaign policy before data.
 
-At the last checkpoint the `agent_lib` package suite passed with `150 passed`.
-Run tests again before claiming the current tree passes.
+At the Phase 2 checkpoint, package-local gates passed with `17 passed` for
+`llm_harness_core` and `153 passed` for `agent_lib`.
+
+## RUN-RECORD-00 — what the next thread must understand
+
+The phrase “build RunRecord” originally hid an important repository fact. There
+is no public cross-package `RunRecord` class, but there **is** an executable,
+versioned NAV run-record implementation:
+
+- `agent_lib/src/agent_lib/eval/repo_navigation.py:1672-1713` renders schema v1;
+- `agent_lib/examples/repo_navigation_eval.py:266-277` writes
+  `run-record.json`;
+- `agent_lib/examples/nav_counterfactual_finalize.py` reads that artifact.
+
+Phase 0 inventoried ASC, `GenerationResponse`, inspector `Trace`, and campaign
+outputs. Phase 2 added the dependency-free core envelope plus lossless NAV-v1
+and ASC adapters over a shared agent-run body. The next task is Phase 3 only: a
+minimal generation recorder, MockEngine cross-kind fixtures, common-reader
+semantic checks, and one privacy-safe live local-engine maintainer acceptance
+run.
 
 ## What the NAV investigation established
 
@@ -108,16 +130,12 @@ campaign is not a pristine first-contact dataset. Preserve that caveat.
   direction.
 - Do not prompt-tune or schema-tune against the completed NAV campaign.
 
-## Reasonable next work
+## Work after the current Phase 3 gate
 
-Choose a new task only after stating the user-visible goal and validation gate.
-Current non-blocking options are:
-
-- workbench reliability and teaching value (`ROADMAP` Phase 4);
-- reference-application modernization (`ROADMAP` Phase 5);
-- a separately scoped evidence-precision/grounded-claims investigation;
-- package documentation or fresh-clone verification;
-- a new agent experiment with a separately predeclared protocol.
+Workbench reliability, reference-application modernization, grounded-claims
+work, and fresh-clone verification remain legitimate later projects. They do
+not supersede the selected RUN-RECORD-00 Phase 3 unless the user explicitly
+changes direction.
 
 Over-citation is a known model behavior, not a trivial JSON-schema fix. A schema
 can require single-line references but cannot know the task-specific number of

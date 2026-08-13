@@ -1,6 +1,7 @@
 # ai_tools — Session Handoff (historical log)
 
 **Latest standing handoff:** `docs/internal/CLAUDE_THREAD_HANDOFF.md`
+(`docs/internal/CODEX_THREAD_HANDOFF.md` is the concise Codex entry point.)
 **This file:** historical session log; do not read it end-to-end for a fresh
 thread.
 
@@ -21,6 +22,27 @@ retained only as historical context.
 ---
 
 ## TL;DR
+
+## Update — 2026-08-13 (RUN-RECORD-00 Phase 2 complete)
+
+Phase 0 inventory and ADR-021/022 are complete. Phase 2 added dependency-free
+run-artifact envelope/read/validate primitives to `llm_harness_core` and
+lossless NAV-v1/ASC adapters to `agent_lib`; legacy producers and NAV replay
+consumers remain unchanged. Package-local checkpoints: 17 core tests and 153
+agent tests passed. Phase 3 generation/agent cross-kind proof is next.
+
+## Update — 2026-08-12 (RUN-RECORD-00 selected; planning only)
+
+RUN-RECORD-00 is the next bounded project. It will inventory and reconcile the
+existing NAV `run-record.json`, ASC `record.json`, engine response, inspector
+trace, and campaign artifact shapes. This is not greenfield: NAV already has a
+schema-v1 producer and a counterfactual consumer. No common schema
+implementation is authorized before the inventory and ADR gates in
+`docs/projects/RUN-RECORD-00-unified-run-artifacts.md`.
+
+Fresh threads should read `docs/internal/CLAUDE_THREAD_HANDOFF.md` and the new
+project document. Preserve the dirty tree and do not infer that a “RunRecord”
+is itself a command-line program.
 
 ## Update — 2026-07-24 (NAV campaign closed)
 

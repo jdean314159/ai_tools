@@ -6,8 +6,10 @@
 
 See `STATUS.md` for the authoritative current state, active work priority list,
 and current test gate baseline. NAV-VERIFIABLE-00 is complete with an
-`inconclusive` frozen verdict; it is not an active tuning campaign. No successor
-project is selected. The checkpoint blocks below are historical.
+`inconclusive` frozen verdict; it is not an active tuning campaign.
+RUN-RECORD-00 Phase 2 is complete under ADR-021/022. The Phase 3
+generation/agent cross-kind proof is next. The checkpoint blocks below are
+historical.
 
 <!-- AI_TOOLS_STATUS_END -->
 
@@ -15,10 +17,9 @@ project is selected. The checkpoint blocks below are historical.
 
 This is the ordered execution plan for the `ai_tools` monorepo.
 
-For the next thread, first choose a concrete user-visible goal. If no new
-product mandate exists, fresh-clone verification, documentation reconciliation,
-and Phase 4 workbench reliability take precedence over speculative agent or
-memory mechanisms.
+For the next thread, begin with the bounded RUN-RECORD-00 Phase 3 generation
+proof in `docs/projects/RUN-RECORD-00-unified-run-artifacts.md`. Do not pull
+inspector, RAG, photo, or course migrations ahead of that proof.
 
 ## Planning assumptions
 
@@ -110,6 +111,29 @@ Make `llm_inspector_ui` a reliable teaching and diagnostic workbench.
 ### Done when
 
 A new user can launch the workbench and inspect baseline, memory-augmented, and retrieval-augmented runs.
+
+## Phase 4A — RUN-RECORD-00 unified artifacts — PHASE 2 COMPLETE
+
+### Goal
+
+Give producers and inspection tools a compatible, versioned artifact surface
+without discarding existing NAV run-record replay or forcing all experiments
+into one schema shape.
+
+### Work
+
+- Completed: inventory and field/privacy crosswalk.
+- Completed: ADR-021 semantics and ADR-022 ownership/public API.
+- Completed: dependency-free core envelope/reader plus lossless NAV-v1 and ASC
+  adapters over one shared agent body.
+- Next: Phase 3 generation recorder with deterministic MockEngine fixtures and
+  one privacy-safe live-engine maintainer acceptance run.
+
+### Done when
+
+Two distinct producers emit or adapt to validated records, NAV counterfactual
+replay remains compatible, and unknown versions and sensitive fields fail
+according to the accepted policy.
 
 ## Phase 5 — Reference application
 

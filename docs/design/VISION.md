@@ -94,10 +94,14 @@ The repo should treat the following as first-class engineering artifacts:
   - `docs/internal/STATUS.md`
   - `docs/internal/ROADMAP.md`
   - `docs/internal/CLAUDE_THREAD_HANDOFF.md`
+  - `docs/internal/CODEX_THREAD_HANDOFF.md`
   - `ADR_INDEX.md`
 - repo-local and package-local `AGENT.md` files
 - JSON task/progress manifests that agents and humans can both read
 - append-only or otherwise durable trace/event logs where long-running agent work requires recovery or auditability
+- versioned run and experiment artifacts that preserve provenance while keeping
+  generation calls, agent trajectories, and multi-run campaigns as distinct
+  typed record kinds rather than one sparse union
 
 ### Consequence for package design
 

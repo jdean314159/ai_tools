@@ -203,3 +203,22 @@ concern into three layers — load-time compromise (controlled here), poisoned b
 review loop), provenance/policy (institutional, not code). Explicitly out of scope: origin
 allowlists, weight scanning, signature verification — no forcing exposure. Open follow-on:
 agentic-execution boundary audit (expected no-gap given COORD-01 + ADR-017).
+
+## ADR-021 — Run-artifact envelope and semantics
+**File:** `adr/ADR-021-run-artifact-envelope-semantics.md`
+**Status:** Accepted; validated by RUN-RECORD-00 Phase 2
+**Summary:** Defines a small common envelope over distinct generation,
+agent-run, and experiment bodies. Separates semantic kind from producer
+profile, immutable snapshots from replaceable checkpoints, relationships from
+attachments, body from profile versions, durable attachment declarations from
+reader resolution, and provenance/privacy/capability claims from downstream
+policy. ADR-022 resolves package ownership.
+
+## ADR-022 — Run-artifact ownership and public API
+**File:** `adr/ADR-022-run-artifact-ownership-and-public-api.md`
+**Status:** Accepted for RUN-RECORD-00 Phase 2
+**Summary:** Places dependency-free envelope types and generic JSON
+read/validate/summary helpers in `llm_harness_core`, while producer packages
+retain their adapters and profile semantics. Phase 2 adds NAV-v1 and ASC
+adapters in `agent_lib` without rewriting either legacy artifact or its current
+consumers.

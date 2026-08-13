@@ -59,6 +59,12 @@ from .repo_navigation import (
     tree_content_digest,
     validate_ground_truth_snapshot,
 )
+from .run_artifact_adapters import (
+    adapt_asc_record,
+    adapt_nav_v1,
+    restore_asc_record,
+    restore_nav_v1,
+)
 
 __all__ = [
     'AgentRedTeamScenario',
@@ -128,4 +134,8 @@ __all__ = [
     'score_navigation_run',
     'tree_content_digest',
     'validate_ground_truth_snapshot',
+    'adapt_asc_record',
+    'adapt_nav_v1',
+    'restore_asc_record',
+    'restore_nav_v1',
 ]

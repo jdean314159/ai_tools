@@ -1,19 +1,41 @@
 # Repo Status
 
-Last updated: 2026-07-24
+Last updated: 2026-08-13
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: no active implementation campaign. NAV-VERIFIABLE-00 is complete
+**Phase: RUN-RECORD-00 Phase 2 agent compatibility slice is complete; Phase 3
+generation/agent cross-kind proof is next. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
 remains parked and output-isolated.**
 
 For a fresh Claude thread, read
-`docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file.
+`docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
+thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
+
+### Active project — RUN-RECORD-00
+
+The next project is a versioned, cross-package run-artifact surface. The key
+correction is that this is **not greenfield**: `agent_lib.eval.repo_navigation`
+already emits a schema-v1 `run-record.json`, and the NAV counterfactual tool
+already consumes it. ASC, inspector traces, engine responses, campaigns, and
+application evals use other shapes.
+
+Phase 0 inventory is complete. ADR-021 accepts the artifact
+semantics and ADR-022 places dependency-free envelope/read/validate primitives
+in `llm_harness_core` while producer adapters remain in producer packages.
+Phase 2 implements lossless NAV-v1 and ASC adapters over one shared agent body;
+the package-local gates are recorded in
+`docs/projects/RUN-RECORD-00-PHASE-2-COMPATIBILITY.md`.
+
+The next gate is Phase 3: a minimal generation recorder using MockEngine
+contract fixtures, followed by one privacy-safe live local-engine maintainer
+acceptance run. Do not pull inspector, RAG, photo, or course migrations ahead
+of that cross-kind proof.
 
 ### Latest completed work — NAV-VERIFIABLE-00
 
@@ -43,11 +65,10 @@ checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
 
-No successor project is selected. Choose the next direction from a concrete
-user need and predeclared validation gate. Reasonable options are ROADMAP Phase
-4 workbench reliability, Phase 5 reference-application modernization, fresh
-clone/documentation verification, or a separately scoped evidence-grounding
-experiment. Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
+RUN-RECORD-00 Phase 2 is complete without rewriting legacy producers. Phase 3
+is authorized only for the generation cross-kind proof. Workbench reliability
+and other roadmap items remain behind this bounded gate. Do not continue
+NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
 reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
@@ -124,7 +145,7 @@ NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `c95b8ab` as a
 confined, read-only Qwen3.6 repository-navigation evaluation with external
 ground truth and result storage.
 
-Next project: choose a new non-mail direction only after grounding it in the current repo state.
+Next project: complete RUN-RECORD-00 Phase 3 against the accepted envelope.
 Standing backlog (none gate-blocking): course-repo extraction, TOPOLOGY-01
 conversion (ADR-015), and neural reactivation only under a new mandate.
 
