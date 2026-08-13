@@ -19,6 +19,25 @@ response = engine.generate(GenerationRequest(
 print(response.text)
 ```
 
+Record the same single engine call as a durable artifact without replacing the
+runtime response contract:
+
+```python
+from llm_engines import record_generation
+from llm_harness_core import dump_artifact
+
+recorded = record_generation(engine, GenerationRequest(
+    messages=[ChatMessage(role="user", content="What is RAG?")],
+))
+print(recorded.response.text)
+dump_artifact(recorded.artifact, "generation-record.json")
+```
+
+Prompts and outputs are sensitive by default. Raw provider payloads and error
+messages are omitted unless an explicit `GenerationRecordingPolicy` includes
+them. A failed call raises `RecordedGenerationError`, whose `artifact` records
+the aborted attempt without issuing a second engine call.
+
 With tool calling:
 
 ```python

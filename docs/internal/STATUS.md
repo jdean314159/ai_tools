@@ -7,8 +7,8 @@ first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: RUN-RECORD-00 Phase 2 agent compatibility slice is complete; Phase 3
-generation/agent cross-kind proof is next. NAV-VERIFIABLE-00 remains complete
+**Phase: RUN-RECORD-00 Phase 3 generation/agent cross-kind proof is complete;
+the next bounded consumer capability has not been selected. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
 remains parked and output-isolated.**
@@ -32,10 +32,12 @@ Phase 2 implements lossless NAV-v1 and ASC adapters over one shared agent body;
 the package-local gates are recorded in
 `docs/projects/RUN-RECORD-00-PHASE-2-COMPATIBILITY.md`.
 
-The next gate is Phase 3: a minimal generation recorder using MockEngine
-contract fixtures, followed by one privacy-safe live local-engine maintainer
-acceptance run. Do not pull inspector, RAG, photo, or course migrations ahead
-of that cross-kind proof.
+Phase 3 adds an opt-in recorder around existing generation contracts, exercises
+the common reader across generation and agent bodies, and records a successful
+privacy-safe Ollama acceptance run. See
+`docs/projects/RUN-RECORD-00-PHASE-3-VALIDATION.md`. Inspector loading is the
+leading next option, but it is not yet selected. Experiment, RAG, photo, and
+course migrations remain deferred.
 
 ### Latest completed work — NAV-VERIFIABLE-00
 
@@ -65,10 +67,9 @@ checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
 
-RUN-RECORD-00 Phase 2 is complete without rewriting legacy producers. Phase 3
-is authorized only for the generation cross-kind proof. Workbench reliability
-and other roadmap items remain behind this bounded gate. Do not continue
-NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
+RUN-RECORD-00 Phase 3 is complete without rewriting legacy producers or engine
+backends. Select the next bounded consumer capability before implementation.
+Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
 reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
@@ -145,7 +146,8 @@ NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `c95b8ab` as a
 confined, read-only Qwen3.6 repository-navigation evaluation with external
 ground truth and result storage.
 
-Next project: complete RUN-RECORD-00 Phase 3 against the accepted envelope.
+Next project: select a bounded post-Phase-3 consumer capability; inspector
+loading and kind-specific summaries are the leading option.
 Standing backlog (none gate-blocking): course-repo extraction, TOPOLOGY-01
 conversion (ADR-015), and neural reactivation only under a new mandate.
 

@@ -59,6 +59,15 @@ from llm_engines.utils.structured_output import (
     ParseResult,
 )
 from llm_engines.interop import describe_engine, message_to_interop, response_to_interop_result
+from llm_engines.generation_artifacts import (
+    GENERATION_BODY_VERSION,
+    GenerationRecordingPolicy,
+    RecordedGeneration,
+    RecordedGenerationError,
+    build_generation_artifact,
+    build_generation_failure_artifact,
+    record_generation,
+)
 
 __version__ = "0.1.0"
 
@@ -110,6 +119,14 @@ __all__ = [
     "describe_engine",
     "message_to_interop",
     "response_to_interop_result",
+    # Durable generation artifacts
+    "GENERATION_BODY_VERSION",
+    "GenerationRecordingPolicy",
+    "RecordedGeneration",
+    "RecordedGenerationError",
+    "build_generation_artifact",
+    "build_generation_failure_artifact",
+    "record_generation",
 ]
 
 

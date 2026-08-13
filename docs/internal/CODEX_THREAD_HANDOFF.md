@@ -2,7 +2,7 @@
 
 - Prepared: 2026-08-12
 - Repository: `/home/cybernaif/repos/ai_tools`
-- Selected project: RUN-RECORD-00, Phase 3 cross-kind generation proof
+- Selected project: RUN-RECORD-00 Phase 3 complete; next slice unselected
 
 ## Read order
 
@@ -18,17 +18,10 @@ Do not read `SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## First assignment
 
-Complete RUN-RECORD-00 Phase 3 only:
-
-- add a minimal durable generation recorder around the existing
-  `GenerationRequest`/`GenerationResponse` contracts;
-- use deterministic MockEngine fixtures for the cross-kind contract gate;
-- prove the common reader handles both generation and agent-run envelopes
-  without homogenizing their bodies;
-- complete one privacy-safe live local-engine maintainer acceptance run.
-
-Do not pull inspector, RAG, photo, experiment migration, or course fixtures
-ahead of this proof.
+Review `RUN-RECORD-00-PHASE-3-VALIDATION.md` and select one bounded consumer
+capability before implementing it. Inspector loading and kind-specific
+summaries are the leading option. Do not pull RAG, photo, experiment migration,
+or course fixtures into that slice.
 
 ## Critical factual correction
 
@@ -36,10 +29,10 @@ This project is not greenfield. The existing NAV schema-v1 producer is
 `agent_lib/src/agent_lib/eval/repo_navigation.py:1672`; its CLI writes
 `run-record.json` in `agent_lib/examples/repo_navigation_eval.py:266-277`, and
 `agent_lib/examples/nav_counterfactual_finalize.py` consumes the artifact.
-ADR-021 and ADR-022 now govern the shared semantics and ownership. Phase 2
+ADR-021 and ADR-022 govern the shared semantics and ownership. Phase 2
 implemented the dependency-free core envelope plus lossless NAV-v1 and ASC
-adapters. Read `docs/projects/RUN-RECORD-00-PHASE-2-COMPATIBILITY.md` before
-starting Phase 3.
+adapters. Phase 3 added generation recording, cross-kind tests, and a live
+Ollama acceptance run.
 
 ## Working-tree posture
 
@@ -49,7 +42,7 @@ any newer work.
 
 ## Verification posture
 
-Phase 2 package-local checkpoints are `17 passed` for `llm_harness_core` and
-`153 passed` for `agent_lib`. Invoke root pytest as `python -m pytest`; the bare
+Phase 3 checkpoints include `209 passed, 12 skipped` for `llm_engines`, two
+cross-kind integration tests, and the Phase 2 regression gates. Invoke root pytest as `python -m pytest`; the bare
 `pytest` console script does not preserve the repository root early enough for
 the centralized example-package bootstrap.

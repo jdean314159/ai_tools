@@ -62,7 +62,7 @@ print(summarize_artifact(artifact))
 Validate and summarize a JSON artifact without importing its producer:
 
 ```bash
-python -m llm_harness_core.run_artifacts unified-run-record.json
+python -m llm_harness_core.run_artifacts_cli unified-run-record.json
 ```
 
 Envelope validation does not imply that the reader understands an unknown body

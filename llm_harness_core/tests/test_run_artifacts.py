@@ -24,7 +24,7 @@ from llm_harness_core import (
     load_artifact,
     summarize_artifact,
 )
-from llm_harness_core.run_artifacts import main
+from llm_harness_core.run_artifacts_cli import main
 
 
 def _artifact() -> RunArtifact:

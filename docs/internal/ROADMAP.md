@@ -7,9 +7,8 @@
 See `STATUS.md` for the authoritative current state, active work priority list,
 and current test gate baseline. NAV-VERIFIABLE-00 is complete with an
 `inconclusive` frozen verdict; it is not an active tuning campaign.
-RUN-RECORD-00 Phase 2 is complete under ADR-021/022. The Phase 3
-generation/agent cross-kind proof is next. The checkpoint blocks below are
-historical.
+RUN-RECORD-00 Phase 3 is complete under ADR-021/022. The next bounded consumer
+capability has not been selected. The checkpoint blocks below are historical.
 
 <!-- AI_TOOLS_STATUS_END -->
 
@@ -17,9 +16,9 @@ historical.
 
 This is the ordered execution plan for the `ai_tools` monorepo.
 
-For the next thread, begin with the bounded RUN-RECORD-00 Phase 3 generation
-proof in `docs/projects/RUN-RECORD-00-unified-run-artifacts.md`. Do not pull
-inspector, RAG, photo, or course migrations ahead of that proof.
+For the next thread, review the Phase 3 validation and select one bounded
+consumer capability. Inspector loading and kind-specific summaries are the
+leading option; do not bundle later producer migrations into that choice.
 
 ## Planning assumptions
 
@@ -112,7 +111,7 @@ Make `llm_inspector_ui` a reliable teaching and diagnostic workbench.
 
 A new user can launch the workbench and inspect baseline, memory-augmented, and retrieval-augmented runs.
 
-## Phase 4A — RUN-RECORD-00 unified artifacts — PHASE 2 COMPLETE
+## Phase 4A — RUN-RECORD-00 unified artifacts — PHASE 3 COMPLETE
 
 ### Goal
 
@@ -126,8 +125,10 @@ into one schema shape.
 - Completed: ADR-021 semantics and ADR-022 ownership/public API.
 - Completed: dependency-free core envelope/reader plus lossless NAV-v1 and ASC
   adapters over one shared agent body.
-- Next: Phase 3 generation recorder with deterministic MockEngine fixtures and
-  one privacy-safe live-engine maintainer acceptance run.
+- Completed: Phase 3 generation recorder with deterministic MockEngine
+  fixtures, common-reader cross-kind tests, and one privacy-safe live-engine
+  maintainer acceptance run.
+- Candidate next slice: inspector loading plus kind-specific summaries.
 
 ### Done when
 

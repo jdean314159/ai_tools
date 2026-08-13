@@ -28,8 +28,8 @@ start by reading the historical sections of `SESSION_HANDOFF.md`.
 
 ## Current posture
 
-RUN-RECORD-00 Phase 2 is complete under accepted ADR-021 and ADR-022. Phase 3,
-the generation/agent cross-kind proof, is next. The most recent completed
+RUN-RECORD-00 Phase 3 is complete under accepted ADR-021 and ADR-022. The next
+bounded consumer slice is unselected. The most recent completed
 empirical campaign, NAV-VERIFIABLE-00, remains closed and must not be extended
 by silently changing its frozen protocol.
 
@@ -44,8 +44,8 @@ Relevant historical commits:
 - `8a4fd71` — added the shared-schema ceiling verdict;
 - `364fed6` / `a0e5189` — froze arm, selection, and campaign policy before data.
 
-At the Phase 2 checkpoint, package-local gates passed with `17 passed` for
-`llm_harness_core` and `153 passed` for `agent_lib`.
+Phase 3 passed 209 engine tests with 12 skipped and two cross-kind integration
+tests, in addition to the Phase 2 core/agent regression gates.
 
 ## RUN-RECORD-00 — what the next thread must understand
 
@@ -60,10 +60,10 @@ versioned NAV run-record implementation:
 
 Phase 0 inventoried ASC, `GenerationResponse`, inspector `Trace`, and campaign
 outputs. Phase 2 added the dependency-free core envelope plus lossless NAV-v1
-and ASC adapters over a shared agent-run body. The next task is Phase 3 only: a
-minimal generation recorder, MockEngine cross-kind fixtures, common-reader
-semantic checks, and one privacy-safe live local-engine maintainer acceptance
-run.
+and ASC adapters. Phase 3 added a generation recorder, MockEngine cross-kind
+fixtures, common-reader semantic checks, and a privacy-safe live Ollama
+acceptance run. Read `RUN-RECORD-00-PHASE-3-VALIDATION.md` before selecting the
+next slice.
 
 ## What the NAV investigation established
 
@@ -130,11 +130,11 @@ campaign is not a pristine first-contact dataset. Preserve that caveat.
   direction.
 - Do not prompt-tune or schema-tune against the completed NAV campaign.
 
-## Work after the current Phase 3 gate
+## Work after the completed Phase 3 gate
 
 Workbench reliability, reference-application modernization, grounded-claims
 work, and fresh-clone verification remain legitimate later projects. They do
-not supersede the selected RUN-RECORD-00 Phase 3 unless the user explicitly
+not imply they should be combined into one successor slice unless the user explicitly
 changes direction.
 
 Over-citation is a known model behavior, not a trivial JSON-schema fix. A schema

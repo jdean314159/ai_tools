@@ -1,8 +1,8 @@
 # RUN-RECORD-00 — Unified, versioned run artifacts
 
-**Status:** Phase 0 and the narrow Phase 2 NAV/ASC compatibility slice are
-complete. Accepted ADR-021 semantics and ADR-022 ownership/public API govern the
-implementation. Phase 3 cross-kind generation proof is next.
+**Status:** Phases 0–3 complete. Accepted ADR-021 semantics and ADR-022
+ownership/public API govern the implementation. The common envelope has passed
+the NAV/ASC agent compatibility gate and the generation/agent cross-kind gate.
 **Prepared:** 2026-08-12
 
 ## Purpose
@@ -154,6 +154,6 @@ failure, redaction tests, and two producer adapters pass.
 
 ## Current action
 
-Complete ADR 1B against the Phase 0 dependency evidence, then implement only
-the Phase 2 NAV/ASC compatibility slice. Do not begin generation recording or
-broader producer migrations.
+Select the next bounded consumer capability. Inspector loading and
+kind-specific summaries are the leading option. Do not infer authorization for
+experiment, RAG, photo, or course migrations from Phase 3 completion.

@@ -389,23 +389,3 @@ def summarize_artifact(artifact: RunArtifact) -> dict[str, Any]:
         "capability_operations": [item.operation for item in envelope.capabilities],
         "body_interpretation": "not_evaluated",
     }
-
-
-def main(argv: list[str] | None = None) -> int:
-    """Validate and summarize one artifact from the command line."""
-
-    import argparse
-
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("artifact", type=Path)
-    args = parser.parse_args(argv)
-    try:
-        artifact = load_artifact(args.artifact)
-    except (OSError, json.JSONDecodeError, ArtifactValidationError) as exc:
-        parser.exit(1, f"invalid run artifact: {exc}\n")
-    print(json.dumps(summarize_artifact(artifact), indent=2, sort_keys=True))
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
