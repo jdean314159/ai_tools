@@ -51,6 +51,9 @@ def test_course_fixture_is_public_minimized_and_integral() -> None:
     assert {item.status for item in bundle.resolutions} == {"resolved"}
     assert bundle.artifact.envelope.privacy.body_bytes_sensitivity == "public"
     assert bundle.artifact.envelope.privacy.validation.status == "validated"
+    assert bundle.artifact.envelope.privacy.validation.policy_id == (
+        "course-evaluation-summary-v3"
+    )
     assert bundle.artifact.envelope.capabilities == ()
     assert {item.field_path for item in bundle.artifact.envelope.omissions} == {
         "/body/decision",
@@ -101,6 +104,9 @@ def test_inspector_output_alone_exposes_the_expected_diagnosis() -> None:
     assert all(child["status"] == "completed" for child in children.values())
     for resolution in load_artifact_bundle(FIXTURE_ROOT).resolutions:
         child = json.loads(Path(resolution.resolved_path).read_text(encoding="utf-8"))
+        assert child["envelope"]["privacy"]["validation"]["policy_id"] == (
+            "course-evaluation-summary-v3"
+        )
         omission_paths = {item["field_path"] for item in child["envelope"]["omissions"]}
         assert {
             "/body/elapsed_seconds",

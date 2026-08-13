@@ -45,8 +45,11 @@ TUTORIALS = [
 
 EXAMPLE_COMMAND_SPECS = [
     {
-        "cmd": [sys.executable, str(ROOT / "course/check_portability.py")],
-        "expect": "Course portability gate passed",
+        "cmd": [
+            sys.executable,
+            str(ROOT / "scripts/check_course_distribution_portability.py"),
+        ],
+        "expect": "Course distribution portability gate passed",
     },
     {"cmd": [sys.executable, str(ROOT / 'rag_lib' / 'examples' / 'broken_rag_lab.py')], "expect": 'Evaluation summary'},
     {"cmd": [sys.executable, str(ROOT / 'engram' / 'examples' / 'memory_contamination_lab.py')], "expect": '=== Scenario:'},

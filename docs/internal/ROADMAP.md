@@ -140,8 +140,8 @@ into one schema shape.
   bundle loading.
 - Completed: Phase 7 privacy-safe offline course fixture, resolved-child
   Inspector summaries, deterministic rebuild, and no-GPU diagnosis gate.
-- Completed: Phase 8 copied-course portability gate, removal of student-facing
-  monorepo file dependencies, exact package pins, and a real generation-level
+- Completed: Phase 8 wheel-installed copied-course portability gate, removal of
+  student-facing monorepo file dependencies, exact package pins, and a real generation-level
   provenance lab.
 - Next gate: make the pinned distributions independently installable and
   replace the excluded legacy reference-app notebook before repository creation.

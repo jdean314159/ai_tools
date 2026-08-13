@@ -17,18 +17,21 @@ link decision.
 | Notebook 09 | `llm_harness_core/EVALUATION_WALKTHROUGH.md` | Same decision as notebook 06; do not duplicate two copies. |
 | Notebook 09 | `tests/integration_tests/memory_eval.py` | Replace with a course-owned evaluation fixture/script; do not depend on a package test path. |
 
-All seven file references above have been removed from student-facing course
-content. The fixture builder now requires an explicit maintainer-only source
-path and the committed bundle remains usable without it.
+**Resolved:** all seven file references above have been removed from
+student-facing course content. The fixture builder now requires an explicit
+maintainer-only source path and the committed bundle remains usable without it.
 
-Notebook 07 exposed a larger issue than a file reference: its imports target a
+**Open — replacement lesson:** Notebook 07 exposed a larger issue than a file
+reference: its imports target a
 retired `language_tutor` application shape, while the current installable
 example exposes `examples.language_tutor`. It is retained as source material
 but explicitly excluded from the split rather than falsely declared portable.
 
-Notebook 01 now installs the exact versions in `requirements.txt`, with a
-temporary monorepo-compatible requirements-file lookup. Distribution publication
-or a wheelhouse remains an external release prerequisite.
+**Resolved locally; external release prerequisite remains:** Notebook 01 now
+installs the exact versions in `requirements.txt`, with a temporary
+monorepo-compatible requirements-file lookup. The wheel-installed portability
+gate passes, but distribution publication or a maintained wheelhouse remains
+required for a clean network install.
 
 ## Runtime package dependencies
 

@@ -18,13 +18,21 @@ phase does not create or publish the separate repository.
   examples, package docs, or integration-test files.
 - The evaluation-blind-spot builder requires an explicit maintainer source;
   the student bundle carries only a non-path source label and frozen digest.
-- `course/check_portability.py` copies the course to a temporary directory,
-  removes `PYTHONPATH`, validates exact installed versions and forbidden path
-  references, and runs both offline artifacts plus a starter evaluation.
+- `scripts/check_course_distribution_portability.py` builds local wheels,
+  installs them into a fresh non-editable environment, copies the course to a
+  temporary directory, and invokes `course/check_portability.py` with
+  `PYTHONPATH` removed. The inner gate rejects editable direct-URL metadata,
+  validates exact versions and forbidden references, and runs both offline
+  artifacts plus a starter evaluation.
 - A real privacy-safe `qwen3:8b` Ollama record now supports the generation
   provenance lab for notebooks 02–03. It teaches that successful output,
   label equality, and temperature zero do not establish model identity or
   deterministic replay.
+
+The generation lab was an explicitly authorized adjacent teaching deliverable,
+not machinery forced by the portability failure. It closes the already-recorded
+no-GPU coverage gap for notebooks 02–03; it is not cited as evidence that the
+portability architecture needed another feature.
 
 ## Falsification found
 
@@ -37,18 +45,35 @@ APIs is separate work.
 
 ## Remaining external prerequisites
 
-The package versions in `course/requirements.txt` are locally installed and
-compatible, but the standalone repository cannot offer a clean network install
+The package versions in `course/requirements.txt` build and pass as ordinary
+local wheels. The standalone repository cannot offer a clean network install
 until those exact distributions and their unpublished sibling dependencies are
-available from a package index or wheelhouse. Repository creation is therefore
-not authorized by this phase alone.
+published to a package index or supplied through a maintained wheelhouse.
+Repository creation is therefore not authorized by this phase alone.
+
+## Post-review corrections
+
+The first Phase 8 gate removed `PYTHONPATH` but ran under the monorepo's editable
+environment. That was insufficient: editable finders can resolve source files
+without `PYTHONPATH`. The distribution gate above replaces that proof with a
+fresh wheel-installed environment.
+
+Changing the experiment body's provenance field from `source_path` to
+`source_label` changed its deterministic identity. Fixture policy v3 now makes
+that transition explicit and mints new root and child IDs. No v2 identity is
+reused for changed bytes.
+
+The identical `990 passed, 250 skipped` Phase 7/8 figures are real but narrowly
+named below: root `pytest.ini` excludes `tests/integration_tests`, so neither
+phase's focused course tests affect the default pytest collection. They are
+reported separately rather than implied to be part of that count.
 
 ## Validation
 
 ```text
-course portability gate: passed (10 extraction notebooks; NB07 excluded)
+wheel-installed portability gate: passed (10 extraction notebooks; NB07 excluded)
 course fixture tests:     4 passed
 teaching-artifact check:  passed
-full repository gate:     990 passed, 250 skipped
+default pytest gate:      990 passed, 250 skipped
 Ruff and diff checks:     passed
 ```

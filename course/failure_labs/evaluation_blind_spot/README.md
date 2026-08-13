@@ -63,6 +63,11 @@ campaign and allowlists scalar outcome facts. It omits workspace paths, source
 code, prompts, final output, reasoning traces, tool payloads, free-text test
 details, and timing. The source SHA-256 is frozen in `build_fixture.py`.
 
+Fixture policy v3 replaces the former monorepo-relative source path with a
+non-path provenance label. Because that label is part of the experiment body,
+v3 mints new immutable root and child identities rather than changing v2 bytes
+under old IDs.
+
 Students do not need the private provenance input to use the committed bundle.
 Maintainers with the frozen ASC campaign source can rebuild into a new empty
 directory by supplying it explicitly:

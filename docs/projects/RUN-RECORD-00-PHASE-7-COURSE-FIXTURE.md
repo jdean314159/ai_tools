@@ -120,7 +120,7 @@ and `body_summary.aggregate_signals` as documented.
 
 ```text
 focused fixture and Inspector gate: 16 passed
-full repository gate:              990 passed, 250 skipped
+default pytest gate:               990 passed, 250 skipped
 teaching-artifact checker:         passed (11 notebooks, 3 starter projects)
 Ruff and git diff checks:          passed
 ```

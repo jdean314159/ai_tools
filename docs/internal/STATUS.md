@@ -64,7 +64,7 @@ could not answer the lesson's frozen diagnostic question. See
 `docs/projects/RUN-RECORD-00-PHASE-7-COURSE-FIXTURE.md`.
 
 Phase 8 removes student-facing monorepo file dependencies, pins the compatible
-package set, adds an isolated copied-course gate, and records a real local
+package set, adds a wheel-installed non-editable copied-course gate, and records a real local
 generation provenance lab. It also proves notebook 07 targets a retired
 application API and excludes it from the extraction set rather than porting it.
 See `docs/projects/RUN-RECORD-00-PHASE-8-COURSE-PORTABILITY.md`.

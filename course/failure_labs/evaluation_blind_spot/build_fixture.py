@@ -34,8 +34,8 @@ SELECTED = (
     (0, "escalation_merge_intervals"),
 )
 CREATED_AT = "2026-06-20T17:00:39.887363+00:00"
-FIXTURE_VERSION = "2"
-POLICY_ID = "course-evaluation-summary-v2"
+FIXTURE_VERSION = "3"
+POLICY_ID = "course-evaluation-summary-v3"
 
 
 def _id(kind: str, payload: Any) -> str:

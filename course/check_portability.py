@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError, distribution
 from pathlib import Path
 
 
@@ -66,15 +66,26 @@ def _validate_requirements() -> None:
             continue
         if line.count("==") != 1:
             raise AssertionError(f"course dependency is not exactly pinned: {line}")
-        distribution, expected = line.split("==", 1)
+        distribution_name, expected = line.split("==", 1)
         try:
-            actual = version(distribution)
+            installed = distribution(distribution_name)
+            actual = installed.version
         except PackageNotFoundError as exc:
-            raise AssertionError(f"course dependency is not installed: {distribution}") from exc
+            raise AssertionError(
+                f"course dependency is not installed: {distribution_name}"
+            ) from exc
         if actual != expected:
             raise AssertionError(
-                f"course dependency version mismatch: {distribution} {actual} != {expected}"
+                f"course dependency version mismatch: {distribution_name} {actual} != {expected}"
             )
+        direct_url = installed.read_text("direct_url.json")
+        if direct_url:
+            provenance = json.loads(direct_url)
+            if provenance.get("dir_info", {}).get("editable") is True:
+                raise AssertionError(
+                    "course dependency is editable, not distribution-isolated: "
+                    f"{distribution_name}"
+                )
 
 
 def _validate_student_files() -> None:

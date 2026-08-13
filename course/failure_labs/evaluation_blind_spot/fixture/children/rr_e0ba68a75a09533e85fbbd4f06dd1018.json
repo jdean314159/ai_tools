@@ -17,7 +17,7 @@
     },
     "profile_data": {
       "escalations": 0,
-      "fixture_policy": "course-evaluation-summary-v2",
+      "fixture_policy": "course-evaluation-summary-v3",
       "mode": "worker-only",
       "seed": 0
     },
@@ -36,7 +36,7 @@
         "actor_id": "recorder",
         "name": "course.evaluation_blind_spot_fixture",
         "role": "recorder",
-        "version": "2"
+        "version": "3"
       }
     ],
     "attachments": [],
@@ -83,13 +83,13 @@
       "transformations_applied": [
         {
           "description": "allowlisted scalar outcome fields only; workspace paths, prompts, reasoning, tool payloads, source code, and free-text details omitted",
-          "policy_id": "course-evaluation-summary-v2",
-          "policy_version": "2"
+          "policy_id": "course-evaluation-summary-v3",
+          "policy_version": "3"
         }
       ],
       "validation": {
-        "policy_id": "course-evaluation-summary-v2",
-        "policy_version": "2",
+        "policy_id": "course-evaluation-summary-v3",
+        "policy_version": "3",
         "scope": [
           "allowlisted scalar body fields",
           "omission of source free text and filesystem paths"
@@ -101,7 +101,7 @@
     },
     "profile": "agent_lib.asc",
     "profile_version": 1,
-    "record_id": "rr_719560fcd97e5523be5d3c475750bf9b",
+    "record_id": "rr_e0ba68a75a09533e85fbbd4f06dd1018",
     "relationships": [
       {
         "relation_type": "derived_from",
