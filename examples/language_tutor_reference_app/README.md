@@ -16,13 +16,12 @@ That makes `language_tutor` both:
 
 ---
 
-## Start here if you are learning from this repo
+## Start here
 
-If you are using `language_tutor` as part of the teaching path, read these in order:
+Read these in order:
 
-1. [`../LEARNING_PATH.md`](../LEARNING_PATH.md) — where this package sits in the full curriculum
-2. [`REFERENCE_APP_GUIDE.md`](./REFERENCE_APP_GUIDE.md) — guided walkthrough of the app as a composed system
-3. this `README.md` — package-specific details, API surface, and setup notes
+1. [`REFERENCE_APP_GUIDE.md`](./REFERENCE_APP_GUIDE.md) — guided walkthrough of the app as a composed system
+2. this `README.md` — package-specific details, API surface, and setup notes
 
 ---
 

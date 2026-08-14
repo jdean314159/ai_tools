@@ -222,3 +222,12 @@ read/validate/summary helpers in `llm_harness_core`, while producer packages
 retain their adapters and profile semantics. Phase 2 adds NAV-v1 and ASC
 adapters in `agent_lib` without rewriting either legacy artifact or its current
 consumers.
+
+## ADR-023 — Split repository licensing
+**File:** `adr/ADR-023-split-repository-licensing.md`
+**Status:** Proposed; blocked on ownership/provenance declarations
+**Summary:** Proposes Apache-2.0 for reusable `ai_tools` infrastructure and
+retains MIT for the extracted `llm-failure-lab` teaching repository. Records
+the rejected single-license alternatives, keeps `THIRD_PARTY_NOTICES.md`
+distinct from an Apache `NOTICE`, and authorizes no relicensing until the
+whole-tree ownership audit closes.
