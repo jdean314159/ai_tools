@@ -2,7 +2,6 @@
 Surprise Filter Implementation
 
 TITANS-inspired perplexity-based gating for selective memory storage.
-Reduces memory storage by 70-90% while preserving important context.
 
 Based on Google Research TITANS papers:
 - arxiv.org/abs/2501.00663
@@ -13,7 +12,6 @@ Key features:
 - Adaptive thresholds with momentum buffer
 - Project-specific calibration
 - Human data baseline (anti-collapse)
-- 70-90% memory reduction
 
 Author: Jeffrey Dean
 """
@@ -125,7 +123,7 @@ class SurpriseFilter:
     """
     Perplexity-based surprise filter for selective memory storage.
 
-    Based on TITANS papers from Google Research. Only stores content
+    inspired by TITANS papers from Google Research. Only stores content
     that is "surprising" (high perplexity) relative to the model's
     expectations.
 
