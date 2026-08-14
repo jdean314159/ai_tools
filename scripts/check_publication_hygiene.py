@@ -6,6 +6,7 @@ import argparse
 import ast
 import os
 import subprocess
+import tomllib
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +31,8 @@ REQUIRED_ROOT_DOCS = [
     "THIRD_PARTY_NOTICES.md",
     "CONTRIBUTING.md",
 ]
+
+EXPECTED_LICENSE_EXPRESSION = "Apache-2.0"
 
 LEGACY_BASENAMES = {
     "README_engram_lite.legacy.md",
@@ -319,6 +322,34 @@ def _find_untracked_fixture_references() -> list[str]:
     return problems
 
 
+def _license_metadata_problems() -> list[str]:
+    root_license = ROOT / "LICENSE"
+    if not root_license.is_file():
+        return []
+
+    expected_bytes = root_license.read_bytes()
+    problems: list[str] = []
+    for pyproject in sorted(ROOT.rglob("pyproject.toml")):
+        if _is_under_skipped_dir(pyproject):
+            continue
+        relative = pyproject.relative_to(ROOT)
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        project = data.get("project", {})
+        if project.get("license") != EXPECTED_LICENSE_EXPRESSION:
+            problems.append(
+                f"{relative}: project.license must be {EXPECTED_LICENSE_EXPRESSION!r}"
+            )
+        if project.get("license-files") != ["LICENSE"]:
+            problems.append(f"{relative}: project.license-files must be ['LICENSE']")
+
+        package_license = pyproject.parent / "LICENSE"
+        if not package_license.is_file():
+            problems.append(f"{relative}: build root is missing LICENSE")
+        elif package_license.read_bytes() != expected_bytes:
+            problems.append(f"{relative}: LICENSE bytes differ from root LICENSE")
+    return problems
+
+
 def _fixture_path_is_tracked(fixture_path: Path, tracked: set[Path]) -> bool:
     resolved = fixture_path.resolve()
     if resolved in tracked:
@@ -376,6 +407,11 @@ def main(argv: list[str] | None = None) -> int:
         problems.append("Referenced fixture files must be tracked:")
         problems.extend(f"- {problem}" for problem in untracked_fixtures)
 
+    license_problems = _license_metadata_problems()
+    if license_problems:
+        problems.append("Distribution license metadata must match the root license:")
+        problems.extend(f"- {problem}" for problem in license_problems)
+
     if warnings:
         print("Publication hygiene warnings:")
         for warning in warnings:
@@ -397,6 +433,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Untracked banned artifacts: none")
     print("Legacy package READMEs are confined to docs/history/.")
     print("Referenced fixture files are tracked.")
+    print("Distribution license metadata and files match the root license.")
     return 0
 
 

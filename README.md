@@ -103,5 +103,6 @@ agnostic and surfaces:
 
 ## License
 
-See [LICENSE](./LICENSE). Historical third-party source attribution is
-preserved in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+`ai_tools` is licensed under Apache License 2.0; see [LICENSE](./LICENSE).
+Current and historical third-party source attribution is preserved in
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

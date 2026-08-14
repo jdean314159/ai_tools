@@ -147,6 +147,36 @@ def test_missing_required_doc_still_fails(tmp_path: Path, monkeypatch: pytest.Mo
     assert checker.main([]) == 1
 
 
+def test_distribution_license_must_match_root(
+    hygiene_root: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    package = hygiene_root / "pkg"
+    _write(
+        package / "pyproject.toml",
+        '[project]\nname = "pkg"\nversion = "0.1.0"\nlicense = "MIT"\n',
+    )
+    _write(package / "LICENSE", "different")
+
+    assert checker.main([]) == 1
+    output = capsys.readouterr().out
+    assert "project.license must be 'Apache-2.0'" in output
+    assert "project.license-files must be ['LICENSE']" in output
+    assert "LICENSE bytes differ from root LICENSE" in output
+
+
+def test_distribution_license_alignment_passes(hygiene_root: Path) -> None:
+    package = hygiene_root / "pkg"
+    _write(
+        package / "pyproject.toml",
+        '[project]\nname = "pkg"\nversion = "0.1.0"\n'
+        'license = "Apache-2.0"\nlicense-files = ["LICENSE"]\n',
+    )
+    _write(package / "LICENSE", (hygiene_root / "LICENSE").read_text(encoding="utf-8"))
+
+    assert checker.main([]) == 0
+
+
 def test_skip_dirs_are_not_descended(hygiene_root: Path) -> None:
     _write(hygiene_root / ".venv" / "lib" / "ignored.pyc")
 

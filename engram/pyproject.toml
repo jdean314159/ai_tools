@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,8 @@ version = "0.2.0"
 description = "Production memory system for LLM applications"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 dependencies = [
     "llm-harness-core>=0.1.0",
     "chromadb>=0.4.0",

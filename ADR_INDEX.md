@@ -225,9 +225,9 @@ consumers.
 
 ## ADR-023 — Split repository licensing
 **File:** `adr/ADR-023-split-repository-licensing.md`
-**Status:** Proposed; blocked on ownership/provenance declarations
-**Summary:** Proposes Apache-2.0 for reusable `ai_tools` infrastructure and
+**Status:** Accepted
+**Summary:** Selects Apache-2.0 for reusable `ai_tools` infrastructure and
 retains MIT for the extracted `llm-failure-lab` teaching repository. Records
 the rejected single-license alternatives, keeps `THIRD_PARTY_NOTICES.md`
-distinct from an Apache `NOTICE`, and authorizes no relicensing until the
-whole-tree ownership audit closes.
+distinct from an Apache `NOTICE`, and records closure of the whole-tree
+ownership audit.

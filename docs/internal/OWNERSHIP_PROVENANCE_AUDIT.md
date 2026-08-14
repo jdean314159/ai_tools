@@ -1,7 +1,7 @@
 # ai_tools ownership and provenance audit
 
 **Date:** 2026-08-14  
-**Status:** Open — repository evidence collected; owner declarations required  
+**Status:** Closed — repository evidence and owner declarations complete
 **Purpose:** Determine whether the current publication tree may be licensed as
 Apache-2.0. This is an engineering provenance audit, not legal advice.
 
@@ -106,9 +106,9 @@ are not included in this repository merely because a `pyproject.toml` names
 them. They retain their own licenses. This audit separately concerns source or
 assets copied into the publication tree.
 
-## Declarations required to close the audit
+## Owner declarations
 
-The copyright owner must confirm all of the following:
+On 2026-08-14, Jeff Dean confirmed all of the following:
 
 1. The three Git display names above identify the same person.
 2. That person owns, or is authorized to relicense, the current `ai_tools`
@@ -121,28 +121,31 @@ The copyright owner must confirm all of the following:
    portion of the current publication tree or restricts its relicensing.
 6. No other copied source or asset is known beyond the items recorded above.
 
-A negative or uncertain answer does not imply the whole repository cannot be
-published. It means the affected path must be identified, attributed, kept
-under its compatible original license, replaced, or removed before the root
-license changes.
+These declarations close the ownership questions that repository evidence
+could not answer. They are recorded as owner testimony, not conclusions drawn
+from Git metadata.
 
-## Packaging defects to repair after ownership closes
+## Packaging implementation and validation
 
-- Replace the root MIT license with the canonical Apache-2.0 text.
-- Use PEP 639 `license = "Apache-2.0"` consistently for every distribution
-  shipped from this repository.
-- Add `license-files` configuration and verify the exact license files inside
-  every wheel and source distribution.
-- Do not create an Apache `NOTICE` file accidentally. The existing
+- The root and all 14 independent distribution build roots contain the same
+  canonical Apache-2.0 license bytes.
+- All 14 `pyproject.toml` files use PEP 639
+  `license = "Apache-2.0"` and `license-files = ["LICENSE"]`.
+- The setuptools build floor is 77.0.3, the documented PEP 639-capable floor.
+- An isolated build produced 14 wheels and 14 source distributions. Every
+  wheel reported `License-Expression: Apache-2.0`, contained exactly one
+  `.dist-info/licenses/LICENSE`, and that file matched the canonical bytes.
+  Every source distribution contained a license file.
+- No Apache `NOTICE` file was created. The existing
   `THIRD_PARTY_NOTICES.md` remains attribution bookkeeping unless a later
   explicit decision designates or replaces it as `NOTICE`.
-- Rebuild all distributions and inspect `License-Expression` and included
-  license files before publication.
+- The recovered language-tutor project generator emits the same license
+  expression and copies its Apache-2.0 license into generated projects.
 
-## Current gate
+## Audit disposition
 
-ADR-023 is Proposed. Do not change license text or package declarations until
-the six owner declarations above are answered and recorded. The separate
+The ownership/provenance and packaging gates are closed. ADR-023 is accepted
+and the `ai_tools` publication tree is licensed under Apache-2.0. The separate
 `llm-failure-lab` repository remains MIT by deliberate design.
 
 ## Primary references

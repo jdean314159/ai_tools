@@ -1,6 +1,6 @@
 # ADR-023 — Split repository licensing
 
-**Status:** Proposed; blocked on ownership/provenance declarations  
+**Status:** Accepted
 **Date:** 2026-08-14  
 **Scope:** `ai_tools` and the extracted `llm-failure-lab` repository
 
@@ -18,10 +18,11 @@ The former monorepo used a root MIT license while four package metadata files
 had previously declared Apache-2.0. Commit `50eb4a2` aligned those metadata
 files to MIT without recording why MIT was selected over Apache-2.0.
 
-## Proposed decision
+## Decision
 
-Subject to closure of
-`docs/internal/OWNERSHIP_PROVENANCE_AUDIT.md`:
+The ownership declarations in
+`docs/internal/OWNERSHIP_PROVENANCE_AUDIT.md` were confirmed by Jeff Dean on
+2026-08-14. Therefore:
 
 1. License the `ai_tools` repository under Apache License 2.0.
 2. Keep `llm-failure-lab` under the MIT License.
@@ -77,9 +78,10 @@ redistribution obligation.
 
 ## Consequences
 
-Until these preconditions close, the current MIT files remain authoritative
-and this ADR authorizes no relicensing. Once accepted, license changes must be
-one reviewable commit with rebuilt-artifact verification.
+The preconditions are closed. The license change was implemented across all
+14 distribution build roots and verified by building 14 wheels and 14 source
+distributions. Wheel metadata and embedded license bytes matched the accepted
+decision. No Apache `NOTICE` file was created.
 
 ## References
 

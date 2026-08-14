@@ -1131,6 +1131,8 @@ version = "0.1.0"
 description = "AI-powered language learning with voice interaction"
 authors = [{name = "Jeff"}]
 requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 dependencies = [
     "fastapi>=0.104",
     "uvicorn[standard]>=0.24",
@@ -1156,7 +1158,7 @@ voice = [
 ]
 
 [build-system]
-requires = ["setuptools>=68.0"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
@@ -1170,6 +1172,14 @@ target-version = ['py311']
 
     (base_dir / "pyproject.toml").write_text(content)
     print("  ✓ Created pyproject.toml")
+
+
+def create_license(base_dir: Path):
+    """Copy the reference app's Apache-2.0 license into the generated project."""
+
+    source = Path(__file__).resolve().parent / "LICENSE"
+    (base_dir / "LICENSE").write_bytes(source.read_bytes())
+    print("  ✓ Created LICENSE")
 
 
 def create_readme(base_dir: Path):
@@ -1363,6 +1373,7 @@ def main():
     create_basic_ui(target_dir)
     create_requirements(target_dir)
     create_pyproject_toml(target_dir)
+    create_license(target_dir)
     create_readme(target_dir)
     create_gitignore(target_dir)
 
