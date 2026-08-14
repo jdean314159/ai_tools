@@ -1,8 +1,31 @@
 # Third-Party Notices
 
-This file records third-party source that appeared in the reachable Git
-history of this repository. The paths described below are not present in the
-current working tree and are not included in current `ai_tools` Python wheels.
+This file records third-party source present in the current tree or reachable
+Git history of this repository.
+
+## Current third-party source
+
+### htmx
+
+Vendored artifact: `examples/mail_assistant/static/htmx.min.js`
+
+Upstream project: `bigskysoftware/htmx`, version 2.0.4
+
+License: Zero-Clause BSD
+
+The exact upstream URL and SHA-256 digest are recorded in
+`examples/mail_assistant/static/HTMX-PROVENANCE.txt`.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED “AS IS” AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
 
 ## Historical source imports
 
