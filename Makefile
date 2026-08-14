@@ -205,7 +205,6 @@ clean-review: clean-all
 .PHONY: check-hygiene
 check-hygiene: clean
 	$(VENV_PYTHON) scripts/check_publication_hygiene.py
-	$(VENV_PYTHON) scripts/check_teaching_artifacts.py
 
 .PHONY: check-decisions
 check-decisions:

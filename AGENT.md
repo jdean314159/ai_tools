@@ -42,9 +42,8 @@ Use this order unless the task says otherwise:
 Use the narrowest command that validates the touched package first, then broader checks as needed:
 
 ```bash
-python -m compileall -q agent_lib engram llm_inspector_ui scripts course
+python -m compileall -q agent_lib engram llm_inspector_ui scripts
 python -m pytest -q agent_lib/tests/test_programming_harness.py llm_inspector_ui/tests/test_rag_retrieval_ui.py
-python scripts/check_teaching_artifacts.py
 make -n install
 make -n test-core
 python scripts/check_publication_hygiene.py

@@ -9,7 +9,6 @@ Before making architectural changes, read:
 - `docs/design/VISION.md`
 - `docs/internal/STATUS.md`
 - `docs/internal/ROADMAP.md`
-- `docs/learning/START_HERE.md`
 - relevant package README files
 
 ## Change policy

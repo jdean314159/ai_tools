@@ -1,16 +1,16 @@
 # Repo Status
 
-Last updated: 2026-08-13
+Last updated: 2026-08-14
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
 
 ## Current posture
 
-**Phase: RUN-RECORD-00 Phase 8 course extraction readiness is complete. The
-course has an isolated portability gate, two offline RunRecord labs, and a
-restored public-API reference-app notebook. The repository split remains
-blocked on external package distribution. NAV-VERIFIABLE-00 remains complete
+**Phase: the failure-driven course and `docs/learning` material have been
+extracted to the sibling `llm-failure-lab` repository. Its maintainer gate
+builds ordinary wheels from this checkout, so the split does not imply PyPI
+publication. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
 remains parked and output-isolated.**
@@ -98,10 +98,9 @@ checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
 
-RUN-RECORD-00 Phase 8 is complete without UI changes or a course-repository
-split. The next course action is a release decision: publish or maintain a
-wheelhouse for the pinned packages before creating the separate repository.
-Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
+RUN-RECORD-00 Phase 8 is complete without UI changes. The course repository
+split is complete locally at `../llm-failure-lab`; package publication is
+deferred. Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
 reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
@@ -230,8 +229,8 @@ Known repository-wide collection limitations outside the core package gates:
 - package-scoped test commands remain the supported gate; the integration suite
   lives under `tests/integration_tests/`.
 
-The collection-time live Ollama call in `course/test_loop.py` was fixed on
-2026-06-09 by moving executable work behind `main()`.
+The former course's collection-time live Ollama call was fixed on 2026-06-09
+before the teaching material moved to `llm-failure-lab`.
 
 ---
 

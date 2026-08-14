@@ -90,11 +90,10 @@ Expected path:
 Do not publish if this resolves to `engram/__init__.py`, `engram/engram`, or
 another obsolete path.
 
-## 7. Hygiene and teaching checks
+## 7. Publication hygiene check
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python scripts/check_publication_hygiene.py
-PYTHONDONTWRITEBYTECODE=1 python scripts/check_teaching_artifacts.py
 ```
 
 Expected:

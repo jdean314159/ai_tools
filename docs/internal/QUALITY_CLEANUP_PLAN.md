@@ -84,7 +84,6 @@ Run from a fresh clone:
     make install
     make test-core
     python scripts/check_publication_hygiene.py
-    python scripts/check_teaching_artifacts.py
 
 Optional ML gate:
 

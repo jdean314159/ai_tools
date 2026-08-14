@@ -82,10 +82,7 @@ This harness compares `engram` and `engram` on:
 
 ## Retrieval walkthrough
 
-The default starter for retrieval evaluation is:
-- `course/starter_projects/source_grounded_qa/eval.py`
-
-That starter shows a small but important pattern:
+A retrieval evaluation should use this small but important pattern:
 - score the answer itself
 - score whether required evidence is present
 - compare baseline vs grounded output separately
@@ -124,7 +121,7 @@ Avoid these failure modes:
 
 ## Concrete next steps
 
-1. Read `LEARNING_PATH.md` and follow the evaluation notes after Stages 3–6.
-2. Open `course/notebooks/07_evaluating_llm_applications.ipynb`.
-3. Run `python course/starter_projects/source_grounded_qa/eval.py`.
-4. Run the memory harness locally when you want a fuller comparison.
+1. Run the memory harness locally for a baseline/augmentation comparison.
+2. Preserve the prompts, retrieved evidence, evaluator outputs, and runtime
+   metadata as one versioned experiment artifact.
+3. Compare answer quality and evidence presence separately.
