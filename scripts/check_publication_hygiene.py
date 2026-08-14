@@ -27,6 +27,7 @@ REQUIRED_ROOT_DOCS = [
     "README.md",
     "ADR_INDEX.md",
     "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
     "CONTRIBUTING.md",
 ]
 

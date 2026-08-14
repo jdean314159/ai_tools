@@ -103,4 +103,5 @@ agnostic and surfaces:
 
 ## License
 
-See [LICENSE](./LICENSE).
+See [LICENSE](./LICENSE). Historical third-party source attribution is
+preserved in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

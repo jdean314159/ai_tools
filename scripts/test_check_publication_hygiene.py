@@ -18,7 +18,13 @@ sys.modules[SPEC.name] = checker
 SPEC.loader.exec_module(checker)
 
 
-REQUIRED_DOCS = ("README.md", "ADR_INDEX.md", "LICENSE", "CONTRIBUTING.md")
+REQUIRED_DOCS = (
+    "README.md",
+    "ADR_INDEX.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "CONTRIBUTING.md",
+)
 
 
 def _write(path: Path, text: str = "x") -> Path:
