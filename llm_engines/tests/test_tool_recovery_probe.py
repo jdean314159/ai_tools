@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+from pathlib import Path
 
 import pytest
 from llm_harness_core import artifact_from_dict, artifact_to_dict
@@ -130,3 +132,21 @@ def test_non_tool_engine_is_rejected_before_running():
 
     with pytest.raises(ValueError, match="tool calling"):
         run_tool_recovery_pilot(MockEngine())
+
+
+def test_committed_recovery_artifacts_match_pinned_bytes_and_privacy():
+    repo = Path(__file__).resolve().parents[2]
+    runs = repo / "docs" / "projects" / "llm_engines" / "runs"
+    expected = {
+        "2026-08-29-spark-qwen-tool-recovery-baseline-v1-invalid-scorer.json":
+            "afbd321ad261a91bd5f1bc5abf87d08fa4fbfd0a3ccd227e1a0e69c183dc2a8e",
+        "2026-08-29-spark-qwen-tool-recovery-baseline-v2.json":
+            "9c2405cc7903b1b4c52a807851d3ab316f7645b229965bb04ce2c57818315009",
+    }
+    forbidden = ("192.168.50.225", "/home/", "cybernaif", "ERROR_TRANSIENT", "R-23")
+
+    for name, digest in expected.items():
+        content = (runs / name).read_bytes()
+        assert hashlib.sha256(content).hexdigest() == digest
+        decoded = content.decode("utf-8")
+        assert not any(value in decoded for value in forbidden)

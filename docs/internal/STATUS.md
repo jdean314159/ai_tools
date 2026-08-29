@@ -63,6 +63,9 @@ pilot is frozen in
 That version-1 pilot exposed an invalid exact-text scorer and was withdrawn.
 The corrected version-2 baseline is frozen in
 `docs/projects/llm_engines/TOOL-RECOVERY-PILOT-V2-2026-08-29.md`.
+It passed 12/12 recoveries with no fabricated-success flags, so the predeclared
+ceiling rule stopped the experiment before a thinking-on condition. Designing
+a harder version-3 suite is a new project; version 2 must not be tuned in place.
 
 ### Active project — RUN-RECORD-00
 
