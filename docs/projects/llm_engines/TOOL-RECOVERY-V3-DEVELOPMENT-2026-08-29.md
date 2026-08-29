@@ -39,6 +39,8 @@ it does not score free prose.
 - Maximum model turns per case: 2
 - Condition order: `v3_development_thinking_off_only`
 - No intentional concurrent load
+- Artifact destination:
+  `docs/projects/llm_engines/runs/2026-08-29-spark-qwen-tool-recovery-v3-development-v1.json`
 
 ## Advancement rule
 
