@@ -76,7 +76,7 @@ def test_tool_decision_campaign_passes_all_fixed_cases_and_aggregates():
     assert report.repetitions == 2
     assert report.cases_per_run == 4
     assert report.profile_version == 2
-    assert report.thinking_requested is False
+    assert report.thinking_requested is None
     assert len(report.results) == 8
     assert all(result.status == "passed" for result in report.results)
     assert report.case_aggregates["choose_relevant_tool"]["pass_rate"] == 1.0
@@ -147,3 +147,14 @@ def test_tool_decision_artifact_round_trips_with_validated_privacy():
     assert artifact.envelope.privacy.validation.status == "validated"
     assert artifact.body["case_aggregates"]["typed_arguments"]["passed"] == 1
     assert "Use lookup_record" not in json.dumps(artifact.body)
+
+
+def test_tool_decision_campaign_sanitizes_absolute_model_path():
+    engine = ToolDecisionEngine()
+    engine.model = "/home/private/models/synthetic.gguf"
+
+    report = run_tool_decision_campaign(engine, repetitions=1, thinking=False)
+
+    assert report.model_label == "synthetic.gguf"
+    assert report.thinking_requested is False
+    assert "/home/private" not in json.dumps(report.to_dict())

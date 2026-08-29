@@ -96,6 +96,10 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _safe_model_label(label: str) -> str:
+    return Path(label).name if Path(label).is_absolute() else label
+
+
 def _spec(name: str, description: str, parameters: dict[str, str]) -> ToolSpec:
     return ToolSpec(
         name=name,
@@ -227,7 +231,7 @@ def run_tool_decision_campaign(
     engine: Any,
     *,
     repetitions: int = 3,
-    thinking: bool | None = False,
+    thinking: bool | None = None,
 ) -> ToolDecisionCampaignReport:
     """Measure repeatability of fixed tool-selection and argument decisions."""
 
@@ -269,7 +273,7 @@ def run_tool_decision_campaign(
         "BACKEND",
         engine.__class__.__module__.rsplit(".", 1)[-1],
     )
-    model_label = str(getattr(engine, "model", "unreported"))
+    model_label = _safe_model_label(str(getattr(engine, "model", "unreported")))
     return ToolDecisionCampaignReport(
         schema_version=TOOL_PROCESS_SCHEMA_VERSION,
         profile=TOOL_PROCESS_PROFILE,
@@ -326,6 +330,7 @@ def build_tool_decision_artifact(report: ToolDecisionCampaignReport) -> RunArtif
                 transformations_applied=(
                     {"operation": "omit_raw_case_content", "version": "1"},
                     {"operation": "omit_exception_messages", "version": "1"},
+                    {"operation": "model_label_basename_only", "version": "1"},
                 ),
                 validation=PrivacyValidation(
                     status="validated",
@@ -373,7 +378,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--api-key-env")
     parser.add_argument("--cloud", action="store_true")
     parser.add_argument("--runs", type=int, default=3)
-    parser.add_argument("--thinking", action="store_true")
+    parser.add_argument(
+        "--thinking",
+        choices=("default", "off", "on"),
+        default="default",
+    )
     parser.add_argument("--artifact", type=Path)
     args = parser.parse_args(argv)
 
@@ -401,7 +410,7 @@ def main(argv: list[str] | None = None) -> int:
     report = run_tool_decision_campaign(
         engine,
         repetitions=args.runs,
-        thinking=True if args.thinking else False,
+        thinking={"default": None, "off": False, "on": True}[args.thinking],
     )
     sys.stdout.write(report.summary_json())
     if args.artifact:

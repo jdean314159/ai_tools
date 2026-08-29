@@ -173,18 +173,20 @@ It provides a stable way to call LLM backends without forcing the rest of the st
 ## Characterize an endpoint
 
 `llm-characterize` runs fixed synthetic checks for exact chat output,
-structured JSON, tool calls, and token log probabilities. Unsupported checks
-are reported as unsupported rather than failed. The result describes the
-endpoint behavior observed in that run; it does not expose hidden reasoning or
-establish that the model is reliable on real work.
+structured JSON, tool calls, and token log probabilities. A check is
+`not_declared` when the selected adapter does not claim that capability;
+endpoint rejection is `error`, while a completed but incorrect observation is
+`failed`. These statuses do not constitute endpoint-feature discovery. The
+result describes the endpoint behavior observed in that run; it does not expose
+hidden reasoning or establish that the model is reliable on real work.
 
 For the Qwen model served by llama.cpp on the Spark:
 
 ```bash
 llm-characterize \
   --backend openai \
-  --model /home/cybernaif/models/Qwen3.8-27B-UD-Q4_K_M.gguf \
-  --base-url http://192.168.50.225:8080/v1 \
+  --model /models/qwen-model.gguf \
+  --base-url http://inference-host:8080/v1 \
   --artifact spark-qwen-characterization.json
 ```
 
@@ -193,9 +195,10 @@ Repeat the complete suite to measure short-run stability and chat latency:
 ```bash
 llm-characterize \
   --backend openai \
-  --model /home/cybernaif/models/Qwen3.8-27B-UD-Q4_K_M.gguf \
-  --base-url http://192.168.50.225:8080/v1 \
+  --model /models/qwen-model.gguf \
+  --base-url http://inference-host:8080/v1 \
   --runs 5 \
+  --thinking default \
   --artifact spark-qwen-characterization-campaign.json
 ```
 
@@ -214,19 +217,22 @@ behavior from tool side effects:
 ```bash
 llm-tool-process-probe \
   --backend openai \
-  --model /home/cybernaif/models/Qwen3.8-27B-UD-Q4_K_M.gguf \
-  --base-url http://192.168.50.225:8080/v1 \
+  --model /models/qwen-model.gguf \
+  --base-url http://inference-host:8080/v1 \
   --runs 3 \
+  --thinking off \
   --artifact spark-qwen-tool-decisions.json
 ```
 
-Add `--thinking` to request thinking for every case and compare that artifact
-with a thinking-disabled campaign. The comparison concerns observable tool
-decisions only; it cannot explain the model's internal process.
+Use `--thinking default`, `--thinking off`, or `--thinking on` to preserve the
+server setting, request suppression, or request thinking for every case. The
+comparison concerns observable tool decisions only; it cannot explain the
+model's internal process.
 
 The durable artifact retains outcomes, scalar measurements, the reported
-model label, and declared capabilities. It does not retain raw prompts, model
-responses, API keys, endpoint URLs, or exception messages. The built-in probes
+model-label basename, requested thinking setting, and declared capabilities.
+It does not retain raw prompts, model responses, API keys, endpoint URLs, or
+exception messages. The built-in probes
 contain no user data. Use separate, explicitly governed experiments when you
 later study application prompts, memory, RAG, or agent behavior.
 

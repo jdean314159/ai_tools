@@ -40,10 +40,14 @@ hidden-reasoning claims.
 
 Live Qwen 3.8 27B testing against llama.cpp on the DGX Spark passed all four
 characterization probes in five repetitions. Matched sequential tool-decision
-campaigns passed all 12 decisions with thinking both disabled and enabled.
-Thinking increased median latency in every synthetic case without improving
-correctness in this small campaign. These are observations about the exact
-endpoint and cases tested, not general model-quality estimates.
+campaigns exercised four cases three times per condition; every case passed in
+both thinking-disabled and thinking-enabled runs. The baseline was already at
+ceiling, so improvement was not measurable. Thinking increased median latency
+in every case and did not cause a regression in this small campaign. These are
+observations about the exact endpoint and cases tested, not general
+model-quality estimates.
+The committed artifacts, digests, and execution limitations are recorded in
+`docs/projects/llm_engines/SPARK-QWEN-CHARACTERIZATION-2026-08-29.md`.
 
 The next process experiment is multi-turn recovery from a tool error or a
 contradictory tool result. It must remain a separate governed profile rather

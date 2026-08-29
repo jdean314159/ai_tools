@@ -111,14 +111,15 @@ def _characterization() -> RunArtifact:
         envelope=_envelope(
             kind="experiment",
             profile="llm_engines.model_characterization",
-            profile_version=1,
+            profile_version=2,
         ),
         body={
             "backend": "openai",
             "model_label": "fixture-model",
+            "thinking_requested": None,
             "probes": [
                 {"probe_id": "chat_exact_text", "status": "passed"},
-                {"probe_id": "tool_call", "status": "unsupported"},
+                {"probe_id": "tool_call", "status": "not_declared"},
             ],
             "interpretation_limit": "observable behavior only",
         },
@@ -130,11 +131,12 @@ def _characterization_campaign() -> RunArtifact:
         envelope=_envelope(
             kind="experiment",
             profile="llm_engines.model_characterization_campaign",
-            profile_version=1,
+            profile_version=2,
         ),
         body={
             "backend": "openai",
             "model_label": "fixture-model",
+            "thinking_requested": None,
             "repetitions": 3,
             "probe_aggregates": {
                 "chat_exact_text": {
@@ -210,11 +212,12 @@ def test_characterization_dispatch_reports_probe_outcomes() -> None:
         "profile": "llm_engines.model_characterization",
         "backend": "openai",
         "model_label": "fixture-model",
+        "thinking_requested": None,
         "probe_count": 2,
-        "status_counts": {"passed": 1, "unsupported": 1},
+        "status_counts": {"passed": 1, "not_declared": 1},
         "probe_statuses": {
             "chat_exact_text": "passed",
-            "tool_call": "unsupported",
+            "tool_call": "not_declared",
         },
         "interpretation_limit": "observable behavior only",
     }
@@ -225,7 +228,7 @@ def test_characterization_comparison_reports_changed_probe_status() -> None:
     right_body = dict(left.body)
     right_body["probes"] = [
         {"probe_id": "chat_exact_text", "status": "failed"},
-        {"probe_id": "tool_call", "status": "unsupported"},
+        {"probe_id": "tool_call", "status": "not_declared"},
     ]
     comparison = compare_artifacts(left, replace(left, body=right_body))
 

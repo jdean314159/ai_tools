@@ -28,6 +28,10 @@ match booleans, direct-answer match booleans, finish reasons, latency, and
 exception types. It omits raw prompts, response text, actual argument values,
 endpoint URLs, secrets, and exception messages.
 
+The CLI exposes all three ADR-024 states as `--thinking default|off|on`.
+Artifacts retain the resulting `null|false|true` value. Host-specific model
+paths are reduced to their basename before recording.
+
 Pass rates and latency summaries describe only the fixed cases and repetitions
 in that artifact. They are not estimates of application reliability. A later
 application experiment must define its own tasks, expected decisions, privacy
@@ -50,3 +54,6 @@ latency comparison. This execution condition is as load-bearing as the
 - Artifacts round-trip with a validated privacy declaration.
 - Inspector recognizes and compares the profile without claiming access to
   hidden reasoning.
+- The corrected sequential version-2 artifacts and their ceiling, order, load,
+  and seed limitations are recorded in
+  `docs/projects/llm_engines/SPARK-QWEN-CHARACTERIZATION-2026-08-29.md`.

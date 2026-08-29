@@ -251,10 +251,11 @@ fail closed and never become executable events or replayable history.
 ## ADR-026 — Model characterization boundary
 **File:** `adr/ADR-026-model-characterization-boundary.md`
 **Status:** Accepted
-**Summary:** Places fixed synthetic endpoint probes in `llm_engines`, keeps
+**Summary:** Places version-2 fixed synthetic endpoint probes in `llm_engines`, keeps
 `llm_inspector` inference-free, and records results through the shared
-experiment envelope. Reports retain bounded outcomes and scalars while
-omitting raw prompts, responses, endpoint URLs, secrets, and exception text.
+experiment envelope. Reports distinguish adapter declarations from observed
+failures, retain tri-state thinking and bounded scalars, and omit raw prompts,
+responses, host paths, endpoint URLs, secrets, and exception text.
 
 ## ADR-027 — Observable tool-decision probes
 **File:** `adr/ADR-027-observable-tool-decision-probes.md`

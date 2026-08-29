@@ -40,10 +40,10 @@ from llm_engines.contracts import (
 )
 
 
-CHARACTERIZATION_SCHEMA_VERSION = 1
+CHARACTERIZATION_SCHEMA_VERSION = 2
 CHARACTERIZATION_PROFILE = "llm_engines.model_characterization"
 CHARACTERIZATION_CAMPAIGN_PROFILE = "llm_engines.model_characterization_campaign"
-ProbeStatus = Literal["passed", "failed", "unsupported", "error"]
+ProbeStatus = Literal["passed", "failed", "not_declared", "error"]
 
 
 @dataclass(frozen=True)
@@ -67,6 +67,7 @@ class CharacterizationReport:
     finished_at: str
     backend: str
     model_label: str
+    thinking_requested: bool | None
     declared_capabilities: dict[str, Any]
     probes: tuple[ProbeResult, ...]
     interpretation_limit: str
@@ -90,6 +91,7 @@ class CharacterizationCampaignReport:
     backend: str
     model_label: str
     repetitions: int
+    thinking_requested: bool | None
     runs: tuple[CharacterizationReport, ...]
     probe_aggregates: dict[str, dict[str, Any]]
     interpretation_limit: str
@@ -112,7 +114,15 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _probe_chat(engine: Any) -> tuple[ProbeResult, str, str]:
+def _safe_model_label(label: str) -> str:
+    """Remove host-specific path components from a provider model label."""
+
+    return Path(label).name if Path(label).is_absolute() else label
+
+
+def _probe_chat(
+    engine: Any, *, thinking: bool | None
+) -> tuple[ProbeResult, str, str]:
     expected = "CHARACTERIZATION_OK"
     response = engine.generate(
         GenerationRequest(
@@ -123,8 +133,8 @@ def _probe_chat(engine: Any) -> tuple[ProbeResult, str, str]:
                 )
             ],
             temperature=0,
-            max_tokens=32,
-            thinking=False,
+            max_tokens=512 if thinking is not False else 32,
+            thinking=thinking,
         )
     )
     actual = response.text.strip()
@@ -140,10 +150,10 @@ def _probe_chat(engine: Any) -> tuple[ProbeResult, str, str]:
             "latency_ms": response.usage.latency_ms,
         },
     )
-    return result, response.backend, response.model_name
+    return result, response.backend, _safe_model_label(response.model_name)
 
 
-def _probe_structured(engine: Any) -> ProbeResult:
+def _probe_structured(engine: Any, *, thinking: bool | None) -> ProbeResult:
     schema = {
         "type": "object",
         "properties": {"code": {"type": "integer", "const": 7}},
@@ -154,8 +164,8 @@ def _probe_structured(engine: Any) -> ProbeResult:
         GenerationRequest(
             messages=[ChatMessage(role="user", content="Return the required object.")],
             temperature=0,
-            max_tokens=64,
-            thinking=False,
+            max_tokens=512 if thinking is not False else 64,
+            thinking=thinking,
             json_schema=schema,
         )
     )
@@ -171,7 +181,7 @@ def _probe_structured(engine: Any) -> ProbeResult:
     )
 
 
-def _probe_tools(engine: Any) -> ProbeResult:
+def _probe_tools(engine: Any, *, thinking: bool | None) -> ProbeResult:
     spec = ToolSpec(
         name="lookup_characterization_code",
         description="Return the supplied synthetic characterization code.",
@@ -192,8 +202,8 @@ def _probe_tools(engine: Any) -> ProbeResult:
                 )
             ],
             temperature=0,
-            max_tokens=128,
-            thinking=False,
+            max_tokens=512 if thinking is not False else 128,
+            thinking=thinking,
         ),
         [spec],
     )
@@ -214,13 +224,13 @@ def _probe_tools(engine: Any) -> ProbeResult:
     )
 
 
-def _probe_logprobs(engine: Any) -> ProbeResult:
+def _probe_logprobs(engine: Any, *, thinking: bool | None) -> ProbeResult:
     result = engine.generate_with_logprobs(
         GenerationRequest(
             messages=[ChatMessage(role="user", content="Reply with exactly SIGNAL.")],
             temperature=0,
-            max_tokens=16,
-            thinking=False,
+            max_tokens=512 if thinking is not False else 16,
+            thinking=thinking,
         )
     )
     valid = result.token_count > 0
@@ -235,7 +245,9 @@ def _probe_logprobs(engine: Any) -> ProbeResult:
     )
 
 
-def characterize_engine(engine: Any) -> CharacterizationReport:
+def characterize_engine(
+    engine: Any, *, thinking: bool | None = None
+) -> CharacterizationReport:
     """Run fixed synthetic probes and return a summary without raw content."""
 
     started = _now()
@@ -245,7 +257,7 @@ def characterize_engine(engine: Any) -> CharacterizationReport:
     model_label = "unreported"
 
     try:
-        chat, backend, model_label = _probe_chat(engine)
+        chat, backend, model_label = _probe_chat(engine, thinking=thinking)
         probes.append(chat)
     except Exception as exc:  # a probe failure must not suppress the report
         probes.append(ProbeResult("chat_exact_text", "error", {}, type(exc).__name__))
@@ -265,21 +277,22 @@ def characterize_engine(engine: Any) -> CharacterizationReport:
     )
     for probe_id, supported, probe in optional:
         if not supported:
-            probes.append(ProbeResult(probe_id, "unsupported", {}))
+            probes.append(ProbeResult(probe_id, "not_declared", {}))
             continue
         try:
-            probes.append(probe(engine))
+            probes.append(probe(engine, thinking=thinking))
         except Exception as exc:  # report the public exception type, not sensitive text
             probes.append(ProbeResult(probe_id, "error", {}, type(exc).__name__))
 
     return CharacterizationReport(
         schema_version=CHARACTERIZATION_SCHEMA_VERSION,
         suite=CHARACTERIZATION_PROFILE,
-        suite_version=1,
+        suite_version=2,
         started_at=started,
         finished_at=_now(),
         backend=backend,
         model_label=model_label,
+        thinking_requested=thinking,
         declared_capabilities=capabilities.model_dump(),
         probes=tuple(probes),
         interpretation_limit=(
@@ -293,13 +306,16 @@ def characterize_engine_repeated(
     engine: Any,
     *,
     repetitions: int,
+    thinking: bool | None = None,
 ) -> CharacterizationCampaignReport:
     """Repeat the fixed suite and summarize observed status and chat latency."""
 
     if repetitions < 2:
         raise ValueError("repetitions must be at least 2 for a campaign")
     started = _now()
-    runs = tuple(characterize_engine(engine) for _ in range(repetitions))
+    runs = tuple(
+        characterize_engine(engine, thinking=thinking) for _ in range(repetitions)
+    )
     probe_ids = sorted({probe.probe_id for run in runs for probe in run.probes})
     aggregates: dict[str, dict[str, Any]] = {}
     for probe_id in probe_ids:
@@ -333,12 +349,13 @@ def characterize_engine_repeated(
     return CharacterizationCampaignReport(
         schema_version=CHARACTERIZATION_SCHEMA_VERSION,
         suite=CHARACTERIZATION_CAMPAIGN_PROFILE,
-        suite_version=1,
+        suite_version=2,
         started_at=started,
         finished_at=_now(),
         backend=runs[-1].backend,
         model_label=runs[-1].model_label,
         repetitions=repetitions,
+        thinking_requested=thinking,
         runs=runs,
         probe_aggregates=aggregates,
         interpretation_limit=(
@@ -346,6 +363,8 @@ def characterize_engine_repeated(
             "it does not establish reliability on real tasks or identify causes of variation."
         ),
     )
+
+
 def build_characterization_artifact(
     report: CharacterizationReport | CharacterizationCampaignReport,
 ) -> RunArtifact:
@@ -365,7 +384,7 @@ def build_characterization_artifact(
         envelope_schema_version=1,
         body_version=1,
         profile=report.suite,
-        profile_version=1,
+        profile_version=report.suite_version,
         record_id=f"mc_{digest[:32]}",
         lifecycle="final",
         relationships=(),
@@ -385,6 +404,7 @@ def build_characterization_artifact(
             transformations_applied=(
                 {"operation": "omit_raw_probe_content", "version": "1"},
                 {"operation": "omit_exception_messages", "version": "1"},
+                {"operation": "model_label_basename_only", "version": "1"},
             ),
             validation=PrivacyValidation(
                 status="validated",
@@ -410,7 +430,7 @@ def build_characterization_artifact(
                     evidence_basis="exercised",
                     conditions=("temperature=0", "fixed synthetic prompts"),
                 ),
-                implementation_version="1",
+                implementation_version="2",
             ),
         ),
         execution_environment={"backend": report.backend, "model_label": report.model_label},
@@ -447,6 +467,12 @@ def main(argv: list[str] | None = None) -> int:
         default=1,
         help="Number of complete suite repetitions (default: 1)",
     )
+    parser.add_argument(
+        "--thinking",
+        choices=("default", "off", "on"),
+        default="default",
+        help="Preserve server default, suppress thinking, or request thinking",
+    )
     args = parser.parse_args(argv)
 
     from llm_harness_core import dump_artifact
@@ -472,11 +498,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.runs < 1:
         parser.error("--runs must be at least 1")
+    thinking = {"default": None, "off": False, "on": True}[args.thinking]
     report: CharacterizationReport | CharacterizationCampaignReport
     report = (
-        characterize_engine(engine)
+        characterize_engine(engine, thinking=thinking)
         if args.runs == 1
-        else characterize_engine_repeated(engine, repetitions=args.runs)
+        else characterize_engine_repeated(
+            engine, repetitions=args.runs, thinking=thinking
+        )
     )
     if isinstance(report, CharacterizationCampaignReport):
         sys.stdout.write(report.summary_json())

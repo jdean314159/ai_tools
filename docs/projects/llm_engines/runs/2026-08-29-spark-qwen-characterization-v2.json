@@ -1,0 +1,514 @@
+{
+  "body": {
+    "backend": "openai",
+    "finished_at": "2026-08-29T18:45:02.761240Z",
+    "interpretation_limit": "Measures repeatability of fixed synthetic probes during this campaign; it does not establish reliability on real tasks or identify causes of variation.",
+    "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "probe_aggregates": {
+      "chat_exact_text": {
+        "latency_ms": {
+          "maximum": 616.256,
+          "median": 477.304,
+          "minimum": 441.937,
+          "samples": 5
+        },
+        "pass_rate": 1.0,
+        "runs": 5,
+        "status_counts": {
+          "passed": 5
+        },
+        "status_stable": true
+      },
+      "structured_output": {
+        "pass_rate": 1.0,
+        "runs": 5,
+        "status_counts": {
+          "passed": 5
+        },
+        "status_stable": true
+      },
+      "token_logprobs": {
+        "pass_rate": 1.0,
+        "runs": 5,
+        "status_counts": {
+          "passed": 5
+        },
+        "status_stable": true
+      },
+      "tool_call": {
+        "pass_rate": 1.0,
+        "runs": 5,
+        "status_counts": {
+          "passed": 5
+        },
+        "status_stable": true
+      }
+    },
+    "repetitions": 5,
+    "runs": [
+      {
+        "backend": "openai",
+        "declared_capabilities": {
+          "async_streaming": true,
+          "batch_generation": false,
+          "chat": true,
+          "embeddings": false,
+          "kv_cache_compression": false,
+          "kv_cache_compression_modes": [],
+          "logprobs": true,
+          "speculative_decoding": false,
+          "streaming": false,
+          "streaming_tool_calls": true,
+          "structured_output": true,
+          "tool_calling": true,
+          "usage_reporting": true,
+          "vision": false
+        },
+        "finished_at": "2026-08-29T18:44:50.150159Z",
+        "interpretation_limit": "Measures this endpoint's observable behavior on fixed synthetic probes; it does not reveal hidden reasoning or establish general task quality.",
+        "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "probes": [
+          {
+            "error_type": null,
+            "observations": {
+              "exact_match": true,
+              "finish_reason": "stop",
+              "input_tokens": 23,
+              "latency_ms": 616.256,
+              "output_tokens": 5,
+              "response_characters": 19
+            },
+            "probe_id": "chat_exact_text",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "response_characters": 15,
+              "schema_match": true
+            },
+            "probe_id": "structured_output",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "finish_reason": "tool_call",
+              "tool_call_count": 1,
+              "valid_call": true
+            },
+            "probe_id": "tool_call",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "mean_logprob": -0.0009798888737956684,
+              "perplexity": 1.0009803691217485,
+              "token_count": 3
+            },
+            "probe_id": "token_logprobs",
+            "status": "passed"
+          }
+        ],
+        "schema_version": 2,
+        "started_at": "2026-08-29T18:44:46.789646Z",
+        "suite": "llm_engines.model_characterization",
+        "suite_version": 2,
+        "thinking_requested": false
+      },
+      {
+        "backend": "openai",
+        "declared_capabilities": {
+          "async_streaming": true,
+          "batch_generation": false,
+          "chat": true,
+          "embeddings": false,
+          "kv_cache_compression": false,
+          "kv_cache_compression_modes": [],
+          "logprobs": true,
+          "speculative_decoding": false,
+          "streaming": false,
+          "streaming_tool_calls": true,
+          "structured_output": true,
+          "tool_calling": true,
+          "usage_reporting": true,
+          "vision": false
+        },
+        "finished_at": "2026-08-29T18:44:53.221750Z",
+        "interpretation_limit": "Measures this endpoint's observable behavior on fixed synthetic probes; it does not reveal hidden reasoning or establish general task quality.",
+        "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "probes": [
+          {
+            "error_type": null,
+            "observations": {
+              "exact_match": true,
+              "finish_reason": "stop",
+              "input_tokens": 23,
+              "latency_ms": 477.304,
+              "output_tokens": 5,
+              "response_characters": 19
+            },
+            "probe_id": "chat_exact_text",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "response_characters": 15,
+              "schema_match": true
+            },
+            "probe_id": "structured_output",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "finish_reason": "tool_call",
+              "tool_call_count": 1,
+              "valid_call": true
+            },
+            "probe_id": "tool_call",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "mean_logprob": -0.0009798888737956684,
+              "perplexity": 1.0009803691217485,
+              "token_count": 3
+            },
+            "probe_id": "token_logprobs",
+            "status": "passed"
+          }
+        ],
+        "schema_version": 2,
+        "started_at": "2026-08-29T18:44:50.150193Z",
+        "suite": "llm_engines.model_characterization",
+        "suite_version": 2,
+        "thinking_requested": false
+      },
+      {
+        "backend": "openai",
+        "declared_capabilities": {
+          "async_streaming": true,
+          "batch_generation": false,
+          "chat": true,
+          "embeddings": false,
+          "kv_cache_compression": false,
+          "kv_cache_compression_modes": [],
+          "logprobs": true,
+          "speculative_decoding": false,
+          "streaming": false,
+          "streaming_tool_calls": true,
+          "structured_output": true,
+          "tool_calling": true,
+          "usage_reporting": true,
+          "vision": false
+        },
+        "finished_at": "2026-08-29T18:44:56.407485Z",
+        "interpretation_limit": "Measures this endpoint's observable behavior on fixed synthetic probes; it does not reveal hidden reasoning or establish general task quality.",
+        "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "probes": [
+          {
+            "error_type": null,
+            "observations": {
+              "exact_match": true,
+              "finish_reason": "stop",
+              "input_tokens": 23,
+              "latency_ms": 441.937,
+              "output_tokens": 5,
+              "response_characters": 19
+            },
+            "probe_id": "chat_exact_text",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "response_characters": 15,
+              "schema_match": true
+            },
+            "probe_id": "structured_output",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "finish_reason": "tool_call",
+              "tool_call_count": 1,
+              "valid_call": true
+            },
+            "probe_id": "tool_call",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "mean_logprob": -0.0009798888737956684,
+              "perplexity": 1.0009803691217485,
+              "token_count": 3
+            },
+            "probe_id": "token_logprobs",
+            "status": "passed"
+          }
+        ],
+        "schema_version": 2,
+        "started_at": "2026-08-29T18:44:53.221780Z",
+        "suite": "llm_engines.model_characterization",
+        "suite_version": 2,
+        "thinking_requested": false
+      },
+      {
+        "backend": "openai",
+        "declared_capabilities": {
+          "async_streaming": true,
+          "batch_generation": false,
+          "chat": true,
+          "embeddings": false,
+          "kv_cache_compression": false,
+          "kv_cache_compression_modes": [],
+          "logprobs": true,
+          "speculative_decoding": false,
+          "streaming": false,
+          "streaming_tool_calls": true,
+          "structured_output": true,
+          "tool_calling": true,
+          "usage_reporting": true,
+          "vision": false
+        },
+        "finished_at": "2026-08-29T18:44:59.633916Z",
+        "interpretation_limit": "Measures this endpoint's observable behavior on fixed synthetic probes; it does not reveal hidden reasoning or establish general task quality.",
+        "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "probes": [
+          {
+            "error_type": null,
+            "observations": {
+              "exact_match": true,
+              "finish_reason": "stop",
+              "input_tokens": 23,
+              "latency_ms": 478.502,
+              "output_tokens": 5,
+              "response_characters": 19
+            },
+            "probe_id": "chat_exact_text",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "response_characters": 15,
+              "schema_match": true
+            },
+            "probe_id": "structured_output",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "finish_reason": "tool_call",
+              "tool_call_count": 1,
+              "valid_call": true
+            },
+            "probe_id": "tool_call",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "mean_logprob": -0.0009798888737956684,
+              "perplexity": 1.0009803691217485,
+              "token_count": 3
+            },
+            "probe_id": "token_logprobs",
+            "status": "passed"
+          }
+        ],
+        "schema_version": 2,
+        "started_at": "2026-08-29T18:44:56.407520Z",
+        "suite": "llm_engines.model_characterization",
+        "suite_version": 2,
+        "thinking_requested": false
+      },
+      {
+        "backend": "openai",
+        "declared_capabilities": {
+          "async_streaming": true,
+          "batch_generation": false,
+          "chat": true,
+          "embeddings": false,
+          "kv_cache_compression": false,
+          "kv_cache_compression_modes": [],
+          "logprobs": true,
+          "speculative_decoding": false,
+          "streaming": false,
+          "streaming_tool_calls": true,
+          "structured_output": true,
+          "tool_calling": true,
+          "usage_reporting": true,
+          "vision": false
+        },
+        "finished_at": "2026-08-29T18:45:02.761180Z",
+        "interpretation_limit": "Measures this endpoint's observable behavior on fixed synthetic probes; it does not reveal hidden reasoning or establish general task quality.",
+        "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "probes": [
+          {
+            "error_type": null,
+            "observations": {
+              "exact_match": true,
+              "finish_reason": "stop",
+              "input_tokens": 23,
+              "latency_ms": 473.196,
+              "output_tokens": 5,
+              "response_characters": 19
+            },
+            "probe_id": "chat_exact_text",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "response_characters": 15,
+              "schema_match": true
+            },
+            "probe_id": "structured_output",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "finish_reason": "tool_call",
+              "tool_call_count": 1,
+              "valid_call": true
+            },
+            "probe_id": "tool_call",
+            "status": "passed"
+          },
+          {
+            "error_type": null,
+            "observations": {
+              "mean_logprob": -0.0009798888737956684,
+              "perplexity": 1.0009803691217485,
+              "token_count": 3
+            },
+            "probe_id": "token_logprobs",
+            "status": "passed"
+          }
+        ],
+        "schema_version": 2,
+        "started_at": "2026-08-29T18:44:59.633945Z",
+        "suite": "llm_engines.model_characterization",
+        "suite_version": 2,
+        "thinking_requested": false
+      }
+    ],
+    "schema_version": 2,
+    "started_at": "2026-08-29T18:44:46.789635Z",
+    "suite": "llm_engines.model_characterization_campaign",
+    "suite_version": 2,
+    "thinking_requested": false
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "characterization-runner",
+        "name": "llm_engines.characterization",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "temperature=0",
+            "fixed synthetic prompts"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "read_only",
+        "execution_mode": "live_external",
+        "implementation_version": "2",
+        "operation": "model_characterization",
+        "requirements": [
+          {
+            "ref": "model_endpoint",
+            "type": "external_service"
+          },
+          {
+            "ref": "llm_engines.model_characterization_campaign",
+            "type": "implementation"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "backend": "openai",
+      "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw prompts and model responses are not retained",
+      "declared_content_categories": [
+        "synthetic_prompt",
+        "model_configuration"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "omit_raw_probe_content",
+          "version": "1"
+        },
+        {
+          "operation": "omit_exception_messages",
+          "version": "1"
+        },
+        {
+          "operation": "model_label_basename_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-probes-no-raw-content",
+        "policy_version": "1",
+        "scope": [
+          "artifact body contains no raw prompt, response, or exception message"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-29T18:45:02.761240Z",
+        "validator": "llm_engines.characterization"
+      }
+    },
+    "profile": "llm_engines.model_characterization_campaign",
+    "profile_version": 2,
+    "record_id": "mc_2e3e4e6dc05e8fd6b1d887163eaebcb7",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T18:45:02.761240Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T18:45:02.761240Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T18:44:46.789635Z"
+      }
+    }
+  }
+}
