@@ -80,6 +80,14 @@ No version-3 evaluation suite was generated and no thinking-on condition was
 run. The overall 15/18 value is not headroom under the family-specific rule.
 A new development work order is required before changing difficulty.
 
+The run also exposed a design weakness in the advancement rule. It sought a
+mixed per-family pass rate by repeating one identical case three times with
+temperature zero and the same requested seed. Stable 3/3 or 0/3 outcomes were
+therefore likely and do not describe a useful difficulty distribution. A
+replacement design must measure each family across multiple distinct,
+predeclared case variants; repeated identical runs may still measure stability
+but must not be the source of headroom.
+
 Artifact:
 `runs/2026-08-29-spark-qwen-tool-recovery-v3-development-v1.json`
 

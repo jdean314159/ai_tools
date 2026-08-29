@@ -71,6 +71,10 @@ The thinking-off-only development stage for that project is frozen in
 It produced five 3/3 families and one 0/3 family. Because no family had mixed
 development performance, the predeclared advancement rule stopped the project;
 no version-3 evaluation suite or thinking-on run exists.
+The stop also exposed that mixed-family eligibility cannot sensibly rely on
+repeating one identical temperature-zero, same-seed case. Any replacement
+development plan must use multiple predeclared variants per family and keep
+repeatability separate from difficulty headroom.
 
 ### Active project — RUN-RECORD-00
 
