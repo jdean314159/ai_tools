@@ -33,6 +33,14 @@ in that artifact. They are not estimates of application reliability. A later
 application experiment must define its own tasks, expected decisions, privacy
 policy, and independent checks.
 
+Matched latency comparisons must run their conditions sequentially against an
+otherwise idle endpoint unless server contention is itself the declared
+treatment. The first version-2 thinking-on/off pair was launched concurrently;
+its correctness observations remain usable, but its latency values were
+excluded. A replacement sequential pair supplied the reported descriptive
+latency comparison. This execution condition is as load-bearing as the
+`thinking_requested` field added when version 1 was withdrawn.
+
 ## Acceptance observations
 
 - Deterministic tests cover all four decisions and aggregation.
