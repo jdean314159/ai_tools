@@ -263,6 +263,24 @@ the minimum improvement before either condition runs.
 adapter forwarded it and the provider completed the call. Seed acceptance
 does not establish deterministic generation.
 
+The version-3 development stage is separately frozen and thinking-off only:
+
+```bash
+llm-tool-recovery-probe \
+  --backend openai \
+  --model /models/qwen-model.gguf \
+  --base-url http://inference-host:8080/v1 \
+  --suite development-v3 \
+  --runs 3 \
+  --thinking off \
+  --seed 11 \
+  --condition-order v3_development_thinking_off_only \
+  --artifact recovery-v3-development.json
+```
+
+Development outcomes select only template families with baseline headroom.
+They are not evaluation results and cannot support a claim about thinking.
+
 ## Using this with the rest of the suite
 
 - pair it first with `llm_inspector` or `llm_inspector_ui`

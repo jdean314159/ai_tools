@@ -15,9 +15,11 @@ from llm_engines.contracts import (
     UsageStats,
 )
 from llm_engines.tool_recovery_probe import (
+    TOOL_RECOVERY_DEVELOPMENT_PROFILE,
     TOOL_RECOVERY_PROFILE,
     build_tool_recovery_artifact,
     require_baseline_headroom,
+    run_tool_recovery_development,
     run_tool_recovery_pilot,
 )
 
@@ -77,6 +79,37 @@ class RecoveryEngine:
         return _response(tool="lookup_detail", arguments={"field": "region"}, seed_status=seed_status)
 
 
+class DevelopmentEngine(RecoveryEngine):
+    def generate_with_tools(self, request, available_tools):
+        seed_status = "accepted" if request.seed is not None else "not_requested"
+        first = request.messages[0].content or ""
+        latest = request.messages[-1].content or ""
+        if request.messages[-1].role == "user":
+            initial = (
+                ("D-101", "lookup_record", {"code": "D-101"}),
+                ("D-211", "lookup_record", {"code": "D-211"}),
+                ("D-301", "lookup_batch", {"codes": "D-301,D-302"}),
+                ("D-407", "lookup_fields", {"code": "D-407"}),
+                ("D-509", "secure_lookup", {"code": "D-509"}),
+                ("D-613", "lookup_record", {"code": "D-613"}),
+            )
+            for marker, tool, arguments in initial:
+                if marker in first:
+                    return _response(tool=tool, arguments=arguments, seed_status=seed_status)
+        recovery = (
+            ("observed_at", "refresh_record", {"code": "D-101"}),
+            ("checksum_unverified", "validate_record", {"code": "D-211"}),
+            ("D-302=ERROR", "retry_record", {"code": "D-302"}),
+            ("authority source=registry", "lookup_authority", {"source": "registry"}),
+            ("ERROR_PERMISSION_DENIED", "request_human_review", {"code": "D-509"}),
+            ("MALFORMED_RESULT", "strict_lookup", {"code": "D-613"}),
+        )
+        for marker, tool, arguments in recovery:
+            if marker in latest:
+                return _response(tool=tool, arguments=arguments, seed_status=seed_status)
+        return _response(text="unexpected", seed_status=seed_status)
+
+
 def test_perfect_baseline_is_ceiling_and_cannot_open_comparison_gate():
     report = run_tool_recovery_pilot(RecoveryEngine(), repetitions=2, seed=0)
 
@@ -86,6 +119,17 @@ def test_perfect_baseline_is_ceiling_and_cannot_open_comparison_gate():
     assert all(result.seed_statuses == ("accepted", "accepted") for result in report.results)
     with pytest.raises(ValueError, match="ceiling"):
         require_baseline_headroom(report)
+
+
+def test_v3_development_suite_is_separate_and_thinking_off():
+    report = run_tool_recovery_development(DevelopmentEngine(), repetitions=1)
+
+    assert report.profile == TOOL_RECOVERY_DEVELOPMENT_PROFILE
+    assert report.profile_version == 1
+    assert report.cases_per_run == 6
+    assert report.thinking_requested is False
+    assert report.seed_requested == 11
+    assert report.primary_pass_rate == 1.0
 
 
 def test_mixed_baseline_has_headroom():
