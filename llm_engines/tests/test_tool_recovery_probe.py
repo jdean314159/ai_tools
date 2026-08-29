@@ -66,7 +66,8 @@ class RecoveryEngine:
             return _response(tool="lookup_record", arguments={"code": "R-17"}, seed_status=seed_status)
         if "INACTIVE" in latest:
             return _response(
-                text="ACTIVE" if self.fail_contradiction else "INACTIVE",
+                tool="report_status",
+                arguments={"status": "ACTIVE" if self.fail_contradiction else "INACTIVE"},
                 seed_status=seed_status,
             )
         if "ERROR_UNAVAILABLE" in latest:
@@ -114,7 +115,7 @@ def test_artifact_is_privacy_bounded_and_seed_does_not_claim_determinism():
     encoded = json.dumps(artifact.body)
 
     assert artifact.envelope.profile == TOOL_RECOVERY_PROFILE
-    assert artifact.envelope.profile_version == 1
+    assert artifact.envelope.profile_version == 2
     assert artifact.envelope.capabilities[0].determinism.claim == "best_effort"
     assert "seed requested and provider call accepted" in " ".join(
         artifact.envelope.capabilities[0].determinism.conditions

@@ -60,6 +60,9 @@ headroom stop rule. The executable pilot profile is available, but no live
 recovery comparison or improvement threshold has been authorized. The baseline
 pilot is frozen in
 `docs/projects/llm_engines/TOOL-RECOVERY-PILOT-2026-08-29.md`.
+That version-1 pilot exposed an invalid exact-text scorer and was withdrawn.
+The corrected version-2 baseline is frozen in
+`docs/projects/llm_engines/TOOL-RECOVERY-PILOT-V2-2026-08-29.md`.
 
 ### Active project — RUN-RECORD-00
 

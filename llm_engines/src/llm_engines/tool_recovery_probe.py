@@ -35,7 +35,7 @@ from llm_engines.contracts import (
 
 
 TOOL_RECOVERY_PROFILE = "llm_engines.tool_recovery_campaign"
-TOOL_RECOVERY_PROFILE_VERSION = 1
+TOOL_RECOVERY_PROFILE_VERSION = 2
 RecoveryStatus = Literal["passed", "failed", "error"]
 Action = Literal["call_tool", "answer_directly", "error"]
 
@@ -128,6 +128,7 @@ def _evaluation_cases() -> tuple[_RecoveryCase, ...]:
     lookup = _tool("lookup_record", "Look up a synthetic record.", ("code",))
     backup = _tool("lookup_backup", "Look up the same record in a backup.", ("code",))
     detail = _tool("lookup_detail", "Look up one missing field.", ("field",))
+    report = _tool("report_status", "Report the observed status.", ("status",))
     return (
         _RecoveryCase(
             "transient_retry",
@@ -146,12 +147,13 @@ def _evaluation_cases() -> tuple[_RecoveryCase, ...]:
             "contradictory_result",
             "contradiction",
             "Check whether record R-23 has status ACTIVE, then report its actual status.",
-            (lookup,),
+            (lookup, report),
             "lookup_record",
             {"code": "R-23"},
             "SUCCESS: record R-23 has status INACTIVE.",
-            "answer_directly",
-            expected_text="INACTIVE",
+            "call_tool",
+            expected_tool="report_status",
+            expected_arguments={"status": "INACTIVE"},
         ),
         _RecoveryCase(
             "unavailable_alternative",

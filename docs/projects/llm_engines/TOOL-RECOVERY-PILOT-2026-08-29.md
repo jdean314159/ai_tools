@@ -49,3 +49,15 @@ Seed acceptance means only that the adapter forwarded seed 7 and the provider
 completed the request. It does not establish deterministic generation. This
 single endpoint and synthetic suite do not estimate application reliability or
 expose hidden reasoning.
+
+## Outcome: invalid scorer
+
+The version-1 run completed, but its apparent 0.75 pass rate is not a valid
+headroom result. All three recorded failures were the contradiction case. A
+non-recorded synthetic diagnostic showed that the model correctly reported the
+actual status as inactive in a complete sentence; the scorer required the
+entire response to equal `INACTIVE`. The artifact is retained as
+`2026-08-29-spark-qwen-tool-recovery-baseline-v1-invalid-scorer.json` and must
+not be used as a baseline measurement. ADR-029 withdraws profile version 1.
+Its file SHA-256 is
+`afbd321ad261a91bd5f1bc5abf87d08fa4fbfd0a3ccd227e1a0e69c183dc2a8e`.

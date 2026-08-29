@@ -177,7 +177,7 @@ def _tool_recovery_campaign() -> RunArtifact:
         envelope=_envelope(
             kind="experiment",
             profile="llm_engines.tool_recovery_campaign",
-            profile_version=1,
+            profile_version=2,
         ),
         body={
             "suite_digest": "sha256:fixture",

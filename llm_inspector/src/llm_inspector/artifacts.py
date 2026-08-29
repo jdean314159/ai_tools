@@ -55,7 +55,7 @@ SUPPORTED_BODY_CONTRACTS = (
         kind="experiment",
         body_version=1,
         profile="llm_engines.tool_recovery_campaign",
-        profile_version=1,
+        profile_version=2,
     ),
     SupportedBodyContract(
         kind="agent_run",

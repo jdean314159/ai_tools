@@ -1,0 +1,351 @@
+{
+  "body": {
+    "backend": "OpenAIEngine",
+    "baseline_headroom": "present",
+    "cases_per_run": 4,
+    "condition_order": "baseline_thinking_off_only",
+    "fabricated_success_rate": 0.0,
+    "finished_at": "2026-08-29T19:43:02.458039Z",
+    "interpretation_limit": "Pilot of fixed synthetic recovery cases; it cannot support an improvement claim.",
+    "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "primary_pass_rate": 0.75,
+    "profile": "llm_engines.tool_recovery_campaign",
+    "profile_version": 1,
+    "repetitions": 3,
+    "results": [
+      {
+        "calls_made": 2,
+        "case_id": "transient_retry",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "explicit_error",
+        "input_tokens": 649,
+        "latency_ms": 3099.0119999999997,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_record",
+        "output_tokens": 60,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 1,
+        "case_id": "contradictory_result",
+        "error_type": null,
+        "expected_action": "answer_directly",
+        "fabricated_success": false,
+        "failure_family": "contradiction",
+        "input_tokens": 647,
+        "latency_ms": 2246.493,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 52,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "unavailable_alternative",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "unavailable_tool",
+        "input_tokens": 783,
+        "latency_ms": 3389.1549999999997,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_backup",
+        "output_tokens": 74,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "incomplete_followup",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "incomplete_result",
+        "input_tokens": 777,
+        "latency_ms": 2978.8360000000002,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_detail",
+        "output_tokens": 57,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "transient_retry",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "explicit_error",
+        "input_tokens": 649,
+        "latency_ms": 2791.068,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_record",
+        "output_tokens": 60,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 1,
+        "case_id": "contradictory_result",
+        "error_type": null,
+        "expected_action": "answer_directly",
+        "fabricated_success": false,
+        "failure_family": "contradiction",
+        "input_tokens": 647,
+        "latency_ms": 2254.1949999999997,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 52,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "unavailable_alternative",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "unavailable_tool",
+        "input_tokens": 783,
+        "latency_ms": 3084.551,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_backup",
+        "output_tokens": 74,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "incomplete_followup",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "incomplete_result",
+        "input_tokens": 777,
+        "latency_ms": 2677.576,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_detail",
+        "output_tokens": 57,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "transient_retry",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "explicit_error",
+        "input_tokens": 649,
+        "latency_ms": 2756.6940000000004,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_record",
+        "output_tokens": 60,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 1,
+        "case_id": "contradictory_result",
+        "error_type": null,
+        "expected_action": "answer_directly",
+        "fabricated_success": false,
+        "failure_family": "contradiction",
+        "input_tokens": 647,
+        "latency_ms": 2255.401,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 52,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "unavailable_alternative",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "unavailable_tool",
+        "input_tokens": 783,
+        "latency_ms": 3069.369,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_backup",
+        "output_tokens": 74,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "incomplete_followup",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "incomplete_result",
+        "input_tokens": 777,
+        "latency_ms": 2669.337,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_detail",
+        "output_tokens": 57,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      }
+    ],
+    "schema_version": 1,
+    "seed_requested": 7,
+    "started_at": "2026-08-29T19:42:29.184396Z",
+    "suite_digest": "sha256:f00ba06fe86160ab56259d6213fa4a65f73e57c6aa67a69ad5bfc39ecc150a82",
+    "thinking_requested": false
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "tool-recovery-runner",
+        "name": "llm_engines.tool_recovery_probe",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "temperature=0",
+            "fixed synthetic evaluation suite",
+            "seed requested and provider call accepted; reproducibility not implied"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "read_only",
+        "execution_mode": "live_external",
+        "implementation_version": "1",
+        "operation": "tool_recovery_characterization",
+        "requirements": [
+          {
+            "ref": "model_endpoint",
+            "type": "external_service"
+          },
+          {
+            "ref": "llm_engines.tool_recovery_campaign",
+            "type": "implementation"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "backend": "OpenAIEngine",
+      "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw interactions are not retained",
+      "declared_content_categories": [
+        "synthetic_prompt",
+        "model_configuration"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "omit_raw_interaction_content",
+          "version": "1"
+        },
+        {
+          "operation": "model_label_basename_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-tool-recovery-no-raw-content",
+        "policy_version": "1",
+        "scope": [
+          "body contains no raw prompt, response, reasoning, or tool-result value"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-29T19:43:02.458039Z",
+        "validator": "llm_engines.tool_recovery_probe"
+      }
+    },
+    "profile": "llm_engines.tool_recovery_campaign",
+    "profile_version": 1,
+    "record_id": "tr_9e0e3737a615989a88f1ddba0f484dff",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T19:43:02.458039Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T19:43:02.458039Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T19:42:29.184396Z"
+      }
+    }
+  }
+}

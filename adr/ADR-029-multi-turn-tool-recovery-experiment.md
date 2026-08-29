@@ -57,7 +57,7 @@ is a pilot and cannot support an improvement claim.
 
 ## Durable record and privacy
 
-The version-1 artifact records case IDs, failure families, expected and
+The version-2 artifact records case IDs, failure families, expected and
 observed actions, recovery and fabricated-success status, turn and call
 counts, bounded latency/token totals, thinking request, seed request, seed
 acceptance, condition order, and frozen-suite identity.
@@ -78,3 +78,16 @@ basename before recording.
 - No live campaign runs until repetitions and minimum improvement are frozen
   in a separate work order.
 
+## Version-1 withdrawal
+
+The first baseline pilot exposed a scorer defect in version 1. The
+contradiction case required the complete natural-language response to equal
+`INACTIVE`. The model instead gave a correct sentence stating that the record
+was not active and that its actual status was inactive, which the exact-text
+check marked wrong. Version 1 therefore measured formatting rather than the
+predeclared recovery proposition and is withdrawn.
+
+Version 2 replaces that free-text answer with a typed `report_status` tool
+call whose `status` argument must equal `INACTIVE`. This changes the frozen
+suite and its digest. The invalid version-1 artifact is retained with an
+`invalid-scorer` filename; it is incident evidence, not a baseline result.

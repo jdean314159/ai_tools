@@ -279,3 +279,5 @@ does not upgrade best-effort generation into a determinism claim.
 **Summary:** Defines a separate, privacy-bounded recovery profile for adverse
 tool results, with a frozen evaluation split, baseline-headroom stop rule, and
 predeclared improvement criteria before any live comparison.
+Version 1 was withdrawn after an exact-text scorer measured formatting rather
+than recovery; version 2 uses a typed status-report action.
