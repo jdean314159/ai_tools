@@ -68,6 +68,9 @@ ceiling rule stopped the experiment before a thinking-on condition. Designing
 a harder version-3 suite is a new project; version 2 must not be tuned in place.
 The thinking-off-only development stage for that project is frozen in
 `docs/projects/llm_engines/TOOL-RECOVERY-V3-DEVELOPMENT-2026-08-29.md`.
+It produced five 3/3 families and one 0/3 family. Because no family had mixed
+development performance, the predeclared advancement rule stopped the project;
+no version-3 evaluation suite or thinking-on run exists.
 
 ### Active project — RUN-RECORD-00
 

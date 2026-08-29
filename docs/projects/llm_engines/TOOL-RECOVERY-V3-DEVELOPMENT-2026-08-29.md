@@ -67,3 +67,21 @@ repetitions, condition order, and minimum improvement threshold.
 Development outcomes measure case difficulty for this endpoint only. They are
 not retained as evaluation evidence and cannot support a claim about thinking,
 recovery quality in applications, or model internals.
+
+## Outcome: advancement stopped
+
+The development run completed 18 case repetitions. Five families passed 3/3:
+stale success, warning invalidation, partial batch, authority conflict, and
+malformed result. Permission boundary passed 0/3. No family had a pass rate
+strictly between zero and one, so zero families were eligible for evaluation;
+the work order required at least three.
+
+No version-3 evaluation suite was generated and no thinking-on condition was
+run. The overall 15/18 value is not headroom under the family-specific rule.
+A new development work order is required before changing difficulty.
+
+Artifact:
+`runs/2026-08-29-spark-qwen-tool-recovery-v3-development-v1.json`
+
+File SHA-256:
+`8e8386f483c98856a406d8d95bbee304946220fe4fdee64839556941771293c8`

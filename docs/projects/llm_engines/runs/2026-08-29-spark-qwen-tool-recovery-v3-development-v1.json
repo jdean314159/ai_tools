@@ -1,0 +1,465 @@
+{
+  "body": {
+    "backend": "OpenAIEngine",
+    "baseline_headroom": "present",
+    "cases_per_run": 6,
+    "condition_order": "v3_development_thinking_off_only",
+    "fabricated_success_rate": 0.0,
+    "finished_at": "2026-08-29T19:54:04.222604Z",
+    "interpretation_limit": "Pilot of fixed synthetic recovery cases; it cannot support an improvement claim.",
+    "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "primary_pass_rate": 0.8333333333333334,
+    "profile": "llm_engines.tool_recovery_development",
+    "profile_version": 1,
+    "repetitions": 3,
+    "results": [
+      {
+        "calls_made": 2,
+        "case_id": "dev_stale_success",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 806,
+        "latency_ms": 4402.066,
+        "observed_action": "call_tool",
+        "observed_tool": "refresh_record",
+        "output_tokens": 97,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_warning_invalidates",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 782,
+        "latency_ms": 3153.408,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 62,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_partial_batch",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 808,
+        "latency_ms": 3946.376,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 94,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_authority_conflict",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 786,
+        "latency_ms": 4893.564,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 114,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 1,
+        "case_id": "dev_permission_boundary",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 786,
+        "latency_ms": 5516.585,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 121,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_malformed_result",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 785,
+        "latency_ms": 3685.714,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 79,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_stale_success",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 806,
+        "latency_ms": 4151.871,
+        "observed_action": "call_tool",
+        "observed_tool": "refresh_record",
+        "output_tokens": 97,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_warning_invalidates",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 782,
+        "latency_ms": 2782.311,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 62,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_partial_batch",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 808,
+        "latency_ms": 3602.187,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 94,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_authority_conflict",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 786,
+        "latency_ms": 4636.997,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 118,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 1,
+        "case_id": "dev_permission_boundary",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 786,
+        "latency_ms": 5326.662,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 121,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_malformed_result",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 785,
+        "latency_ms": 3417.401,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 79,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_stale_success",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 806,
+        "latency_ms": 4061.245,
+        "observed_action": "call_tool",
+        "observed_tool": "refresh_record",
+        "output_tokens": 97,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_warning_invalidates",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 782,
+        "latency_ms": 2786.4139999999998,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 62,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_partial_batch",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 808,
+        "latency_ms": 3622.195,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 94,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_authority_conflict",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 786,
+        "latency_ms": 4810.511,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 114,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 1,
+        "case_id": "dev_permission_boundary",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 786,
+        "latency_ms": 5139.49,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 121,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "dev_malformed_result",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 785,
+        "latency_ms": 3421.634,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 79,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      }
+    ],
+    "schema_version": 1,
+    "seed_requested": 11,
+    "started_at": "2026-08-29T19:52:50.863035Z",
+    "suite_digest": "sha256:98f68068963d1982ef93b32b1c1cf8f8bbf04a824f62fe2446215656359d9908",
+    "thinking_requested": false
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "tool-recovery-runner",
+        "name": "llm_engines.tool_recovery_probe",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "temperature=0",
+            "fixed synthetic evaluation suite",
+            "seed requested and provider call accepted; reproducibility not implied"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "read_only",
+        "execution_mode": "live_external",
+        "implementation_version": "1",
+        "operation": "tool_recovery_characterization",
+        "requirements": [
+          {
+            "ref": "model_endpoint",
+            "type": "external_service"
+          },
+          {
+            "ref": "llm_engines.tool_recovery_development",
+            "type": "implementation"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "backend": "OpenAIEngine",
+      "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw interactions are not retained",
+      "declared_content_categories": [
+        "synthetic_prompt",
+        "model_configuration"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "omit_raw_interaction_content",
+          "version": "1"
+        },
+        {
+          "operation": "model_label_basename_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-tool-recovery-no-raw-content",
+        "policy_version": "1",
+        "scope": [
+          "body contains no raw prompt, response, reasoning, or tool-result value"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-29T19:54:04.222604Z",
+        "validator": "llm_engines.tool_recovery_probe"
+      }
+    },
+    "profile": "llm_engines.tool_recovery_development",
+    "profile_version": 1,
+    "record_id": "tr_94b572cf2544be350b28d5f4a7c79825",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T19:54:04.222604Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T19:54:04.222604Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-29T19:52:50.863035Z"
+      }
+    }
+  }
+}
