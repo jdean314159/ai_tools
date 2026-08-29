@@ -57,7 +57,9 @@ ADR-028 now defines seed request and acceptance as separate facts; accepted
 seed parameters do not upgrade `best_effort` determinism. ADR-029 freezes the
 recovery pilot boundary, four failure families, privacy contract, and baseline-
 headroom stop rule. The executable pilot profile is available, but no live
-recovery campaign or improvement threshold has been authorized.
+recovery comparison or improvement threshold has been authorized. The baseline
+pilot is frozen in
+`docs/projects/llm_engines/TOOL-RECOVERY-PILOT-2026-08-29.md`.
 
 ### Active project — RUN-RECORD-00
 
