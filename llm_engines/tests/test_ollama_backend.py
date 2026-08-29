@@ -126,6 +126,15 @@ def _nested_schema() -> dict:
 
 class TestOllamaGenerate:
 
+    def test_seed_zero_is_in_payload_and_acceptance_is_reported(self, ollama_engine) -> None:
+        payload = ollama_engine._base_payload([], 10, 0, seed=0)
+        assert payload["options"]["seed"] == 0
+
+        response = ollama_engine.generate(
+            GenerationRequest(messages=_req().messages, seed=0)
+        )
+        assert response.seed_status == "accepted"
+
     def test_returns_generation_response(self, ollama_engine) -> None:
         routes = {"/api/chat": _chat_response("Test response")}
         with patch("urllib.request.urlopen", side_effect=_make_url_dispatch(routes)):

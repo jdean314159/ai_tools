@@ -102,6 +102,7 @@ class MockEngine:
             ),
             model_name=self.model,
             backend=self.BACKEND,
+            seed_status="accepted" if request.seed is not None else "not_requested",
         )
 
     # ------------------------------------------------------------------

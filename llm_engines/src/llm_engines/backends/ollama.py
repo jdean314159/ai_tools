@@ -164,6 +164,7 @@ class OllamaEngine:
         max_tokens: int,
         temperature: float,
         json_schema: dict[str, Any] | None = None,
+        seed: int | None = None,
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "model": self.model,
@@ -179,6 +180,8 @@ class OllamaEngine:
         }
         if self.num_gpu is not None:
             payload["options"]["num_gpu"] = self.num_gpu
+        if seed is not None:
+            payload["options"]["seed"] = seed
         if json_schema is not None:
             payload["format"] = inline_local_json_schema_refs(json_schema)
         return payload
@@ -268,6 +271,7 @@ class OllamaEngine:
             request.max_tokens,
             request.temperature,
             request.json_schema,
+            request.seed,
         )
         if request.stop:
             payload["options"]["stop"] = request.stop
@@ -285,6 +289,7 @@ class OllamaEngine:
             model_name=self.model,
             backend=BACKEND,
             raw_provider_payload=self._debug_payload(result),
+            seed_status="accepted" if request.seed is not None else "not_requested",
         )
 
     # ------------------------------------------------------------------
@@ -318,6 +323,7 @@ class OllamaEngine:
             self._format_messages(request),
             request.max_tokens,
             request.temperature,
+            seed=request.seed,
         )
         payload["stream"] = True
         if request.stop:

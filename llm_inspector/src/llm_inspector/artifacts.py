@@ -52,6 +52,12 @@ SUPPORTED_BODY_CONTRACTS = (
         profile_version=2,
     ),
     SupportedBodyContract(
+        kind="experiment",
+        body_version=1,
+        profile="llm_engines.tool_recovery_campaign",
+        profile_version=1,
+    ),
+    SupportedBodyContract(
         kind="agent_run",
         body_version=1,
         profile="agent_lib.nav",
@@ -191,6 +197,23 @@ def _agent_summary(artifact: RunArtifact) -> dict[str, Any]:
 
 def _experiment_summary(artifact: RunArtifact) -> dict[str, Any]:
     body = artifact.body
+    if artifact.envelope.profile == "llm_engines.tool_recovery_campaign":
+        return {
+            "record_type": "tool_recovery_campaign",
+            "profile": artifact.envelope.profile,
+            "suite_digest": body.get("suite_digest"),
+            "backend": body.get("backend"),
+            "model_label": body.get("model_label"),
+            "repetitions": body.get("repetitions"),
+            "cases_per_run": body.get("cases_per_run"),
+            "thinking_requested": body.get("thinking_requested"),
+            "seed_requested": body.get("seed_requested"),
+            "condition_order": body.get("condition_order"),
+            "primary_pass_rate": body.get("primary_pass_rate"),
+            "fabricated_success_rate": body.get("fabricated_success_rate"),
+            "baseline_headroom": body.get("baseline_headroom"),
+            "interpretation_limit": body.get("interpretation_limit"),
+        }
     if artifact.envelope.profile == "llm_engines.tool_decision_campaign":
         aggregates = (
             body.get("case_aggregates")

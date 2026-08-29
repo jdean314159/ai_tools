@@ -207,6 +207,7 @@ class ToolExecutor:
         max_tokens: int = 1024,
         temperature: float = 0.7,
         thinking: bool | None = None,
+        seed: int | None = None,
     ) -> GenerationResponse:
         """
         Run the tool-calling loop until the model produces a final response.
@@ -238,6 +239,7 @@ class ToolExecutor:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 thinking=thinking,
+                seed=seed,
             )
 
             logger.debug("Step %d: calling engine with %d messages", step + 1, len(history))

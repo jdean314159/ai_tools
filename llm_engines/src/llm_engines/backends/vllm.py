@@ -136,6 +136,11 @@ def _apply_thinking_preference(
         }
 
 
+def _apply_seed_preference(kwargs: dict[str, Any], request: GenerationRequest) -> None:
+    if request.seed is not None:
+        kwargs["seed"] = request.seed
+
+
 class vLLMEngine:
     """
     LLM engine backed by a local vLLM HTTP server.
@@ -244,6 +249,7 @@ class vLLMEngine:
         if request.stop:
             kwargs["stop"] = request.stop
         _apply_thinking_preference(kwargs, request)
+        _apply_seed_preference(kwargs, request)
 
         t0 = time.perf_counter()
         try:
@@ -261,9 +267,11 @@ class vLLMEngine:
             raise GenerationError(f"vLLM generation failed: {e}") from e
 
         latency_ms = (time.perf_counter() - t0) * 1000
-        return self._build_response(raw, latency_ms)
+        return self._build_response(raw, latency_ms, request=request)
 
-    def _build_response(self, raw: Any, latency_ms: float) -> GenerationResponse:
+    def _build_response(
+        self, raw: Any, latency_ms: float, *, request: GenerationRequest
+    ) -> GenerationResponse:
         choice = raw.choices[0]
         u = getattr(raw, "usage", None)
         usage = UsageStats(
@@ -285,6 +293,7 @@ class vLLMEngine:
             raw_provider_payload=(
                 {"id": raw.id, "model": raw.model} if self.debug else None
             ),
+            seed_status="accepted" if request.seed is not None else "not_requested",
         )
 
     # ------------------------------------------------------------------
@@ -310,6 +319,7 @@ class vLLMEngine:
         if request.stop:
             kwargs["stop"] = request.stop
         _apply_thinking_preference(kwargs, request)
+        _apply_seed_preference(kwargs, request)
 
         started = time.perf_counter()
         try:
@@ -326,7 +336,9 @@ class vLLMEngine:
         except Exception as exc:
             raise GenerationError(f"vLLM tool generation failed: {exc}") from exc
 
-        return self._build_response(raw, (time.perf_counter() - started) * 1000)
+        return self._build_response(
+            raw, (time.perf_counter() - started) * 1000, request=request
+        )
 
     # ------------------------------------------------------------------
     # LogprobModel Protocol
@@ -353,6 +365,7 @@ class vLLMEngine:
             "top_logprobs": actual_top,
         }
         _apply_thinking_preference(kwargs, request)
+        _apply_seed_preference(kwargs, request)
 
         try:
             raw = self._client.chat.completions.create(**kwargs)
@@ -392,6 +405,7 @@ class vLLMEngine:
             "stream": True,
         }
         _apply_thinking_preference(kwargs, request)
+        _apply_seed_preference(kwargs, request)
         try:
             stream: Any = await self._async_client.chat.completions.create(**kwargs)
             async for chunk in stream:
@@ -446,9 +460,12 @@ class vLLMEngine:
             "temperature": request.temperature,
         }
         _apply_thinking_preference(kwargs, request)
+        _apply_seed_preference(kwargs, request)
         t0 = time.perf_counter()
         try:
             raw = await self._async_client.chat.completions.create(**kwargs)
         except Exception as e:
             raise GenerationError(f"vLLM async generation failed: {e}") from e
-        return self._build_response(raw, (time.perf_counter() - t0) * 1000)
+        return self._build_response(
+            raw, (time.perf_counter() - t0) * 1000, request=request
+        )

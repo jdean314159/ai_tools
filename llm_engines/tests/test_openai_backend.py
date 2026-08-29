@@ -88,6 +88,23 @@ def _req(content="Hello"):
 
 class TestOpenAIGenerate:
 
+    def test_seed_zero_is_forwarded_and_acceptance_is_reported(self, engine) -> None:
+        engine._client.chat.completions.create.return_value = _fake_completion()
+
+        response = engine.generate(GenerationRequest(messages=_req().messages, seed=0))
+
+        kwargs = engine._client.chat.completions.create.call_args.kwargs
+        assert kwargs["seed"] == 0
+        assert response.seed_status == "accepted"
+
+    def test_unspecified_seed_is_omitted(self, engine) -> None:
+        engine._client.chat.completions.create.return_value = _fake_completion()
+
+        response = engine.generate(_req())
+
+        assert "seed" not in engine._client.chat.completions.create.call_args.kwargs
+        assert response.seed_status == "not_requested"
+
     def test_returns_generation_response(self, engine) -> None:
         engine._client.chat.completions.create.return_value = _fake_completion()
         resp = engine.generate(_req())

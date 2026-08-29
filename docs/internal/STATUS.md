@@ -53,6 +53,12 @@ The next process experiment is multi-turn recovery from a tool error or a
 contradictory tool result. It must remain a separate governed profile rather
 than expanding the current single-decision contract implicitly.
 
+ADR-028 now defines seed request and acceptance as separate facts; accepted
+seed parameters do not upgrade `best_effort` determinism. ADR-029 freezes the
+recovery pilot boundary, four failure families, privacy contract, and baseline-
+headroom stop rule. The executable pilot profile is available, but no live
+recovery campaign or improvement threshold has been authorized.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

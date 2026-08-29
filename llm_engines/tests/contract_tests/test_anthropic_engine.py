@@ -74,6 +74,14 @@ def _req(content="Hello"):
 
 class TestAnthropicChatModel:
 
+    def test_requested_seed_is_not_forwarded_or_claimed_honored(self, engine) -> None:
+        engine._client.messages.create.return_value = _fake_response()
+
+        response = engine.generate(GenerationRequest(messages=_req().messages, seed=7))
+
+        assert "seed" not in engine._client.messages.create.call_args.kwargs
+        assert response.seed_status == "not_honored"
+
     def test_returns_generation_response(self, engine) -> None:
         engine._client.messages.create.return_value = _fake_response()
         response = engine.generate(_req())

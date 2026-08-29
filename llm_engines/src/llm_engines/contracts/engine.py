@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Iterator, Literal, Protoco
 
 from llm_harness_core import LLMMessage as InteropMessage
 from llm_harness_core import OperationResult, OperationWarning, ToolInvocation
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictInt
 
 if TYPE_CHECKING:
     from .tools import ToolSpec
@@ -288,6 +288,10 @@ class GenerationRequest(BaseModel):
     # ^^^  Per-request reasoning-mode preference. None preserves the backend or
     #      server default; True requests thinking; False requests suppression.
     #      Backends without request-level control may ignore this preference.
+    seed: StrictInt | None = Field(default=None, ge=0, le=4_294_967_295)
+    # ^^^  Per-request sampling-seed preference. None sends no seed. A backend
+    #      may decline to honor the preference; inspect GenerationResponse's
+    #      seed_status rather than inferring acceptance from this field.
 
 
 class GenerationResponse(BaseModel):
@@ -303,6 +307,9 @@ class GenerationResponse(BaseModel):
     # Zero-value CacheStats (hit_ratio == 0.0) means the backend did not
     # report cache information — not that there were no cache hits.
     raw_provider_payload: dict[str, Any] | None = None  # Preserved for debugging
+    seed_status: Literal["not_requested", "accepted", "not_honored"] = "not_requested"
+    # ^^^  "accepted" means the adapter forwarded the seed and the provider
+    #      completed the request. It is not a deterministic-output claim.
 
     @property
     def text(self) -> str:

@@ -278,6 +278,23 @@ class TestToolExecutorRun:
         assert len(engine.captured_requests) == 2
         assert all(request.thinking is True for request in engine.captured_requests)
 
+    def test_seed_preference_is_preserved_across_tool_rounds(self) -> None:
+        engine = FakeToolEngine([
+            _tool_call_response("add", {"a": 2, "b": 3}),
+            _text_response("5"),
+        ])
+        executor = ToolExecutor(engine, max_steps=2)
+        executor._tools["add"] = lambda a, b: a + b
+        executor._specs["add"] = _make_spec("add")
+
+        executor.run(
+            [ChatMessage(role="user", content="Add two and three")],
+            seed=0,
+        )
+
+        assert len(engine.captured_requests) == 2
+        assert all(request.seed == 0 for request in engine.captured_requests)
+
     def test_tool_result_in_second_request(self) -> None:
         """Tool result message must appear in subsequent request."""
         ex, engine = self._executor([

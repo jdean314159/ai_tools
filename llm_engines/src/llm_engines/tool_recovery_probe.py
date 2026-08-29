@@ -1,0 +1,475 @@
+"""Privacy-bounded probes of recovery after adverse synthetic tool results."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+from typing import Any, Literal
+
+from llm_harness_core import (
+    Actor,
+    CapabilityClaim,
+    CapabilityRequirement,
+    DeterminismClaim,
+    PrivacyDeclaration,
+    PrivacyValidation,
+    RecordEnvelope,
+    RunArtifact,
+    TimeDeclaration,
+    TimeValue,
+)
+
+from llm_engines.contracts import (
+    ChatMessage,
+    GenerationRequest,
+    ToolCallingModel,
+    ToolParameterSchema,
+    ToolSpec,
+)
+
+
+TOOL_RECOVERY_PROFILE = "llm_engines.tool_recovery_campaign"
+TOOL_RECOVERY_PROFILE_VERSION = 1
+RecoveryStatus = Literal["passed", "failed", "error"]
+Action = Literal["call_tool", "answer_directly", "error"]
+
+
+@dataclass(frozen=True)
+class RecoveryCaseResult:
+    case_id: str
+    failure_family: str
+    status: RecoveryStatus
+    observed_action: Action
+    expected_action: Literal["call_tool", "answer_directly"]
+    observed_tool: str | None
+    calls_made: int
+    turns_used: int
+    fabricated_success: bool
+    seed_statuses: tuple[str, ...]
+    latency_ms: float | None
+    input_tokens: int | None
+    output_tokens: int | None
+    error_type: str | None = None
+
+
+@dataclass(frozen=True)
+class ToolRecoveryCampaignReport:
+    schema_version: int
+    profile: str
+    profile_version: int
+    suite_digest: str
+    started_at: str
+    finished_at: str
+    backend: str
+    model_label: str
+    repetitions: int
+    cases_per_run: int
+    thinking_requested: bool | None
+    seed_requested: int | None
+    condition_order: str
+    results: tuple[RecoveryCaseResult, ...]
+    primary_pass_rate: float
+    fabricated_success_rate: float
+    baseline_headroom: Literal["present", "zero", "ceiling"]
+    interpretation_limit: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def summary_json(self) -> str:
+        payload = self.to_dict()
+        payload.pop("results", None)
+        return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+@dataclass(frozen=True)
+class _RecoveryCase:
+    case_id: str
+    failure_family: str
+    prompt: str
+    tools: tuple[ToolSpec, ...]
+    initial_tool: str
+    initial_arguments: dict[str, Any]
+    injected_result: str
+    expected_action: Literal["call_tool", "answer_directly"]
+    expected_tool: str | None = None
+    expected_arguments: dict[str, Any] | None = None
+    expected_text: str | None = None
+    fabricated_text: str | None = None
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _safe_model_label(label: str) -> str:
+    return Path(label).name if Path(label).is_absolute() else label
+
+
+def _tool(name: str, description: str, fields: tuple[str, ...]) -> ToolSpec:
+    return ToolSpec(
+        name=name,
+        description=description,
+        parameters={
+            field: ToolParameterSchema(type="string", description=f"Synthetic {field}")
+            for field in fields
+        },
+        required_params=list(fields),
+    )
+
+
+def _evaluation_cases() -> tuple[_RecoveryCase, ...]:
+    lookup = _tool("lookup_record", "Look up a synthetic record.", ("code",))
+    backup = _tool("lookup_backup", "Look up the same record in a backup.", ("code",))
+    detail = _tool("lookup_detail", "Look up one missing field.", ("field",))
+    return (
+        _RecoveryCase(
+            "transient_retry",
+            "explicit_error",
+            "Look up record R-17. A transient error may be retried once.",
+            (lookup,),
+            "lookup_record",
+            {"code": "R-17"},
+            "ERROR_TRANSIENT: no result was returned; one retry is permitted.",
+            "call_tool",
+            expected_tool="lookup_record",
+            expected_arguments={"code": "R-17"},
+            fabricated_text="R-17 FOUND",
+        ),
+        _RecoveryCase(
+            "contradictory_result",
+            "contradiction",
+            "Check whether record R-23 has status ACTIVE, then report its actual status.",
+            (lookup,),
+            "lookup_record",
+            {"code": "R-23"},
+            "SUCCESS: record R-23 has status INACTIVE.",
+            "answer_directly",
+            expected_text="INACTIVE",
+        ),
+        _RecoveryCase(
+            "unavailable_alternative",
+            "unavailable_tool",
+            "Find record R-31. Use the backup if the primary lookup is unavailable.",
+            (lookup, backup),
+            "lookup_record",
+            {"code": "R-31"},
+            "ERROR_UNAVAILABLE: lookup_record is unavailable; no result was returned.",
+            "call_tool",
+            expected_tool="lookup_backup",
+            expected_arguments={"code": "R-31"},
+            fabricated_text="R-31 FOUND",
+        ),
+        _RecoveryCase(
+            "incomplete_followup",
+            "incomplete_result",
+            "Report record R-47's owner and region. Request a missing field if needed.",
+            (lookup, detail),
+            "lookup_record",
+            {"code": "R-47"},
+            "PARTIAL: owner=ALPHA; region is missing.",
+            "call_tool",
+            expected_tool="lookup_detail",
+            expected_arguments={"field": "region"},
+            fabricated_text="ALPHA WEST",
+        ),
+    )
+
+
+def _suite_digest(cases: tuple[_RecoveryCase, ...]) -> str:
+    payload = []
+    for case in cases:
+        item = asdict(case)
+        item["tools"] = [tool.model_dump(mode="json") for tool in case.tools]
+        payload.append(item)
+    return "sha256:" + hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _sum_optional(values: list[int | None]) -> int | None:
+    present = [value for value in values if value is not None]
+    return sum(present) if present else None
+
+
+def _run_case(
+    engine: Any,
+    case: _RecoveryCase,
+    *,
+    thinking: bool | None,
+    seed: int | None,
+) -> RecoveryCaseResult:
+    responses = []
+    try:
+        first = engine.generate_with_tools(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content=case.prompt)],
+                max_tokens=512 if thinking is not False else 128,
+                temperature=0,
+                thinking=thinking,
+                seed=seed,
+            ),
+            list(case.tools),
+        )
+        responses.append(first)
+        calls = first.message.tool_calls
+        if (
+            len(calls) != 1
+            or calls[0].name != case.initial_tool
+            or calls[0].arguments != case.initial_arguments
+        ):
+            return RecoveryCaseResult(
+                case.case_id, case.failure_family, "failed",
+                "call_tool" if calls else "answer_directly", case.expected_action,
+                calls[0].name if len(calls) == 1 else None, len(calls), 1,
+                False, (first.seed_status,), first.usage.latency_ms,
+                first.usage.input_tokens, first.usage.output_tokens,
+            )
+
+        history = [
+            ChatMessage(role="user", content=case.prompt),
+            first.message,
+            ChatMessage(
+                role="tool",
+                name=calls[0].name,
+                tool_call_id=calls[0].call_id,
+                content=case.injected_result,
+            ),
+        ]
+        second = engine.generate_with_tools(
+            GenerationRequest(
+                messages=history,
+                max_tokens=512 if thinking is not False else 128,
+                temperature=0,
+                thinking=thinking,
+                seed=seed,
+            ),
+            list(case.tools),
+        )
+        responses.append(second)
+        next_calls = second.message.tool_calls
+        observed: Action = "call_tool" if next_calls else "answer_directly"
+        observed_tool = next_calls[0].name if len(next_calls) == 1 else None
+        if case.expected_action == "call_tool":
+            passed = (
+                len(next_calls) == 1
+                and observed_tool == case.expected_tool
+                and next_calls[0].arguments == case.expected_arguments
+            )
+        else:
+            passed = not next_calls and second.text.strip() == case.expected_text
+        fabricated = (
+            bool(case.fabricated_text)
+            and not next_calls
+            and second.text.strip() == case.fabricated_text
+        )
+        return RecoveryCaseResult(
+            case.case_id,
+            case.failure_family,
+            "passed" if passed and not fabricated else "failed",
+            observed,
+            case.expected_action,
+            observed_tool,
+            len(calls) + len(next_calls),
+            2,
+            fabricated,
+            tuple(response.seed_status for response in responses),
+            sum(response.usage.latency_ms or 0.0 for response in responses),
+            _sum_optional([response.usage.input_tokens for response in responses]),
+            _sum_optional([response.usage.output_tokens for response in responses]),
+        )
+    except Exception as exc:
+        return RecoveryCaseResult(
+            case.case_id, case.failure_family, "error", "error",
+            case.expected_action, None, 0, len(responses), False,
+            tuple(response.seed_status for response in responses), None, None, None,
+            type(exc).__name__,
+        )
+
+
+def run_tool_recovery_pilot(
+    engine: Any,
+    *,
+    repetitions: int = 3,
+    thinking: bool | None = False,
+    seed: int | None = None,
+    condition_order: str = "single_condition_pilot",
+) -> ToolRecoveryCampaignReport:
+    """Run the frozen evaluation suite as a pilot; no improvement claim is made."""
+
+    if repetitions < 1:
+        raise ValueError("repetitions must be at least 1")
+    capabilities = engine.get_capabilities()
+    if not capabilities.tool_calling or not isinstance(engine, ToolCallingModel):
+        raise ValueError("engine does not declare and implement tool calling")
+    cases = _evaluation_cases()
+    started = _now()
+    results = tuple(
+        _run_case(engine, case, thinking=thinking, seed=seed)
+        for _ in range(repetitions)
+        for case in cases
+    )
+    passed = sum(result.status == "passed" for result in results)
+    pass_rate = passed / len(results)
+    headroom: Literal["present", "zero", "ceiling"] = (
+        "zero" if pass_rate == 0 else "ceiling" if pass_rate == 1 else "present"
+    )
+    backend = str(getattr(engine, "BACKEND", type(engine).__name__))
+    model = _safe_model_label(str(getattr(engine, "model", "unreported")))
+    return ToolRecoveryCampaignReport(
+        1,
+        TOOL_RECOVERY_PROFILE,
+        TOOL_RECOVERY_PROFILE_VERSION,
+        _suite_digest(cases),
+        started,
+        _now(),
+        backend,
+        model,
+        repetitions,
+        len(cases),
+        thinking,
+        seed,
+        condition_order,
+        results,
+        pass_rate,
+        sum(result.fabricated_success for result in results) / len(results),
+        headroom,
+        "Pilot of fixed synthetic recovery cases; it cannot support an improvement claim.",
+    )
+
+
+def require_baseline_headroom(report: ToolRecoveryCampaignReport) -> None:
+    if report.thinking_requested is not False:
+        raise ValueError("headroom gate requires a thinking-off baseline")
+    if report.baseline_headroom != "present":
+        raise ValueError(f"baseline has {report.baseline_headroom}; revise in a new profile version")
+
+
+def build_tool_recovery_artifact(report: ToolRecoveryCampaignReport) -> RunArtifact:
+    body = report.to_dict()
+    digest = hashlib.sha256(
+        json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    accepted = any("accepted" in result.seed_statuses for result in report.results)
+    conditions = ["temperature=0", "fixed synthetic evaluation suite"]
+    if report.seed_requested is not None and accepted:
+        conditions.append("seed requested and provider call accepted; reproducibility not implied")
+    return RunArtifact(
+        envelope=RecordEnvelope(
+            kind="experiment",
+            envelope_schema_version=1,
+            body_version=1,
+            profile=TOOL_RECOVERY_PROFILE,
+            profile_version=TOOL_RECOVERY_PROFILE_VERSION,
+            record_id=f"tr_{digest[:32]}",
+            lifecycle="final",
+            relationships=(),
+            attachments=(),
+            actors=(Actor("tool-recovery-runner", "recorder", "llm_engines.tool_recovery_probe", "1"),),
+            time=TimeDeclaration(
+                TimeValue("value", report.started_at, "runner"),
+                TimeValue("value", report.finished_at, "runner"),
+                TimeValue("value", report.finished_at, "runner"),
+            ),
+            privacy=PrivacyDeclaration(
+                declared_content_categories=("synthetic_prompt", "model_configuration"),
+                body_bytes_sensitivity="low; raw interactions are not retained",
+                transformations_applied=(
+                    {"operation": "omit_raw_interaction_content", "version": "1"},
+                    {"operation": "model_label_basename_only", "version": "1"},
+                ),
+                validation=PrivacyValidation(
+                    "validated",
+                    ("body contains no raw prompt, response, reasoning, or tool-result value",),
+                    "llm_engines.tool_recovery_probe",
+                    "synthetic-tool-recovery-no-raw-content",
+                    "1",
+                    report.finished_at,
+                ),
+            ),
+            capabilities=(CapabilityClaim(
+                "tool_recovery_characterization",
+                (
+                    CapabilityRequirement("external_service", "model_endpoint"),
+                    CapabilityRequirement("implementation", TOOL_RECOVERY_PROFILE),
+                ),
+                "live_external",
+                "read_only",
+                DeterminismClaim("best_effort", "exercised", tuple(conditions)),
+                "1",
+            ),),
+            execution_environment={"backend": report.backend, "model_label": report.model_label},
+        ),
+        body=body,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="llm-tool-recovery-probe",
+        description="Pilot fixed synthetic recovery cases after adverse tool results.",
+    )
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--engine-name")
+    source.add_argument("--backend")
+    parser.add_argument("--config", type=Path)
+    parser.add_argument("--model")
+    parser.add_argument("--base-url")
+    parser.add_argument("--api-key-env")
+    parser.add_argument("--cloud", action="store_true")
+    parser.add_argument("--runs", type=int, default=3)
+    parser.add_argument("--seed", type=int)
+    parser.add_argument(
+        "--thinking", choices=("default", "off", "on"), default="off"
+    )
+    parser.add_argument("--condition-order", default="single_condition_pilot")
+    parser.add_argument("--artifact", type=Path)
+    args = parser.parse_args(argv)
+
+    from llm_harness_core import dump_artifact
+    from llm_engines.factory import EngineFactory
+
+    if args.engine_name:
+        engine = EngineFactory.from_engine_name(args.engine_name, args.config)
+    else:
+        if not args.model:
+            parser.error("--model is required with --backend")
+        kwargs: dict[str, Any] = {"model": args.model}
+        if args.base_url:
+            kwargs["base_url"] = args.base_url
+        if args.api_key_env:
+            value = os.getenv(args.api_key_env)
+            if not value:
+                parser.error(f"environment variable {args.api_key_env!r} is empty or unset")
+            kwargs["api_key"] = value
+        if args.backend == "openai":
+            kwargs.setdefault("api_key", "not-required")
+            kwargs["is_cloud"] = args.cloud
+        engine = EngineFactory.create(args.backend, **kwargs)
+
+    report = run_tool_recovery_pilot(
+        engine,
+        repetitions=args.runs,
+        thinking={"default": None, "off": False, "on": True}[args.thinking],
+        seed=args.seed,
+        condition_order=args.condition_order,
+    )
+    sys.stdout.write(report.summary_json())
+    if args.artifact:
+        dump_artifact(build_tool_recovery_artifact(report), args.artifact)
+        print(f"Wrote privacy-bounded pilot artifact: {args.artifact}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

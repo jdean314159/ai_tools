@@ -265,3 +265,17 @@ tool choice, avoiding unnecessary tools, and typed arguments. Tools are not
 executed, the requested thinking setting is retained, raw content is omitted,
 and observed decisions are not presented as
 access to hidden reasoning or general application reliability.
+
+## ADR-028 — Request-level seed control
+**File:** `adr/ADR-028-request-level-seed-control.md`
+**Status:** Accepted
+**Summary:** Adds a portable seed preference and separately records whether a
+backend forwarded and received a successful response to it. Seed acceptance
+does not upgrade best-effort generation into a determinism claim.
+
+## ADR-029 — Multi-turn tool-recovery experiment
+**File:** `adr/ADR-029-multi-turn-tool-recovery-experiment.md`
+**Status:** Accepted
+**Summary:** Defines a separate, privacy-bounded recovery profile for adverse
+tool results, with a frozen evaluation split, baseline-headroom stop rule, and
+predeclared improvement criteria before any live comparison.

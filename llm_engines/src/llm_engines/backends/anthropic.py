@@ -220,9 +220,11 @@ class AnthropicEngine:
             raise GenerationError(f"Anthropic generation failed: {e}") from e
 
         latency_ms = (time.perf_counter() - t0) * 1000
-        return self._build_response(raw, latency_ms)
+        return self._build_response(raw, latency_ms, request=request)
 
-    def _build_response(self, raw: Any, latency_ms: float) -> GenerationResponse:
+    def _build_response(
+        self, raw: Any, latency_ms: float, *, request: GenerationRequest
+    ) -> GenerationResponse:
         text = _extract_text(raw.content)
         tool_calls = _extract_tool_calls(raw.content)
         finish_reason = _map_finish(getattr(raw, "stop_reason", None))
@@ -261,6 +263,7 @@ class AnthropicEngine:
             model_name=self.model,
             backend=BACKEND,
             raw_provider_payload=debug_payload,
+            seed_status="not_honored" if request.seed is not None else "not_requested",
         )
 
     # ------------------------------------------------------------------
@@ -322,7 +325,7 @@ class AnthropicEngine:
             raise GenerationError(f"Anthropic tool generation failed: {e}") from e
 
         latency_ms = (time.perf_counter() - t0) * 1000
-        return self._build_response(raw, latency_ms)
+        return self._build_response(raw, latency_ms, request=request)
 
     # ------------------------------------------------------------------
     # AsyncStreamingModel Protocol

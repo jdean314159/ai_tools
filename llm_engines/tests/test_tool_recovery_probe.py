@@ -1,0 +1,131 @@
+from __future__ import annotations
+
+import json
+
+import pytest
+from llm_harness_core import artifact_from_dict, artifact_to_dict
+
+from llm_engines.contracts import (
+    ChatMessage,
+    EngineCapabilities,
+    GenerationResponse,
+    ToolCall,
+    UsageStats,
+)
+from llm_engines.tool_recovery_probe import (
+    TOOL_RECOVERY_PROFILE,
+    build_tool_recovery_artifact,
+    require_baseline_headroom,
+    run_tool_recovery_pilot,
+)
+
+
+def _response(*, text=None, tool=None, arguments=None, seed_status="not_requested"):
+    calls = []
+    if tool:
+        calls = [ToolCall(call_id="call-1", name=tool, arguments=arguments or {})]
+    return GenerationResponse(
+        message=ChatMessage(role="assistant", content=text, tool_calls=calls),
+        finish_reason="tool_call" if calls else "stop",
+        usage=UsageStats(input_tokens=10, output_tokens=4, latency_ms=5.0),
+        model_name="/private/models/synthetic.gguf",
+        backend="synthetic",
+        seed_status=seed_status,
+    )
+
+
+class RecoveryEngine:
+    BACKEND = "synthetic"
+    model = "/private/models/synthetic.gguf"
+
+    def __init__(self, *, fail_contradiction=False, fabricate_retry=False):
+        self.fail_contradiction = fail_contradiction
+        self.fabricate_retry = fabricate_retry
+
+    def get_capabilities(self):
+        return EngineCapabilities(tool_calling=True)
+
+    def generate(self, request):
+        raise AssertionError("ordinary generation is not used")
+
+    def generate_with_tools(self, request, available_tools):
+        seed_status = "accepted" if request.seed is not None else "not_requested"
+        latest = request.messages[-1].content or ""
+        first = request.messages[0].content or ""
+        if request.messages[-1].role == "user":
+            if "R-17" in first:
+                return _response(tool="lookup_record", arguments={"code": "R-17"}, seed_status=seed_status)
+            if "R-23" in first:
+                return _response(tool="lookup_record", arguments={"code": "R-23"}, seed_status=seed_status)
+            if "R-31" in first:
+                return _response(tool="lookup_record", arguments={"code": "R-31"}, seed_status=seed_status)
+            return _response(tool="lookup_record", arguments={"code": "R-47"}, seed_status=seed_status)
+        if "ERROR_TRANSIENT" in latest:
+            if self.fabricate_retry:
+                return _response(text="R-17 FOUND", seed_status=seed_status)
+            return _response(tool="lookup_record", arguments={"code": "R-17"}, seed_status=seed_status)
+        if "INACTIVE" in latest:
+            return _response(
+                text="ACTIVE" if self.fail_contradiction else "INACTIVE",
+                seed_status=seed_status,
+            )
+        if "ERROR_UNAVAILABLE" in latest:
+            return _response(tool="lookup_backup", arguments={"code": "R-31"}, seed_status=seed_status)
+        return _response(tool="lookup_detail", arguments={"field": "region"}, seed_status=seed_status)
+
+
+def test_perfect_baseline_is_ceiling_and_cannot_open_comparison_gate():
+    report = run_tool_recovery_pilot(RecoveryEngine(), repetitions=2, seed=0)
+
+    assert report.primary_pass_rate == 1.0
+    assert report.baseline_headroom == "ceiling"
+    assert report.model_label == "synthetic.gguf"
+    assert all(result.seed_statuses == ("accepted", "accepted") for result in report.results)
+    with pytest.raises(ValueError, match="ceiling"):
+        require_baseline_headroom(report)
+
+
+def test_mixed_baseline_has_headroom():
+    report = run_tool_recovery_pilot(
+        RecoveryEngine(fail_contradiction=True), repetitions=1
+    )
+
+    assert report.primary_pass_rate == 0.75
+    assert report.baseline_headroom == "present"
+    require_baseline_headroom(report)
+
+
+def test_fabricated_success_fails_even_after_valid_initial_call():
+    report = run_tool_recovery_pilot(
+        RecoveryEngine(fabricate_retry=True), repetitions=1
+    )
+    result = next(item for item in report.results if item.case_id == "transient_retry")
+
+    assert result.status == "failed"
+    assert result.fabricated_success is True
+    assert report.fabricated_success_rate == 0.25
+
+
+def test_artifact_is_privacy_bounded_and_seed_does_not_claim_determinism():
+    report = run_tool_recovery_pilot(RecoveryEngine(), repetitions=1, seed=7)
+    artifact = artifact_from_dict(
+        artifact_to_dict(build_tool_recovery_artifact(report))
+    )
+    encoded = json.dumps(artifact.body)
+
+    assert artifact.envelope.profile == TOOL_RECOVERY_PROFILE
+    assert artifact.envelope.profile_version == 1
+    assert artifact.envelope.capabilities[0].determinism.claim == "best_effort"
+    assert "seed requested and provider call accepted" in " ".join(
+        artifact.envelope.capabilities[0].determinism.conditions
+    )
+    assert "ERROR_TRANSIENT" not in encoded
+    assert "R-17 FOUND" not in encoded
+    assert "/private" not in encoded
+
+
+def test_non_tool_engine_is_rejected_before_running():
+    from llm_engines.backends.mock import MockEngine
+
+    with pytest.raises(ValueError, match="tool calling"):
+        run_tool_recovery_pilot(MockEngine())

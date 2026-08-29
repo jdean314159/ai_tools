@@ -60,6 +60,18 @@ def test_llamacpp_omits_response_format_without_json_schema(monkeypatch) -> None
     assert "response_format" not in engine._llm.calls[0]  # noqa: SLF001
 
 
+def test_llamacpp_forwards_seed_zero_and_reports_acceptance(monkeypatch) -> None:
+    module = _load_llamacpp_with_fake_dependency(monkeypatch)
+    engine = module.LlamaCppEngine(model_path="/models/test.gguf")
+
+    response = engine.generate(
+        GenerationRequest(messages=[ChatMessage(role="user", content="Hi")], seed=0)
+    )
+
+    assert engine._llm.calls[0]["seed"] == 0  # noqa: SLF001
+    assert response.seed_status == "accepted"
+
+
 def test_llamacpp_think_false_appends_no_think_to_last_user_message(monkeypatch) -> None:
     module = _load_llamacpp_with_fake_dependency(monkeypatch)
     engine = module.LlamaCppEngine(model_path="/models/test.gguf", think=False)

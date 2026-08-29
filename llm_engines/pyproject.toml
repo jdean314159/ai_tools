@@ -21,6 +21,7 @@ dependencies = [
 [project.scripts]
 llm-characterize = "llm_engines.characterization:main"
 llm-tool-process-probe = "llm_engines.tool_process_probe:main"
+llm-tool-recovery-probe = "llm_engines.tool_recovery_probe:main"
 
 [project.optional-dependencies]
 ollama = ["ollama>=0.4"]

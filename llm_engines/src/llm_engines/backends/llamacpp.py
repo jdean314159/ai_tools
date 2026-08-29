@@ -235,6 +235,8 @@ class LlamaCppEngine:
             "stop": request.stop or [],
             "stream": False,
         }
+        if request.seed is not None:
+            completion_kwargs["seed"] = request.seed
         if request.json_schema is not None:
             completion_kwargs["response_format"] = {
                 "type": "json_object",
@@ -273,6 +275,7 @@ class LlamaCppEngine:
             ),
             model_name=self.model_path,
             backend=BACKEND,
+            seed_status="accepted" if request.seed is not None else "not_requested",
         )
 
     # ------------------------------------------------------------------
@@ -286,13 +289,16 @@ class LlamaCppEngine:
         messages = self._messages_for_request(request)
 
         try:
-            for chunk in self._llm.create_chat_completion(
-                messages=messages,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                stop=request.stop or [],
-                stream=True,
-            ):
+            kwargs: dict[str, Any] = {
+                "messages": messages,
+                "max_tokens": request.max_tokens,
+                "temperature": request.temperature,
+                "stop": request.stop or [],
+                "stream": True,
+            }
+            if request.seed is not None:
+                kwargs["seed"] = request.seed
+            for chunk in self._llm.create_chat_completion(**kwargs):
                 delta = chunk["choices"][0].get("delta", {})
                 token = delta.get("content")
                 if token:
@@ -316,14 +322,17 @@ class LlamaCppEngine:
         messages = self._messages_for_request(request)
 
         try:
-            raw = self._llm.create_chat_completion(
-                messages=messages,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                logprobs=True,
-                top_logprobs=max(1, top_logprobs),
-                stream=False,
-            )
+            kwargs = {
+                "messages": messages,
+                "max_tokens": request.max_tokens,
+                "temperature": request.temperature,
+                "logprobs": True,
+                "top_logprobs": max(1, top_logprobs),
+                "stream": False,
+            }
+            if request.seed is not None:
+                kwargs["seed"] = request.seed
+            raw = self._llm.create_chat_completion(**kwargs)
         except Exception as e:
             raise GenerationError(f"LlamaCppEngine logprob generation failed: {e}") from e
 

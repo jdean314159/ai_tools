@@ -236,6 +236,33 @@ exception messages. The built-in probes
 contain no user data. Use separate, explicitly governed experiments when you
 later study application prompts, memory, RAG, or agent behavior.
 
+## Pilot recovery after tool failures
+
+`llm-tool-recovery-probe` presents fixed synthetic adverse tool results and
+measures the model's next observable action. The cases cover a transient
+error, contradictory evidence, an unavailable primary tool, and an incomplete
+result. Tools are not executed and raw interactions are not retained.
+
+```bash
+llm-tool-recovery-probe \
+  --backend openai \
+  --model /models/qwen-model.gguf \
+  --base-url http://inference-host:8080/v1 \
+  --runs 3 \
+  --thinking off \
+  --seed 7 \
+  --artifact spark-qwen-recovery-pilot.json
+```
+
+This produces a pilot, not an improvement claim. A baseline that gets none or
+all of the cases right lacks the headroom required by ADR-029. A matched
+thinking comparison also requires a work order that freezes repetitions and
+the minimum improvement before either condition runs.
+
+`GenerationRequest.seed` is a preference. A response reports whether the
+adapter forwarded it and the provider completed the call. Seed acceptance
+does not establish deterministic generation.
+
 ## Using this with the rest of the suite
 
 - pair it first with `llm_inspector` or `llm_inspector_ui`

@@ -134,6 +134,11 @@ def _apply_local_thinking_preference(
         }
 
 
+def _apply_seed_preference(kwargs: dict[str, Any], request: GenerationRequest) -> None:
+    if request.seed is not None:
+        kwargs["seed"] = request.seed
+
+
 def _apply_json_schema(
     kwargs: dict[str, Any], request: GenerationRequest
 ) -> None:
@@ -239,6 +244,7 @@ class OpenAIEngine:
         if request.stop:
             kwargs["stop"] = request.stop
         _apply_local_thinking_preference(kwargs, request, is_cloud=self.is_cloud)
+        _apply_seed_preference(kwargs, request)
         _apply_json_schema(kwargs, request)
 
         t0 = time.perf_counter()
@@ -257,9 +263,11 @@ class OpenAIEngine:
             raise GenerationError(f"OpenAI generation failed: {e}") from e
 
         latency_ms = (time.perf_counter() - t0) * 1000
-        return self._build_response(raw, latency_ms)
+        return self._build_response(raw, latency_ms, request=request)
 
-    def _build_response(self, raw: Any, latency_ms: float) -> GenerationResponse:
+    def _build_response(
+        self, raw: Any, latency_ms: float, *, request: GenerationRequest
+    ) -> GenerationResponse:
         choice = raw.choices[0]
         content = choice.message.content
         tool_calls = _extract_tool_calls(choice)
@@ -286,6 +294,7 @@ class OpenAIEngine:
             raw_provider_payload=(
                 {"id": raw.id, "model": raw.model} if self.debug else None
             ),
+            seed_status="accepted" if request.seed is not None else "not_requested",
         )
 
     # ------------------------------------------------------------------
@@ -312,6 +321,7 @@ class OpenAIEngine:
             "tool_choice": "auto",
         }
         _apply_local_thinking_preference(kwargs, request, is_cloud=self.is_cloud)
+        _apply_seed_preference(kwargs, request)
 
         t0 = time.perf_counter()
         try:
@@ -323,7 +333,9 @@ class OpenAIEngine:
         except Exception as e:
             raise GenerationError(f"OpenAI tool generation failed: {e}") from e
 
-        return self._build_response(raw, (time.perf_counter() - t0) * 1000)
+        return self._build_response(
+            raw, (time.perf_counter() - t0) * 1000, request=request
+        )
 
     # ------------------------------------------------------------------
     # EmbeddingModel Protocol
@@ -381,6 +393,7 @@ class OpenAIEngine:
         if request.stop:
             kwargs["stop"] = request.stop
         _apply_local_thinking_preference(kwargs, request, is_cloud=self.is_cloud)
+        _apply_seed_preference(kwargs, request)
 
         try:
             raw = self._client.chat.completions.create(**kwargs)
@@ -422,6 +435,7 @@ class OpenAIEngine:
             "stream": True,
         }
         _apply_local_thinking_preference(kwargs, request, is_cloud=self.is_cloud)
+        _apply_seed_preference(kwargs, request)
         _apply_json_schema(kwargs, request)
         try:
             stream: Any = await self._async_client.chat.completions.create(**kwargs)
@@ -455,6 +469,7 @@ class OpenAIEngine:
             "stream": True,
         }
         _apply_local_thinking_preference(kwargs, request, is_cloud=self.is_cloud)
+        _apply_seed_preference(kwargs, request)
 
         # OpenAI-compatible servers stream a tool call across multiple deltas.
         # Buffer by provider index and emit only after strict JSON parsing. This

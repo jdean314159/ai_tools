@@ -231,6 +231,7 @@ class ProposeThenVerifyEngine:
             max_tokens=original_request.max_tokens,
             temperature=0.0,  # deterministic selection
             thinking=original_request.thinking,
+            seed=original_request.seed,
         )
 
         try:

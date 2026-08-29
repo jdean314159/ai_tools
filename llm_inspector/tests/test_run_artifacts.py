@@ -172,6 +172,30 @@ def _tool_decision_campaign(*, thinking: bool) -> RunArtifact:
     )
 
 
+def _tool_recovery_campaign() -> RunArtifact:
+    return RunArtifact(
+        envelope=_envelope(
+            kind="experiment",
+            profile="llm_engines.tool_recovery_campaign",
+            profile_version=1,
+        ),
+        body={
+            "suite_digest": "sha256:fixture",
+            "backend": "openai",
+            "model_label": "fixture-model",
+            "repetitions": 3,
+            "cases_per_run": 4,
+            "thinking_requested": False,
+            "seed_requested": 7,
+            "condition_order": "single_condition_pilot",
+            "primary_pass_rate": 0.5,
+            "fabricated_success_rate": 0.0,
+            "baseline_headroom": "present",
+            "interpretation_limit": "pilot only",
+        },
+    )
+
+
 def test_generation_and_agent_dispatch_to_different_summaries() -> None:
     generation = inspect_artifact(_generation())
     agent = inspect_artifact(_agent())
@@ -264,6 +288,16 @@ def test_tool_decision_comparison_surfaces_thinking_setting() -> None:
         "equal": False,
     }
     assert any("hidden reasoning" in notice for notice in comparison.notices)
+
+
+def test_tool_recovery_summary_surfaces_headroom_and_seed_request() -> None:
+    inspection = inspect_artifact(_tool_recovery_campaign())
+
+    assert inspection.body_support == "supported"
+    assert inspection.body_summary["record_type"] == "tool_recovery_campaign"
+    assert inspection.body_summary["primary_pass_rate"] == 0.5
+    assert inspection.body_summary["baseline_headroom"] == "present"
+    assert inspection.body_summary["seed_requested"] == 7
 
 
 def test_unsupported_profile_keeps_envelope_and_refuses_body_interpretation() -> None:
