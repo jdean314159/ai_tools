@@ -19,7 +19,7 @@ from engram import ProjectMemory
 mem = ProjectMemory(base_dir="~/.myapp", project_id="demo")
 mem.new_session("s1")
 mem.add_turn("user", "My name is Jeff and I work on LLM security.")
-result = mem.build_prompt("What do I work on?", session_id="s1")
+result = mem.build_prompt("What do I work on?")
 print(result["prompt"])
 ```
 
@@ -34,7 +34,7 @@ engine = get_engine("ollama", "qwen3:8b")
 
 user_msg = "What projects am I working on?"
 mem.add_turn("user", user_msg, "s1")
-prompt = mem.build_prompt(user_msg, session_id="s1")["prompt"]
+prompt = mem.build_prompt(user_msg)["prompt"]
 
 response = engine.generate(GenerationRequest(
     messages=[ChatMessage(role="user", content=prompt)]
@@ -134,6 +134,12 @@ prompt hints remain available only as explicit research controls through
 `NeuralMemoryConfig(importance_advisory_enabled=True)` and
 `NeuralMemoryConfig(prompt_advisory_enabled=True)`.
 
+This is an integration decision, not a conclusion that RTRL is a failed
+learning algorithm. The core learns sequential and repetition-related signals;
+the tested label-free outputs did not translate those signals into dependable
+candidate utility. The completed runs exceeded the 50-step warmup threshold,
+so cold start alone does not explain the null and negative results.
+
 NEURAL-07 found that calibrated surprise thresholds reduced neural updates
 without improving full-run quality, inspected hints missed the expected episode
 on all 180 queries, and a feedback-free candidate-utility scorer did not improve
@@ -142,6 +148,14 @@ held-out ranking across three seeds. See
 record and reactivation gate.
 Perplexity/logprob-based surprise filtering remains separate and is not wired
 into `ProjectMemory`.
+
+One use case remains deliberately unmeasured: direct projected-space candidate
+affinity learned across many genuine sessions in a stable project domain. A
+future longitudinal evaluation must first show held-out separation between
+useful, stale, and plausible-but-wrong candidates in shadow mode. It must then
+show retrieval improvement across fixed seeds without direct/paraphrase
+regression or unsafe semantic promotion. More sessions or a larger affinity
+weight are hypotheses to test, not presumed remedies.
 
 The synthesis path uses `value_dim=32`; a 64-dimensional experiment overflowed
 at full evaluation volume. Any non-finite neural state disables neural updates

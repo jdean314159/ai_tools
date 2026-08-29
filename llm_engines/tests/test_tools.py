@@ -263,6 +263,21 @@ class TestToolExecutorRun:
         assert response.message.content == "It is sunny in Paris."
         assert engine.call_count == 2
 
+    def test_thinking_preference_is_preserved_across_tool_rounds(self) -> None:
+        ex, engine = self._executor([
+            _tool_call_response("get_weather", {"city": "Paris"}),
+            _text_response("It is sunny in Paris."),
+        ])
+        self._register_weather(ex)
+
+        ex.run(
+            messages=[ChatMessage(role="user", content="Weather in Paris?")],
+            thinking=True,
+        )
+
+        assert len(engine.captured_requests) == 2
+        assert all(request.thinking is True for request in engine.captured_requests)
+
     def test_tool_result_in_second_request(self) -> None:
         """Tool result message must appear in subsequent request."""
         ex, engine = self._executor([

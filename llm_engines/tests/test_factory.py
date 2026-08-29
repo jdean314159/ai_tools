@@ -70,6 +70,37 @@ class TestCreateSingleEngine:
             }
         ]
 
+    def test_create_vllm_preserves_remote_server_settings(self, monkeypatch) -> None:
+        calls = []
+
+        class FakeVLLMEngine:
+            def __init__(self, **kwargs) -> None:
+                calls.append(kwargs)
+
+        monkeypatch.setattr(
+            "llm_engines.factory._import_class",
+            lambda _dotted: FakeVLLMEngine,
+        )
+
+        EngineFactory.create(
+            "vllm",
+            model="unsloth/Qwen3.8-27B-NVFP4",
+            base_url="http://192.168.50.225:8000/v1",
+            max_context="262144",
+            timeout="120",
+            debug=True,
+        )
+
+        assert calls == [
+            {
+                "model": "unsloth/Qwen3.8-27B-NVFP4",
+                "base_url": "http://192.168.50.225:8000/v1",
+                "max_context": 262144,
+                "timeout": 120.0,
+                "debug": True,
+            }
+        ]
+
 
 class TestFromConfig:
 

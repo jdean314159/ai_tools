@@ -3,7 +3,7 @@ llm_engines/backends/vllm.py
 
 vLLMEngine: high-performance local inference via vLLM's OpenAI-compatible API.
 
-Protocols: ChatModel, EmbeddingModel, AsyncStreamingModel, BatchChatModel, LogprobModel
+Protocols: ChatModel, ToolCallingModel, AsyncStreamingModel, BatchChatModel, LogprobModel
 is_cloud = False (local server, no sanitisation applied by FailoverEngine)
 
 Requires: a running vLLM server — NOT the vllm Python package directly.
@@ -29,6 +29,7 @@ Key differences from OpenAIEngine:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from typing import Any, AsyncIterator
@@ -51,6 +52,8 @@ from llm_engines.contracts import (
     LogprobModel,
     LogprobResult,
     TokenLogprob,
+    ToolCall,
+    ToolSpec,
     UsageStats,
 )
 
@@ -77,6 +80,60 @@ def _map_finish(raw: str | None) -> str:
     if raw is None:
         return "unknown"
     return _FINISH_MAP.get(raw, "unknown")
+
+
+def _to_openai_messages(request: GenerationRequest) -> list[dict[str, Any]]:
+    messages: list[dict[str, Any]] = []
+    for message in request.messages:
+        if message.role == "tool":
+            messages.append({
+                "role": "tool",
+                "tool_call_id": message.tool_call_id or "",
+                "content": message.content or "",
+            })
+        elif message.role == "assistant" and message.tool_calls:
+            messages.append({
+                "role": "assistant",
+                "content": message.content,
+                "tool_calls": [
+                    {
+                        "id": call.call_id,
+                        "type": "function",
+                        "function": {
+                            "name": call.name,
+                            "arguments": json.dumps(call.arguments),
+                        },
+                    }
+                    for call in message.tool_calls
+                ],
+            })
+        else:
+            messages.append({"role": message.role, "content": message.content or ""})
+    return messages
+
+
+def _extract_tool_calls(choice: Any) -> list[ToolCall]:
+    calls: list[ToolCall] = []
+    for raw_call in getattr(choice.message, "tool_calls", None) or []:
+        try:
+            arguments = json.loads(raw_call.function.arguments)
+        except (TypeError, ValueError):
+            arguments = {"raw": raw_call.function.arguments}
+        calls.append(ToolCall(
+            call_id=raw_call.id,
+            name=raw_call.function.name,
+            arguments=arguments,
+        ))
+    return calls
+
+
+def _apply_thinking_preference(
+    kwargs: dict[str, Any], request: GenerationRequest
+) -> None:
+    if request.thinking is not None:
+        kwargs["extra_body"] = {
+            "chat_template_kwargs": {"enable_thinking": request.thinking}
+        }
 
 
 class vLLMEngine:
@@ -164,7 +221,7 @@ class vLLMEngine:
             chat=True,
             streaming=False,
             async_streaming=True,
-            tool_calling=False,    # vLLM supports it but not wired here yet
+            tool_calling=True,
             embeddings=False,      # vLLM can serve embedding models separately
             structured_output=False,
             batch_generation=True,
@@ -177,7 +234,7 @@ class vLLMEngine:
         if not request.messages:
             raise GenerationError("messages list cannot be empty")
 
-        messages: Any = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        messages: Any = _to_openai_messages(request)
         kwargs: dict[str, Any] = {
             "model": self._resolved_model,
             "messages": messages,
@@ -186,6 +243,7 @@ class vLLMEngine:
         }
         if request.stop:
             kwargs["stop"] = request.stop
+        _apply_thinking_preference(kwargs, request)
 
         t0 = time.perf_counter()
         try:
@@ -215,7 +273,11 @@ class vLLMEngine:
             latency_ms=round(latency_ms, 3),
         )
         return GenerationResponse(
-            message=ChatMessage(role="assistant", content=choice.message.content),
+            message=ChatMessage(
+                role="assistant",
+                content=choice.message.content,
+                tool_calls=_extract_tool_calls(choice),
+            ),
             finish_reason=_map_finish(choice.finish_reason),  # type: ignore[arg-type]
             usage=usage,
             model_name=getattr(raw, "model", self._resolved_model),
@@ -224,6 +286,47 @@ class vLLMEngine:
                 {"id": raw.id, "model": raw.model} if self.debug else None
             ),
         )
+
+    # ------------------------------------------------------------------
+    # ToolCallingModel Protocol
+    # ------------------------------------------------------------------
+
+    def generate_with_tools(
+        self,
+        request: GenerationRequest,
+        available_tools: list[ToolSpec],
+    ) -> GenerationResponse:
+        if not request.messages:
+            raise GenerationError("messages list cannot be empty")
+
+        kwargs: dict[str, Any] = {
+            "model": self._resolved_model,
+            "messages": _to_openai_messages(request),
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "tools": [tool.to_openai_schema() for tool in available_tools],
+            "tool_choice": "auto",
+        }
+        if request.stop:
+            kwargs["stop"] = request.stop
+        _apply_thinking_preference(kwargs, request)
+
+        started = time.perf_counter()
+        try:
+            raw = self._client.chat.completions.create(**kwargs)
+        except _openai.APIConnectionError as exc:
+            raise BackendUnavailableError(
+                f"vLLM not reachable at {self.base_url}. Is vLLM running?"
+            ) from exc
+        except _openai.BadRequestError as exc:
+            message = str(exc).lower()
+            if "max_model_len" in message or "too long" in message or "context" in message:
+                raise ContextLengthExceededError(str(exc)) from exc
+            raise GenerationError(f"vLLM tool request rejected: {exc}") from exc
+        except Exception as exc:
+            raise GenerationError(f"vLLM tool generation failed: {exc}") from exc
+
+        return self._build_response(raw, (time.perf_counter() - started) * 1000)
 
     # ------------------------------------------------------------------
     # LogprobModel Protocol
@@ -238,18 +341,21 @@ class vLLMEngine:
         if not request.messages:
             raise GenerationError("messages list cannot be empty")
 
-        messages: Any = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        messages: Any = _to_openai_messages(request)
         actual_top = max(1, top_logprobs)
 
+        kwargs: dict[str, Any] = {
+            "model": self._resolved_model,
+            "messages": messages,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "logprobs": True,
+            "top_logprobs": actual_top,
+        }
+        _apply_thinking_preference(kwargs, request)
+
         try:
-            raw = self._client.chat.completions.create(
-                model=self._resolved_model,
-                messages=messages,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                logprobs=True,
-                top_logprobs=actual_top,
-            )
+            raw = self._client.chat.completions.create(**kwargs)
         except _openai.APIConnectionError as e:
             raise BackendUnavailableError(f"vLLM unreachable: {e}") from e
         except Exception as e:
@@ -277,15 +383,17 @@ class vLLMEngine:
         if not request.messages:
             raise GenerationError("messages list cannot be empty")
 
-        messages: Any = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        messages: Any = _to_openai_messages(request)
+        kwargs: dict[str, Any] = {
+            "model": self._resolved_model,
+            "messages": messages,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "stream": True,
+        }
+        _apply_thinking_preference(kwargs, request)
         try:
-            stream: Any = await self._async_client.chat.completions.create(
-                model=self._resolved_model,
-                messages=messages,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                stream=True,
-            )
+            stream: Any = await self._async_client.chat.completions.create(**kwargs)
             async for chunk in stream:
                 if chunk.choices:
                     delta = chunk.choices[0].delta.content
@@ -330,15 +438,17 @@ class vLLMEngine:
             return asyncio.run(_run_all())
 
     async def _generate_async(self, request: GenerationRequest) -> GenerationResponse:
-        messages: Any = [{"role": m.role, "content": m.content or ""} for m in request.messages]
+        messages: Any = _to_openai_messages(request)
+        kwargs: dict[str, Any] = {
+            "model": self._resolved_model,
+            "messages": messages,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+        }
+        _apply_thinking_preference(kwargs, request)
         t0 = time.perf_counter()
         try:
-            raw = await self._async_client.chat.completions.create(
-                model=self._resolved_model,
-                messages=messages,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-            )
+            raw = await self._async_client.chat.completions.create(**kwargs)
         except Exception as e:
             raise GenerationError(f"vLLM async generation failed: {e}") from e
         return self._build_response(raw, (time.perf_counter() - t0) * 1000)

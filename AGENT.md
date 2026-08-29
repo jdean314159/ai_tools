@@ -36,6 +36,7 @@ Use this order unless the task says otherwise:
 - Keep examples runnable without live model access where practical.
 - Update docs and validation scripts together when notebook names, course order, package layout, or install targets change.
 - Keep default install/test paths lightweight; PyTorch and GPU stacks belong behind explicit ML/GPU targets.
+- Claude may defer filenames, function organization, and prose wording. Claude may not defer durable field names and types, state transitions, identity and digest semantics, privacy and export behavior, or acceptance observables — those are specification and belong in the spec before it goes to Codex.
 
 ## Verification commands
 

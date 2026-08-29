@@ -198,9 +198,12 @@ supported memory path.
 The recovered RTRL/TITANS algorithm, neural-memory wrapper, and surprise filter
 exist as opt-in primitives under `engram.neural`. The `NeuralMemoryLayer`
 adapter integrates paired-turn learning, telemetry, and persistence through the
-additive `MemoryLayer` boundary. Neural recall affinity is disabled after evaluation
-showed material recall loss. The adapter uses NumPy by default and is registered
-by `ProjectMemory` only when explicitly enabled with an embedder. Its
+additive `MemoryLayer` boundary. The core learns sequential signals, but no
+tested label-free output path earned a recall role: neural recall affinity is
+disabled after evaluation showed material recall loss. This rejects the tested
+integrations, not RTRL as a learning algorithm. The adapter uses NumPy by
+default and is registered by `ProjectMemory` only when explicitly enabled with
+an embedder. Its
 embedding-reconstruction value dimension is 32 after the 64-dimensional
 configuration overflowed at full evaluation volume; non-finite state fails
 closed.
@@ -212,6 +215,9 @@ controls; an enabled layer can collect telemetry without affecting recall. This
 does not restore the archived heavy runtime: the neural layer cannot
 replace core retrieval candidates, logprob-based surprise gating remains
 unwired, and default-on status requires a separate corpus evaluation.
+Longitudinal, domain-consistent candidate affinity across many genuine project
+sessions remains unmeasured; it is a research hypothesis, not an established
+benefit or a reason to raise influence without a held-out gate.
 
 Typical responsibilities:
 

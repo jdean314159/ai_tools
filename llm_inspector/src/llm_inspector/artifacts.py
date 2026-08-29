@@ -34,6 +34,24 @@ SUPPORTED_BODY_CONTRACTS = (
         profile_version=1,
     ),
     SupportedBodyContract(
+        kind="experiment",
+        body_version=1,
+        profile="llm_engines.model_characterization",
+        profile_version=1,
+    ),
+    SupportedBodyContract(
+        kind="experiment",
+        body_version=1,
+        profile="llm_engines.model_characterization_campaign",
+        profile_version=1,
+    ),
+    SupportedBodyContract(
+        kind="experiment",
+        body_version=1,
+        profile="llm_engines.tool_decision_campaign",
+        profile_version=2,
+    ),
+    SupportedBodyContract(
         kind="agent_run",
         body_version=1,
         profile="agent_lib.nav",
@@ -173,6 +191,61 @@ def _agent_summary(artifact: RunArtifact) -> dict[str, Any]:
 
 def _experiment_summary(artifact: RunArtifact) -> dict[str, Any]:
     body = artifact.body
+    if artifact.envelope.profile == "llm_engines.tool_decision_campaign":
+        aggregates = (
+            body.get("case_aggregates")
+            if isinstance(body.get("case_aggregates"), Mapping)
+            else {}
+        )
+        return {
+            "record_type": "tool_decision_campaign",
+            "profile": artifact.envelope.profile,
+            "backend": body.get("backend"),
+            "model_label": body.get("model_label"),
+            "repetitions": body.get("repetitions"),
+            "cases_per_run": body.get("cases_per_run"),
+            "thinking_requested": body.get("thinking_requested"),
+            "case_aggregates": dict(aggregates),
+            "interpretation_limit": body.get("interpretation_limit"),
+        }
+    if artifact.envelope.profile == "llm_engines.model_characterization_campaign":
+        aggregates = (
+            body.get("probe_aggregates")
+            if isinstance(body.get("probe_aggregates"), Mapping)
+            else {}
+        )
+        return {
+            "record_type": "model_characterization_campaign",
+            "profile": artifact.envelope.profile,
+            "backend": body.get("backend"),
+            "model_label": body.get("model_label"),
+            "repetitions": body.get("repetitions"),
+            "probe_aggregates": dict(aggregates),
+            "interpretation_limit": body.get("interpretation_limit"),
+        }
+    if artifact.envelope.profile == "llm_engines.model_characterization":
+        probes = body.get("probes") if isinstance(body.get("probes"), list) else []
+        status_counts: dict[str, int] = {}
+        probe_statuses: dict[str, str] = {}
+        for probe in probes:
+            if not isinstance(probe, Mapping):
+                continue
+            probe_id = probe.get("probe_id")
+            status = probe.get("status")
+            if isinstance(status, str):
+                status_counts[status] = status_counts.get(status, 0) + 1
+                if isinstance(probe_id, str):
+                    probe_statuses[probe_id] = status
+        return {
+            "record_type": "model_characterization",
+            "profile": artifact.envelope.profile,
+            "backend": body.get("backend"),
+            "model_label": body.get("model_label"),
+            "probe_count": len(probes),
+            "status_counts": status_counts,
+            "probe_statuses": probe_statuses,
+            "interpretation_limit": body.get("interpretation_limit"),
+        }
     campaign = body.get("campaign") if isinstance(body.get("campaign"), Mapping) else {}
     items = body.get("items") if isinstance(body.get("items"), list) else []
     aggregate = body.get("aggregate")
@@ -320,6 +393,16 @@ def _model_labels(inspection: ArtifactInspection) -> dict[str, Any]:
             "reported": summary.get("reported_model_label"),
             "backend": summary.get("backend"),
         }
+    if summary.get("record_type") in {
+        "model_characterization",
+        "model_characterization_campaign",
+        "tool_decision_campaign",
+    }:
+        return {
+            "requested": summary.get("model_label"),
+            "reported": summary.get("model_label"),
+            "backend": summary.get("backend"),
+        }
     return {"requested": None, "reported": None, "backend": None}
 
 
@@ -363,6 +446,58 @@ def compare_artifacts(left: RunArtifact, right: RunArtifact) -> ArtifactComparis
         "model_labels_equal": bool(labels_equal),
         "model_identity_equal": "not_determined",
     }
+    left_summary = left_inspection.body_summary or {}
+    right_summary = right_inspection.body_summary or {}
+    if (
+        left_summary.get("record_type") == "model_characterization"
+        and right_summary.get("record_type") == "model_characterization"
+    ):
+        left_statuses = left_summary.get("probe_statuses") or {}
+        right_statuses = right_summary.get("probe_statuses") or {}
+        comparable_ids = sorted(set(left_statuses) & set(right_statuses))
+        common_facts["comparable_probe_ids"] = comparable_ids
+        common_facts["changed_probe_statuses"] = {
+            probe_id: {"left": left_statuses[probe_id], "right": right_statuses[probe_id]}
+            for probe_id in comparable_ids
+            if left_statuses[probe_id] != right_statuses[probe_id]
+        }
+        notices.append(
+            "matching probe outcomes describe these runs only; they do not establish model or deployment equivalence"
+        )
+    if (
+        left_summary.get("record_type") == "model_characterization_campaign"
+        and right_summary.get("record_type") == "model_characterization_campaign"
+    ):
+        left_aggregates = left_summary.get("probe_aggregates") or {}
+        right_aggregates = right_summary.get("probe_aggregates") or {}
+        common_facts["comparable_probe_ids"] = sorted(
+            set(left_aggregates) & set(right_aggregates)
+        )
+        common_facts["campaign_aggregates_equal"] = left_aggregates == right_aggregates
+        notices.append(
+            "campaign aggregate differences are descriptive; this comparison does not test statistical significance"
+        )
+    if (
+        left_summary.get("record_type") == "tool_decision_campaign"
+        and right_summary.get("record_type") == "tool_decision_campaign"
+    ):
+        left_aggregates = left_summary.get("case_aggregates") or {}
+        right_aggregates = right_summary.get("case_aggregates") or {}
+        common_facts["comparable_case_ids"] = sorted(
+            set(left_aggregates) & set(right_aggregates)
+        )
+        common_facts["case_aggregates_equal"] = left_aggregates == right_aggregates
+        common_facts["thinking_requested"] = {
+            "left": left_summary.get("thinking_requested"),
+            "right": right_summary.get("thinking_requested"),
+            "equal": (
+                left_summary.get("thinking_requested")
+                == right_summary.get("thinking_requested")
+            ),
+        }
+        notices.append(
+            "tool-decision differences are descriptive observations from fixed synthetic cases, not explanations of hidden reasoning"
+        )
     return ArtifactComparison(
         left=left_inspection,
         right=right_inspection,

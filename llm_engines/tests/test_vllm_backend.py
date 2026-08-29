@@ -18,6 +18,7 @@ from llm_engines.contracts import (
     ChatMessage,
     GenerationRequest,
     GenerationResponse,
+    ToolSpec,
 )
 
 
@@ -112,6 +113,87 @@ class TestVLLMGenerate:
     def test_is_cloud_false(self, engine) -> None:
         assert engine.is_cloud is False
 
+    @pytest.mark.parametrize("thinking", [True, False])
+    def test_passes_request_level_thinking_preference(self, engine, thinking) -> None:
+        engine._client.chat.completions.create.return_value = _fake_completion()
+        request = GenerationRequest(
+            messages=[ChatMessage(role="user", content="Think if requested")],
+            thinking=thinking,
+        )
+
+        engine.generate(request)
+
+        kwargs = engine._client.chat.completions.create.call_args.kwargs
+        assert kwargs["extra_body"] == {
+            "chat_template_kwargs": {"enable_thinking": thinking}
+        }
+
+    def test_omits_thinking_override_when_unspecified(self, engine) -> None:
+        engine._client.chat.completions.create.return_value = _fake_completion()
+        engine.generate(_req())
+        kwargs = engine._client.chat.completions.create.call_args.kwargs
+        assert "extra_body" not in kwargs
+
+
+class TestVLLMTools:
+
+    def test_normalizes_tool_call_and_followup_messages(self, engine) -> None:
+        raw_tool_call = SimpleNamespace(
+            id="call_add",
+            function=SimpleNamespace(name="add", arguments='{"a": 17, "b": 25}'),
+        )
+        engine._client.chat.completions.create.return_value = SimpleNamespace(
+            id="tool_1",
+            model="test",
+            choices=[SimpleNamespace(
+                message=SimpleNamespace(content=None, tool_calls=[raw_tool_call]),
+                finish_reason="tool_calls",
+            )],
+            usage=_fake_usage(),
+        )
+        spec = ToolSpec(
+            name="add",
+            description="Add two integers",
+            parameters={
+                "a": {"type": "integer", "description": "First integer"},
+                "b": {"type": "integer", "description": "Second integer"},
+            },
+            required_params=["a", "b"],
+        )
+
+        response = engine.generate_with_tools(_req("add 17 and 25"), [spec])
+
+        assert response.finish_reason == "tool_call"
+        assert response.message.tool_calls[0].name == "add"
+        assert response.message.tool_calls[0].arguments == {"a": 17, "b": 25}
+        kwargs = engine._client.chat.completions.create.call_args.kwargs
+        assert kwargs["tool_choice"] == "auto"
+        assert kwargs["tools"][0]["function"]["name"] == "add"
+
+        thinking_request = GenerationRequest(
+            messages=[ChatMessage(role="user", content="add 17 and 25")],
+            thinking=True,
+        )
+        engine.generate_with_tools(thinking_request, [spec])
+        assert engine._client.chat.completions.create.call_args.kwargs["extra_body"] == {
+            "chat_template_kwargs": {"enable_thinking": True}
+        }
+
+        engine._client.chat.completions.create.return_value = _fake_completion("42")
+        followup = GenerationRequest(messages=[
+            ChatMessage(role="user", content="add 17 and 25"),
+            response.message,
+            ChatMessage(role="tool", content="42", tool_call_id="call_add", name="add"),
+        ])
+        engine.generate_with_tools(followup, [spec])
+        messages = engine._client.chat.completions.create.call_args.kwargs["messages"]
+        assert messages[1]["tool_calls"][0]["function"]["arguments"] == '{"a": 17, "b": 25}'
+        assert messages[2] == {
+            "role": "tool",
+            "tool_call_id": "call_add",
+            "content": "42",
+        }
+
 
 class TestVLLMModelResolution:
 
@@ -202,7 +284,7 @@ class TestVLLMCapabilities:
         assert caps.async_streaming is True
         assert caps.batch_generation is True
         assert caps.logprobs is True
-        assert caps.tool_calling is False  # not wired yet
+        assert caps.tool_calling is True
         assert caps.embeddings is False
 
 

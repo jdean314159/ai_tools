@@ -206,6 +206,7 @@ class ToolExecutor:
         messages: list[ChatMessage],
         max_tokens: int = 1024,
         temperature: float = 0.7,
+        thinking: bool | None = None,
     ) -> GenerationResponse:
         """
         Run the tool-calling loop until the model produces a final response.
@@ -236,6 +237,7 @@ class ToolExecutor:
                 messages=history,
                 max_tokens=max_tokens,
                 temperature=temperature,
+                thinking=thinking,
             )
 
             logger.debug("Step %d: calling engine with %d messages", step + 1, len(history))

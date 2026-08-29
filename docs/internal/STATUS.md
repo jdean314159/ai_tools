@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-08-14
+Last updated: 2026-08-29
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -18,6 +18,36 @@ remains parked and output-isolated.**
 For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
+
+### Latest completed work — remote local-model characterization
+
+`llm_engines` now supports a remote OpenAI-compatible llama.cpp server as a
+fully exercised local inference path. Request-level thinking, strict structured
+output, token log probabilities, validated streamed tool calls, and JSON-safe
+tool-history replay are covered by ADR-024 and ADR-025. Local-compatible
+endpoints no longer claim embeddings or vision unless the corresponding typed
+contract is actually available.
+
+ADR-026 adds privacy-bounded synthetic characterization. A single run checks
+chat, structured output, tool-call construction, and log probabilities; a
+campaign repeats those checks and records descriptive stability and latency
+summaries. ADR-027 adds a separate version-2 tool-decision campaign for required
+tool use, relevant-tool choice, avoiding unnecessary tools, and typed argument
+construction. It never executes tools or retains raw prompts, responses,
+argument values, endpoint URLs, secrets, or exception messages. Inspector
+recognizes and compares both profiles while refusing model-identity or
+hidden-reasoning claims.
+
+Live Qwen 3.8 27B testing against llama.cpp on the DGX Spark passed all four
+characterization probes in five repetitions. Matched sequential tool-decision
+campaigns passed all 12 decisions with thinking both disabled and enabled.
+Thinking increased median latency in every synthetic case without improving
+correctness in this small campaign. These are observations about the exact
+endpoint and cases tested, not general model-quality estimates.
+
+The next process experiment is multi-turn recovery from a tool error or a
+contradictory tool result. It must remain a separate governed profile rather
+than expanding the current single-decision contract implicitly.
 
 ### Active project — RUN-RECORD-00
 
@@ -143,19 +173,23 @@ Earlier neural-memory and knowledge-curation threads both concluded by *declinin
 larger system their investigations started toward — each on evidence, per the governing rule
 (build a capability when a concrete run fails without it, not speculatively).
 
-**Neural memory (RTRL/TITANS) — parked, output-isolated, default-off.** Fully implemented behind
-the additive `MemoryLayer` seam (ADR-016 / NEURAL-01..07) and evaluated.
-Retrieval re-ranking was rejected (catastrophic recall loss, two clean 27b
-runs). TITANS-style prompt synthesis first returned a clean null, then NEURAL-07
-content inspection found 0/180 expected episodes in emitted hints. A calibrated
-surprise-threshold finalist reduced neural updates but regressed decoy recall;
-a held-out utility scorer produced no improvement across three seeds. Neural
-reranking remains absent, while prompt and episode-importance outputs are now
-separately default-off. The layer is retained for explicitly enabled telemetry
-and research; the base package imports neither `engram.neural` nor torch unless
-enabled. Reactivation requires a real usefulness-feedback source plus the
-predeclared gate in the NEURAL-07 report. `value_dim` and `hidden_dim` remain 32
-(64 caused RTRL/P-matrix overflow).
+**Neural memory (RTRL/TITANS) — parked, output-isolated, default-off.** Fully
+implemented behind the additive `MemoryLayer` seam (ADR-016 / NEURAL-01..07)
+and evaluated. The core learns sequential signals; the negative decision is
+about the tested label-free recall integrations, not a claim that RTRL cannot
+learn. Retrieval re-ranking was rejected (catastrophic recall loss, two clean
+27b runs). TITANS-style prompt synthesis first returned a clean null, then
+NEURAL-07 content inspection found 0/180 expected episodes in emitted hints. A
+calibrated surprise-threshold finalist reduced neural updates but regressed
+decoy recall; a held-out utility scorer produced no improvement across three
+seeds. Neural reranking remains absent, while prompt and episode-importance
+outputs are now separately default-off. Longitudinal, domain-consistent
+candidate affinity over many genuine sessions has not been measured. The layer
+is retained for explicitly enabled telemetry and research; the base package
+imports neither `engram.neural` nor torch unless enabled. Reactivation requires
+a real usefulness-feedback source plus the predeclared gate in the NEURAL-07
+report. `value_dim` and `hidden_dim` remain 32 (64 caused RTRL/P-matrix
+overflow).
 
 **Decision-history metadata — shipped.** A knowledge-curation MVP investigation
 (could conversation history become an evidence-linked memory?) resolved against
@@ -193,12 +227,13 @@ one-to-two-judgment noise. A stability correction reverted `value_dim` 64 → 32
 non-finite-state guard.
 
 Decision: the layer is **parked** — kept behind the default-off ADR-016 seam,
-not actively developed. It cannot improve retrieval as integrated; its only
-distinctive output is a label-free surprise signal better suited to
-novelty/anomaly use (agent derailment, memory-poisoning detection, chunk
-segmentation). Reactivation needs a concrete safety/observability need plus a
-predeclared decision gate. Do not re-run retrieval evals without a new mandate.
-ADR-016 holds the full rationale.
+not actively developed. It cannot improve retrieval as currently integrated;
+its tested label-free output paths did not supply dependable candidate utility.
+Its distinctive surprise signal may be better suited to novelty/anomaly use
+(agent derailment, memory-poisoning detection, chunk segmentation), but that
+role is also unproven. Reactivation needs a concrete safety/observability or
+longitudinal-memory need plus a predeclared decision gate. Do not re-run the
+same retrieval evals without a new mandate. ADR-016 holds the full rationale.
 
 NEURAL-07 follow-up closed the remaining output paths. Affinity is inactive;
 the full surprise-threshold finalist failed; all 180 inspected prompt hints
@@ -207,6 +242,12 @@ feedback-free candidate-utility scorer failed across three seeds. Prompt hints
 and surprise-based importance adjustment now require separate explicit opt-ins,
 so an enabled RTRL layer can collect telemetry without affecting recall. See
 `docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`.
+
+Interpretation boundary: these runs exceeded the 50-step warmup threshold, so
+cold start alone does not explain their result. They did not test whether
+direct projected-space affinity separates useful from stale or decoy candidates
+after many domain-consistent, genuine project sessions. That longitudinal use
+case remains an explicit unmeasured hypothesis, not a forecast of improvement.
 
 ---
 

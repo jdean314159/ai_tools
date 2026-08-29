@@ -26,6 +26,25 @@ utility function. It records that the repository has no dependable production
 feedback signal from which to learn candidate usefulness, and that every tested
 label-free output path failed its gate.
 
+## Interpretation Boundary
+
+RTRL is not classified here as a failed learning algorithm. Unit and signal
+tests establish that the core can learn sequential and repetition-related
+patterns. This evaluation rejects the recall roles actually tested:
+
+- label-free neural affinity as evaluated in the retrieval experiments;
+- surprise-threshold changes as a route to better recall;
+- pseudoinverse reconstruction plus newest-episode prompt advice; and
+- feedback-free candidate-utility scoring on the evaluation corpus.
+
+The completed evaluations exceeded the 50-step warmup threshold. The
+generation finalist observed 463 pairs and made 209 RTRL updates, so cold start
+alone does not explain its result. Conversely, the corpus was a synthetic
+sequence of injected facts and distractors, not many genuine sessions with a
+stable user, project, and conversational domain. The results therefore do not
+settle whether a different, longitudinal training distribution could produce a
+useful affinity signal.
+
 ## Controls Added Before Testing
 
 The evaluation harness was corrected before drawing conclusions:
@@ -126,6 +145,23 @@ citation, correction, supersession decision, or explicit user rejection.
 Ordinary system usage supplies no reliable “candidate was irrelevant” label.
 Synthetic labels can test mechanics but cannot justify online production
 adaptation.
+
+## Unmeasured Longitudinal Hypothesis
+
+A bounded future experiment may test whether direct projected-space affinity
+becomes informative across many genuine sessions in one stable project domain,
+for example a tutor with recurring grammatical topics and explicit corrections.
+This is unmeasured and is not a prediction that more sessions or a larger
+affinity weight will improve recall.
+
+The experiment must keep base candidate generation fixed and begin in shadow
+mode. At minimum it should compare neural-off, current paired-turn telemetry,
+and an old-compatible learning arm across multiple deterministic
+initializations. Per-session evidence must include candidate ranks, affinity
+separation for useful versus stale/decoy candidates, correction recovery, and
+false semantic promotions. Reranking may be tested only after held-out affinity
+separation exists; consolidation must not be enabled until false-promotion risk
+is measured independently.
 
 ## Current Configuration
 

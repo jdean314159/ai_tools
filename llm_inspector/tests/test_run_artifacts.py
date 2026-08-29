@@ -106,6 +106,70 @@ def _experiment(profile="agent_lib.asc_campaign") -> RunArtifact:
     )
 
 
+def _characterization() -> RunArtifact:
+    return RunArtifact(
+        envelope=_envelope(
+            kind="experiment",
+            profile="llm_engines.model_characterization",
+            profile_version=1,
+        ),
+        body={
+            "backend": "openai",
+            "model_label": "fixture-model",
+            "probes": [
+                {"probe_id": "chat_exact_text", "status": "passed"},
+                {"probe_id": "tool_call", "status": "unsupported"},
+            ],
+            "interpretation_limit": "observable behavior only",
+        },
+    )
+
+
+def _characterization_campaign() -> RunArtifact:
+    return RunArtifact(
+        envelope=_envelope(
+            kind="experiment",
+            profile="llm_engines.model_characterization_campaign",
+            profile_version=1,
+        ),
+        body={
+            "backend": "openai",
+            "model_label": "fixture-model",
+            "repetitions": 3,
+            "probe_aggregates": {
+                "chat_exact_text": {
+                    "runs": 3,
+                    "status_counts": {"passed": 3},
+                    "status_stable": True,
+                    "pass_rate": 1.0,
+                }
+            },
+            "interpretation_limit": "descriptive observations only",
+        },
+    )
+
+
+def _tool_decision_campaign(*, thinking: bool) -> RunArtifact:
+    return RunArtifact(
+        envelope=_envelope(
+            kind="experiment",
+            profile="llm_engines.tool_decision_campaign",
+            profile_version=2,
+        ),
+        body={
+            "backend": "openai",
+            "model_label": "fixture-model",
+            "repetitions": 2,
+            "cases_per_run": 1,
+            "thinking_requested": thinking,
+            "case_aggregates": {
+                "required_single_tool": {"runs": 2, "passed": 2, "pass_rate": 1.0}
+            },
+            "interpretation_limit": "observable decisions only",
+        },
+    )
+
+
 def test_generation_and_agent_dispatch_to_different_summaries() -> None:
     generation = inspect_artifact(_generation())
     agent = inspect_artifact(_agent())
@@ -135,6 +199,68 @@ def test_experiment_dispatch_preserves_campaign_semantics() -> None:
         "aggregate_signals": {"runs": 2},
         "decision_signals": {},
     }
+
+
+def test_characterization_dispatch_reports_probe_outcomes() -> None:
+    inspection = inspect_artifact(_characterization())
+
+    assert inspection.body_support == "supported"
+    assert inspection.body_summary == {
+        "record_type": "model_characterization",
+        "profile": "llm_engines.model_characterization",
+        "backend": "openai",
+        "model_label": "fixture-model",
+        "probe_count": 2,
+        "status_counts": {"passed": 1, "unsupported": 1},
+        "probe_statuses": {
+            "chat_exact_text": "passed",
+            "tool_call": "unsupported",
+        },
+        "interpretation_limit": "observable behavior only",
+    }
+
+
+def test_characterization_comparison_reports_changed_probe_status() -> None:
+    left = _characterization()
+    right_body = dict(left.body)
+    right_body["probes"] = [
+        {"probe_id": "chat_exact_text", "status": "failed"},
+        {"probe_id": "tool_call", "status": "unsupported"},
+    ]
+    comparison = compare_artifacts(left, replace(left, body=right_body))
+
+    assert comparison.common_facts["changed_probe_statuses"] == {
+        "chat_exact_text": {"left": "passed", "right": "failed"}
+    }
+    assert comparison.common_facts["model_identity_equal"] == "not_determined"
+    assert any("these runs only" in notice for notice in comparison.notices)
+
+
+def test_characterization_campaign_summary_and_comparison_are_descriptive() -> None:
+    artifact = _characterization_campaign()
+    inspection = inspect_artifact(artifact)
+    comparison = compare_artifacts(artifact, artifact)
+
+    assert inspection.body_support == "supported"
+    assert inspection.body_summary["record_type"] == "model_characterization_campaign"
+    assert inspection.body_summary["repetitions"] == 3
+    assert comparison.common_facts["campaign_aggregates_equal"] is True
+    assert any("statistical significance" in notice for notice in comparison.notices)
+
+
+def test_tool_decision_comparison_surfaces_thinking_setting() -> None:
+    comparison = compare_artifacts(
+        _tool_decision_campaign(thinking=False),
+        _tool_decision_campaign(thinking=True),
+    )
+
+    assert comparison.left.body_support == "supported"
+    assert comparison.common_facts["thinking_requested"] == {
+        "left": False,
+        "right": True,
+        "equal": False,
+    }
+    assert any("hidden reasoning" in notice for notice in comparison.notices)
 
 
 def test_unsupported_profile_keeps_envelope_and_refuses_body_interpretation() -> None:

@@ -231,3 +231,36 @@ retains MIT for the extracted `llm-failure-lab` teaching repository. Records
 the rejected single-license alternatives, keeps `THIRD_PARTY_NOTICES.md`
 distinct from an Apache `NOTICE`, and records closure of the whole-tree
 ownership audit.
+
+## ADR-024 — Request-level thinking control
+**File:** `adr/ADR-024-request-level-thinking-control.md`
+**Status:** Accepted
+**Summary:** Adds the three-state `GenerationRequest.thinking` preference:
+inherit the server default, request thinking, or request suppression. vLLM maps
+it to Qwen's request-level chat-template option, and tool loops preserve it.
+Reasoning text remains transient and excluded from responses and memory.
+
+## ADR-025 — Validated streamed tool-call events
+**File:** `adr/ADR-025-validated-streamed-tool-calls.md`
+**Status:** Accepted
+**Summary:** Adds a separate async tool-streaming protocol with typed text,
+complete-tool-call, and finish events. Provider argument fragments remain
+internal until strict JSON parsing succeeds; incomplete or malformed calls
+fail closed and never become executable events or replayable history.
+
+## ADR-026 — Model characterization boundary
+**File:** `adr/ADR-026-model-characterization-boundary.md`
+**Status:** Accepted
+**Summary:** Places fixed synthetic endpoint probes in `llm_engines`, keeps
+`llm_inspector` inference-free, and records results through the shared
+experiment envelope. Reports retain bounded outcomes and scalars while
+omitting raw prompts, responses, endpoint URLs, secrets, and exception text.
+
+## ADR-027 — Observable tool-decision probes
+**File:** `adr/ADR-027-observable-tool-decision-probes.md`
+**Status:** Accepted
+**Summary:** Defines a version-2 fixed synthetic campaign for required tool use, relevant
+tool choice, avoiding unnecessary tools, and typed arguments. Tools are not
+executed, the requested thinking setting is retained, raw content is omitted,
+and observed decisions are not presented as
+access to hidden reasoning or general application reliability.

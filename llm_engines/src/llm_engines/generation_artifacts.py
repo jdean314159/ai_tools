@@ -224,7 +224,7 @@ def build_generation_artifact(
             "/request": {"method": "copied", "supplied_by": "recorder"},
         },
     }
-    if body["model_identity"]["requested_label"] is None:
+    if requested_model is None:
         omissions.append(
             Omission(
                 field_path="/body/model_identity/requested_label",

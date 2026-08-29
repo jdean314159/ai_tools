@@ -174,6 +174,23 @@ def _engine_from_config_dict(
             kwargs["base_url"] = engine_cfg["base_url"]
         if "is_cloud" in engine_cfg:
             kwargs["is_cloud"] = bool(engine_cfg["is_cloud"])
+        if "timeout" in engine_cfg and engine_cfg["timeout"] is not None:
+            kwargs["timeout"] = float(engine_cfg["timeout"])
+        if "debug" in engine_cfg:
+            kwargs["debug"] = bool(engine_cfg["debug"])
+        if backend == "openai" and "supports_embeddings" in engine_cfg:
+            kwargs["supports_embeddings"] = bool(engine_cfg["supports_embeddings"])
+
+    # vLLM HTTP server
+    if backend == "vllm":
+        if "base_url" in engine_cfg:
+            kwargs["base_url"] = str(engine_cfg["base_url"])
+        if "max_context" in engine_cfg and engine_cfg["max_context"] is not None:
+            kwargs["max_context"] = int(engine_cfg["max_context"])
+        if "timeout" in engine_cfg and engine_cfg["timeout"] is not None:
+            kwargs["timeout"] = float(engine_cfg["timeout"])
+        if "debug" in engine_cfg:
+            kwargs["debug"] = bool(engine_cfg["debug"])
 
     # llama.cpp (in-process via llama-cpp-python)
     if backend in ("llamacpp", "llama_cpp"):

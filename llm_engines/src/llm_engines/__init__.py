@@ -24,6 +24,10 @@ from llm_engines.contracts import (
     ChatModel,
     GenerationRequest,
     GenerationResponse,
+    GenerationStreamEvent,
+    StreamFinishedEvent,
+    TextDeltaEvent,
+    ToolCallEvent,
 )
 from llm_engines.factory import EngineFactory
 from llm_engines.tools import ToolExecutor, tool
@@ -68,6 +72,25 @@ from llm_engines.generation_artifacts import (
     build_generation_failure_artifact,
     record_generation,
 )
+from llm_engines.characterization import (
+    CHARACTERIZATION_CAMPAIGN_PROFILE,
+    CHARACTERIZATION_PROFILE,
+    CHARACTERIZATION_SCHEMA_VERSION,
+    CharacterizationCampaignReport,
+    CharacterizationReport,
+    ProbeResult,
+    build_characterization_artifact,
+    characterize_engine,
+    characterize_engine_repeated,
+)
+from llm_engines.tool_process_probe import (
+    TOOL_PROCESS_PROFILE,
+    TOOL_PROCESS_SCHEMA_VERSION,
+    ToolDecisionCampaignReport,
+    ToolDecisionCaseResult,
+    build_tool_decision_artifact,
+    run_tool_decision_campaign,
+)
 
 __version__ = "0.1.0"
 
@@ -81,6 +104,10 @@ __all__ = [
     "CacheStats",
     "GenerationRequest",
     "GenerationResponse",
+    "GenerationStreamEvent",
+    "StreamFinishedEvent",
+    "TextDeltaEvent",
+    "ToolCallEvent",
     # Tool support
     "ToolExecutor",
     "tool",
@@ -127,6 +154,23 @@ __all__ = [
     "build_generation_artifact",
     "build_generation_failure_artifact",
     "record_generation",
+    # Synthetic endpoint characterization
+    "CHARACTERIZATION_PROFILE",
+    "CHARACTERIZATION_CAMPAIGN_PROFILE",
+    "CHARACTERIZATION_SCHEMA_VERSION",
+    "CharacterizationCampaignReport",
+    "CharacterizationReport",
+    "ProbeResult",
+    "build_characterization_artifact",
+    "characterize_engine",
+    "characterize_engine_repeated",
+    # Controlled observable tool-decision experiments
+    "TOOL_PROCESS_PROFILE",
+    "TOOL_PROCESS_SCHEMA_VERSION",
+    "ToolDecisionCampaignReport",
+    "ToolDecisionCaseResult",
+    "build_tool_decision_artifact",
+    "run_tool_decision_campaign",
 ]
 
 

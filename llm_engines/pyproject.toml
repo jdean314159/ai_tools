@@ -18,6 +18,10 @@ dependencies = [
     "llm-harness-core>=0.1.0",
 ]
 
+[project.scripts]
+llm-characterize = "llm_engines.characterization:main"
+llm-tool-process-probe = "llm_engines.tool_process_probe:main"
+
 [project.optional-dependencies]
 ollama = ["ollama>=0.4"]
 ollama-logprobs = ["ollama>=0.4", "openai>=1.0"]

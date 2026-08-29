@@ -113,6 +113,7 @@ class EngineCapabilities(BaseModel):
     chat: bool = True
     streaming: bool = False
     async_streaming: bool = False
+    streaming_tool_calls: bool = False
     tool_calling: bool = False
     embeddings: bool = False
     structured_output: bool = False
@@ -219,6 +220,27 @@ class ToolCall(BaseModel):
         )
 
 
+class TextDeltaEvent(BaseModel):
+    """A text fragment emitted during generation."""
+    kind: Literal["text_delta"] = "text_delta"
+    text: str
+
+
+class ToolCallEvent(BaseModel):
+    """A complete, JSON-validated tool call emitted by a stream."""
+    kind: Literal["tool_call"] = "tool_call"
+    tool_call: ToolCall
+
+
+class StreamFinishedEvent(BaseModel):
+    """The terminal event for a generation stream."""
+    kind: Literal["finish"] = "finish"
+    finish_reason: FinishReason
+
+
+GenerationStreamEvent = TextDeltaEvent | ToolCallEvent | StreamFinishedEvent
+
+
 class ChatMessage(BaseModel):
     """Single message in a conversation."""
     role: Literal["system", "user", "assistant", "tool"]
@@ -262,6 +284,10 @@ class GenerationRequest(BaseModel):
     #      that share a long common prefix (e.g. system prompt + tool spec) and
     #      serve those tokens from cache rather than recomputing attention.
     #      Ignored by backends that do not support prefix caching.
+    thinking: bool | None = None
+    # ^^^  Per-request reasoning-mode preference. None preserves the backend or
+    #      server default; True requests thinking; False requests suppression.
+    #      Backends without request-level control may ignore this preference.
 
 
 class GenerationResponse(BaseModel):
@@ -396,6 +422,19 @@ class AsyncStreamingModel(Protocol):
 
 
 @runtime_checkable
+class AsyncToolStreamingModel(Protocol):
+    """Engine that streams text and complete, validated tool calls."""
+
+    async def stream_with_tools_async(
+        self,
+        request: GenerationRequest,
+        available_tools: list["ToolSpec"],  # noqa: F821
+    ) -> AsyncIterator[GenerationStreamEvent]:
+        """Yield text deltas, complete tool calls, and one finish event."""
+        ...
+
+
+@runtime_checkable
 class LogprobModel(Protocol):
     """Engine that can return per-token log probabilities (for surprise filter)."""
 
@@ -442,7 +481,7 @@ class AnthropicEngine(ChatModel, ToolCallingModel, AsyncStreamingModel, Protocol
     pass
 
 
-class OpenAIEngine(ChatModel, ToolCallingModel, EmbeddingModel, AsyncStreamingModel, Protocol):
+class OpenAIEngine(ChatModel, ToolCallingModel, EmbeddingModel, AsyncStreamingModel, AsyncToolStreamingModel, Protocol):
     """OpenAI: chat, tool calling, embeddings, async streaming."""
     pass
 
