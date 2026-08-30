@@ -8,8 +8,8 @@ Lightweight project memory for LLM applications. Stores conversation turns,
 retrieves relevant prior context, and assembles memory-augmented prompts.
 Does not run inference — it enriches prompts that other packages execute.
 
-Internal storage layers (SQLite, ChromaDB, semantic graph) are implementation
-details. The public API is `ProjectMemory`.
+Internal storage layers (JSONL, ChromaDB, semantic graph) are implementation
+details. The primary public API is `ProjectMemory`.
 
 ## Quick start
 
@@ -50,6 +50,9 @@ inspectable way to add memory behavior to an LLM workflow.
 ## Using this with the rest of the suite
 
 - inspect its behavior in `llm_inspector` and `llm_inspector_ui`
+- evaluate stage boundaries with `llm_harness_core`
+- see [Temporal memory](docs/temporal_memory.md) for versioned facts
+- see [Reliability testing](docs/reliability_testing.md) for deterministic attribution
 
 ## Current support status
 
@@ -89,6 +92,61 @@ It can expose:
 - capability descriptors for the workbench/inspector layers
 
 This is important because the package is not meant to be a hidden prompt manipulator. It should make memory contributions visible.
+
+Prompt results now include `budget_diagnostics` and `retrieval_diagnostics`.
+Evidence traces retain structured episode provenance, including `episode_id`
+and `topic_key` when available. For deterministic staged evaluation,
+`observation_from_engram(...)` converts retrieval and prompt results into
+`llm_harness_core.MemoryCaseObservation`, allowing testers to attribute storage,
+retrieval, composition, inference, and exact-scoring failures separately.
+
+### Prompt result diagnostics
+
+`build_prompt(..., return_trace=True)` returns the existing prompt fields plus:
+
+- `included_items`: the actual ranked items admitted to each prompt section
+- `budget_diagnostics`: candidate, included, and excluded item counts;
+  total/reserved/available tokens; and `memory_starved`
+- `retrieval_diagnostics`: vector use, relevance filtering, temporal filtering,
+  historical mode, and unresolved active-topic conflict counts
+- `trace`: final sections and included evidence with structured metadata
+
+Under budget pressure, Engram packs ranked items individually. It no longer
+needs an entire memory layer to fit before admitting any item from that layer.
+`memory_tokens` remains the candidate-memory token estimate for compatibility; use
+`included_items` and `budget_diagnostics` to inspect what actually entered the
+prompt.
+
+### Temporal memory
+
+Versioned facts can be stored explicitly with `store_temporal_episode(...)`:
+
+```python
+old_id = mem.store_temporal_episode(
+    "Atlas deploys in us-east-1.",
+    topic_key="atlas::deployment_region",
+    action="set",
+)
+new_id = mem.store_temporal_episode(
+    "Atlas now deploys in eu-central-1.",
+    topic_key="atlas::deployment_region",
+    action="update",
+)
+
+current = mem.search_episodes("Atlas current deployment region")
+history = mem.search_episodes(
+    "Atlas deployment region",
+    include_historical=True,
+)
+```
+
+Supported actions are `set`, `update`, and `retract`. Current-state retrieval
+suppresses superseded predecessors while retaining them in persistent storage.
+Historical retrieval exposes both active and superseded versions. See
+[Temporal memory](docs/temporal_memory.md) for metadata and query behavior.
+
+Engram does not infer arbitrary semantic contradictions. Callers must supply a
+stable `topic_key` and temporal action for deterministic resolution.
 
 ## Optional memory layers
 
@@ -171,6 +229,9 @@ and hints rather than affecting core Engram behavior.
 - retrieval-time diversity filtering
 - prompt assembly that can use internal episodic hits even without an external retriever
 - basic canonical correction/update handling for lightweight fact replacement
+- opt-in retained temporal history with current/historical retrieval boundaries
+- item-level prompt packing with starvation and exclusion diagnostics
+- structured episode provenance in evidence traces
 
 ## Memory formation policy
 
@@ -183,6 +244,10 @@ and hints rather than affecting core Engram behavior.
 ## Lightweight update handling
 
 `engram` performs a small amount of **canonical update handling** for common user correction/update phrasings so retrieval is less likely to drag stale values back into the prompt.
+
+Canonical update handling preserves its existing replacement semantics. Use
+`store_temporal_episode(...)` when historical retention, explicit retraction,
+or deterministic validity metadata is required.
 
 ## Known Limitations (v0.2)
 
@@ -200,21 +265,19 @@ admit more results (including decoys), higher values are more restrictive.
 The correct long-term fix is LLM-based extraction scoring, which evaluates
 relevance semantically rather than geometrically. This is deferred.
 
-### Contradiction bleed under stress (~18%)
-When contradictory facts are stored (one claim overriding another),
-`engram` may surface both the original and the override in the same
-prompt under stress conditions — particularly when distractor volume is
-high. The contradiction rate under stress is approximately 18% with the
-current pattern-based extraction (`pattern_only=True`).
+### Explicit temporal updates versus semantic contradiction
 
-The root cause is that `engram` detects contradictions via regex
-pattern matching on known update phrases ("actually", "correction:", etc.).
-It does not understand semantic contradiction — two facts can conflict
-without either using correction language.
+The explicit temporal API prevents known superseded versions from entering
+current-state prompts. Paired validation removed obsolete evidence from 3/3
+current prompts while preserving historical recall and exact answers. A cold
+reopen with real MiniLM embeddings and ChromaDB also passed 3/3 timelines.
 
-The correct fix is LLM-based extraction to identify contradictions
-semantically. This requires `pattern_only=False` and a running LLM, which
-is outside engram's lightweight design constraints.
+This does not solve unlabelled semantic contradiction. Independently stored
+claims without a shared `topic_key` and temporal action can still conflict.
+`retrieval_diagnostics["unresolved_conflict_topic_count"]` reports multiple
+active retrieved records for a known topic, but Engram does not invent a
+resolution. LLM-based semantic extraction remains outside the default
+lightweight path.
 
 ### No procedural memory
 `engram` stores episodic and semantic memory but has no synthesis
@@ -226,3 +289,17 @@ do Y") or surface procedural patterns in prompts. There is currently no
 `engram` has no `audit_memory()` facility. Orphaned records,
 contradicting facts, and stale data accumulate silently. An audit and
 remediation API remains future work.
+
+## Validation scope
+
+The current temporal evidence is intentionally bounded:
+
+- paired legacy/temporal live-model validation: five queries per arm
+- obsolete evidence in current prompts: legacy 3/3, temporal 0/3
+- exact answers: 5/5 in both arms
+- aggregate temporal prompt-token reduction: 11.8%
+- cold-reopen hybrid vector validation: 3/3 timelines
+
+These results validate the implemented mechanisms, not general performance on
+large natural histories, arbitrary contradictions, or other embedding models.
+The retained reports live under `docs/projects/` in the ai_tools repository.

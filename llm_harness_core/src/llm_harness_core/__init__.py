@@ -19,6 +19,16 @@ from .evaluators import (
     SubstringMatchEvaluator,
 )
 from .messages import LLMMessage, Role, ToolInvocation
+from .memory_evaluation import (
+    MEMORY_STAGES,
+    MemoryCaseEvaluation,
+    MemoryCaseObservation,
+    MemoryCaseSpec,
+    build_memory_experiment_body,
+    evaluate_memory_case,
+    prepare_new_artifact_path,
+    summarize_memory_evaluations,
+)
 from .results import OperationError, OperationResult, OperationWarning
 from .run_artifacts import (
     ENVELOPE_SCHEMA_VERSION,
@@ -77,6 +87,14 @@ __all__ = [
     "LLMMessage",
     "Role",
     "ToolInvocation",
+    "MEMORY_STAGES",
+    "MemoryCaseSpec",
+    "MemoryCaseObservation",
+    "MemoryCaseEvaluation",
+    "evaluate_memory_case",
+    "summarize_memory_evaluations",
+    "build_memory_experiment_body",
+    "prepare_new_artifact_path",
     "OperationError",
     "OperationResult",
     "OperationWarning",

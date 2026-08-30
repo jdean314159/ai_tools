@@ -61,6 +61,19 @@ def safe_score(item: Any) -> float | None:
     return None
 
 
+def safe_metadata(item: Any) -> dict[str, Any]:
+    if isinstance(item, dict):
+        metadata = dict(item.get("metadata") or item.get("meta") or {})
+        if item.get("id") and "episode_id" not in metadata:
+            metadata["episode_id"] = item["id"]
+        return metadata
+    metadata = dict(getattr(item, "metadata", None) or getattr(item, "meta", None) or {})
+    episode_id = getattr(item, "episode_id", None) or getattr(item, "id", None)
+    if episode_id and "episode_id" not in metadata:
+        metadata["episode_id"] = episode_id
+    return metadata
+
+
 def count_text_tokens(text: str, token_counter: Optional[TokenCounter] = None) -> int:
     if not text or not text.strip():
         return 0
@@ -252,7 +265,8 @@ def build_prompt_trace_from_result(
         if origin not in included_memory_origins:
             continue
 
-        items = getattr(ctx, origin, []) or []
+        included_items = result.get("included_items", {})
+        items = included_items.get(origin, getattr(ctx, origin, []) or [])
         for item in items:
             text = safe_text(item).strip()
             if not text:
@@ -268,6 +282,7 @@ def build_prompt_trace_from_result(
                     source=origin,
                     text=text,
                     score=safe_score(item),
+                    meta=safe_metadata(item),
                 )
             )
 
@@ -276,7 +291,8 @@ def build_prompt_trace_from_result(
         for origin in ("working", "episodic", "semantic", "cold")
         if getattr(ctx, origin, []) or []
     }
-    truncated = bool(all_memory_origins - included_memory_origins)
+    excluded_counts = dict(result.get("budget_diagnostics", {}).get("excluded_item_counts", {}))
+    truncated = bool(all_memory_origins - included_memory_origins) or any(excluded_counts.values())
 
     token_accounting = TokenAccountingTrace(
         target_tokens=available_for_prompt,
@@ -291,6 +307,7 @@ def build_prompt_trace_from_result(
             f"total_budget={total_budget}",
             f"reserve_output_tokens={reserve_output_tokens}",
             *([f"memory_tokens={memory_tokens}"] if memory_tokens is not None else []),
+            *([f"excluded_items={sum(excluded_counts.values())}"] if excluded_counts else []),
         ],
     )
 
@@ -305,6 +322,7 @@ def build_prompt_trace_from_result(
             "include_cold_fallback": include_cold_fallback,
             "store_overflow_summary": store_overflow_summary,
             "system_prompt_present": bool(system_prompt.strip()),
+            "budget_diagnostics": dict(result.get("budget_diagnostics") or {}),
         },
         final_prompt=prompt,
     )
@@ -367,6 +385,11 @@ def build_prompt_from_context(
     sections.append(("user", "User", user_message))
 
     final_parts = list(sections)
+    included_items: dict[str, list[Any]] = {
+        "working": list(context_result.working), "episodic": list(context_result.episodic),
+        "semantic": list(context_result.semantic), "cold": list(context_result.cold),
+        "memory_layer": list(advisory_hints or []),
+    }
     prompt = render_sections(final_parts)
     prompt_tokens = count_text_tokens(prompt, token_counter=token_counter)
     compressed = False
@@ -379,24 +402,64 @@ def build_prompt_from_context(
         memory_parts = [part for part in sections if part[0] not in {"system", "user"}]
 
         kept_memory: list[tuple[str, str, str]] = []
-        for part in memory_parts:
-            trial_parts = system_parts + kept_memory + [part] + user_parts
-            trial_prompt = render_sections(trial_parts)
-            trial_tokens = count_text_tokens(trial_prompt, token_counter=token_counter)
-            if trial_tokens <= available_for_prompt:
-                kept_memory.append(part)
+        included_items = {key: [] for key in included_items}
+        origin_titles = {
+            "working": "Working", "episodic": "Episodic", "semantic": "Semantic",
+            "cold": "Cold", "memory_layer": "Memory Layer Hints",
+        }
+        origin_items = {
+            "working": context_result.working, "episodic": context_result.episodic,
+            "semantic": context_result.semantic, "cold": context_result.cold,
+            "memory_layer": list(advisory_hints or []),
+        }
+        for origin, _title, _text in memory_parts:
+            accepted: list[Any] = []
+            for item in origin_items.get(origin, []):
+                trial_items = accepted + [item]
+                trial_part = (origin, origin_titles[origin], format_items(trial_items))
+                other_parts = [part for part in kept_memory if part[0] != origin]
+                trial_parts = system_parts + other_parts + [trial_part] + user_parts
+                if count_text_tokens(render_sections(trial_parts), token_counter=token_counter) <= available_for_prompt:
+                    accepted.append(item)
+                else:
+                    break
+            if accepted:
+                included_items[origin] = accepted
+                kept_memory.append((origin, origin_titles[origin], format_items(accepted)))
 
         final_parts = system_parts + kept_memory + user_parts
         prompt = render_sections(final_parts)
         prompt_tokens = count_text_tokens(prompt, token_counter=token_counter)
 
     advisory_tokens = count_items_tokens(advisory_hints or [], token_counter=token_counter)
+    candidate_counts = {
+        "working": len(context_result.working), "episodic": len(context_result.episodic),
+        "semantic": len(context_result.semantic), "cold": len(context_result.cold),
+        "memory_layer": len(advisory_hints or []),
+    }
+    included_counts = {key: len(included_items.get(key, [])) for key in candidate_counts}
+    excluded_counts = {key: candidate_counts[key] - included_counts[key] for key in candidate_counts}
+    memory_candidate_count = sum(candidate_counts.values())
+    memory_included_count = sum(included_counts.values())
+    budget_diagnostics = {
+        "total_prompt_tokens": total_budget,
+        "reserve_output_tokens": max(0, reserve_output_tokens),
+        "available_prompt_tokens": available_for_prompt,
+        "candidate_item_counts": candidate_counts,
+        "included_item_counts": included_counts,
+        "excluded_item_counts": excluded_counts,
+        "memory_candidate_count": memory_candidate_count,
+        "memory_included_count": memory_included_count,
+        "memory_starved": memory_candidate_count > 0 and memory_included_count == 0,
+    }
     result: dict[str, Any] = {
         "prompt": prompt,
         "context": context_result,
         "prompt_tokens": prompt_tokens,
         "memory_tokens": context_result.memory_tokens() + advisory_tokens,
         "compressed": compressed,
+        "included_items": included_items,
+        "budget_diagnostics": budget_diagnostics,
     }
     if advisory_hints:
         result["advisory_hints"] = list(advisory_hints)
@@ -428,5 +491,6 @@ __all__ = [
     "normalize_retrieval_result",
     "render_sections",
     "safe_score",
+    "safe_metadata",
     "safe_text",
 ]

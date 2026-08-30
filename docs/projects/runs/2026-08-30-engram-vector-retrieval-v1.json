@@ -1,0 +1,317 @@
+{
+  "body": {
+    "case_count": 5,
+    "condition_order": "all_text_only_then_all_hybrid",
+    "embedder_label": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_dimension": 384,
+    "finished_at": "2026-08-30T16:36:23.250433Z",
+    "hybrid_relevant_ahead_count": 5,
+    "hybrid_relevant_recall_count": 5,
+    "hybrid_vector_used_count": 5,
+    "interpretation_limit": "Five fixed synthetic cases; not a general retrieval-quality estimate.",
+    "observations": [
+      {
+        "case_id": "orion_geo",
+        "chroma_count": null,
+        "condition": "text_only",
+        "ranked_ids": [
+          "VM-ORION-N",
+          "VM-ORION-R",
+          "VM-ORION-C"
+        ],
+        "relevant_ahead_of_conflict": true,
+        "relevant_recalled": true,
+        "scores": [
+          0.523,
+          0.4655,
+          0.4175
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 0,
+        "vector_search_used": false
+      },
+      {
+        "case_id": "lumen_retention",
+        "chroma_count": null,
+        "condition": "text_only",
+        "ranked_ids": [
+          "VM-LUMEN-C",
+          "VM-LUMEN-R",
+          "VM-LUMEN-N"
+        ],
+        "relevant_ahead_of_conflict": false,
+        "relevant_recalled": true,
+        "scores": [
+          0.6645,
+          0.595,
+          0.547
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 0,
+        "vector_search_used": false
+      },
+      {
+        "case_id": "cedar_owner",
+        "chroma_count": null,
+        "condition": "text_only",
+        "ranked_ids": [
+          "VM-CEDAR-R",
+          "VM-CEDAR-N",
+          "VM-CEDAR-C"
+        ],
+        "relevant_ahead_of_conflict": true,
+        "relevant_recalled": true,
+        "scores": [
+          0.734,
+          0.56133333,
+          0.43666667
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 0,
+        "vector_search_used": false
+      },
+      {
+        "case_id": "delta_time",
+        "chroma_count": null,
+        "condition": "text_only",
+        "ranked_ids": [
+          "VM-DELTA-C",
+          "VM-DELTA-R",
+          "VM-DELTA-N"
+        ],
+        "relevant_ahead_of_conflict": false,
+        "relevant_recalled": true,
+        "scores": [
+          0.6445,
+          0.635,
+          0.587
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 0,
+        "vector_search_used": false
+      },
+      {
+        "case_id": "ember_encoding",
+        "chroma_count": null,
+        "condition": "text_only",
+        "ranked_ids": [
+          "VM-EMBER-C",
+          "VM-EMBER-R",
+          "VM-EMBER-N"
+        ],
+        "relevant_ahead_of_conflict": false,
+        "relevant_recalled": true,
+        "scores": [
+          0.6645,
+          0.595,
+          0.547
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 0,
+        "vector_search_used": false
+      },
+      {
+        "case_id": "orion_geo",
+        "chroma_count": 4,
+        "condition": "hybrid",
+        "ranked_ids": [
+          "VM-ORION-R",
+          "VM-ORION-N",
+          "VM-ORION-C"
+        ],
+        "relevant_ahead_of_conflict": true,
+        "relevant_recalled": true,
+        "scores": [
+          0.03902697,
+          0.03642517,
+          0.01777778
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 2,
+        "vector_search_used": true
+      },
+      {
+        "case_id": "lumen_retention",
+        "chroma_count": 4,
+        "condition": "hybrid",
+        "ranked_ids": [
+          "VM-LUMEN-R",
+          "VM-LUMEN-C",
+          "VM-LUMEN-N"
+        ],
+        "relevant_ahead_of_conflict": true,
+        "relevant_recalled": true,
+        "scores": [
+          0.03902697,
+          0.03642517,
+          0.03555556
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 1,
+        "vector_search_used": true
+      },
+      {
+        "case_id": "cedar_owner",
+        "chroma_count": 4,
+        "condition": "hybrid",
+        "ranked_ids": [
+          "VM-CEDAR-R",
+          "VM-CEDAR-N",
+          "VM-CEDAR-C"
+        ],
+        "relevant_ahead_of_conflict": true,
+        "relevant_recalled": true,
+        "scores": [
+          0.03934426,
+          0.03612903,
+          0.01777778
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 2,
+        "vector_search_used": true
+      },
+      {
+        "case_id": "delta_time",
+        "chroma_count": 4,
+        "condition": "hybrid",
+        "ranked_ids": [
+          "VM-DELTA-R",
+          "VM-DELTA-C",
+          "VM-DELTA-N"
+        ],
+        "relevant_ahead_of_conflict": true,
+        "relevant_recalled": true,
+        "scores": [
+          0.03870968,
+          0.03672131,
+          0.03555556
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 1,
+        "vector_search_used": true
+      },
+      {
+        "case_id": "ember_encoding",
+        "chroma_count": 4,
+        "condition": "hybrid",
+        "ranked_ids": [
+          "VM-EMBER-R",
+          "VM-EMBER-C",
+          "VM-EMBER-N"
+        ],
+        "relevant_ahead_of_conflict": true,
+        "relevant_recalled": true,
+        "scores": [
+          0.03870968,
+          0.03672131,
+          0.03555556
+        ],
+        "stored_count": 4,
+        "vector_filtered_count": 1,
+        "vector_search_used": true
+      }
+    ],
+    "profile": "examples.engram_vector_retrieval",
+    "profile_version": 1,
+    "schema_version": 1,
+    "started_at": "2026-08-30T16:36:20.035013Z",
+    "suite_digest": "sha256:5922c1e36e7ab57a4b7cdcb63cf98a3f889e5ec4e4e9175f542fc8199cb5f381"
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "vector-memory-runner",
+        "name": "examples.engram_vector_retrieval",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "cached model",
+            "cpu"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "state_changing",
+        "execution_mode": "local_compute",
+        "implementation_version": "1",
+        "operation": "vector_memory_retrieval",
+        "requirements": [
+          {
+            "ref": "engram",
+            "type": "implementation"
+          },
+          {
+            "ref": "chromadb",
+            "type": "implementation"
+          },
+          {
+            "ref": "all-MiniLM-L6-v2",
+            "type": "model"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "embedder_label": "sentence-transformers/all-MiniLM-L6-v2"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw synthetic text omitted",
+      "declared_content_categories": [
+        "synthetic_memory"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "retain_ids_and_scores_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-only",
+        "policy_version": "1",
+        "scope": [
+          "no raw query or memory text"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-30T16:36:23.250433Z",
+        "validator": "examples.engram_vector_retrieval"
+      }
+    },
+    "profile": "examples.engram_vector_retrieval",
+    "profile_version": 1,
+    "record_id": "vr_d16a66a15b5e534b4da230a1f9518ce1",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T16:36:23.250433Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T16:36:23.250433Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T16:36:20.035013Z"
+      }
+    }
+  }
+}

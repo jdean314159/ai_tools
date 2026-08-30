@@ -269,6 +269,21 @@ class TestBuildPromptFromContext:
         )
         assert result["compressed"] is True
 
+    def test_compression_packs_ranked_items_and_reports_exclusions(self):
+        ctx = self._ctx(episodic=[
+            {"id": "ep_1", "text": "short relevant memory", "metadata": {"topic_key": "topic"}},
+            {"id": "ep_2", "text": "word " * 100},
+        ])
+        result = build_prompt_from_context(
+            user_message="question", context=ctx, total_prompt_tokens=18,
+            reserve_output_tokens=0, token_counter=word_counter, return_trace=True,
+        )
+        assert "short relevant memory" in result["prompt"]
+        assert result["budget_diagnostics"]["included_item_counts"]["episodic"] == 1
+        assert result["budget_diagnostics"]["excluded_item_counts"]["episodic"] == 1
+        evidence = next(item for item in result["trace"].evidence if item.source == "episodic")
+        assert evidence.meta == {"topic_key": "topic", "episode_id": "ep_1"}
+
     def test_user_message_always_included(self):
         """Even under extreme budget pressure, the user message must survive."""
         ctx = self._ctx(working=[FakeItem("word " * 100)])

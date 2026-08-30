@@ -1,0 +1,124 @@
+{
+  "case_count": 3,
+  "cold_reopen_pass_count": 3,
+  "embedder_label": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "finished_at": "2026-08-30T18:31:40.072176Z",
+  "historical_pass_count": 3,
+  "interpretation_limit": "Three synthetic timelines using one cached embedding model on CPU; not a scale or general retrieval claim.",
+  "metadata_pass_count": 3,
+  "observations": [
+    {
+      "case_id": "atlas",
+      "cold_chroma_count": 2,
+      "current_filtered_count": 1,
+      "current_metadata_active": true,
+      "current_only_active": true,
+      "current_prompt_ids": [
+        "CTV-ATLAS-2"
+      ],
+      "current_prompt_only_active": true,
+      "current_prompt_tokens": 28,
+      "current_ranked_ids": [
+        "CTV-ATLAS-2"
+      ],
+      "current_vector_used": true,
+      "historical_has_both": true,
+      "historical_prompt_has_old": true,
+      "historical_prompt_ids": [
+        "CTV-ATLAS-1",
+        "CTV-ATLAS-2"
+      ],
+      "historical_prompt_tokens": 46,
+      "historical_ranked_ids": [
+        "CTV-ATLAS-1",
+        "CTV-ATLAS-2"
+      ],
+      "historical_vector_used": true,
+      "memory_starved": false,
+      "native_ids_persisted": true,
+      "old_metadata_superseded": true,
+      "old_superseded_by_current": true,
+      "writer_chroma_count": 2
+    },
+    {
+      "case_id": "beacon",
+      "cold_chroma_count": 2,
+      "current_filtered_count": 1,
+      "current_metadata_active": true,
+      "current_only_active": true,
+      "current_prompt_ids": [
+        "CTV-BEACON-2"
+      ],
+      "current_prompt_only_active": true,
+      "current_prompt_tokens": 31,
+      "current_ranked_ids": [
+        "CTV-BEACON-2"
+      ],
+      "current_vector_used": true,
+      "historical_has_both": true,
+      "historical_prompt_has_old": true,
+      "historical_prompt_ids": [
+        "CTV-BEACON-2",
+        "CTV-BEACON-1"
+      ],
+      "historical_prompt_tokens": 48,
+      "historical_ranked_ids": [
+        "CTV-BEACON-2",
+        "CTV-BEACON-1"
+      ],
+      "historical_vector_used": true,
+      "memory_starved": false,
+      "native_ids_persisted": true,
+      "old_metadata_superseded": true,
+      "old_superseded_by_current": true,
+      "writer_chroma_count": 2
+    },
+    {
+      "case_id": "delta",
+      "cold_chroma_count": 2,
+      "current_filtered_count": 1,
+      "current_metadata_active": true,
+      "current_only_active": true,
+      "current_prompt_ids": [
+        "CTV-DELTA-2"
+      ],
+      "current_prompt_only_active": true,
+      "current_prompt_tokens": 26,
+      "current_ranked_ids": [
+        "CTV-DELTA-2"
+      ],
+      "current_vector_used": true,
+      "historical_has_both": true,
+      "historical_prompt_has_old": true,
+      "historical_prompt_ids": [
+        "CTV-DELTA-2",
+        "CTV-DELTA-1"
+      ],
+      "historical_prompt_tokens": 41,
+      "historical_ranked_ids": [
+        "CTV-DELTA-2",
+        "CTV-DELTA-1"
+      ],
+      "historical_vector_used": true,
+      "memory_starved": false,
+      "native_ids_persisted": true,
+      "old_metadata_superseded": true,
+      "old_superseded_by_current": true,
+      "writer_chroma_count": 2
+    }
+  ],
+  "offline_cached_model": true,
+  "prior_unstarted_dependency_attempts": 1,
+  "privacy": {
+    "host_paths_retained": false,
+    "raw_memories_retained": false,
+    "raw_queries_retained": false
+  },
+  "profile": "examples.engram_temporal_vector_cold",
+  "profile_version": 1,
+  "schema_version": 1,
+  "started_at": "2026-08-30T18:31:37.011890Z",
+  "suite_digest": "sha256:7f23952d376d06e5e4eabac16c19e37654919ed7740e36aef85af00fae3ebb3a",
+  "vector_current_pass_count": 3
+}

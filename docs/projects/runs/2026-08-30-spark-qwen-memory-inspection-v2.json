@@ -1,0 +1,316 @@
+{
+  "body": {
+    "baseline_safe_count": 5,
+    "case_count": 5,
+    "condition_order": "all_baseline_then_all_memory",
+    "distractor_used_count": 0,
+    "finished_at": "2026-08-30T13:47:18.366286Z",
+    "interpretation_limit": "Five fixed synthetic cases; not a general memory or model quality estimate.",
+    "memory_correct_count": 5,
+    "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "observations": [
+      {
+        "case_id": "atlas_region",
+        "condition": "baseline",
+        "correct": true,
+        "distractor_selected": false,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 68,
+        "latency_ms": 975.485,
+        "observed_memory_id": "NONE",
+        "observed_value": "UNKNOWN",
+        "output_tokens": 11,
+        "relevant_in_prompt": false,
+        "relevant_selected": false,
+        "seed_status": "accepted",
+        "selected_memory_ids": [],
+        "status": "completed"
+      },
+      {
+        "case_id": "beacon_retention",
+        "condition": "baseline",
+        "correct": true,
+        "distractor_selected": false,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 68,
+        "latency_ms": 1015.372,
+        "observed_memory_id": "NONE",
+        "observed_value": "UNKNOWN",
+        "output_tokens": 21,
+        "relevant_in_prompt": false,
+        "relevant_selected": false,
+        "seed_status": "accepted",
+        "selected_memory_ids": [],
+        "status": "completed"
+      },
+      {
+        "case_id": "cedar_escalation",
+        "condition": "baseline",
+        "correct": true,
+        "distractor_selected": false,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 68,
+        "latency_ms": 987.203,
+        "observed_memory_id": "NONE",
+        "observed_value": "UNKNOWN",
+        "output_tokens": 21,
+        "relevant_in_prompt": false,
+        "relevant_selected": false,
+        "seed_status": "accepted",
+        "selected_memory_ids": [],
+        "status": "completed"
+      },
+      {
+        "case_id": "delta_window",
+        "condition": "baseline",
+        "correct": true,
+        "distractor_selected": false,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 68,
+        "latency_ms": 1002.398,
+        "observed_memory_id": "NONE",
+        "observed_value": "UNKNOWN",
+        "output_tokens": 21,
+        "relevant_in_prompt": false,
+        "relevant_selected": false,
+        "seed_status": "accepted",
+        "selected_memory_ids": [],
+        "status": "completed"
+      },
+      {
+        "case_id": "ember_format",
+        "condition": "baseline",
+        "correct": true,
+        "distractor_selected": false,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 69,
+        "latency_ms": 790.746,
+        "observed_memory_id": "NONE",
+        "observed_value": "UNKNOWN",
+        "output_tokens": 14,
+        "relevant_in_prompt": false,
+        "relevant_selected": false,
+        "seed_status": "accepted",
+        "selected_memory_ids": [],
+        "status": "completed"
+      },
+      {
+        "case_id": "atlas_region",
+        "condition": "memory",
+        "correct": true,
+        "distractor_selected": true,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 179,
+        "latency_ms": 1008.814,
+        "observed_memory_id": "MEM-ATLAS-R",
+        "observed_value": "eu-central-1",
+        "output_tokens": 28,
+        "relevant_in_prompt": true,
+        "relevant_selected": true,
+        "seed_status": "accepted",
+        "selected_memory_ids": [
+          "MEM-ATLAS-D",
+          "MEM-ATLAS-R"
+        ],
+        "status": "completed"
+      },
+      {
+        "case_id": "beacon_retention",
+        "condition": "memory",
+        "correct": true,
+        "distractor_selected": true,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 181,
+        "latency_ms": 1166.242,
+        "observed_memory_id": "MEM-BEACON-R",
+        "observed_value": "45 days",
+        "output_tokens": 28,
+        "relevant_in_prompt": true,
+        "relevant_selected": true,
+        "seed_status": "accepted",
+        "selected_memory_ids": [
+          "MEM-BEACON-D",
+          "MEM-BEACON-R"
+        ],
+        "status": "completed"
+      },
+      {
+        "case_id": "cedar_escalation",
+        "condition": "memory",
+        "correct": true,
+        "distractor_selected": true,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 174,
+        "latency_ms": 1113.109,
+        "observed_memory_id": "MEM-CEDAR-R",
+        "observed_value": "ORANGE",
+        "output_tokens": 26,
+        "relevant_in_prompt": true,
+        "relevant_selected": true,
+        "seed_status": "accepted",
+        "selected_memory_ids": [
+          "MEM-CEDAR-D",
+          "MEM-CEDAR-R"
+        ],
+        "status": "completed"
+      },
+      {
+        "case_id": "delta_window",
+        "condition": "memory",
+        "correct": true,
+        "distractor_selected": true,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 185,
+        "latency_ms": 1259.1,
+        "observed_memory_id": "MEM-DELTA-R",
+        "observed_value": "03:30 UTC",
+        "output_tokens": 30,
+        "relevant_in_prompt": true,
+        "relevant_selected": true,
+        "seed_status": "accepted",
+        "selected_memory_ids": [
+          "MEM-DELTA-D",
+          "MEM-DELTA-R"
+        ],
+        "status": "completed"
+      },
+      {
+        "case_id": "ember_format",
+        "condition": "memory",
+        "correct": true,
+        "distractor_selected": true,
+        "distractor_used": false,
+        "error_type": null,
+        "input_tokens": 177,
+        "latency_ms": 1117.018,
+        "observed_memory_id": "MEM-EMBER-R",
+        "observed_value": "PARQUET",
+        "output_tokens": 26,
+        "relevant_in_prompt": true,
+        "relevant_selected": true,
+        "seed_status": "accepted",
+        "selected_memory_ids": [
+          "MEM-EMBER-D",
+          "MEM-EMBER-R"
+        ],
+        "status": "completed"
+      }
+    ],
+    "paired_success_count": 5,
+    "prior_unretained_attempts": 2,
+    "profile": "examples.memory_inspection_composition",
+    "profile_version": 2,
+    "schema_version": 1,
+    "seed_requested": 23,
+    "started_at": "2026-08-30T13:47:07.875897Z",
+    "suite_digest": "sha256:601d2ecc330501ca691e96f2a888fe4694fa5aacf1572e7c3170280977ba83c3",
+    "thinking_requested": false
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "memory-inspection-runner",
+        "name": "examples.memory_inspection_composition",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "temperature=0",
+            "seed requested; reproducibility not implied"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "state_changing",
+        "execution_mode": "live_external",
+        "implementation_version": "1",
+        "operation": "memory_inspection_composition",
+        "requirements": [
+          {
+            "ref": "model_endpoint",
+            "type": "external_service"
+          },
+          {
+            "ref": "engram",
+            "type": "implementation"
+          },
+          {
+            "ref": "llm_inspector",
+            "type": "implementation"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw interactions omitted",
+      "declared_content_categories": [
+        "synthetic_prompt",
+        "synthetic_memory"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "omit_raw_interactions",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-only",
+        "policy_version": "1",
+        "scope": [
+          "no endpoint, raw prompt, response, or memory text"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-30T13:47:18.366286Z",
+        "validator": "examples.memory_inspection_composition"
+      }
+    },
+    "profile": "examples.memory_inspection_composition",
+    "profile_version": 2,
+    "record_id": "mi_7cb5e00ee4fc2640f7f16e3258f18a76",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T13:47:18.366286Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T13:47:18.366286Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T13:47:07.875897Z"
+      }
+    }
+  }
+}

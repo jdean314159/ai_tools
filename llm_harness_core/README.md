@@ -130,6 +130,32 @@ That includes:
 Use [`EVALUATION_WALKTHROUGH.md`](./EVALUATION_WALKTHROUGH.md) to compare
 baseline and augmented systems with a shared vocabulary.
 
+Memory experiments can use the deterministic staged evaluator to distinguish
+storage, retrieval, prompt composition, inference, and exact-scoring failures
+without an oracle model or LLM judge:
+
+```python
+from llm_harness_core import MemoryCaseSpec, MemoryCaseObservation, evaluate_memory_case
+
+evaluation = evaluate_memory_case(
+    MemoryCaseSpec(
+        case_id="region_update", expected_storage_count=2,
+        required_evidence_ids=("current",), forbidden_evidence_ids=("obsolete",),
+        expected_output={"value": "eu-central-1", "evidence_id": "current"},
+    ),
+    MemoryCaseObservation(
+        stored_count=2, retrieved_evidence_ids=("current",),
+        prompt_evidence_ids=("current",),
+        observed_output={"value": "eu-central-1", "evidence_id": "current"},
+    ),
+)
+print(evaluation.primary_failure_stage)
+```
+
+`build_memory_experiment_body(...)` omits raw prompts, memory text, and model
+outputs by construction. `prepare_new_artifact_path(...)` enforces the common
+no-overwrite rule for frozen runs.
+
 ## Synthetic data utilities
 
 `llm_harness_core` includes lightweight synthetic data helpers for memory and retrieval labs:

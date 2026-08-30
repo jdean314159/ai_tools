@@ -1,0 +1,925 @@
+{
+  "arm_summaries": {
+    "legacy": {
+      "case_count": 5,
+      "end_to_end_pass_count": 2,
+      "issue_counts": {
+        "composition_included_forbidden_evidence": 3
+      },
+      "primary_failure_counts": {
+        "composition": 3,
+        "inference": 0,
+        "retrieval": 0,
+        "scoring": 0,
+        "storage": 0
+      },
+      "stage_pass_counts": {
+        "composition": 2,
+        "inference": 5,
+        "retrieval": 5,
+        "scoring": 5,
+        "storage": 5
+      }
+    },
+    "temporal": {
+      "case_count": 5,
+      "end_to_end_pass_count": 5,
+      "issue_counts": {},
+      "primary_failure_counts": {
+        "composition": 0,
+        "inference": 0,
+        "retrieval": 0,
+        "scoring": 0,
+        "storage": 0
+      },
+      "stage_pass_counts": {
+        "composition": 5,
+        "inference": 5,
+        "retrieval": 5,
+        "scoring": 5,
+        "storage": 5
+      }
+    }
+  },
+  "current_obsolete_prompt_counts": {
+    "legacy": 3,
+    "temporal": 0
+  },
+  "evaluations": [
+    {
+      "case_id": "legacy:atlas_current",
+      "composition_passed": false,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 2,
+          "memory_included_count": 2,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 44,
+        "prompt_tokens": 101,
+        "retrieval": {
+          "include_historical": false,
+          "latency_ms": 0.1163482666015625,
+          "min_relevance": 0.0,
+          "query": "What is Atlas's current deployment region?",
+          "relevance_filtered_count": 0,
+          "results_count": 2,
+          "temporal_filtered_count": 0,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": false,
+      "forbidden_prompt_ids": [
+        "EVT-ATLAS-1"
+      ],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [
+        "composition_included_forbidden_evidence"
+      ],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": "composition",
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "legacy:atlas_historical",
+      "composition_passed": true,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 2,
+          "memory_included_count": 2,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 44,
+        "prompt_tokens": 103,
+        "retrieval": {
+          "include_historical": true,
+          "latency_ms": 0.11396408081054688,
+          "min_relevance": 0.0,
+          "query": "What was Atlas's deployment region before the update?",
+          "relevance_filtered_count": 0,
+          "results_count": 2,
+          "temporal_filtered_count": 0,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": true,
+      "forbidden_prompt_ids": [],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": null,
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "legacy:beacon_current",
+      "composition_passed": false,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 2,
+          "memory_included_count": 2,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 46,
+        "prompt_tokens": 103,
+        "retrieval": {
+          "include_historical": false,
+          "latency_ms": 0.11301040649414062,
+          "min_relevance": 0.0,
+          "query": "What is Beacon's current retention period?",
+          "relevance_filtered_count": 0,
+          "results_count": 2,
+          "temporal_filtered_count": 0,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": false,
+      "forbidden_prompt_ids": [
+        "EVT-BEACON-1"
+      ],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [
+        "composition_included_forbidden_evidence"
+      ],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": "composition",
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "legacy:beacon_historical",
+      "composition_passed": true,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 2,
+          "memory_included_count": 2,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 46,
+        "prompt_tokens": 106,
+        "retrieval": {
+          "include_historical": true,
+          "latency_ms": 0.11587142944335938,
+          "min_relevance": 0.0,
+          "query": "What was Beacon's retention period before the retraction?",
+          "relevance_filtered_count": 0,
+          "results_count": 2,
+          "temporal_filtered_count": 0,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": true,
+      "forbidden_prompt_ids": [],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": null,
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "legacy:delta_current",
+      "composition_passed": false,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 2,
+          "memory_included_count": 2,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 46,
+        "prompt_tokens": 103,
+        "retrieval": {
+          "include_historical": false,
+          "latency_ms": 0.12731552124023438,
+          "min_relevance": 0.0,
+          "query": "What is Delta's current maintenance time?",
+          "relevance_filtered_count": 0,
+          "results_count": 2,
+          "temporal_filtered_count": 0,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": false,
+      "forbidden_prompt_ids": [
+        "EVT-DELTA-1"
+      ],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [
+        "composition_included_forbidden_evidence"
+      ],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": "composition",
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "temporal:atlas_current",
+      "composition_passed": true,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 1,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 1,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 1,
+          "memory_included_count": 1,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 27,
+        "prompt_tokens": 81,
+        "retrieval": {
+          "include_historical": false,
+          "latency_ms": 0.10323524475097656,
+          "min_relevance": 0.0,
+          "query": "What is Atlas's current deployment region?",
+          "relevance_filtered_count": 1,
+          "results_count": 1,
+          "temporal_filtered_count": 1,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": true,
+      "forbidden_prompt_ids": [],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": null,
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "temporal:atlas_historical",
+      "composition_passed": true,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 2,
+          "memory_included_count": 2,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 44,
+        "prompt_tokens": 103,
+        "retrieval": {
+          "include_historical": true,
+          "latency_ms": 0.141143798828125,
+          "min_relevance": 0.0,
+          "query": "What was Atlas's deployment region before the update?",
+          "relevance_filtered_count": 0,
+          "results_count": 2,
+          "temporal_filtered_count": 0,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": true,
+      "forbidden_prompt_ids": [],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": null,
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "temporal:beacon_current",
+      "composition_passed": true,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 1,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 1,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 1,
+          "memory_included_count": 1,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 29,
+        "prompt_tokens": 83,
+        "retrieval": {
+          "include_historical": false,
+          "latency_ms": 0.10848045349121094,
+          "min_relevance": 0.0,
+          "query": "What is Beacon's current retention period?",
+          "relevance_filtered_count": 1,
+          "results_count": 1,
+          "temporal_filtered_count": 1,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": true,
+      "forbidden_prompt_ids": [],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": null,
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "temporal:beacon_historical",
+      "composition_passed": true,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 2,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 2,
+          "memory_included_count": 2,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 46,
+        "prompt_tokens": 106,
+        "retrieval": {
+          "include_historical": true,
+          "latency_ms": 0.12087821960449219,
+          "min_relevance": 0.0,
+          "query": "What was Beacon's retention period before the retraction?",
+          "relevance_filtered_count": 0,
+          "results_count": 2,
+          "temporal_filtered_count": 0,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": true,
+      "forbidden_prompt_ids": [],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": null,
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    },
+    {
+      "case_id": "temporal:delta_current",
+      "composition_passed": true,
+      "diagnostics": {
+        "budget": {
+          "available_prompt_tokens": 424,
+          "candidate_item_counts": {
+            "cold": 0,
+            "episodic": 1,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "excluded_item_counts": {
+            "cold": 0,
+            "episodic": 0,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "included_item_counts": {
+            "cold": 0,
+            "episodic": 1,
+            "memory_layer": 0,
+            "semantic": 0,
+            "working": 0
+          },
+          "memory_candidate_count": 1,
+          "memory_included_count": 1,
+          "memory_starved": false,
+          "reserve_output_tokens": 96,
+          "total_prompt_tokens": 520
+        },
+        "compressed": false,
+        "memory_tokens": 28,
+        "prompt_tokens": 82,
+        "retrieval": {
+          "include_historical": false,
+          "latency_ms": 0.10585784912109375,
+          "min_relevance": 0.0,
+          "query": "What is Delta's current maintenance time?",
+          "relevance_filtered_count": 1,
+          "results_count": 1,
+          "temporal_filtered_count": 1,
+          "unresolved_conflict_topic_count": 0,
+          "used_vector_search": false,
+          "vector_filtered_count": 0,
+          "vector_similarity_threshold": 0.4
+        }
+      },
+      "end_to_end_passed": true,
+      "forbidden_prompt_ids": [],
+      "forbidden_retrieval_ids": [],
+      "inference_passed": true,
+      "issue_codes": [],
+      "mismatched_output_fields": [],
+      "missing_prompt_ids": [],
+      "missing_retrieval_ids": [],
+      "primary_failure_stage": null,
+      "retrieval_passed": true,
+      "scoring_passed": true,
+      "storage_passed": true
+    }
+  ],
+  "finished_at": "2026-08-30T18:27:12.754924Z",
+  "interpretation_limit": "Three frozen synthetic timelines and five queries per arm; paired mechanism validation, not a general quality estimate.",
+  "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+  "observations": [
+    {
+      "arm": "legacy",
+      "end_to_end_passed": false,
+      "error_type": null,
+      "historical": false,
+      "issue_codes": [
+        "composition_included_forbidden_evidence"
+      ],
+      "latency_ms": 1447.999,
+      "memory_starved": false,
+      "memory_tokens": 44,
+      "obsolete_in_prompt": true,
+      "primary_failure_stage": "composition",
+      "prompt_tokens": 101,
+      "query_id": "atlas_current",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-ATLAS-2",
+        "EVT-ATLAS-1"
+      ]
+    },
+    {
+      "arm": "legacy",
+      "end_to_end_passed": true,
+      "error_type": null,
+      "historical": true,
+      "issue_codes": [],
+      "latency_ms": 1320.346,
+      "memory_starved": false,
+      "memory_tokens": 44,
+      "obsolete_in_prompt": false,
+      "primary_failure_stage": null,
+      "prompt_tokens": 103,
+      "query_id": "atlas_historical",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-ATLAS-1",
+        "EVT-ATLAS-2"
+      ]
+    },
+    {
+      "arm": "legacy",
+      "end_to_end_passed": false,
+      "error_type": null,
+      "historical": false,
+      "issue_codes": [
+        "composition_included_forbidden_evidence"
+      ],
+      "latency_ms": 1192.934,
+      "memory_starved": false,
+      "memory_tokens": 46,
+      "obsolete_in_prompt": true,
+      "primary_failure_stage": "composition",
+      "prompt_tokens": 103,
+      "query_id": "beacon_current",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-BEACON-2",
+        "EVT-BEACON-1"
+      ]
+    },
+    {
+      "arm": "legacy",
+      "end_to_end_passed": true,
+      "error_type": null,
+      "historical": true,
+      "issue_codes": [],
+      "latency_ms": 1231.569,
+      "memory_starved": false,
+      "memory_tokens": 46,
+      "obsolete_in_prompt": false,
+      "primary_failure_stage": null,
+      "prompt_tokens": 106,
+      "query_id": "beacon_historical",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-BEACON-2",
+        "EVT-BEACON-1"
+      ]
+    },
+    {
+      "arm": "legacy",
+      "end_to_end_passed": false,
+      "error_type": null,
+      "historical": false,
+      "issue_codes": [
+        "composition_included_forbidden_evidence"
+      ],
+      "latency_ms": 1430.251,
+      "memory_starved": false,
+      "memory_tokens": 46,
+      "obsolete_in_prompt": true,
+      "primary_failure_stage": "composition",
+      "prompt_tokens": 103,
+      "query_id": "delta_current",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-DELTA-2",
+        "EVT-DELTA-1"
+      ]
+    },
+    {
+      "arm": "temporal",
+      "end_to_end_passed": true,
+      "error_type": null,
+      "historical": false,
+      "issue_codes": [],
+      "latency_ms": 1338.155,
+      "memory_starved": false,
+      "memory_tokens": 27,
+      "obsolete_in_prompt": false,
+      "primary_failure_stage": null,
+      "prompt_tokens": 81,
+      "query_id": "atlas_current",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-ATLAS-2"
+      ]
+    },
+    {
+      "arm": "temporal",
+      "end_to_end_passed": true,
+      "error_type": null,
+      "historical": true,
+      "issue_codes": [],
+      "latency_ms": 1190.779,
+      "memory_starved": false,
+      "memory_tokens": 44,
+      "obsolete_in_prompt": false,
+      "primary_failure_stage": null,
+      "prompt_tokens": 103,
+      "query_id": "atlas_historical",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-ATLAS-1",
+        "EVT-ATLAS-2"
+      ]
+    },
+    {
+      "arm": "temporal",
+      "end_to_end_passed": true,
+      "error_type": null,
+      "historical": false,
+      "issue_codes": [],
+      "latency_ms": 1265.548,
+      "memory_starved": false,
+      "memory_tokens": 29,
+      "obsolete_in_prompt": false,
+      "primary_failure_stage": null,
+      "prompt_tokens": 83,
+      "query_id": "beacon_current",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-BEACON-2"
+      ]
+    },
+    {
+      "arm": "temporal",
+      "end_to_end_passed": true,
+      "error_type": null,
+      "historical": true,
+      "issue_codes": [],
+      "latency_ms": 1315.439,
+      "memory_starved": false,
+      "memory_tokens": 46,
+      "obsolete_in_prompt": false,
+      "primary_failure_stage": null,
+      "prompt_tokens": 106,
+      "query_id": "beacon_historical",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-BEACON-2",
+        "EVT-BEACON-1"
+      ]
+    },
+    {
+      "arm": "temporal",
+      "end_to_end_passed": true,
+      "error_type": null,
+      "historical": false,
+      "issue_codes": [],
+      "latency_ms": 1326.582,
+      "memory_starved": false,
+      "memory_tokens": 28,
+      "obsolete_in_prompt": false,
+      "primary_failure_stage": null,
+      "prompt_tokens": 82,
+      "query_id": "delta_current",
+      "seed_status": "accepted",
+      "selected_evidence_ids": [
+        "EVT-DELTA-2"
+      ]
+    }
+  ],
+  "oracle_or_llm_judge_used": false,
+  "privacy": {
+    "raw_memories_retained": false,
+    "raw_outputs_retained": false,
+    "raw_prompts_retained": false
+  },
+  "profile": "examples.engram_temporal_ab",
+  "profile_version": 1,
+  "prompt_budget": 520,
+  "schema_version": 1,
+  "seed_requested": 59,
+  "started_at": "2026-08-30T18:26:59.680492Z",
+  "suite_digest": "sha256:bc3f79507baba3752f52644297fee95963b26b19b529eb10ffcab5000441427d",
+  "summary": {
+    "case_count": 10,
+    "end_to_end_pass_count": 7,
+    "issue_counts": {
+      "composition_included_forbidden_evidence": 3
+    },
+    "primary_failure_counts": {
+      "composition": 3,
+      "inference": 0,
+      "retrieval": 0,
+      "scoring": 0,
+      "storage": 0
+    },
+    "stage_pass_counts": {
+      "composition": 7,
+      "inference": 10,
+      "retrieval": 10,
+      "scoring": 10,
+      "storage": 10
+    }
+  },
+  "thinking_requested": false
+}

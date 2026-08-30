@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 import time
 import uuid
 from dataclasses import dataclass
@@ -120,6 +121,7 @@ class ProjectMemory:
         self._loaded_sessions: set[str] = set()
         self._episodes: list[dict[str, Any]] = []
         self._episode_embeddings: dict[str, tuple[float, ...]] = {}
+        self._last_search_diagnostics: dict[str, Any] = {}
         self._extension_layers: list[MemoryLayer] = []
         self._extension_layers_closed = False
         self.neural_layer = None
@@ -1059,7 +1061,15 @@ class ProjectMemory:
 
         normalized = decision.normalized_text or normalize_text(cleaned_text)
         topic_key = str(payload_metadata.get("topic_key") or canonical.topic_key or "").strip()
-        if topic_key:
+        retain_history = bool(payload_metadata.get("retain_history", False))
+        temporal_predecessors: list[dict[str, Any]] = []
+        if topic_key and retain_history:
+            temporal_predecessors = [
+                ep for ep in self._episodes
+                if str((ep.get("metadata") or {}).get("topic_key") or "").strip() == topic_key
+                and str((ep.get("metadata") or {}).get("temporal_status") or "active") == "active"
+            ]
+        elif topic_key:
             retained = []
             replaced = 0
             for ep in self._episodes:
@@ -1081,6 +1091,21 @@ class ProjectMemory:
 
         episode_id = f"ep_{uuid.uuid4().hex[:12]}"
         created_at = time.time()
+        if retain_history:
+            payload_metadata.setdefault("temporal_action", "update")
+            payload_metadata.setdefault("temporal_status", "active")
+            payload_metadata.setdefault("valid_from", created_at)
+            payload_metadata.setdefault("supersedes", [ep.get("id") for ep in temporal_predecessors])
+            for predecessor in temporal_predecessors:
+                predecessor_metadata = dict(predecessor.get("metadata") or {})
+                predecessor_metadata.update({
+                    "temporal_status": "superseded",
+                    "valid_until": payload_metadata["valid_from"],
+                    "superseded_by": episode_id,
+                })
+                predecessor["metadata"] = predecessor_metadata
+            if temporal_predecessors:
+                self._rewrite_jsonl(self._episodes_path, self._episodes)
         episode = {
             "id": episode_id,
             "text": cleaned_text[: self._quality.max_episode_chars],
@@ -1173,6 +1198,42 @@ class ProjectMemory:
 
         return episode_id
 
+    def store_temporal_episode(
+        self,
+        text: str,
+        *,
+        topic_key: str,
+        action: str = "update",
+        effective_at: float | None = None,
+        metadata: dict[str, Any] | None = None,
+        importance: float = 0.8,
+        bypass_filter: bool = False,
+    ) -> str:
+        """Store a versioned episode while retaining its topic history.
+
+        ``action`` is deterministic metadata, not semantic inference. Supported
+        values are ``set``, ``update``, and ``retract``. Current-state recall
+        suppresses superseded predecessors; callers can request history through
+        ``search_episodes(..., include_historical=True)``.
+        """
+        normalized_action = str(action or "update").strip().lower()
+        if normalized_action not in {"set", "update", "retract"}:
+            raise ValueError("action must be one of: set, update, retract")
+        if not str(topic_key or "").strip():
+            raise ValueError("topic_key must be non-empty")
+        temporal_metadata = {
+            **dict(metadata or {}),
+            "topic_key": str(topic_key).strip(),
+            "retain_history": True,
+            "temporal_action": normalized_action,
+        }
+        if effective_at is not None:
+            temporal_metadata["valid_from"] = float(effective_at)
+        return self.store_episode(
+            text, metadata=temporal_metadata, importance=importance,
+            bypass_filter=bypass_filter, bypass_dedup=True,
+        )
+
     # ------------------------------------------------------------------
     # Retrieval
     # ------------------------------------------------------------------
@@ -1185,6 +1246,7 @@ class ProjectMemory:
         days_back: int | None = None,
         min_relevance: Optional[float] = None,
         vector_similarity_threshold: Optional[float] = None,
+        include_historical: bool = False,
     ) -> list[Any]:
         """Search episodes with hybrid retrieval and relevance thresholding.
 
@@ -1276,7 +1338,11 @@ class ProjectMemory:
             query_embedding=query_embedding,
         )
 
-        self.telemetry.emit("search_completed", {
+        fused, temporal_diagnostics = self._apply_temporal_filter(
+            fused, include_historical=include_historical,
+        )
+
+        search_diagnostics = {
             "query": query,
             "results_count": len(fused[:n]),
             "latency_ms": (_time.time() - start) * 1000,
@@ -1285,9 +1351,44 @@ class ProjectMemory:
             "relevance_filtered_count": before_relevance_filter - len(fused),
             "vector_similarity_threshold": sim_threshold,
             "min_relevance": relevance_threshold,
-        })
+            **temporal_diagnostics,
+        }
+        self._last_search_diagnostics = dict(search_diagnostics)
+        self.telemetry.emit("search_completed", search_diagnostics)
 
         return self._to_episode_results(fused[:n])
+
+    def _apply_temporal_filter(
+        self, rows: list[dict[str, Any]], *, include_historical: bool,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        authoritative = {str(ep.get("id")): ep for ep in self._episodes}
+        enriched: list[dict[str, Any]] = []
+        for row in rows:
+            current = authoritative.get(str(row.get("id")))
+            if current is not None:
+                row = {**row, "metadata": dict(current.get("metadata") or {})}
+            enriched.append(row)
+        topic_groups: dict[str, list[dict[str, Any]]] = {}
+        for row in enriched:
+            topic = str((row.get("metadata") or {}).get("topic_key") or "").strip()
+            if topic:
+                topic_groups.setdefault(topic, []).append(row)
+        unresolved = sum(
+            1 for group in topic_groups.values()
+            if sum(str((row.get("metadata") or {}).get("temporal_status") or "active") == "active" for row in group) > 1
+        )
+        if include_historical:
+            selected = enriched
+        else:
+            selected = [
+                row for row in enriched
+                if str((row.get("metadata") or {}).get("temporal_status") or "active") != "superseded"
+            ]
+        return selected, {
+            "include_historical": include_historical,
+            "temporal_filtered_count": len(enriched) - len(selected),
+            "unresolved_conflict_topic_count": unresolved,
+        }
 
     def _search_episodes_text(
         self,
@@ -1341,8 +1442,9 @@ class ProjectMemory:
         results = []
         for row in rows:
             results.append(SimpleNamespace(
+                episode_id=row.get("id", ""),
                 text=row.get("text", ""),
-                metadata=row.get("metadata") or {},
+                metadata={**dict(row.get("metadata") or {}), "episode_id": row.get("id", "")},
                 importance=float(row.get("importance", 0.0)),
                 score=float(row.get("final_score", row.get("score", 0.0))),
             ))
@@ -1488,7 +1590,14 @@ class ProjectMemory:
         ]
 
     def _internal_episode_hits(self, query: str) -> list[Any]:
-        return self.search_episodes(query, n=self._quality.internal_retrieval_limit, min_importance=0.05)
+        historical = bool(re.search(
+            r"\b(?:historical|previously|used to|before|at (?:that |the )?time|after session|in session)\b",
+            str(query or ""), re.IGNORECASE,
+        ))
+        return self.search_episodes(
+            query, n=self._quality.internal_retrieval_limit, min_importance=0.05,
+            include_historical=historical,
+        )
 
     def _merge_working_context(self, retrieval: Any, *, working_items: list, query: str) -> Any:
         internal_episodic = self._internal_episode_hits(query)
@@ -1529,7 +1638,7 @@ class ProjectMemory:
             retrieval, working_items=self._recent_working_items(), query=resolved_query,
         )
         prompt_hints = self._collect_prompt_hints(resolved_query)
-        return build_prompt_from_context(
+        result = build_prompt_from_context(
             user_message=user_message,
             retrieval=retrieval,
             system_prompt=self.system_prompt,
@@ -1542,6 +1651,15 @@ class ProjectMemory:
             token_counter=self._token_counter,
             advisory_hints=prompt_hints,
         )
+        result["retrieval_diagnostics"] = dict(self._last_search_diagnostics)
+        trace = result.get("trace")
+        if trace is not None:
+            trace.flags["retrieval_diagnostics"] = dict(self._last_search_diagnostics)
+        budget_diagnostics = dict(result.get("budget_diagnostics") or {})
+        self.telemetry.emit("prompt_budget_completed", budget_diagnostics)
+        if budget_diagnostics.get("memory_starved"):
+            self.telemetry.emit("prompt_memory_starved", budget_diagnostics)
+        return result
 
     def build_prompt_trace(self, user_message: str, **kwargs):
         result = self.build_prompt(user_message=user_message, return_trace=True, **kwargs)

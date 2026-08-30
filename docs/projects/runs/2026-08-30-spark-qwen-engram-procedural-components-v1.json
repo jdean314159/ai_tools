@@ -1,0 +1,205 @@
+{
+  "case_count": 5,
+  "component_pass_count": 4,
+  "end_to_end_pass_count": 4,
+  "evidence_pass_count": 5,
+  "finished_at": "2026-08-30T18:08:53.210448Z",
+  "interpretation_limit": "Five synthetic cases with a closed component vocabulary; not autonomous rule induction.",
+  "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+  "observations": [
+    {
+      "case_id": "rate_limit",
+      "components_correct": true,
+      "declared_count": 37,
+      "end_to_end_passed": true,
+      "error_type": null,
+      "evidence_correct": true,
+      "expected_components": [
+        "exponential_backoff",
+        "jitter",
+        "retry"
+      ],
+      "expected_evidence_id": "EXP-RATE-1",
+      "expected_evidence_selected": true,
+      "input_tokens": 356,
+      "latency_ms": 2229.648,
+      "memory_tokens": 212,
+      "observed_components": [
+        "exponential_backoff",
+        "jitter",
+        "retry"
+      ],
+      "observed_evidence_id": "EXP-RATE-1",
+      "output_tokens": 46,
+      "prompt_tokens": 324,
+      "seed_status": "accepted",
+      "selected_count": 6,
+      "selected_event_ids": [
+        "EXP-RATE-1",
+        "NOISE-RATE-31",
+        "NOISE-RATE-32",
+        "NOISE-RATE-33",
+        "NOISE-RATE-34",
+        "NOISE-RATE-35"
+      ],
+      "status": "completed",
+      "stored_count": 37
+    },
+    {
+      "case_id": "schema_drift",
+      "components_correct": false,
+      "declared_count": 37,
+      "end_to_end_passed": false,
+      "error_type": null,
+      "evidence_correct": true,
+      "expected_components": [
+        "refresh_schema_contract",
+        "regenerate_mapping",
+        "retry"
+      ],
+      "expected_evidence_id": "EXP-SCHEMA-1",
+      "expected_evidence_selected": true,
+      "input_tokens": 363,
+      "latency_ms": 1988.323,
+      "memory_tokens": 221,
+      "observed_components": [
+        "refresh_schema_contract",
+        "regenerate_mapping"
+      ],
+      "observed_evidence_id": "EXP-SCHEMA-1",
+      "output_tokens": 42,
+      "prompt_tokens": 335,
+      "seed_status": "accepted",
+      "selected_count": 6,
+      "selected_event_ids": [
+        "EXP-SCHEMA-1",
+        "NOISE-SCHEMA-31",
+        "NOISE-SCHEMA-32",
+        "NOISE-SCHEMA-33",
+        "NOISE-SCHEMA-34",
+        "NOISE-SCHEMA-35"
+      ],
+      "status": "completed",
+      "stored_count": 37
+    },
+    {
+      "case_id": "disk_pressure",
+      "components_correct": true,
+      "declared_count": 37,
+      "end_to_end_passed": true,
+      "error_type": null,
+      "evidence_correct": true,
+      "expected_components": [
+        "rotate_archived_logs",
+        "retry"
+      ],
+      "expected_evidence_id": "EXP-DISK-1",
+      "expected_evidence_selected": true,
+      "input_tokens": 348,
+      "latency_ms": 1849.189,
+      "memory_tokens": 208,
+      "observed_components": [
+        "rotate_archived_logs",
+        "retry"
+      ],
+      "observed_evidence_id": "EXP-DISK-1",
+      "output_tokens": 40,
+      "prompt_tokens": 320,
+      "seed_status": "accepted",
+      "selected_count": 6,
+      "selected_event_ids": [
+        "EXP-DISK-1",
+        "NOISE-DISK-31",
+        "NOISE-DISK-32",
+        "NOISE-DISK-33",
+        "NOISE-DISK-34",
+        "NOISE-DISK-35"
+      ],
+      "status": "completed",
+      "stored_count": 37
+    },
+    {
+      "case_id": "clock_skew",
+      "components_correct": true,
+      "declared_count": 37,
+      "end_to_end_passed": true,
+      "error_type": null,
+      "evidence_correct": true,
+      "expected_components": [
+        "synchronize_system_clock",
+        "retry"
+      ],
+      "expected_evidence_id": "EXP-CLOCK-1",
+      "expected_evidence_selected": true,
+      "input_tokens": 363,
+      "latency_ms": 1879.568,
+      "memory_tokens": 219,
+      "observed_components": [
+        "synchronize_system_clock",
+        "retry"
+      ],
+      "observed_evidence_id": "EXP-CLOCK-1",
+      "output_tokens": 40,
+      "prompt_tokens": 335,
+      "seed_status": "accepted",
+      "selected_count": 6,
+      "selected_event_ids": [
+        "EXP-CLOCK-1",
+        "NOISE-CLOCK-31",
+        "NOISE-CLOCK-32",
+        "NOISE-CLOCK-33",
+        "NOISE-CLOCK-34",
+        "NOISE-CLOCK-35"
+      ],
+      "status": "completed",
+      "stored_count": 37
+    },
+    {
+      "case_id": "batch_oom",
+      "components_correct": true,
+      "declared_count": 37,
+      "end_to_end_passed": true,
+      "error_type": null,
+      "evidence_correct": true,
+      "expected_components": [
+        "halve_batch_size",
+        "resume_from_checkpoint"
+      ],
+      "expected_evidence_id": "EXP-BATCH-1",
+      "expected_evidence_selected": true,
+      "input_tokens": 353,
+      "latency_ms": 1976.352,
+      "memory_tokens": 213,
+      "observed_components": [
+        "halve_batch_size",
+        "resume_from_checkpoint"
+      ],
+      "observed_evidence_id": "EXP-BATCH-1",
+      "output_tokens": 42,
+      "prompt_tokens": 325,
+      "seed_status": "accepted",
+      "selected_count": 6,
+      "selected_event_ids": [
+        "EXP-BATCH-1",
+        "NOISE-BATCH-31",
+        "NOISE-BATCH-32",
+        "NOISE-BATCH-33",
+        "NOISE-BATCH-34",
+        "NOISE-BATCH-35"
+      ],
+      "status": "completed",
+      "stored_count": 37
+    }
+  ],
+  "oracle_or_llm_judge_used": false,
+  "profile": "examples.engram_procedural_components",
+  "profile_version": 1,
+  "prompt_budget": 600,
+  "retrieval_pass_count": 5,
+  "schema_version": 1,
+  "seed_requested": 53,
+  "started_at": "2026-08-30T18:08:43.018313Z",
+  "storage_pass_count": 5,
+  "suite_digest": "sha256:986845b9b21ff773ca689bfb6daf0d36f9d0d6d4b4686bedf844d1a3503e68e3",
+  "thinking_requested": false
+}
