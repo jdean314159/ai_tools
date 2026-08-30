@@ -109,3 +109,60 @@ def test_policy_validates_configuration_and_levels():
         assert "tenant_id" in str(error)
     else:
         raise AssertionError("empty tenant must fail")
+
+
+def test_explicit_tenant_alias_is_authorized(tmp_path):
+    memory = ProjectMemory(
+        base_dir=tmp_path, project_id="p",
+        trust_policy=policy(tenant_aliases=frozenset({"acme-legacy"})),
+    )
+    episode_id = memory.store_episode(
+        "Legacy alias fact", metadata=metadata(tenant="acme-legacy"),
+        bypass_filter=True,
+    )
+    assert episode_id
+    assert memory.search_episodes("Legacy alias", n=5)[0].episode_id == episode_id
+
+
+def test_review_classifies_legacy_episode_and_persists_audit(tmp_path):
+    unguarded = ProjectMemory(base_dir=tmp_path, project_id="p")
+    episode_id = unguarded.store_episode("Legacy Atlas region west", bypass_filter=True)
+    unguarded.close()
+    guarded = ProjectMemory(base_dir=tmp_path, project_id="p", trust_policy=policy())
+    assert guarded.search_episodes("Atlas region", n=5) == []
+    result = guarded.review_episode_trust(
+        episode_id, trust="verified", tenant="acme", source="operator",
+        writer="admin", reviewer="security-reviewer",
+    )
+    assert result["action"] == "accept"
+    assert guarded.search_episodes("Atlas region", n=5)[0].episode_id == episode_id
+    guarded.close()
+    reopened = ProjectMemory(base_dir=tmp_path, project_id="p", trust_policy=policy())
+    reviewed = reopened.search_episodes("Atlas region", n=5)[0]
+    assert reviewed.metadata["trust_reviewer"] == "security-reviewer"
+    assert len(reviewed.metadata["trust_review_history"]) == 1
+
+
+def test_quarantine_release_requires_valid_metadata_and_explicit_release(tmp_path):
+    memory = ProjectMemory(
+        base_dir=tmp_path, project_id="p",
+        trust_policy=policy(ingestion_violation="quarantine"),
+    )
+    episode_id = memory.store_episode(
+        "Reviewed Atlas fact", metadata=metadata(trust="low"), bypass_filter=True,
+    )
+    rejected = memory.review_episode_trust(
+        episode_id, trust="verified", tenant="wrong", source="operator",
+        writer="admin", reviewer="reviewer", release_quarantine=True,
+    )
+    assert rejected["action"] == "reject"
+    assert memory.search_episodes("Reviewed Atlas", n=5) == []
+    accepted = memory.review_episode_trust(
+        episode_id, trust="verified", tenant="acme", source="operator",
+        writer="admin", reviewer="reviewer", release_quarantine=True,
+    )
+    assert accepted == {
+        "episode_id": episode_id, "action": "accept", "reasons": [],
+        "released": True, "reviewer": "reviewer",
+    }
+    assert memory.search_episodes("Reviewed Atlas", n=5)[0].episode_id == episode_id

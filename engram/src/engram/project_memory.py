@@ -1235,6 +1235,84 @@ class ProjectMemory:
         """Return privacy-minimized trust decisions made by this instance."""
         return [dict(item) for item in self._trust_audit]
 
+    def review_episode_trust(
+        self,
+        episode_id: str,
+        *,
+        trust: str,
+        tenant: str,
+        source: str,
+        writer: str,
+        reviewer: str,
+        release_quarantine: bool = False,
+    ) -> dict[str, Any]:
+        """Reclassify one existing episode through the configured policy.
+
+        Authentication and authorization of ``reviewer`` belong to the calling
+        application. Engram records the supplied reviewer but never infers or
+        verifies identity. Failed reviews do not modify persistent metadata.
+        """
+        if self.trust_policy is None:
+            raise RuntimeError("review_episode_trust requires trust_policy")
+        if not str(reviewer or "").strip():
+            raise ValueError("reviewer must be non-empty")
+        episode = next(
+            (item for item in self._episodes if str(item.get("id", "")) == str(episode_id)),
+            None,
+        )
+        if episode is None:
+            raise KeyError(f"unknown episode_id: {episode_id}")
+
+        current = dict(episode.get("metadata") or {})
+        candidate = {
+            **current,
+            "trust": trust,
+            "tenant": tenant,
+            "source": source,
+            "writer": writer,
+        }
+        if release_quarantine:
+            candidate["quarantined"] = False
+            candidate.pop("quarantine_reasons", None)
+        decision = self.trust_policy.ingestion_decision(candidate)
+        recall_decision = self.trust_policy.recall_decision(candidate)
+        reasons = tuple(dict.fromkeys((*decision.reasons, *recall_decision.reasons)))
+        if reasons:
+            result = {
+                "episode_id": str(episode_id), "action": "reject",
+                "reasons": list(reasons), "released": False,
+                "reviewer": str(reviewer).strip(),
+            }
+            self._trust_audit.append({"stage": "review", **result})
+            self.telemetry.emit("memory_trust_review_rejected", result)
+            return result
+
+        reviewed_at = time.time()
+        history = list(current.get("trust_review_history") or [])
+        history.append({
+            "reviewer": str(reviewer).strip(), "reviewed_at": reviewed_at,
+            "previous_trust": current.get("trust"),
+            "previous_tenant": current.get("tenant"),
+            "released_quarantine": bool(release_quarantine and current.get("quarantined")),
+        })
+        candidate["trust_review_history"] = history
+        candidate["trust_reviewed_at"] = reviewed_at
+        candidate["trust_reviewer"] = str(reviewer).strip()
+        episode["metadata"] = candidate
+        self._rewrite_jsonl(self._episodes_path, self._episodes)
+        if self.chromadb is not None:
+            try:
+                self.chromadb.update_metadata(str(episode_id), candidate)
+            except Exception as exc:
+                logger.debug("ChromaDB trust review update failed for %s: %s", episode_id, exc)
+        result = {
+            "episode_id": str(episode_id), "action": "accept", "reasons": [],
+            "released": bool(release_quarantine), "reviewer": str(reviewer).strip(),
+        }
+        self._trust_audit.append({"stage": "review", **result})
+        self.telemetry.emit("memory_trust_review_accepted", result)
+        return result
+
     def store_temporal_episode(
         self,
         text: str,

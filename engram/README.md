@@ -108,7 +108,9 @@ tenant, source, and writer metadata; rejects or quarantines unsafe ingestion;
 filters recall and external-retriever context; labels prompt evidence; and
 emits privacy-minimized diagnostics. Enforcement is opt-in for compatibility,
 but enabled policies fail closed for missing trust or tenant metadata. Engram
-does not infer trust from content. See [Memory trust policy](docs/trust_policy.md).
+does not infer trust from content. Exact-ID review supports audited legacy
+classification and explicit quarantine release; reviewer authorization remains
+the application's responsibility. See [Memory trust policy](docs/trust_policy.md).
 
 Prompt results now include `budget_diagnostics` and `retrieval_diagnostics`.
 Evidence traces retain structured episode provenance, including `episode_id`

@@ -51,6 +51,7 @@ class MemoryTrustPolicy:
     min_recall_trust: TrustLevel = TrustLevel.VERIFIED
     allowed_sources: frozenset[str] = frozenset()
     allowed_writers: frozenset[str] = frozenset()
+    tenant_aliases: frozenset[str] = frozenset()
     ingestion_violation: str = "reject"
 
     def __post_init__(self) -> None:
@@ -58,6 +59,11 @@ class MemoryTrustPolicy:
             raise ValueError("tenant_id must be non-empty")
         if self.ingestion_violation not in {"reject", "quarantine"}:
             raise ValueError("ingestion_violation must be 'reject' or 'quarantine'")
+        if any(not isinstance(alias, str) or not alias.strip() or alias != alias.strip()
+               for alias in self.tenant_aliases):
+            raise ValueError("tenant_aliases must contain non-empty normalized strings")
+        if self.tenant_id in self.tenant_aliases:
+            raise ValueError("tenant_aliases must not repeat tenant_id")
 
     def normalize_metadata(self, metadata: Mapping[str, Any] | None) -> dict[str, Any]:
         normalized = dict(metadata or {})
@@ -81,7 +87,8 @@ class MemoryTrustPolicy:
 
     def _boundary_reasons(self, meta: Mapping[str, Any], minimum: TrustLevel) -> list[str]:
         reasons: list[str] = []
-        if meta.get("tenant") != self.tenant_id:
+        authorized_tenants = {self.tenant_id, *self.tenant_aliases}
+        if meta.get("tenant") not in authorized_tenants:
             reasons.append("tenant_mismatch")
         if TrustLevel.parse(meta.get("trust")) < minimum:
             reasons.append("trust_below_minimum")
