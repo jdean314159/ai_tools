@@ -58,6 +58,12 @@ inspectable way to add memory behavior to an LLM workflow.
 
 This package is the **default** memory path and is **active and recommended**.
 
+The base installation includes ChromaDB but not Sentence Transformers. Install
+`engram[sentence-transformers]` only when local dense embeddings are required.
+That extra installs PyTorch and may resolve large CUDA runtime wheels on Linux
+even when the embedder is configured for CPU; plan cache, disk, and install time
+accordingly. Ollama embeddings avoid that Python ML dependency set.
+
 ## Responsibilities
 
 - recent/project memory storage

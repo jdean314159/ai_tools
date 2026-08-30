@@ -15,7 +15,10 @@ class SentenceTransformersEmbedder(Embedder):
             )
         self._model_name = model
         self._model = SentenceTransformer(model, device=device)
-        self._dimension = self._model.get_sentence_embedding_dimension()
+        dimension_getter = getattr(self._model, "get_embedding_dimension", None)
+        if not callable(dimension_getter):
+            dimension_getter = self._model.get_sentence_embedding_dimension
+        self._dimension = int(dimension_getter())
 
     @property
     def model_name(self) -> str:
