@@ -1,0 +1,526 @@
+{
+  "acceptance_gate": {
+    "passed": false,
+    "reference_budget_exact_output": false,
+    "relevant_composed_in_all_conditions": true,
+    "require_reference_budget_exact_output": true,
+    "require_relevant_composed_in_all_conditions": true
+  },
+  "case_count_per_condition": 9,
+  "finished_at": "2026-08-30T19:28:10.443343Z",
+  "interpretation_limit": "Nine synthetic budget-density pairs with fixed ranked retrieval; measures word-count prompt packing, not tokenizer-exact capacity or field workload prevalence.",
+  "live_call_maximum": 18,
+  "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+  "observations": [
+    {
+      "case_id": "budget_180_memories_2",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 2,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 2,
+          "inference_completed": false,
+          "ingestion_accepted_count": 2,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 29,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 71,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 2,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": true,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 1,
+          "included_memory_count": 1,
+          "inference_completed": false,
+          "ingestion_accepted_count": 2,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 76,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 105,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 2,
+      "policy_on_inclusion_delta": -1,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 180
+    },
+    {
+      "case_id": "budget_180_memories_5",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 5,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 5,
+          "inference_completed": false,
+          "ingestion_accepted_count": 5,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 68,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 114,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 5,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": true,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 4,
+          "included_memory_count": 1,
+          "inference_completed": false,
+          "ingestion_accepted_count": 5,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 188,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 105,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 5,
+      "policy_on_inclusion_delta": -4,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 180
+    },
+    {
+      "case_id": "budget_180_memories_10",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 10,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": true,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 5,
+          "included_memory_count": 5,
+          "inference_completed": false,
+          "ingestion_accepted_count": 10,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 131,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 114,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 10,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": true,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 9,
+          "included_memory_count": 1,
+          "inference_completed": false,
+          "ingestion_accepted_count": 10,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 372,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 105,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 10,
+      "policy_on_inclusion_delta": -4,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 180
+    },
+    {
+      "case_id": "budget_260_memories_2",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 2,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 2,
+          "inference_completed": false,
+          "ingestion_accepted_count": 2,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 29,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 71,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 2,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 2,
+          "inference_completed": false,
+          "ingestion_accepted_count": 2,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 76,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 145,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 2,
+      "policy_on_inclusion_delta": 0,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 260
+    },
+    {
+      "case_id": "budget_260_memories_5",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 5,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 5,
+          "inference_completed": false,
+          "ingestion_accepted_count": 5,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 68,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 114,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 5,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": true,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 2,
+          "included_memory_count": 3,
+          "inference_completed": false,
+          "ingestion_accepted_count": 5,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 188,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 185,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 5,
+      "policy_on_inclusion_delta": -2,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 260
+    },
+    {
+      "case_id": "budget_260_memories_10",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 10,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 10,
+          "inference_completed": false,
+          "ingestion_accepted_count": 10,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 131,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 183,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 10,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": true,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 7,
+          "included_memory_count": 3,
+          "inference_completed": false,
+          "ingestion_accepted_count": 10,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 372,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 185,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 10,
+      "policy_on_inclusion_delta": -7,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 260
+    },
+    {
+      "case_id": "budget_420_memories_2",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 2,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 2,
+          "inference_completed": false,
+          "ingestion_accepted_count": 2,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 29,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 71,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 2,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 2,
+          "inference_completed": false,
+          "ingestion_accepted_count": 2,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 76,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 145,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 2,
+      "policy_on_inclusion_delta": 0,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 420
+    },
+    {
+      "case_id": "budget_420_memories_5",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 5,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 5,
+          "inference_completed": false,
+          "ingestion_accepted_count": 5,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 68,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 114,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 5,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 5,
+          "inference_completed": false,
+          "ingestion_accepted_count": 5,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 188,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 263,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 5,
+      "policy_on_inclusion_delta": 0,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 420
+    },
+    {
+      "case_id": "budget_420_memories_10",
+      "conditions": {
+        "policy_off": {
+          "candidate_memory_count": 10,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": false,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 0,
+          "included_memory_count": 10,
+          "inference_completed": false,
+          "ingestion_accepted_count": 10,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 131,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 183,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        },
+        "policy_on": {
+          "candidate_memory_count": 10,
+          "citation_correct": false,
+          "composition_passed": true,
+          "compressed": true,
+          "error_type": "BackendUnavailableError",
+          "exact_output_correct": false,
+          "excluded_memory_count": 3,
+          "included_memory_count": 7,
+          "inference_completed": false,
+          "ingestion_accepted_count": 10,
+          "issue_codes": [
+            "inference_failed"
+          ],
+          "latency_ms": null,
+          "memory_starved": false,
+          "memory_tokens": 372,
+          "primary_failure_stage": "inference",
+          "prompt_tokens": 340,
+          "retrieval_passed": true,
+          "seed_status": null,
+          "value_correct": false
+        }
+      },
+      "memory_count": 10,
+      "policy_on_inclusion_delta": -3,
+      "reserve_output_tokens": 64,
+      "total_prompt_tokens": 420
+    }
+  ],
+  "oracle_or_llm_judge_used": false,
+  "pressure_observed": true,
+  "privacy": {
+    "endpoint_retained": false,
+    "raw_memories_retained": false,
+    "raw_outputs_retained": false,
+    "raw_prompts_retained": false
+  },
+  "profile": "examples.engram_trust_prompt_pressure",
+  "profile_version": 1,
+  "schema_version": 1,
+  "seed_requested": 89,
+  "started_at": "2026-08-30T19:27:46.258219Z",
+  "suite_digest": "sha256:d3abc8b69f87c9ebbb33cbe4c8743647c6203d01d81b425615b4d2483d401681",
+  "thinking_requested": false
+}

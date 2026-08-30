@@ -41,6 +41,9 @@ The work progressed through evidence rather than assuming a design:
 8. Exact-ID review now supports legacy classification, explicit tenant aliases,
    and quarantine release with persisted review history. The application remains
    responsible for reviewer authentication and authorization.
+9. Prompt-pressure validation preserved the first relevant record and exact
+   output in 18/18 paired conditions, while trust labels displaced up to four
+   otherwise accepted memories in the tested crowded contexts.
 
 Key commits, oldest to newest:
 
@@ -67,22 +70,21 @@ Key commits, oldest to newest:
 
 ## Recommended next assignment
 
-Do not extend the policy immediately. First choose one bounded validation:
+Do not extend the policy from this bounded matrix. Choose one next validation:
 
 1. Run the deferred thinking-on version of the frozen paired security profile,
    preserving all cases and scorers; or
-2. Measure trust-label prompt-budget pressure with many accepted memories and a
-   predeclared exact-answer/citation gate; or
-3. Return to the broader `ai_tools` capability inventory and select the next
+2. Return to the broader `ai_tools` capability inventory and select the next
    unvalidated package capability one at a time.
 
-The leading Engram-specific choice is prompt-budget pressure because the
-availability run measured a 37-token overhead per one-item prompt but did not
-test displacement under crowded context.
+The leading Engram-specific prompt-budget choice is complete. Do not tune the
+policy from this one synthetic matrix. The next assignment should either run
+the deferred thinking-on paired security profile unchanged or return to the
+broader capability inventory and select one unvalidated package surface.
 
 ## Verification posture
 
-The latest repository gate passed with 1,234 tests, 305 skips, and three existing
+The latest repository gate passed with 1,252 tests, 304 skips, and three existing
 multiprocessing/fork deprecation warnings. Focused trust, temporal, security, and
 availability tests also pass. Use the root invocation documented in `AGENTS.md`
 with explicit source paths and plugin autoload disabled when reproducing this

@@ -146,6 +146,18 @@ persisted history; applications must authenticate reviewers, and JSONL history
 is not tamper-evident. See `docs/projects/ENGRAM-TRUST-AVAILABILITY-2026-08-30.md`
 and `docs/projects/ENGRAM-TRUST-REVIEW-WORKFLOW-2026-08-30.md`.
 
+The follow-up trust-label prompt-pressure profile crossed three word-count
+budgets with 2, 5, and 10 fully conforming ranked memories. Its corrected live
+version passed exact value/citation in all 18 policy-off/on conditions and kept
+the first relevant record under every budget, but policy labels displaced up to
+four otherwise accepted memories. At 420 tokens, policy off/on included 10/6
+records at density ten; both included all five records at density five. The
+infrastructure-invalid version 1 and citation-asymmetric version 2 are retained
+and disclosed. See
+`docs/projects/ENGRAM-TRUST-PROMPT-PRESSURE-2026-08-30.md`.
+The subsequent repository gate passed with 1,252 tests, 304 skips, and three
+existing multiprocessing/fork deprecation warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key
