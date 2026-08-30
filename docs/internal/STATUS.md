@@ -158,6 +158,17 @@ and disclosed. See
 The subsequent repository gate passed with 1,252 tests, 304 skips, and three
 existing multiprocessing/fork deprecation warnings.
 
+Outside Engram, a six-case deterministic `agent_lib` policy/observability probe
+found that `tool_not_granted` enforced denial but was misclassified as a generic
+invocation failure in Inspector and shared interop surfaces. The failed version
+1 artifact is retained. Adding the existing code to both blocked-error
+classifications produced full policy, trace, diagnostic, warning, and critic-
+escalation parity in 6/6 corrected version-2 cases. This does not validate OS or
+container isolation, concurrent patch ownership, model planning, or UI display.
+See `docs/projects/agent_lib/AGENT-POLICY-OBSERVABILITY-2026-08-30.md`.
+The subsequent repository gate passed with 1,255 tests, 304 skips, and the same
+three multiprocessing/fork deprecation warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

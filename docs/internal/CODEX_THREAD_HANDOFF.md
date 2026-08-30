@@ -44,6 +44,9 @@ The work progressed through evidence rather than assuming a design:
 9. Prompt-pressure validation preserved the first relevant record and exact
    output in 18/18 paired conditions, while trust labels displaced up to four
    otherwise accepted memories in the tested crowded contexts.
+10. A deterministic `agent_lib` policy/observability profile exposed and then
+    corrected `tool_not_granted` block classification; the corrected profile
+    passed enforcement and signal parity in 6/6 cases.
 
 Key commits, oldest to newest:
 
@@ -77,14 +80,15 @@ Do not extend the policy from this bounded matrix. Choose one next validation:
 2. Return to the broader `ai_tools` capability inventory and select the next
    unvalidated package capability one at a time.
 
-The leading Engram-specific prompt-budget choice is complete. Do not tune the
-policy from this one synthetic matrix. The next assignment should either run
-the deferred thinking-on paired security profile unchanged or return to the
-broader capability inventory and select one unvalidated package surface.
+The Engram prompt-budget choice and the first bounded `agent_lib` policy/trace
+characterization are complete. Do not generalize the latter to OS/container
+isolation. The next assignment should either run the deferred thinking-on paired
+security profile unchanged or select another unvalidated non-Engram surface,
+with `agent_lib` command isolation or Inspector/UI replay as bounded candidates.
 
 ## Verification posture
 
-The latest repository gate passed with 1,252 tests, 304 skips, and three existing
+The latest repository gate passed with 1,255 tests, 304 skips, and three existing
 multiprocessing/fork deprecation warnings. Focused trust, temporal, security, and
 availability tests also pass. Use the root invocation documented in `AGENTS.md`
 with explicit source paths and plugin autoload disabled when reproducing this

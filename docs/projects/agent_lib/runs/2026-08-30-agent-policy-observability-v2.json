@@ -1,0 +1,140 @@
+{
+  "acceptance_gate": {
+    "common_trace_events": true,
+    "expected_policy_outcomes": true,
+    "passed": true,
+    "require_common_trace_events": true,
+    "require_expected_policy_outcomes": true,
+    "require_signal_parity": true,
+    "signal_parity": true
+  },
+  "case_count": 6,
+  "finished_at": "2026-08-30T19:42:49.537713Z",
+  "interpretation_limit": "Six deterministic native-runtime cases; tests policy and shared-observability parity, not OS/container isolation or model planning quality.",
+  "model_used": false,
+  "observations": [
+    {
+      "approval_interop": false,
+      "approval_trace": false,
+      "blocked_interop": true,
+      "blocked_trace": true,
+      "case_id": "tool_not_granted",
+      "common_trace_complete": true,
+      "escalation_summary": false,
+      "escalation_trace": false,
+      "expected_error": "tool_not_granted",
+      "expected_signal": "blocked",
+      "observed_error": "tool_not_granted",
+      "signal_complete": true,
+      "tool_success": false,
+      "warning_codes": [
+        "agent_tool_failure",
+        "tool_execution_blocked"
+      ]
+    },
+    {
+      "approval_interop": false,
+      "approval_trace": false,
+      "blocked_interop": true,
+      "blocked_trace": true,
+      "case_id": "path_escape",
+      "common_trace_complete": true,
+      "escalation_summary": false,
+      "escalation_trace": false,
+      "expected_error": "path_escape",
+      "expected_signal": "blocked",
+      "observed_error": "path_escape",
+      "signal_complete": true,
+      "tool_success": false,
+      "warning_codes": [
+        "agent_tool_failure",
+        "tool_execution_blocked"
+      ]
+    },
+    {
+      "approval_interop": false,
+      "approval_trace": false,
+      "blocked_interop": true,
+      "blocked_trace": true,
+      "case_id": "write_denied",
+      "common_trace_complete": true,
+      "escalation_summary": false,
+      "escalation_trace": false,
+      "expected_error": "write_denied",
+      "expected_signal": "blocked",
+      "observed_error": "write_denied",
+      "signal_complete": true,
+      "tool_success": false,
+      "warning_codes": [
+        "agent_tool_failure",
+        "tool_execution_blocked"
+      ]
+    },
+    {
+      "approval_interop": false,
+      "approval_trace": false,
+      "blocked_interop": true,
+      "blocked_trace": true,
+      "case_id": "command_denied",
+      "common_trace_complete": true,
+      "escalation_summary": false,
+      "escalation_trace": false,
+      "expected_error": "command_denied",
+      "expected_signal": "blocked",
+      "observed_error": "command_denied",
+      "signal_complete": true,
+      "tool_success": false,
+      "warning_codes": [
+        "agent_tool_failure",
+        "tool_execution_blocked"
+      ]
+    },
+    {
+      "approval_interop": true,
+      "approval_trace": true,
+      "blocked_interop": false,
+      "blocked_trace": false,
+      "case_id": "approval_required",
+      "common_trace_complete": true,
+      "escalation_summary": false,
+      "escalation_trace": false,
+      "expected_error": null,
+      "expected_signal": "approval",
+      "observed_error": null,
+      "signal_complete": true,
+      "tool_success": true,
+      "warning_codes": [
+        "tool_approval_required"
+      ]
+    },
+    {
+      "approval_interop": false,
+      "approval_trace": false,
+      "blocked_interop": false,
+      "blocked_trace": false,
+      "case_id": "objective_failure",
+      "common_trace_complete": true,
+      "escalation_summary": true,
+      "escalation_trace": true,
+      "expected_error": "verification_mismatch",
+      "expected_signal": "escalation",
+      "observed_error": "verification_mismatch",
+      "signal_complete": true,
+      "tool_success": false,
+      "warning_codes": [
+        "agent_tool_failure",
+        "tool_invocation_failed"
+      ]
+    }
+  ],
+  "privacy": {
+    "environment_retained": false,
+    "raw_tool_outputs_retained": false,
+    "workspace_paths_retained": false
+  },
+  "profile": "examples.agent_policy_observability",
+  "profile_version": 2,
+  "schema_version": 1,
+  "started_at": "2026-08-30T19:42:49.536329Z",
+  "suite_digest": "sha256:3f24e6684ff527f8a267cc782fc7907788870a1857906788b5ec8991a408da75"
+}

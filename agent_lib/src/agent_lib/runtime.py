@@ -93,7 +93,7 @@ def _merge_execution_observation(summary: dict[str, Any], observation: AgentObse
         "policy_reason": meta.get("policy_reason"),
         "returncode": meta.get("returncode"),
     }
-    blocked_errors = {"policy_violation", "invalid_arguments", "invalid_path", "path_escape", "write_denied", "ownership_denied", "command_denied", "sandbox_unavailable", "invalid_sandbox_backend"}
+    blocked_errors = {"policy_violation", "tool_not_granted", "invalid_arguments", "invalid_path", "path_escape", "write_denied", "ownership_denied", "command_denied", "sandbox_unavailable", "invalid_sandbox_backend"}
     blocked = str(meta.get("error") or "") in blocked_errors
     degraded = bool(meta.get("sandbox_fallback_used"))
     approval = bool(meta.get("approval_required"))
@@ -269,7 +269,7 @@ class InspectorTraceEmitter:
                     tags.append("policy")
                 if observation.tool_result.meta.get("sandbox_fallback_used"):
                     tags.append("degraded")
-                blocked_errors = {"policy_violation", "invalid_arguments", "invalid_path", "path_escape", "write_denied", "ownership_denied", "command_denied", "sandbox_unavailable", "invalid_sandbox_backend"}
+                blocked_errors = {"policy_violation", "tool_not_granted", "invalid_arguments", "invalid_path", "path_escape", "write_denied", "ownership_denied", "command_denied", "sandbox_unavailable", "invalid_sandbox_backend"}
                 if str(observation.tool_result.meta.get("error") or "") in blocked_errors:
                     severity = "warning"
                     tags.append("blocked")

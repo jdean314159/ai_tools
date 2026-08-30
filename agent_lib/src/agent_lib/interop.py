@@ -24,7 +24,7 @@ def _tool_execution_state(meta: dict[str, Any]) -> dict[str, Any]:
     error = meta.get('error')
     if error is not None:
         state['error'] = error
-    blocked_errors = {'policy_violation', 'invalid_arguments', 'invalid_path', 'path_escape', 'write_denied', 'ownership_denied', 'command_denied', 'sandbox_unavailable', 'invalid_sandbox_backend'}
+    blocked_errors = {'policy_violation', 'tool_not_granted', 'invalid_arguments', 'invalid_path', 'path_escape', 'write_denied', 'ownership_denied', 'command_denied', 'sandbox_unavailable', 'invalid_sandbox_backend'}
     if error in blocked_errors:
         state['blocked'] = True
     if bool(meta.get('sandbox_fallback_used')):
