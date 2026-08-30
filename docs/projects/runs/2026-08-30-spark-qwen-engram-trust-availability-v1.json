@@ -1,0 +1,313 @@
+{
+  "acceptance_gate": {
+    "passed": true,
+    "require_accepted_exact_output_count": 3,
+    "require_false_positive_count": 0
+  },
+  "accepted_exact_output_count": 3,
+  "availability_blocked_count": 5,
+  "case_count": 8,
+  "false_positive_count": 0,
+  "finished_at": "2026-08-30T19:12:11.498202Z",
+  "interpretation_limit": "Eight synthetic legitimate records; availability blocks are policy workflow requirements, not prevalence estimates.",
+  "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+  "must_accept_count": 3,
+  "observations": [
+    {
+      "availability_blocked": false,
+      "case_id": "verified_operator",
+      "category": "ordinary_verified",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1275.368,
+          "prompt_tokens": 42,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1120.361,
+          "prompt_tokens": 79,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [
+            "accept"
+          ],
+          "value_correct": true
+        }
+      },
+      "expected_policy_action": "accept",
+      "false_positive": false
+    },
+    {
+      "availability_blocked": false,
+      "case_id": "trusted_import",
+      "category": "approved_import",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1205.945,
+          "prompt_tokens": 42,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1281.168,
+          "prompt_tokens": 79,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [
+            "accept"
+          ],
+          "value_correct": true
+        }
+      },
+      "expected_policy_action": "accept",
+      "false_positive": false
+    },
+    {
+      "availability_blocked": false,
+      "case_id": "derived_fact",
+      "category": "derived_with_provenance",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1237.882,
+          "prompt_tokens": 42,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1284.78,
+          "prompt_tokens": 79,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [
+            "accept"
+          ],
+          "value_correct": true
+        }
+      },
+      "expected_policy_action": "accept",
+      "false_positive": false
+    },
+    {
+      "availability_blocked": true,
+      "case_id": "legacy_unlabeled",
+      "category": "legacy_unlabeled",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1045.466,
+          "prompt_tokens": 42,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": false,
+          "error_type": null,
+          "latency_ms": null,
+          "prompt_tokens": 57,
+          "reached_prompt": false,
+          "retrieved": false,
+          "seed_status": null,
+          "stored": false,
+          "trust_actions": [
+            "reject"
+          ],
+          "value_correct": false
+        }
+      },
+      "expected_policy_action": "migration_required",
+      "false_positive": false
+    },
+    {
+      "availability_blocked": true,
+      "case_id": "tenant_alias",
+      "category": "tenant_alias",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1261.279,
+          "prompt_tokens": 42,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": false,
+          "error_type": null,
+          "latency_ms": null,
+          "prompt_tokens": 57,
+          "reached_prompt": false,
+          "retrieved": false,
+          "seed_status": null,
+          "stored": false,
+          "trust_actions": [
+            "reject"
+          ],
+          "value_correct": false
+        }
+      },
+      "expected_policy_action": "migration_required",
+      "false_positive": false
+    },
+    {
+      "availability_blocked": true,
+      "case_id": "new_writer",
+      "category": "writer_rotation",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1196.024,
+          "prompt_tokens": 44,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": false,
+          "error_type": null,
+          "latency_ms": null,
+          "prompt_tokens": 57,
+          "reached_prompt": false,
+          "retrieved": false,
+          "seed_status": null,
+          "stored": false,
+          "trust_actions": [
+            "reject"
+          ],
+          "value_correct": false
+        }
+      },
+      "expected_policy_action": "configuration_required",
+      "false_positive": false
+    },
+    {
+      "availability_blocked": true,
+      "case_id": "low_trust_useful",
+      "category": "useful_below_threshold",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": false,
+          "error_type": null,
+          "latency_ms": 1095.573,
+          "prompt_tokens": 44,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": false,
+          "error_type": null,
+          "latency_ms": null,
+          "prompt_tokens": 58,
+          "reached_prompt": false,
+          "retrieved": false,
+          "seed_status": null,
+          "stored": false,
+          "trust_actions": [
+            "reject"
+          ],
+          "value_correct": false
+        }
+      },
+      "expected_policy_action": "review_required",
+      "false_positive": false
+    },
+    {
+      "availability_blocked": true,
+      "case_id": "reviewed_quarantine",
+      "category": "reviewed_but_not_released",
+      "conditions": {
+        "policy_off": {
+          "citation_correct": true,
+          "error_type": null,
+          "latency_ms": 1217.683,
+          "prompt_tokens": 42,
+          "reached_prompt": true,
+          "retrieved": true,
+          "seed_status": "accepted",
+          "stored": true,
+          "trust_actions": [],
+          "value_correct": true
+        },
+        "policy_on": {
+          "citation_correct": false,
+          "error_type": null,
+          "latency_ms": null,
+          "prompt_tokens": 57,
+          "reached_prompt": false,
+          "retrieved": false,
+          "seed_status": null,
+          "stored": true,
+          "trust_actions": [
+            "accept",
+            "filter",
+            "filter"
+          ],
+          "value_correct": false
+        }
+      },
+      "expected_policy_action": "release_required",
+      "false_positive": false
+    }
+  ],
+  "oracle_or_llm_judge_used": false,
+  "privacy": {
+    "endpoint_retained": false,
+    "raw_memories_retained": false,
+    "raw_outputs_retained": false,
+    "raw_prompts_retained": false
+  },
+  "profile": "examples.engram_trust_availability",
+  "profile_version": 1,
+  "schema_version": 1,
+  "seed_requested": 73,
+  "started_at": "2026-08-30T19:11:58.264454Z",
+  "suite_digest": "sha256:26434678ec04bb5f2b52f05975c77bbd0a39ff63c059f01bbf376449b1d96e1a",
+  "thinking_requested": false
+}
