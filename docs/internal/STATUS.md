@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-08-29
+Last updated: 2026-08-30
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -13,7 +13,10 @@ builds ordinary wheels from this checkout, so the split does not imply PyPI
 publication. NAV-VERIFIABLE-00 remains complete
 with a frozen `inconclusive` verdict; NAV-TEST-00 remains an autonomous
 navigation failure. Mail-assistant adoption is closed, and neural memory
-remains parked and output-isolated.**
+remains parked and output-isolated. Engram temporal reliability, persistent
+memory trust enforcement, live security/availability characterization, and the
+audited review workflow are complete; the next Engram experiment is not yet
+selected.**
 
 For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
@@ -75,6 +78,73 @@ The stop also exposed that mixed-family eligibility cannot sensibly rely on
 repeating one identical temperature-zero, same-seed case. Any replacement
 development plan must use multiple predeclared variants per family and keep
 repeatability separate from difficulty headroom.
+
+The replacement version-4 thinking-off development stage used five distinct,
+predeclared variants in each of the six families. It passed 28/30 overall, but
+five families remained at 5/5 and only `stale_success` showed family-level
+headroom at 3/5. The frozen gate required at least three eligible families, so
+advancement stopped. No evaluation suite or thinking-on run exists. The run,
+artifact digest, privacy boundary, and exact stopping decision are recorded in
+`docs/projects/llm_engines/TOOL-RECOVERY-V4-DEVELOPMENT-2026-08-30.md`.
+
+### Latest completed work — memory/inspection composition
+
+Engram temporal reliability and memory-test attribution were extended on
+2026-08-30. Explicit `store_temporal_episode(...)` calls now retain version
+history with supersession/retraction metadata while current-state retrieval
+suppresses superseded predecessors. Prompt compression packs ranked items
+instead of dropping whole memory layers, and prompt/search results expose
+structured provenance, budget starvation, exclusions, and temporal conflict
+diagnostics. `llm_harness_core` adds deterministic storage → retrieval →
+composition → inference → scoring attribution with privacy-minimized artifacts;
+Engram provides the adapter. Existing topic replacement remains compatible and
+semantic contradiction is not claimed. A paired live validation then found
+obsolete evidence in 3/3 legacy current prompts and 0/3 temporal prompts while
+preserving exact answers and historical recall. Cold reopen with cached MiniLM
+and real ChromaDB subsequently passed current filtering, historical retrieval,
+prompt provenance, and persisted metadata in 3/3 timelines. The repository gate
+passed at 1,240 tests with 292 skips. See
+`docs/projects/ENGRAM-TEMPORAL-AND-MEMORY-EVAL-2026-08-30.md`.
+
+A five-case synthetic composition experiment exercised the remote llama.cpp
+engine with Engram memory and Inspector evidence traces. All five baselines
+safely returned unknown. In every memory condition Inspector showed both a
+current fact and an explicit superseded distractor in the prompt; the model
+returned the current value and cited the relevant synthetic memory ID in all
+five cases, with no distractor use. This is a bounded 5/5 composition result,
+not a general memory-quality claim. Version 1 produced no retained result due
+to an interruption and then an artifact-directory defect; the sole disclosed
+version-2 retry is frozen in
+`docs/projects/MEMORY-INSPECTION-COMPOSITION-2026-08-30.md`.
+
+The next Engram gate exercised cached `all-MiniLM-L6-v2` embeddings on CPU,
+ChromaDB, hybrid fusion, and retrieval telemetry across five synthetic cases.
+Hybrid retrieval used vector search and ranked the current relevant memory
+ahead of an explicit superseded conflict in 5/5 cases; text-only retrieval did
+so in 2/5, while both recalled the relevant item in the top three in 5/5.
+This bounded result is frozen in
+`docs/projects/ENGRAM-VECTOR-RETRIEVAL-2026-08-30.md`.
+
+Engram's persistent-memory trust boundary is now implemented and validated.
+The original five-family probe showed untrusted content reaching storage,
+retrieval, and prompts in 5/5 cases even though the model resisted compromise.
+The opt-in policy now enforces application-assigned trust, tenant, source, and
+writer metadata at ingestion, retrieval, and composition. In the final paired
+DGX Spark run, policy-on reduced poison storage, retrieval, and prompt inclusion
+to 0/5 while preserving exact values and evidence citations in 5/5 cases. The
+failed intermediate citation runs are retained and disclosed; they led to the
+addition of `evidence_id` in visible prompt provenance. See
+`docs/projects/ENGRAM-TRUST-POLICY-LIVE-VALIDATION-2026-08-30.md`.
+
+A separate legitimate-memory availability probe observed 0/3 unexpected
+rejections among fully conforming records, but confirmed five operational
+blocks involving legacy metadata, aliases, writer rotation, low-trust review,
+and quarantine release. Accepted one-item prompts incurred approximately 37
+word-count tokens of policy/provenance overhead. Exact-ID review now supports
+legacy classification, explicit tenant aliases, and quarantine release with
+persisted history; applications must authenticate reviewers, and JSONL history
+is not tamper-evident. See `docs/projects/ENGRAM-TRUST-AVAILABILITY-2026-08-30.md`
+and `docs/projects/ENGRAM-TRUST-REVIEW-WORKFLOW-2026-08-30.md`.
 
 ### Active project — RUN-RECORD-00
 
