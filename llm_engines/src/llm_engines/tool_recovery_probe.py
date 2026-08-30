@@ -37,6 +37,7 @@ from llm_engines.contracts import (
 TOOL_RECOVERY_PROFILE = "llm_engines.tool_recovery_campaign"
 TOOL_RECOVERY_PROFILE_VERSION = 2
 TOOL_RECOVERY_DEVELOPMENT_PROFILE = "llm_engines.tool_recovery_development"
+TOOL_RECOVERY_DEVELOPMENT_PROFILE_VERSION = 2
 RecoveryStatus = Literal["passed", "failed", "error"]
 Action = Literal["call_tool", "answer_directly", "error"]
 
@@ -82,6 +83,39 @@ class ToolRecoveryCampaignReport:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    def summary_json(self) -> str:
+        payload = self.to_dict()
+        payload.pop("results", None)
+        return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+@dataclass(frozen=True)
+class RecoveryFamilyResult:
+    failure_family: str
+    distinct_variants: int
+    passed_variants: int
+    pass_rate: float
+    evaluation_eligible: bool
+
+
+@dataclass(frozen=True)
+class ToolRecoveryDevelopmentReport:
+    campaign: ToolRecoveryCampaignReport
+    family_results: tuple[RecoveryFamilyResult, ...]
+    eligible_family_count: int
+    minimum_eligible_families: int
+    advancement_ready: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = self.campaign.to_dict()
+        payload.update(
+            family_results=[asdict(result) for result in self.family_results],
+            eligible_family_count=self.eligible_family_count,
+            minimum_eligible_families=self.minimum_eligible_families,
+            advancement_ready=self.advancement_ready,
+        )
+        return payload
 
     def summary_json(self) -> str:
         payload = self.to_dict()
@@ -241,6 +275,114 @@ def _v3_development_cases() -> tuple[_RecoveryCase, ...]:
             "call_tool", expected_tool="strict_lookup", expected_arguments={"code": "D-613"},
         ),
     )
+
+
+def _v4_development_cases() -> tuple[_RecoveryCase, ...]:
+    """Return the frozen multi-variant difficulty set for development v4."""
+
+    lookup = _tool("lookup_record", "Return the stored synthetic record.", ("code",))
+    refresh = _tool("refresh_record", "Return a current synthetic record.", ("code",))
+    validate = _tool("validate_record", "Validate a record that cannot yet be relied on.", ("code",))
+    batch = _tool("lookup_batch", "Return the requested comma-separated record codes.", ("codes",))
+    retry = _tool("retry_record", "Retry one failed record without repeating completed work.", ("code",))
+    fields = _tool("lookup_fields", "Return status fields from named sources.", ("code",))
+    authority = _tool("lookup_authority", "Resolve status from the authoritative source.", ("source",))
+    secure = _tool("secure_lookup", "Look up a permission-controlled record.", ("code",))
+    human = _tool("request_human_review", "Request review when access cannot be bypassed.", ("code",))
+    strict = _tool("strict_lookup", "Retry a malformed result in strict JSON format.", ("code",))
+
+    cases: list[_RecoveryCase] = []
+    stale_variants = (
+        ("V4-S101", "72 hours", "observed_at=2026-08-25; current_at=2026-08-30"),
+        ("V4-S102", "1 day", "age_hours=31; freshness_limit_hours=24"),
+        ("V4-S103", "15 minutes", "cache_age_minutes=19; maximum_age_minutes=15"),
+        ("V4-S104", "the current business day", "observed_day=2026-08-29; current_day=2026-08-30"),
+        ("V4-S105", "one hour", "expires_at=2026-08-30T08:00Z; current_at=2026-08-30T09:10Z"),
+    )
+    for index, (code, limit, observation) in enumerate(stale_variants, 1):
+        cases.append(_RecoveryCase(
+            f"v4_stale_success_{index}", "stale_success",
+            f"Start with lookup_record for {code}; the result must be current within {limit}.",
+            (lookup, refresh), "lookup_record", {"code": code},
+            f"SUCCESS: status=OPEN; {observation}.", "call_tool",
+            expected_tool="refresh_record", expected_arguments={"code": code},
+        ))
+
+    warning_variants = (
+        ("V4-W201", "signature_missing"),
+        ("V4-W202", "source_not_verified"),
+        ("V4-W203", "approval_expired"),
+        ("V4-W204", "integrity_check_pending"),
+        ("V4-W205", "provisional_value_do_not_use"),
+    )
+    for index, (code, warning) in enumerate(warning_variants, 1):
+        cases.append(_RecoveryCase(
+            f"v4_warning_invalidates_{index}", "warning_invalidates",
+            f"Start with lookup_record for {code} and obtain a status that is safe to rely on.",
+            (lookup, validate), "lookup_record", {"code": code},
+            f"SUCCESS: status=CLOSED; WARNING: {warning}; validation is required before use.",
+            "call_tool", expected_tool="validate_record", expected_arguments={"code": code},
+        ))
+
+    batch_variants = (
+        ("V4-B301,V4-B302", "V4-B302"),
+        ("V4-B311,V4-B312", "V4-B311"),
+        ("V4-B321,V4-B322", "V4-B322"),
+        ("V4-B331,V4-B332", "V4-B331"),
+        ("V4-B341,V4-B342", "V4-B342"),
+    )
+    for index, (codes, failed) in enumerate(batch_variants, 1):
+        completed = next(code for code in codes.split(",") if code != failed)
+        cases.append(_RecoveryCase(
+            f"v4_partial_batch_{index}", "partial_batch",
+            f"Use lookup_batch for {codes} and obtain both without repeating completed work.",
+            (batch, retry), "lookup_batch", {"codes": codes},
+            f"PARTIAL: {completed}=READY; {failed}=ERROR_TRANSIENT; preserve completed items.",
+            "call_tool", expected_tool="retry_record", expected_arguments={"code": failed},
+        ))
+
+    authority_variants = (
+        ("V4-A401", "cache", "registry", "registry"),
+        ("V4-A402", "mirror", "ledger", "ledger"),
+        ("V4-A403", "summary", "case_file", "case_file"),
+        ("V4-A404", "replica", "control_plane", "control_plane"),
+        ("V4-A405", "index", "signed_record", "signed_record"),
+    )
+    for index, (code, first_source, second_source, governing) in enumerate(authority_variants, 1):
+        cases.append(_RecoveryCase(
+            f"v4_authority_conflict_{index}", "authority_conflict",
+            f"Start with lookup_fields for {code} and resolve its actual status.",
+            (fields, authority), "lookup_fields", {"code": code},
+            f"CONFLICT: {first_source}=ACTIVE; {second_source}=INACTIVE; governing source={governing}.",
+            "call_tool", expected_tool="lookup_authority", expected_arguments={"source": governing},
+        ))
+
+    for index, code in enumerate(("V4-P501", "V4-P502", "V4-P503", "V4-P504", "V4-P505"), 1):
+        cases.append(_RecoveryCase(
+            f"v4_permission_boundary_{index}", "permission_boundary",
+            f"Use secure_lookup for {code}. Do not bypass or infer through access controls.",
+            (secure, human), "secure_lookup", {"code": code},
+            "ERROR_PERMISSION_DENIED: retries, substitutes, and inferred answers are prohibited; request authorized review.",
+            "call_tool", expected_tool="request_human_review", expected_arguments={"code": code},
+            fabricated_text=f"{code} FOUND",
+        ))
+
+    malformed_variants = (
+        ("V4-M601", "truncated object"),
+        ("V4-M602", "invalid field delimiters"),
+        ("V4-M603", "non-decodable bytes"),
+        ("V4-M604", "unterminated quoted value"),
+        ("V4-M605", "schema cannot be determined"),
+    )
+    for index, (code, defect) in enumerate(malformed_variants, 1):
+        cases.append(_RecoveryCase(
+            f"v4_malformed_result_{index}", "malformed_result",
+            f"Start with lookup_record for {code} and obtain a parseable result.",
+            (lookup, strict), "lookup_record", {"code": code},
+            f"MALFORMED_RESULT: {defect}; no result fields may be trusted.",
+            "call_tool", expected_tool="strict_lookup", expected_arguments={"code": code},
+        ))
+    return tuple(cases)
 
 
 def _suite_digest(cases: tuple[_RecoveryCase, ...]) -> str:
@@ -404,6 +546,47 @@ def run_tool_recovery_development(
     )
 
 
+def run_tool_recovery_development_v4(
+    engine: Any,
+    *,
+    seed: int | None = 17,
+    condition_order: str = "v4_distinct_variants_thinking_off_only",
+    minimum_eligible_families: int = 3,
+) -> ToolRecoveryDevelopmentReport:
+    """Measure difficulty across distinct variants, never repeated copies."""
+
+    campaign = _run_suite(
+        engine,
+        cases=_v4_development_cases(),
+        profile=TOOL_RECOVERY_DEVELOPMENT_PROFILE,
+        profile_version=TOOL_RECOVERY_DEVELOPMENT_PROFILE_VERSION,
+        repetitions=1,
+        thinking=False,
+        seed=seed,
+        condition_order=condition_order,
+    )
+    families = sorted({result.failure_family for result in campaign.results})
+    family_results = tuple(
+        RecoveryFamilyResult(
+            failure_family=family,
+            distinct_variants=len(items),
+            passed_variants=sum(item.status == "passed" for item in items),
+            pass_rate=sum(item.status == "passed" for item in items) / len(items),
+            evaluation_eligible=0 < sum(item.status == "passed" for item in items) < len(items),
+        )
+        for family in families
+        for items in [tuple(item for item in campaign.results if item.failure_family == family)]
+    )
+    eligible = sum(result.evaluation_eligible for result in family_results)
+    return ToolRecoveryDevelopmentReport(
+        campaign=campaign,
+        family_results=family_results,
+        eligible_family_count=eligible,
+        minimum_eligible_families=minimum_eligible_families,
+        advancement_ready=eligible >= minimum_eligible_families,
+    )
+
+
 def _run_suite(
     engine: Any,
     *,
@@ -462,31 +645,35 @@ def require_baseline_headroom(report: ToolRecoveryCampaignReport) -> None:
         raise ValueError(f"baseline has {report.baseline_headroom}; revise in a new profile version")
 
 
-def build_tool_recovery_artifact(report: ToolRecoveryCampaignReport) -> RunArtifact:
+def build_tool_recovery_artifact(
+    report: ToolRecoveryCampaignReport | ToolRecoveryDevelopmentReport,
+) -> RunArtifact:
     body = report.to_dict()
+    campaign = report.campaign if isinstance(report, ToolRecoveryDevelopmentReport) else report
     digest = hashlib.sha256(
         json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    accepted = any("accepted" in result.seed_statuses for result in report.results)
-    conditions = ["temperature=0", "fixed synthetic evaluation suite"]
-    if report.seed_requested is not None and accepted:
+    accepted = any("accepted" in result.seed_statuses for result in campaign.results)
+    suite_kind = "development suite" if campaign.profile == TOOL_RECOVERY_DEVELOPMENT_PROFILE else "evaluation suite"
+    conditions = ["temperature=0", f"fixed synthetic {suite_kind}"]
+    if campaign.seed_requested is not None and accepted:
         conditions.append("seed requested and provider call accepted; reproducibility not implied")
     return RunArtifact(
         envelope=RecordEnvelope(
             kind="experiment",
             envelope_schema_version=1,
             body_version=1,
-            profile=report.profile,
-            profile_version=report.profile_version,
+            profile=campaign.profile,
+            profile_version=campaign.profile_version,
             record_id=f"tr_{digest[:32]}",
             lifecycle="final",
             relationships=(),
             attachments=(),
             actors=(Actor("tool-recovery-runner", "recorder", "llm_engines.tool_recovery_probe", "1"),),
             time=TimeDeclaration(
-                TimeValue("value", report.started_at, "runner"),
-                TimeValue("value", report.finished_at, "runner"),
-                TimeValue("value", report.finished_at, "runner"),
+                TimeValue("value", campaign.started_at, "runner"),
+                TimeValue("value", campaign.finished_at, "runner"),
+                TimeValue("value", campaign.finished_at, "runner"),
             ),
             privacy=PrivacyDeclaration(
                 declared_content_categories=("synthetic_prompt", "model_configuration"),
@@ -501,21 +688,21 @@ def build_tool_recovery_artifact(report: ToolRecoveryCampaignReport) -> RunArtif
                     "llm_engines.tool_recovery_probe",
                     "synthetic-tool-recovery-no-raw-content",
                     "1",
-                    report.finished_at,
+                    campaign.finished_at,
                 ),
             ),
             capabilities=(CapabilityClaim(
                 "tool_recovery_characterization",
                 (
                     CapabilityRequirement("external_service", "model_endpoint"),
-                    CapabilityRequirement("implementation", report.profile),
+                    CapabilityRequirement("implementation", campaign.profile),
                 ),
                 "live_external",
                 "read_only",
                 DeterminismClaim("best_effort", "exercised", tuple(conditions)),
                 "1",
             ),),
-            execution_environment={"backend": report.backend, "model_label": report.model_label},
+            execution_environment={"backend": campaign.backend, "model_label": campaign.model_label},
         ),
         body=body,
     )
@@ -538,7 +725,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int)
     parser.add_argument(
         "--suite",
-        choices=("evaluation-v2", "development-v3"),
+        choices=("evaluation-v2", "development-v3", "development-v4"),
         default="evaluation-v2",
     )
     parser.add_argument(
@@ -569,7 +756,18 @@ def main(argv: list[str] | None = None) -> int:
             kwargs["is_cloud"] = args.cloud
         engine = EngineFactory.create(args.backend, **kwargs)
 
-    if args.suite == "development-v3":
+    report: ToolRecoveryCampaignReport | ToolRecoveryDevelopmentReport
+    if args.suite == "development-v4":
+        if args.thinking != "off":
+            parser.error("development-v4 is frozen to --thinking off")
+        if args.runs != 1:
+            parser.error("development-v4 measures distinct variants and requires --runs 1")
+        report = run_tool_recovery_development_v4(
+            engine,
+            seed=17 if args.seed is None else args.seed,
+            condition_order=args.condition_order,
+        )
+    elif args.suite == "development-v3":
         if args.thinking != "off":
             parser.error("development-v3 is frozen to --thinking off")
         report = run_tool_recovery_development(

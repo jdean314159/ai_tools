@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
 
 import pytest
 from llm_harness_core import artifact_from_dict, artifact_to_dict
@@ -20,6 +21,7 @@ from llm_engines.tool_recovery_probe import (
     build_tool_recovery_artifact,
     require_baseline_headroom,
     run_tool_recovery_development,
+    run_tool_recovery_development_v4,
     run_tool_recovery_pilot,
 )
 
@@ -110,6 +112,46 @@ class DevelopmentEngine(RecoveryEngine):
         return _response(text="unexpected", seed_status=seed_status)
 
 
+class MultiVariantDevelopmentEngine(RecoveryEngine):
+    def __init__(self, *, fail_variant_five=False):
+        self.fail_variant_five = fail_variant_five
+
+    def generate_with_tools(self, request, available_tools):
+        seed_status = "accepted" if request.seed is not None else "not_requested"
+        first = request.messages[0].content or ""
+        latest = request.messages[-1].content or ""
+        code = re.search(r"V4-[A-Z]\d{3}", first)
+        assert code is not None
+        code_value = code.group(0)
+        if request.messages[-1].role == "user":
+            names = {tool.name for tool in available_tools}
+            if "lookup_batch" in names:
+                codes = re.search(r"V4-B\d{3},V4-B\d{3}", first)
+                assert codes is not None
+                return _response(tool="lookup_batch", arguments={"codes": codes.group(0)}, seed_status=seed_status)
+            initial = "lookup_fields" if "lookup_fields" in names else "secure_lookup" if "secure_lookup" in names else "lookup_record"
+            return _response(tool=initial, arguments={"code": code_value}, seed_status=seed_status)
+
+        fifth_variant_codes = {"V4-S105", "V4-W205", "V4-B341", "V4-A405", "V4-P505", "V4-M605"}
+        if self.fail_variant_five and code_value in fifth_variant_codes:
+            return _response(text="unable to recover", seed_status=seed_status)
+        if "ERROR_TRANSIENT" in latest:
+            failed = re.search(r"(V4-B\d{3})=ERROR_TRANSIENT", latest)
+            assert failed is not None
+            return _response(tool="retry_record", arguments={"code": failed.group(1)}, seed_status=seed_status)
+        if "governing source=" in latest:
+            source = re.search(r"governing source=([a-z_]+)", latest)
+            assert source is not None
+            return _response(tool="lookup_authority", arguments={"source": source.group(1)}, seed_status=seed_status)
+        recovery_tool = (
+            "refresh_record" if "SUCCESS: status=OPEN" in latest
+            else "validate_record" if "WARNING:" in latest
+            else "request_human_review" if "ERROR_PERMISSION_DENIED" in latest
+            else "strict_lookup"
+        )
+        return _response(tool=recovery_tool, arguments={"code": code_value}, seed_status=seed_status)
+
+
 def test_perfect_baseline_is_ceiling_and_cannot_open_comparison_gate():
     report = run_tool_recovery_pilot(RecoveryEngine(), repetitions=2, seed=0)
 
@@ -130,6 +172,45 @@ def test_v3_development_suite_is_separate_and_thinking_off():
     assert report.thinking_requested is False
     assert report.seed_requested == 11
     assert report.primary_pass_rate == 1.0
+
+
+def test_v4_development_measures_five_distinct_variants_per_family():
+    report = run_tool_recovery_development_v4(MultiVariantDevelopmentEngine())
+
+    assert report.campaign.profile == TOOL_RECOVERY_DEVELOPMENT_PROFILE
+    assert report.campaign.profile_version == 2
+    assert report.campaign.repetitions == 1
+    assert report.campaign.cases_per_run == 30
+    assert report.campaign.thinking_requested is False
+    assert report.campaign.seed_requested == 17
+    assert len({result.case_id for result in report.campaign.results}) == 30
+    assert {result.distinct_variants for result in report.family_results} == {5}
+    assert report.eligible_family_count == 0
+    assert report.advancement_ready is False
+
+
+def test_v4_eligibility_uses_cross_variant_outcomes():
+    report = run_tool_recovery_development_v4(
+        MultiVariantDevelopmentEngine(fail_variant_five=True)
+    )
+
+    assert {result.passed_variants for result in report.family_results} == {4}
+    assert {result.pass_rate for result in report.family_results} == {0.8}
+    assert all(result.evaluation_eligible for result in report.family_results)
+    assert report.eligible_family_count == 6
+    assert report.advancement_ready is True
+
+
+def test_v4_artifact_retains_aggregate_variant_results_not_raw_cases():
+    report = run_tool_recovery_development_v4(MultiVariantDevelopmentEngine())
+    artifact = artifact_from_dict(artifact_to_dict(build_tool_recovery_artifact(report)))
+    encoded = json.dumps(artifact.body)
+
+    assert artifact.envelope.profile == TOOL_RECOVERY_DEVELOPMENT_PROFILE
+    assert artifact.envelope.profile_version == 2
+    assert artifact.body["eligible_family_count"] == 0
+    assert "V4-S101" not in encoded
+    assert "current_at=" not in encoded
 
 
 def test_mixed_baseline_has_headroom():
@@ -188,8 +269,18 @@ def test_committed_recovery_artifacts_match_pinned_bytes_and_privacy():
             "9c2405cc7903b1b4c52a807851d3ab316f7645b229965bb04ce2c57818315009",
         "2026-08-29-spark-qwen-tool-recovery-v3-development-v1.json":
             "8e8386f483c98856a406d8d95bbee304946220fe4fdee64839556941771293c8",
+        "2026-08-30-spark-qwen-tool-recovery-v4-development-v1.json":
+            "a304925a3db422887af26b9a1afb9ae97a45d4203e51a69319afbfc5d6dd23d8",
     }
-    forbidden = ("192.168.50.225", "/home/", "cybernaif", "ERROR_TRANSIENT", "R-23")
+    forbidden = (
+        "192.168.50.225",
+        "/home/",
+        "cybernaif",
+        "ERROR_TRANSIENT",
+        "R-23",
+        "V4-S101",
+        "current_at=",
+    )
 
     for name, digest in expected.items():
         content = (runs / name).read_bytes()

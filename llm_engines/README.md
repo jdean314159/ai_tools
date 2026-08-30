@@ -281,6 +281,28 @@ llm-tool-recovery-probe \
 Development outcomes select only template families with baseline headroom.
 They are not evaluation results and cannot support a claim about thinking.
 
+The frozen v3 stage repeated one deterministic case per family, so it measured
+repeatability rather than a useful difficulty distribution and did not advance.
+Development v4 corrects that design with five predeclared, distinct variants
+per family and exactly one observation per variant:
+
+```bash
+llm-tool-recovery-probe \
+  --backend openai \
+  --model /models/qwen-model.gguf \
+  --base-url http://inference-host:8080/v1 \
+  --suite development-v4 \
+  --runs 1 \
+  --thinking off \
+  --seed 17 \
+  --condition-order v4_distinct_variants_thinking_off_only \
+  --artifact recovery-v4-development.json
+```
+
+The command refuses `--runs` other than 1. Difficulty headroom is the pass
+rate across distinct variants within a family; repeatability requires a
+separate future profile and does not determine evaluation eligibility.
+
 ## Using this with the rest of the suite
 
 - pair it first with `llm_inspector` or `llm_inspector_ui`

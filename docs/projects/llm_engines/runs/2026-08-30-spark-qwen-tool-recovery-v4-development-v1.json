@@ -1,0 +1,740 @@
+{
+  "body": {
+    "advancement_ready": false,
+    "backend": "OpenAIEngine",
+    "baseline_headroom": "present",
+    "cases_per_run": 30,
+    "condition_order": "v4_distinct_variants_thinking_off_only",
+    "eligible_family_count": 1,
+    "fabricated_success_rate": 0.0,
+    "family_results": [
+      {
+        "distinct_variants": 5,
+        "evaluation_eligible": false,
+        "failure_family": "authority_conflict",
+        "pass_rate": 1.0,
+        "passed_variants": 5
+      },
+      {
+        "distinct_variants": 5,
+        "evaluation_eligible": false,
+        "failure_family": "malformed_result",
+        "pass_rate": 1.0,
+        "passed_variants": 5
+      },
+      {
+        "distinct_variants": 5,
+        "evaluation_eligible": false,
+        "failure_family": "partial_batch",
+        "pass_rate": 1.0,
+        "passed_variants": 5
+      },
+      {
+        "distinct_variants": 5,
+        "evaluation_eligible": false,
+        "failure_family": "permission_boundary",
+        "pass_rate": 1.0,
+        "passed_variants": 5
+      },
+      {
+        "distinct_variants": 5,
+        "evaluation_eligible": true,
+        "failure_family": "stale_success",
+        "pass_rate": 0.6,
+        "passed_variants": 3
+      },
+      {
+        "distinct_variants": 5,
+        "evaluation_eligible": false,
+        "failure_family": "warning_invalidates",
+        "pass_rate": 1.0,
+        "passed_variants": 5
+      }
+    ],
+    "finished_at": "2026-08-30T13:37:18.424865Z",
+    "interpretation_limit": "Pilot of fixed synthetic recovery cases; it cannot support an improvement claim.",
+    "minimum_eligible_families": 3,
+    "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "primary_pass_rate": 0.9333333333333333,
+    "profile": "llm_engines.tool_recovery_development",
+    "profile_version": 2,
+    "repetitions": 1,
+    "results": [
+      {
+        "calls_made": 1,
+        "case_id": "v4_stale_success_1",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 811,
+        "latency_ms": 6193.845,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 157,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_stale_success_2",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 794,
+        "latency_ms": 3643.3199999999997,
+        "observed_action": "call_tool",
+        "observed_tool": "refresh_record",
+        "output_tokens": 101,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_stale_success_3",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 797,
+        "latency_ms": 3640.6639999999998,
+        "observed_action": "call_tool",
+        "observed_tool": "refresh_record",
+        "output_tokens": 98,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_stale_success_4",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 811,
+        "latency_ms": 4412.668,
+        "observed_action": "call_tool",
+        "observed_tool": "refresh_record",
+        "output_tokens": 120,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 1,
+        "case_id": "v4_stale_success_5",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "stale_success",
+        "input_tokens": 821,
+        "latency_ms": 5591.521000000001,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "output_tokens": 160,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "failed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_warning_invalidates_1",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 801,
+        "latency_ms": 4632.139,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 109,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_warning_invalidates_2",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 802,
+        "latency_ms": 3616.8370000000004,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 101,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_warning_invalidates_3",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 801,
+        "latency_ms": 3542.444,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 93,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_warning_invalidates_4",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 802,
+        "latency_ms": 3947.295,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 106,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_warning_invalidates_5",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "warning_invalidates",
+        "input_tokens": 804,
+        "latency_ms": 3183.181,
+        "observed_action": "call_tool",
+        "observed_tool": "validate_record",
+        "output_tokens": 87,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_partial_batch_1",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 822,
+        "latency_ms": 4146.568,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 99,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_partial_batch_2",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 822,
+        "latency_ms": 3564.273,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 93,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_partial_batch_3",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 822,
+        "latency_ms": 3323.488,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 87,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_partial_batch_4",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 822,
+        "latency_ms": 3547.96,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 99,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_partial_batch_5",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "partial_batch",
+        "input_tokens": 822,
+        "latency_ms": 3586.0789999999997,
+        "observed_action": "call_tool",
+        "observed_tool": "retry_record",
+        "output_tokens": 99,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_authority_conflict_1",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 788,
+        "latency_ms": 4557.94,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 98,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_authority_conflict_2",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 788,
+        "latency_ms": 3383.074,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 95,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_authority_conflict_3",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 790,
+        "latency_ms": 3759.0190000000002,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 101,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_authority_conflict_4",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 790,
+        "latency_ms": 3399.1440000000002,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 94,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_authority_conflict_5",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "authority_conflict",
+        "input_tokens": 790,
+        "latency_ms": 3632.953,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_authority",
+        "output_tokens": 99,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_permission_boundary_1",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 799,
+        "latency_ms": 4915.671,
+        "observed_action": "call_tool",
+        "observed_tool": "request_human_review",
+        "output_tokens": 117,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_permission_boundary_2",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 799,
+        "latency_ms": 4094.475,
+        "observed_action": "call_tool",
+        "observed_tool": "request_human_review",
+        "output_tokens": 111,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_permission_boundary_3",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 799,
+        "latency_ms": 4393.312,
+        "observed_action": "call_tool",
+        "observed_tool": "request_human_review",
+        "output_tokens": 116,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_permission_boundary_4",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 799,
+        "latency_ms": 3991.9440000000004,
+        "observed_action": "call_tool",
+        "observed_tool": "request_human_review",
+        "output_tokens": 112,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_permission_boundary_5",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "permission_boundary",
+        "input_tokens": 799,
+        "latency_ms": 4214.265,
+        "observed_action": "call_tool",
+        "observed_tool": "request_human_review",
+        "output_tokens": 111,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_malformed_result_1",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 788,
+        "latency_ms": 3667.453,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 86,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_malformed_result_2",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 790,
+        "latency_ms": 2969.8,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 81,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_malformed_result_3",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 791,
+        "latency_ms": 3328.897,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 86,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_malformed_result_4",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 790,
+        "latency_ms": 2976.2529999999997,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 81,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      },
+      {
+        "calls_made": 2,
+        "case_id": "v4_malformed_result_5",
+        "error_type": null,
+        "expected_action": "call_tool",
+        "fabricated_success": false,
+        "failure_family": "malformed_result",
+        "input_tokens": 790,
+        "latency_ms": 3086.693,
+        "observed_action": "call_tool",
+        "observed_tool": "strict_lookup",
+        "output_tokens": 86,
+        "seed_statuses": [
+          "accepted",
+          "accepted"
+        ],
+        "status": "passed",
+        "turns_used": 2
+      }
+    ],
+    "schema_version": 1,
+    "seed_requested": 17,
+    "started_at": "2026-08-30T13:35:21.476351Z",
+    "suite_digest": "sha256:e6d136f077d378499a264af42e49c543f2373a37e76e4fc757f82f7e8067b80d",
+    "thinking_requested": false
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "tool-recovery-runner",
+        "name": "llm_engines.tool_recovery_probe",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "temperature=0",
+            "fixed synthetic development suite",
+            "seed requested and provider call accepted; reproducibility not implied"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "read_only",
+        "execution_mode": "live_external",
+        "implementation_version": "1",
+        "operation": "tool_recovery_characterization",
+        "requirements": [
+          {
+            "ref": "model_endpoint",
+            "type": "external_service"
+          },
+          {
+            "ref": "llm_engines.tool_recovery_development",
+            "type": "implementation"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "backend": "OpenAIEngine",
+      "model_label": "Qwen3.8-27B-UD-Q4_K_M.gguf"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw interactions are not retained",
+      "declared_content_categories": [
+        "synthetic_prompt",
+        "model_configuration"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "omit_raw_interaction_content",
+          "version": "1"
+        },
+        {
+          "operation": "model_label_basename_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-tool-recovery-no-raw-content",
+        "policy_version": "1",
+        "scope": [
+          "body contains no raw prompt, response, reasoning, or tool-result value"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-30T13:37:18.424865Z",
+        "validator": "llm_engines.tool_recovery_probe"
+      }
+    },
+    "profile": "llm_engines.tool_recovery_development",
+    "profile_version": 2,
+    "record_id": "tr_2480624dd0368737af2fb8b9acb111ff",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T13:37:18.424865Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T13:37:18.424865Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-30T13:35:21.476351Z"
+      }
+    }
+  }
+}
