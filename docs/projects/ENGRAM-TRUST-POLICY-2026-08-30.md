@@ -38,9 +38,11 @@ Focused policy and adjacent Engram tests passed: 31 tests. The three frozen
 memory-security artifact tests also passed. The repository suite passed with
 1,228 tests, 301 skips, and three existing multiprocessing deprecation warnings.
 
-## Remaining validation
+## Live validation
 
-The deterministic policy has unit coverage but has not yet been rerun as a live
-paired DGX Spark experiment. That next experiment should reuse the frozen five
-attack families without changing their content, compare policy-off with
-policy-on, and require zero poison retrieval and zero poison prompt inclusion.
+The paired DGX Spark experiment is complete. Policy-on eliminated poison
+storage, retrieval, and prompt inclusion in all five frozen cases. An initial
+citation regression exposed a missing `evidence_id` in visible provenance
+labels; after correction, the final run passed both security and exact-output
+utility gates in 5/5 cases. The complete disclosed run history is in
+`docs/projects/ENGRAM-TRUST-POLICY-LIVE-VALIDATION-2026-08-30.md`.

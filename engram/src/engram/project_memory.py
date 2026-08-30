@@ -1705,8 +1705,9 @@ class ProjectMemory:
                         else str(getattr(item, "text", None) or getattr(item, "content", None) or item)
                     )
                     label = " ".join(
-                        f"{key}={meta.get(key, 'unknown')}"
-                        for key in ("trust", "tenant", "source", "writer")
+                        f"{key}={meta[key]}"
+                        for key in ("evidence_id", "trust", "tenant", "source", "writer")
+                        if meta.get(key) is not None
                     )
                     score = (
                         item.get("score") if isinstance(item, dict)

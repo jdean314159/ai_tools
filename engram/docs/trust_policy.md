@@ -40,10 +40,11 @@ minimum, quarantined records, and disallowed sources or writers. The same
 checks run immediately before prompt composition so an external retriever
 cannot bypass the policy.
 
-Composed persistent-memory items receive visible `trust`, `tenant`, `source`,
-and `writer` labels. A prompt instruction tells the model to treat memory as
-attributed evidence rather than executable instructions. These are defense in
-depth; the deterministic filters are the security boundary.
+Composed persistent-memory items receive visible `evidence_id` (when supplied),
+`trust`, `tenant`, `source`, and `writer` labels. A prompt instruction tells the
+model to treat memory as attributed evidence rather than executable
+instructions. These are defense in depth; the deterministic filters are the
+security boundary.
 
 Inspect `result["retrieval_diagnostics"]`, the prompt trace flags, telemetry,
 or `memory.get_trust_audit()` to see filtering counts and reason codes. Audit

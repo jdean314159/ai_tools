@@ -91,6 +91,16 @@ def test_external_retriever_cannot_bypass_composition_policy(tmp_path):
     assert result["retrieval_diagnostics"]["composition_trust"]["trust_filtered_count"] == 1
 
 
+def test_composed_provenance_label_includes_application_evidence_id(tmp_path):
+    memory = ProjectMemory(base_dir=tmp_path, project_id="p", trust_policy=policy())
+    memory.store_episode(
+        "Atlas region is west", metadata=metadata(evidence_id="ATLAS-7"),
+        bypass_filter=True,
+    )
+    prompt = memory.build_prompt("Atlas region?")["prompt"]
+    assert "[memory evidence_id=ATLAS-7 trust=verified" in prompt
+
+
 def test_policy_validates_configuration_and_levels():
     assert TrustLevel.parse("trusted") > TrustLevel.parse("verified")
     try:
