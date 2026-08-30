@@ -39,6 +39,7 @@ from .contracts import (
 from .project_memory import ProjectMemory
 from .telemetry import Telemetry, TelemetryEvent
 from .types import ProjectType, TokenBudget
+from .trust import MemoryTrustPolicy, TrustDecision, TrustLevel
 from .interop import augment_result_to_interop_result, describe_memory, trace_to_memory_records
 from .evaluation import observation_from_engram
 
@@ -55,6 +56,9 @@ __all__ = [
     # Config types
     "ProjectType",
     "TokenBudget",
+    "MemoryTrustPolicy",
+    "TrustDecision",
+    "TrustLevel",
     # Telemetry configuration
     "Telemetry",
     "TelemetryEvent",

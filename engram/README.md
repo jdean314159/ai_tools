@@ -53,6 +53,7 @@ inspectable way to add memory behavior to an LLM workflow.
 - evaluate stage boundaries with `llm_harness_core`
 - see [Temporal memory](docs/temporal_memory.md) for versioned facts
 - see [Reliability testing](docs/reliability_testing.md) for deterministic attribution
+- see [Memory trust policy](docs/trust_policy.md) for opt-in ingestion, tenant, and recall enforcement
 
 ## Current support status
 
@@ -98,6 +99,16 @@ It can expose:
 - capability descriptors for the workbench/inspector layers
 
 This is important because the package is not meant to be a hidden prompt manipulator. It should make memory contributions visible.
+
+## Memory trust boundaries
+
+Applications that ingest content from users, imports, agents, or shared stores
+can configure `MemoryTrustPolicy`. It validates application-assigned trust,
+tenant, source, and writer metadata; rejects or quarantines unsafe ingestion;
+filters recall and external-retriever context; labels prompt evidence; and
+emits privacy-minimized diagnostics. Enforcement is opt-in for compatibility,
+but enabled policies fail closed for missing trust or tenant metadata. Engram
+does not infer trust from content. See [Memory trust policy](docs/trust_policy.md).
 
 Prompt results now include `budget_diagnostics` and `retrieval_diagnostics`.
 Evidence traces retain structured episode provenance, including `episode_id`

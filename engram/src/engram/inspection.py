@@ -53,7 +53,10 @@ def _evidence_provenance(evidence: Any) -> dict[str, Any]:
         "source": getattr(evidence, "source", "memory"),
         "augmenter": "engram",
     }
-    for key in ("session_id", "project_id", "episode_id", "topic_key"):
+    for key in (
+        "session_id", "project_id", "episode_id", "topic_key",
+        "tenant", "source", "writer", "trust", "quarantined",
+    ):
         if key in meta:
             prov[key] = meta[key]
     return prov
