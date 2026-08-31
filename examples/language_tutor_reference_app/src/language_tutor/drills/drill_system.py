@@ -23,21 +23,23 @@ if TYPE_CHECKING:
 @dataclass
 class DrillQuestion:
     """A single drill question returned to the caller."""
+
     question_id: str
     drill_type: str
     prompt: str
     correct_answer: str
     context: str = ""
     hint: str = ""
-    auto_play_tts: bool = False   # For listening drills
+    auto_play_tts: bool = False  # For listening drills
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class DrillResult:
     """Result of checking a drill answer."""
+
     correct: bool
-    accuracy: float           # 0.0–1.0
+    accuracy: float  # 0.0–1.0
     user_answer: str
     correct_answer: str
     feedback: str
@@ -68,12 +70,12 @@ class DrillSystem:
         language: str,
         memory: Optional["ProjectMemory"] = None,
         engine: Optional["LLMEngine"] = None,
-        store=None,   # SessionStore — for spaced-repetition mastery tracking
+        store=None,  # SessionStore — for spaced-repetition mastery tracking
     ):
         self.language = language.lower()
         self.memory = memory
         self.engine = engine
-        self.store = store   # may be None; vocabulary_review degrades gracefully
+        self.store = store  # may be None; vocabulary_review degrades gracefully
 
         # Load content
         if self.language in ("spanish", "es"):
@@ -83,12 +85,17 @@ class DrillSystem:
             try:
                 from language_tutor.content.latin import get_content
             except ImportError:
+
                 def get_content():
                     return {
-                        "irregular_verbs": {}, "reflexive_verbs": {},
-                        "reflexive_conjugations": {}, "preposition_drills": [],
-                        "practice_sentences": [], "listening_sentences": [],
-                        "conversation_starters": [], "conversation_prompts": [],
+                        "irregular_verbs": {},
+                        "reflexive_verbs": {},
+                        "reflexive_conjugations": {},
+                        "preposition_drills": [],
+                        "practice_sentences": [],
+                        "listening_sentences": [],
+                        "conversation_starters": [],
+                        "conversation_prompts": [],
                     }
 
         self.content = get_content()
@@ -107,31 +114,31 @@ class DrillSystem:
         # vocabulary_review and translation are available to both languages
         common = {
             "vocabulary_review": self._vocabulary_review,
-            "translation":       self._translation,
-            "pronunciation":     self._pronunciation,
+            "translation": self._translation,
+            "pronunciation": self._pronunciation,
         }
 
         if self.language in ("latin", "la"):
             dispatch = {
-                "irregular_verbs_present":    lambda: self._irregular_verb("present"),
-                "irregular_verbs_imperfect":  lambda: self._irregular_verb("imperfect"),
-                "irregular_verbs_perfect":    lambda: self._irregular_verb("perfect"),
-                "noun_declensions":           self._noun_declension,
-                "prepositions":               self._preposition,
-                "sentence_dictation":         self._sentence_dictation,
-                "listening_comprehension":    self._listening_comprehension,
-                "mixed_review":               self._mixed_review,
+                "irregular_verbs_present": lambda: self._irregular_verb("present"),
+                "irregular_verbs_imperfect": lambda: self._irregular_verb("imperfect"),
+                "irregular_verbs_perfect": lambda: self._irregular_verb("perfect"),
+                "noun_declensions": self._noun_declension,
+                "prepositions": self._preposition,
+                "sentence_dictation": self._sentence_dictation,
+                "listening_comprehension": self._listening_comprehension,
+                "mixed_review": self._mixed_review,
                 **common,
             }
         else:
             dispatch = {
-                "irregular_verbs_preterite":  lambda: self._irregular_verb("preterite"),
-                "irregular_verbs_imperfect":  lambda: self._irregular_verb("imperfect"),
-                "reflexive_verbs":            self._reflexive_verb,
-                "prepositions":               self._preposition,
-                "sentence_dictation":         self._sentence_dictation,
-                "listening_comprehension":    self._listening_comprehension,
-                "mixed_review":               self._mixed_review,
+                "irregular_verbs_preterite": lambda: self._irregular_verb("preterite"),
+                "irregular_verbs_imperfect": lambda: self._irregular_verb("imperfect"),
+                "reflexive_verbs": self._reflexive_verb,
+                "prepositions": self._preposition,
+                "sentence_dictation": self._sentence_dictation,
+                "listening_comprehension": self._listening_comprehension,
+                "mixed_review": self._mixed_review,
                 **common,
             }
         handler = dispatch.get(drill_type, self._mixed_review)
@@ -142,14 +149,14 @@ class DrillSystem:
         self._attempts += 1
 
         checker = {
-            "irregular_verb":          self._check_exact,
-            "reflexive_verb":          self._check_exact,
-            "prepositions":            self._check_exact,
-            "noun_declension":         self._check_exact,
-            "vocabulary_review":       self._check_exact,
-            "translation":             self._check_translation,
-            "pronunciation":           self._check_pronunciation,
-            "sentence_dictation":      self._check_dictation,
+            "irregular_verb": self._check_exact,
+            "reflexive_verb": self._check_exact,
+            "prepositions": self._check_exact,
+            "noun_declension": self._check_exact,
+            "vocabulary_review": self._check_exact,
+            "translation": self._check_translation,
+            "pronunciation": self._check_pronunciation,
+            "sentence_dictation": self._check_dictation,
             "listening_comprehension": self._check_dictation,
         }.get(question.drill_type, self._check_exact)
 
@@ -158,12 +165,14 @@ class DrillSystem:
         if result.correct:
             self._correct += 1
         else:
-            self._mistake_log.append({
-                "drill_type":     question.drill_type,
-                "question_id":    question.question_id,
-                "correct_answer": question.correct_answer,
-                "user_answer":    user_answer,
-            })
+            self._mistake_log.append(
+                {
+                    "drill_type": question.drill_type,
+                    "question_id": question.question_id,
+                    "correct_answer": question.correct_answer,
+                    "user_answer": user_answer,
+                }
+            )
 
         # Update spaced-repetition mastery for vocabulary review drills
         if question.drill_type == "vocabulary_review" and self.store is not None:
@@ -172,9 +181,7 @@ class DrillSystem:
             translation = meta.get("translation", "")
             if word:
                 try:
-                    self.store.record_vocab_result(
-                        self.language, word, translation, result.correct
-                    )
+                    self.store.record_vocab_result(self.language, word, translation, result.correct)
                 except Exception:
                     pass
 
@@ -189,7 +196,8 @@ class DrillSystem:
         user_words = user_input.lower().strip().split()
 
         correct_words = sum(
-            1 for i, w in enumerate(user_words)
+            1
+            for i, w in enumerate(user_words)
             if i < len(expected_words) and w == expected_words[i]
         )
         accuracy = correct_words / len(expected_words) if expected_words else 0.0
@@ -200,8 +208,7 @@ class DrillSystem:
             feedback = f"¡Muy bien! {correct_words}/{len(expected_words)} words correct."
         elif accuracy >= 0.5:
             feedback = (
-                f"Buen intento. {correct_words}/{len(expected_words)} correct. "
-                f"Expected: {expected}"
+                f"Buen intento. {correct_words}/{len(expected_words)} correct. Expected: {expected}"
             )
         else:
             feedback = f"Keep practicing. The sentence was: {expected}"
@@ -224,10 +231,10 @@ class DrillSystem:
 
     def get_session_stats(self) -> Dict[str, Any]:
         return {
-            "attempts":  self._attempts,
-            "correct":   self._correct,
-            "accuracy":  self.get_session_accuracy(),
-            "mistakes":  self._mistake_log,
+            "attempts": self._attempts,
+            "correct": self._correct,
+            "accuracy": self.get_session_accuracy(),
+            "mistakes": self._mistake_log,
         }
 
     def recommend_drill_type(self) -> str:
@@ -253,22 +260,22 @@ class DrillSystem:
                     error_type = rows[0].get("error_type", "").lower()
                     # Map error_type strings → drill types (both languages)
                     mapping = {
-                        "reflexive":   "reflexive_verbs",
+                        "reflexive": "reflexive_verbs",
                         "preposition": "prepositions",
-                        "preterite":   "irregular_verbs_preterite",
-                        "imperfect":   "irregular_verbs_imperfect",
-                        "present":     "irregular_verbs_present",
-                        "perfect":     "irregular_verbs_perfect",
-                        "declension":  "noun_declensions",
-                        "case":        "noun_declensions",
-                        "vocab":       "vocabulary_review",
+                        "preterite": "irregular_verbs_preterite",
+                        "imperfect": "irregular_verbs_imperfect",
+                        "present": "irregular_verbs_present",
+                        "perfect": "irregular_verbs_perfect",
+                        "declension": "noun_declensions",
+                        "case": "noun_declensions",
+                        "vocab": "vocabulary_review",
                         "translation": "translation",
-                        "grammar":     "translation",
+                        "grammar": "translation",
                         "drill:irreg": "irregular_verbs_preterite",
-                        "drill:refl":  "reflexive_verbs",
-                        "drill:prep":  "prepositions",
+                        "drill:refl": "reflexive_verbs",
+                        "drill:prep": "prepositions",
                         "drill:trans": "translation",
-                        "drill:noun":  "noun_declensions",
+                        "drill:noun": "noun_declensions",
                     }
                     for key, drill_type in mapping.items():
                         if key in error_type:
@@ -278,6 +285,7 @@ class DrillSystem:
 
         # Day-of-week schedule fallback — language-specific
         from datetime import datetime
+
         weekday = datetime.now().weekday()
         if self.language in ("latin", "la"):
             schedule = {
@@ -315,8 +323,14 @@ class DrillSystem:
         # Latin uses grammatical person labels; Spanish uses pronoun labels
         if self.language in ("latin", "la"):
             persons = ["1s", "2s", "3s", "1pl", "2pl", "3pl"]
-            person_label = {"1s": "ego (1sg)", "2s": "tu (2sg)", "3s": "is/ea (3sg)",
-                            "1pl": "nos (1pl)", "2pl": "vos (2pl)", "3pl": "ei (3pl)"}
+            person_label = {
+                "1s": "ego (1sg)",
+                "2s": "tu (2sg)",
+                "3s": "is/ea (3sg)",
+                "1pl": "nos (1pl)",
+                "2pl": "vos (2pl)",
+                "3pl": "ei (3pl)",
+            }
         else:
             persons = ["yo", "tú", "él", "nosotros", "ellos"]
             person_label = {p: p for p in persons}
@@ -462,7 +476,7 @@ class DrillSystem:
         return DrillQuestion(
             question_id=f"vocab_{word[:30].replace(' ', '_')}",
             drill_type="vocabulary_review",
-            prompt=f"Translate: \"{translation}\"",
+            prompt=f'Translate: "{translation}"',
             correct_answer=word,
             context=f"Level: {level_label}" + (f" · {overdue}d overdue" if overdue > 0 else ""),
             hint=f"This is a {level_label}-level word.",
@@ -596,14 +610,15 @@ class DrillSystem:
         """Extract a JSON array or object from an LLM response string."""
         import json
         import re
+
         raw = raw.strip()
-        raw = re.sub(r'^```[a-z]*\s*', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE).strip()
+        raw = re.sub(r"^```[a-z]*\s*", "", raw, flags=re.MULTILINE)
+        raw = re.sub(r"```\s*$", "", raw, flags=re.MULTILINE).strip()
         try:
             return json.loads(raw)
         except json.JSONDecodeError:
             pass
-        m = re.search(r'[\[{].*[\]}]', raw, re.DOTALL)
+        m = re.search(r"[\[{].*[\]}]", raw, re.DOTALL)
         if m:
             try:
                 return json.loads(m.group())
@@ -619,8 +634,13 @@ class DrillSystem:
         # Allow accent-free responses (common for keyboard without accents)
         def strip_accents(s: str) -> str:
             replacements = {
-                "á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u",
-                "ü": "u", "ñ": "n",
+                "á": "a",
+                "é": "e",
+                "í": "i",
+                "ó": "o",
+                "ú": "u",
+                "ü": "u",
+                "ñ": "n",
             }
             return "".join(replacements.get(c, c) for c in s)
 
@@ -628,9 +648,14 @@ class DrillSystem:
         accuracy = 1.0 if correct else 0.0
 
         if correct:
-            feedback = random.choice([
-                "¡Correcto!", "¡Exacto!", "¡Muy bien!", "¡Perfecto!",
-            ])
+            feedback = random.choice(
+                [
+                    "¡Correcto!",
+                    "¡Exacto!",
+                    "¡Muy bien!",
+                    "¡Perfecto!",
+                ]
+            )
         else:
             feedback = f"Not quite. The answer is: {question.correct_answer}"
 
@@ -655,7 +680,8 @@ class DrillSystem:
         """
         if not user_answer.strip():
             return DrillResult(
-                correct=False, accuracy=0.0,
+                correct=False,
+                accuracy=0.0,
                 user_answer=user_answer,
                 correct_answer=question.correct_answer,
                 feedback="Please enter a translation.",
@@ -667,7 +693,7 @@ class DrillSystem:
             # No LLM — fall back to fuzzy dictation check
             return self._check_dictation(question, user_answer)
 
-        english = question.context     # English phrase
+        english = question.context  # English phrase
         reference = question.correct_answer
 
         grading_prompt = (
@@ -679,7 +705,7 @@ class DrillSystem:
             f"Minor differences in word choice, word order, or accent marks are fine "
             f"if the meaning is correct. Do NOT penalise for missing accents.\n\n"
             f"Respond with JSON only — no other text:\n"
-            f'{{\"correct\": true/false, \"feedback\": \"one short sentence\"}}'
+            f'{{"correct": true/false, "feedback": "one short sentence"}}'
         )
 
         try:
@@ -696,7 +722,8 @@ class DrillSystem:
                 # Try direct object parse
                 import json
                 import re
-                m = re.search(r'\{[^}]+\}', raw, re.DOTALL)
+
+                m = re.search(r"\{[^}]+\}", raw, re.DOTALL)
                 parsed = json.loads(m.group()) if m else {}
 
             correct = bool(parsed.get("correct", False))

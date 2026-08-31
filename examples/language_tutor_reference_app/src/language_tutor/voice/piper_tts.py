@@ -67,9 +67,9 @@ class PiperTTSService:
     """
 
     def __init__(self, model_path: Optional[Path] = None) -> None:
-        self.model_path  = model_path or _find_model()
+        self.model_path = model_path or _find_model()
         self._speed_map: dict = PIPER_CONFIG["speed_map"]
-        self._timeout: int    = PIPER_CONFIG["timeout"]
+        self._timeout: int = PIPER_CONFIG["timeout"]
 
     async def generate_speech(self, text: str, speed: str = "normal") -> str:
         """
@@ -90,9 +90,12 @@ class PiperTTSService:
             result = subprocess.run(
                 [
                     "piper",
-                    "--model",        str(self.model_path),
-                    "--output_file",  out_path,
-                    "--length_scale", str(length_scale),
+                    "--model",
+                    str(self.model_path),
+                    "--output_file",
+                    out_path,
+                    "--length_scale",
+                    str(length_scale),
                 ],
                 input=text.encode("utf-8"),
                 capture_output=True,

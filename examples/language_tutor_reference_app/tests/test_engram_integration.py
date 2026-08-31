@@ -145,7 +145,9 @@ def test_strategy_catalogue_exposes_cross_library_modes():
     assert STRATEGIES["openai_planning"]["planner"]["engine"] == "openai"
 
 
-def test_engine_manager_gemini_missing_key_raises_runtimeerror(local_strategy: dict, monkeypatch: pytest.MonkeyPatch):
+def test_engine_manager_gemini_missing_key_raises_runtimeerror(
+    local_strategy: dict, monkeypatch: pytest.MonkeyPatch
+):
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
     manager = EngineManager(local_strategy)
     with pytest.raises(RuntimeError, match="Cannot initialize"):
@@ -195,7 +197,9 @@ def test_tutor_session_round_trip_exercises_selected_memory_backend(
             pass
 
 
-def test_tutor_session_can_drive_llm_engines_adapter_path(tmp_path: Path, local_strategy: dict, monkeypatch: pytest.MonkeyPatch):
+def test_tutor_session_can_drive_llm_engines_adapter_path(
+    tmp_path: Path, local_strategy: dict, monkeypatch: pytest.MonkeyPatch
+):
     built: list[tuple[str, str]] = []
 
     def fake_build_engine(config: dict):
@@ -233,8 +237,10 @@ def test_tutor_session_can_drive_llm_engines_adapter_path(tmp_path: Path, local_
             pass
 
 
-
-@pytest.mark.skipif(not os.getenv("LANGUAGE_TUTOR_LIVE_OLLAMA"), reason="set LANGUAGE_TUTOR_LIVE_OLLAMA=1 for live Ollama integration")
+@pytest.mark.skipif(
+    not os.getenv("LANGUAGE_TUTOR_LIVE_OLLAMA"),
+    reason="set LANGUAGE_TUTOR_LIVE_OLLAMA=1 for live Ollama integration",
+)
 def test_live_ollama_smoke(tmp_path: Path):
     strategy = copy.deepcopy(STRATEGIES["local_everything"])
     session = TutorSession(

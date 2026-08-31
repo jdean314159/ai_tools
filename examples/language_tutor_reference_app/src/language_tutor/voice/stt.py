@@ -41,8 +41,8 @@ class STTService:
         device: Optional[str] = None,
         compute_type: Optional[str] = None,
     ) -> None:
-        self.model_name   = model_name   or WHISPER_CONFIG["model"]
-        self.device       = device       or WHISPER_CONFIG["device"]
+        self.model_name = model_name or WHISPER_CONFIG["model"]
+        self.device = device or WHISPER_CONFIG["device"]
         self.compute_type = compute_type or WHISPER_CONFIG["compute_type"]
 
         # Language resolution:
@@ -52,7 +52,7 @@ class STTService:
         # "auto" → None, which tells faster-whisper to detect the language.
         env_lang = os.environ.get("WHISPER_LANGUAGE", "").strip().lower()
         if env_lang == "auto":
-            self.language = None          # auto-detect
+            self.language = None  # auto-detect
         elif env_lang:
             self.language = env_lang
         else:

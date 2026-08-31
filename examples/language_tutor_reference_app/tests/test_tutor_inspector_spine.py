@@ -14,6 +14,7 @@ Verifies that:
 This test lives in integration_tests/ alongside test_augmenter_spine.py because
 it spans three packages (language_tutor, llm_inspector_ui, llm_inspector).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -36,6 +37,7 @@ from llm_inspector_ui.utils.trace_access import (
 # Fake engine — records calls, returns predictable text
 # ---------------------------------------------------------------------------
 
+
 class _FakePlan(BaseModel):
     warmup_topic: str = "daily life"
     focus_areas: list[str] = ["past tense", "ser vs estar"]
@@ -52,7 +54,9 @@ class _FakeEngine:
             return "Session summary: practiced ser vs estar and past tense."
         return "Claro. Ayer fui al mercado y compré frutas. ¿Qué hiciste tú?"
 
-    def generate_structured(self, prompt: str, response_model: type[BaseModel], **kwargs: Any) -> BaseModel:
+    def generate_structured(
+        self, prompt: str, response_model: type[BaseModel], **kwargs: Any
+    ) -> BaseModel:
         return response_model(**_FakePlan().model_dump())
 
     def count_tokens(self, text: str) -> int:
@@ -63,6 +67,7 @@ class _FakeEngine:
 # Session builder
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=False)
 def patched_engine(monkeypatch):
     """Patch EngineManager._load_engine for the lifetime of the test.
@@ -71,6 +76,7 @@ def patched_engine(monkeypatch):
     session.start(), which triggers lazy planner loading after construction.
     """
     from language_tutor.engine_manager import EngineManager
+
     monkeypatch.setattr(
         EngineManager,
         "_load_engine",
@@ -100,6 +106,7 @@ def _build_session(tmp_path: Path, session_id: str = "spine-session") -> Any:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _assert_inspector_trace(trace: dict[str, Any], *, session_id: str) -> None:
     """Assert core trace structure.
 
@@ -117,6 +124,7 @@ def _assert_inspector_trace(trace: dict[str, Any], *, session_id: str) -> None:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_start_interop_result_feeds_inspector_trace(tmp_path: Path, patched_engine):
     session = _build_session(tmp_path, session_id="spine-start")
@@ -149,9 +157,7 @@ def test_handle_text_interop_result_feeds_inspector_trace(tmp_path: Path, patche
     inspector = InspectorService()
     try:
         asyncio.run(session.start(duration_minutes=15))
-        result = asyncio.run(session.handle_text_interop(
-            "Yo soy estudiando español ahora mismo."
-        ))
+        result = asyncio.run(session.handle_text_interop("Yo soy estudiando español ahora mismo."))
 
         assert isinstance(result, OperationResult)
         assert result.ok
@@ -176,10 +182,12 @@ def test_explain_interop_result_feeds_inspector_trace(tmp_path: Path, patched_en
     session = _build_session(tmp_path, session_id="spine-explain")
     inspector = InspectorService()
     try:
-        result = asyncio.run(session.explain_interop(
-            "Ayer fui al mercado.",
-            question="Why is 'fui' used here?",
-        ))
+        result = asyncio.run(
+            session.explain_interop(
+                "Ayer fui al mercado.",
+                question="Why is 'fui' used here?",
+            )
+        )
 
         # Verify OperationResult shape
         assert isinstance(result, OperationResult)
@@ -237,9 +245,7 @@ def test_multiple_turns_produce_diffable_traces(tmp_path: Path, patched_engine):
         )
         assert isinstance(diff, dict)
         # Diff report should identify the two sides
-        assert "turn_1" in diff.get("name_a", "") or any(
-            "turn_1" in str(v) for v in diff.values()
-        )
+        assert "turn_1" in diff.get("name_a", "") or any("turn_1" in str(v) for v in diff.values())
     finally:
         session.close()
 

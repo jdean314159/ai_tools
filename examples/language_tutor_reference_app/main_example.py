@@ -22,8 +22,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 from language_tutor.hardware_strategy import (
     detect_hardware,
     get_strategy,
-    show_strategy_info,
-    save_config,
     load_config,
     setup_wizard,
     STRATEGIES,
@@ -74,7 +72,7 @@ async def run_interactive():
     try:
         await session.start(duration_minutes=30)
 
-        print(f"\n💬 Session started! Type 'quit' or 'adiós' to end.\n")
+        print("\n💬 Session started! Type 'quit' or 'adiós' to end.\n")
 
         while True:
             try:
@@ -104,10 +102,12 @@ async def run_interactive():
         print("\n" + "=" * 60)
         print(result.get("summary", ""))
         stats = result.get("statistics", {})
-        print(f"\nDuration: {stats.get('session_duration','?')}  |  "
-              f"Exchanges: {stats.get('exchanges',0)}  |  "
-              f"Corrections: {stats.get('corrections_made',0)}  |  "
-              f"New vocab: {stats.get('new_vocabulary',0)}")
+        print(
+            f"\nDuration: {stats.get('session_duration', '?')}  |  "
+            f"Exchanges: {stats.get('exchanges', 0)}  |  "
+            f"Corrections: {stats.get('corrections_made', 0)}  |  "
+            f"New vocab: {stats.get('new_vocabulary', 0)}"
+        )
         session.close()
 
 
@@ -117,8 +117,8 @@ async def quick_test():
     print("🧪 Quick test mode\n")
 
     hardware = detect_hardware()
-    override  = os.getenv("LANGUAGE_TUTOR_STRATEGY")
-    strategy  = get_strategy(hardware, override=override)
+    override = os.getenv("LANGUAGE_TUTOR_STRATEGY")
+    strategy = get_strategy(hardware, override=override)
 
     if strategy is None:
         print("No valid strategy — check hardware or set LANGUAGE_TUTOR_STRATEGY.")

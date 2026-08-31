@@ -39,12 +39,12 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         "planner": {
             "engine": "ollama",
             "model": "qwen3.5:27b",
-            "num_gpu": None,   # 27B Q4_K_M fits entirely on RTX 3090 24GB
+            "num_gpu": None,  # 27B Q4_K_M fits entirely on RTX 3090 24GB
         },
         "executor": {
             "engine": "ollama",
             "model": "qwen3.5:9b",
-            "num_gpu": None,   # 9B fits entirely on GPU
+            "num_gpu": None,  # 9B fits entirely on GPU
         },
         "memory_engine": "executor",  # Use executor for surprise filter
         "surprise_filter": True,
@@ -60,7 +60,6 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         "description": "Run everything locally on GPU. Zero ongoing cost, best latency.",
         "requirements": "20GB+ VRAM (RTX 3090, 4090, A6000)",
     },
-
     "hybrid_cloud_planning": {
         "name": "hybrid_cloud_planning",
         "display_name": "Hybrid (Recommended Balance)",
@@ -91,7 +90,6 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
             "conversation": 0.0,
         },
     },
-
     "cloud_executor_only": {
         "name": "cloud_executor_only",
         "display_name": "Cloud Budget Mode",
@@ -121,7 +119,6 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
             "conversation": 0.09,
         },
     },
-
     "cloud_everything": {
         "name": "cloud_everything",
         "display_name": "Cloud Premium Mode",
@@ -143,26 +140,24 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         "requirements": "Anthropic API key only",
         "cost_breakdown": {"planning": 0.03, "summary": 0.03, "conversation": 0.30},
     },
-
     # ── Gemini strategies ──────────────────────────────────────────────
-
     "gemini_planning": {
         "name": "gemini_planning",
         "display_name": "Gemini Planning + Local 9B",
         "planner": {
             "engine": "gemini",
-            "model":  "gemini-2.0-flash",
+            "model": "gemini-2.0-flash",
         },
         "executor": {
-            "engine":   "ollama",
-            "model":    "qwen3.5:9b",
-            "num_gpu":  None,
+            "engine": "ollama",
+            "model": "qwen3.5:9b",
+            "num_gpu": None,
         },
         "memory_engine": None,
         "surprise_filter": False,
         "voice_stt": {"enabled": True},
         "voice_tts": {"enabled": True},
-        "cost_per_session": 0.0,   # Gemini free tier
+        "cost_per_session": 0.0,  # Gemini free tier
         "latency": "good",
         "description": (
             "Gemini Flash for planning/explanations (fast, free), "
@@ -171,18 +166,17 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         ),
         "requirements": "GOOGLE_API_KEY + Ollama with qwen3.5:9b",
     },
-
     "gemini_local_3b": {
         "name": "gemini_local_3b",
         "display_name": "Gemini Planning + Local 8B (laptop)",
         "planner": {
             "engine": "gemini",
-            "model":  "gemini-2.0-flash",
+            "model": "gemini-2.0-flash",
         },
         "executor": {
-            "engine":  "ollama",
-            "model":   "qwen3:8b",
-            "num_gpu": None,   # Ollama auto-allocates; fits mostly on GTX 1650 4GB
+            "engine": "ollama",
+            "model": "qwen3:8b",
+            "num_gpu": None,  # Ollama auto-allocates; fits mostly on GTX 1650 4GB
         },
         "memory_engine": None,
         "surprise_filter": False,
@@ -197,17 +191,16 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         ),
         "requirements": "GOOGLE_API_KEY + llama-server with qwen3.2-3b GGUF",
     },
-
     "gemini_everything": {
         "name": "gemini_everything",
         "display_name": "Gemini Only (no local models)",
         "planner": {
             "engine": "gemini",
-            "model":  "gemini-2.0-flash",
+            "model": "gemini-2.0-flash",
         },
         "executor": {
             "engine": "gemini",
-            "model":  "gemini-2.0-flash",
+            "model": "gemini-2.0-flash",
         },
         "memory_engine": None,
         "surprise_filter": False,
@@ -222,19 +215,17 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         ),
         "requirements": "GOOGLE_API_KEY only",
     },
-
     # ── OpenAI strategies ──────────────────────────────────────────────
-
     "openai_planning": {
         "name": "openai_planning",
         "display_name": "OpenAI Planning + Local 9B",
         "planner": {
             "engine": "openai",
-            "model":  "gpt-4o-mini",
+            "model": "gpt-4o-mini",
         },
         "executor": {
-            "engine":  "ollama",
-            "model":   "qwen3.5:9b",
+            "engine": "ollama",
+            "model": "qwen3.5:9b",
             "num_gpu": None,
         },
         "memory_engine": None,
@@ -250,17 +241,16 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         ),
         "requirements": "OPENAI_API_KEY + Ollama with qwen3.5:9b",
     },
-
     "openai_local_3b": {
         "name": "openai_local_3b",
         "display_name": "OpenAI Planning + Local 8B (laptop)",
         "planner": {
             "engine": "openai",
-            "model":  "gpt-4o-mini",
+            "model": "gpt-4o-mini",
         },
         "executor": {
-            "engine":  "ollama",
-            "model":   "qwen3:8b",
+            "engine": "ollama",
+            "model": "qwen3:8b",
             "num_gpu": None,
         },
         "memory_engine": None,
@@ -276,17 +266,16 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         ),
         "requirements": "OPENAI_API_KEY + Ollama with qwen3:8b",
     },
-
     "openai_everything": {
         "name": "openai_everything",
         "display_name": "OpenAI Only (no local models)",
         "planner": {
             "engine": "openai",
-            "model":  "gpt-4o-mini",
+            "model": "gpt-4o-mini",
         },
         "executor": {
             "engine": "openai",
-            "model":  "gpt-4o-mini",
+            "model": "gpt-4o-mini",
         },
         "memory_engine": None,
         "surprise_filter": False,
@@ -302,7 +291,6 @@ STRATEGIES: Dict[str, Dict[str, Any]] = {
         "requirements": "OPENAI_API_KEY only",
     },
 }
-
 
 
 def get_strategy(
@@ -348,8 +336,10 @@ def get_strategy(
     strategy = STRATEGIES[strategy_name]
 
     # Check if strategy requires API key
-    needs_api = strategy["planner"]["engine"] == "anthropic" or \
-                strategy["executor"]["engine"] == "anthropic"
+    needs_api = (
+        strategy["planner"]["engine"] == "anthropic"
+        or strategy["executor"]["engine"] == "anthropic"
+    )
 
     if needs_api and not has_api_key:
         print("\n❌ Selected strategy requires Anthropic API key")
@@ -386,18 +376,18 @@ def show_strategy_info(strategy: Dict[str, Any], hardware: HardwareProfile):
 
     print(f"\n💰 Cost per session: ${strategy['cost_per_session']:.2f}")
 
-    if strategy['cost_per_session'] > 0:
+    if strategy["cost_per_session"] > 0:
         print(f"   Monthly (20 sessions): ${strategy['cost_per_session'] * 20:.2f}")
         print(f"   Yearly (240 sessions): ${strategy['cost_per_session'] * 240:.2f}")
 
-        if 'cost_breakdown' in strategy:
+        if "cost_breakdown" in strategy:
             print("\n   Breakdown:")
-            for item, cost in strategy['cost_breakdown'].items():
+            for item, cost in strategy["cost_breakdown"].items():
                 print(f"      {item.capitalize()}: ${cost:.2f}")
 
         # Show hardware upgrade ROI if applicable
-        if hardware.primary_gpu_free_mb < 6 * 1024 and strategy['cost_per_session'] > 0.06:
-            sessions_to_break_even_3060 = 200 / (strategy['cost_per_session'] - 0.06)
+        if hardware.primary_gpu_free_mb < 6 * 1024 and strategy["cost_per_session"] > 0.06:
+            sessions_to_break_even_3060 = 200 / (strategy["cost_per_session"] - 0.06)
             print("\n   💡 Hardware Upgrade Option:")
             print("      Used RTX 3060 12GB: ~$200")
             print("      → Reduces cost to $0.06/session")
@@ -449,8 +439,8 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
 
     # ── 1. Detect hardware and engine availability ──────────────────
     print("\n🔍 Detecting hardware and available engines…")
-    hw      = detect_hardware()
-    avail   = available_engines()
+    hw = detect_hardware()
+    avail = available_engines()
 
     primary_gpu = hw.primary_gpu
     gpu_str = (
@@ -468,25 +458,30 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
     print(f"  OPENAI_API_KEY    : {'✓' if avail.has_openai_key else '✗ not set'}")
 
     # ── 2. Score and filter strategies ──────────────────────────────
-    viable   = []
-    marginal = []   # viable after downloading a model
-    blocked  = []
+    viable = []
+    marginal = []  # viable after downloading a model
+    blocked = []
 
     # Model size hints for download prompt
     MODEL_SIZES = {
-        "qwen3.5:27b": 17.0, "qwen3.5:9b": 6.6, "qwen3.5:35b": 23.0,
-        "qwen3:8b":    5.2,  "qwen3:14b":  9.3,  "qwen3:32b":  20.0,
-        "qwen2.5:7b":  4.7,  "qwen2.5:32b": 19.0,
+        "qwen3.5:27b": 17.0,
+        "qwen3.5:9b": 6.6,
+        "qwen3.5:35b": 23.0,
+        "qwen3:8b": 5.2,
+        "qwen3:14b": 9.3,
+        "qwen3:32b": 20.0,
+        "qwen2.5:7b": 4.7,
+        "qwen2.5:32b": 19.0,
     }
 
     for name, s in STRATEGIES.items():
-        reasons_blocked  = []
+        reasons_blocked = []
         reasons_marginal = []
 
         for role in ("planner", "executor"):
-            cfg    = s.get(role, {})
+            cfg = s.get(role, {})
             engine = cfg.get("engine", "")
-            model  = cfg.get("model", "")
+            model = cfg.get("model", "")
 
             if engine == "ollama":
                 if not avail.ollama_running:
@@ -513,10 +508,16 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
 
     # ── 3. Determine recommendation ─────────────────────────────────
     PRIORITY = [
-        "local_everything", "gemini_planning", "openai_planning",
-        "gemini_local_3b", "openai_local_3b",
-        "gemini_everything", "openai_everything",
-        "hybrid_cloud_planning", "cloud_executor_only", "cloud_everything",
+        "local_everything",
+        "gemini_planning",
+        "openai_planning",
+        "gemini_local_3b",
+        "openai_local_3b",
+        "gemini_everything",
+        "openai_everything",
+        "hybrid_cloud_planning",
+        "cloud_executor_only",
+        "cloud_everything",
     ]
 
     recommended_name = None
@@ -548,19 +549,19 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
             else:
                 name, s, info = item
                 if isinstance(info[0], tuple):
-                    note = f"  [needs: {', '.join(f'{m}({sz:.0f}GB)' for m,sz in info)}]"
+                    note = f"  [needs: {', '.join(f'{m}({sz:.0f}GB)' for m, sz in info)}]"
                 else:
                     note = f"  [blocked: {', '.join(info)}]"
             idx = len(all_choices) + 1
             rec = " ← recommended" if name == recommended_name else ""
             all_choices.append(name)
-            cost = s['cost_per_session']
+            cost = s["cost_per_session"]
             cost_str = "free" if cost == 0 else f"${cost:.2f}/session"
             print(f"  {idx:2d}. {s['display_name']:<40} {cost_str}{rec}{note}")
 
-    _show_group(viable,   "✓ Ready to use:")
+    _show_group(viable, "✓ Ready to use:")
     _show_group(marginal, "⬇  Available (model download required):")
-    _show_group(blocked,  "✗ Not available (missing API key or Ollama):")
+    _show_group(blocked, "✗ Not available (missing API key or Ollama):")
 
     if not all_choices:
         print("\n❌ No strategies available. Check that Ollama is running or an API key is set.")
@@ -579,16 +580,16 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
         choice = default
 
     selected_name = all_choices[choice - 1]
-    selected      = STRATEGIES[selected_name]
+    selected = STRATEGIES[selected_name]
 
     print(f"\n✓ Selected: {selected['display_name']}")
     print(f"  {selected['description']}")
 
     # ── 6. Validate / offer to download missing models ───────────────
     for role in ("planner", "executor"):
-        cfg    = selected.get(role, {})
+        cfg = selected.get(role, {})
         engine = cfg.get("engine", "")
-        model  = cfg.get("model", "")
+        model = cfg.get("model", "")
         if engine != "ollama" or not model:
             continue
         if avail.has_model(model):
@@ -606,14 +607,22 @@ def setup_wizard() -> Optional[Dict[str, Any]]:
                 return None
 
         size_hint = MODEL_SIZES.get(model, 0)
-        size_str  = f" ({size_hint:.0f}GB)" if size_hint else ""
+        size_str = f" ({size_hint:.0f}GB)" if size_hint else ""
         ok_disk, free_gb = check_disk_space("/", required_gb=size_hint * 1.1)
         if not ok_disk:
-            print(f"  ⚠️  Only {free_gb:.1f}GB free — {model} needs ~{size_hint:.0f}GB. Free up space first.")
+            print(
+                f"  ⚠️  Only {free_gb:.1f}GB free — {model} needs ~{size_hint:.0f}GB. Free up space first."
+            )
             return None
 
         try:
-            ans = input(f"\n  {role.capitalize()} model {model}{size_str} not found. Download now? [y/n]: ").strip().lower()
+            ans = (
+                input(
+                    f"\n  {role.capitalize()} model {model}{size_str} not found. Download now? [y/n]: "
+                )
+                .strip()
+                .lower()
+            )
         except EOFError:
             ans = "n"
 

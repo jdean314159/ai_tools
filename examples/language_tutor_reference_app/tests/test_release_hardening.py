@@ -6,9 +6,12 @@ import sys
 import pytest
 
 
-@pytest.mark.parametrize("module_name", [
-    "language_tutor.drills.base",
-])
+@pytest.mark.parametrize(
+    "module_name",
+    [
+        "language_tutor.drills.base",
+    ],
+)
 def test_release_compat_modules_import(module_name):
     if module_name == "language_tutor.drills.base":
         with pytest.warns(DeprecationWarning):

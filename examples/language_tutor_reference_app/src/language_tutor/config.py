@@ -12,9 +12,9 @@ from typing import List, Optional
 class LanguageProfile:
     """Profile for a specific language."""
 
-    code: str              # ISO code: "es", "la"
-    name: str              # English name: "Spanish", "Latin"
-    native_name: str       # Native name: "Español", "Latina"
+    code: str  # ISO code: "es", "la"
+    name: str  # English name: "Spanish", "Latin"
+    native_name: str  # Native name: "Español", "Latina"
 
     # System prompts
     system_prompt: str
@@ -35,6 +35,7 @@ class LanguageProfile:
     def get_random_starter(self) -> str:
         """Return a random conversation starter, or the default greeting."""
         import random
+
         if self.starters:
             return random.choice(self.starters)
         return self.greeting
@@ -168,7 +169,7 @@ LATIN_PROFILE = LanguageProfile(
     # Until then, Latin uses Piper TTS. Set PIPER_MODEL_PATH to a Latin-capable
     # voice model, or leave unset to use the first .onnx file found.
     tts_backend="piper",
-    tts_voice=None,          # resolved at runtime from PIPER_MODEL_PATH env var
+    tts_voice=None,  # resolved at runtime from PIPER_MODEL_PATH env var
     needs_phonetic_mapping=True,
 )
 
@@ -200,9 +201,10 @@ def get_language_profile(language: str) -> LanguageProfile:
 # Token budgets for memory layers
 class TokenBudget:
     """Default token budgets for memory layers."""
-    WORKING = 1000      # Recent conversation
-    EPISODIC = 800      # Past important moments
-    SEMANTIC = 400      # Vocabulary and grammar knowledge
+
+    WORKING = 1000  # Recent conversation
+    EPISODIC = 800  # Past important moments
+    SEMANTIC = 400  # Vocabulary and grammar knowledge
 
 
 # Whisper STT configuration (Phase 2)
@@ -223,9 +225,5 @@ WHISPER_CONFIG = {
 # Piper TTS configuration (Phase 2)
 PIPER_CONFIG = {
     "timeout": 30,
-    "speed_map": {
-        "slow": "1.5",
-        "normal": "1.0",
-        "fast": "0.75"
-    },
+    "speed_map": {"slow": "1.5", "normal": "1.0", "fast": "0.75"},
 }

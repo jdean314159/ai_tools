@@ -23,7 +23,9 @@ class FakeStructuredPlan(BaseModel):
 class RecordingEngine:
     def __init__(self, *, purpose: str, session_summary: str | None = None) -> None:
         self.purpose = purpose
-        self.session_summary = session_summary or "Session summary: practiced ser vs estar and present progressive."
+        self.session_summary = (
+            session_summary or "Session summary: practiced ser vs estar and present progressive."
+        )
         self.prompts: list[str] = []
         self.structured_prompts: list[str] = []
         self.responses: list[str] = []
@@ -77,7 +79,9 @@ def recording_loader(monkeypatch: pytest.MonkeyPatch):
     return engines
 
 
-def _build_session(tmp_path: Path, strategy: dict, *, memory_backend: str, session_id: str) -> TutorSession:
+def _build_session(
+    tmp_path: Path, strategy: dict, *, memory_backend: str, session_id: str
+) -> TutorSession:
     return TutorSession(
         language="spanish",
         strategy=strategy,
@@ -94,7 +98,12 @@ def test_recent_turns_and_correction_carry_forward_reach_next_prompt(
     recording_loader,
     memory_backend: str,
 ):
-    session = _build_session(tmp_path, local_strategy, memory_backend=memory_backend, session_id=f"carry_{memory_backend}")
+    session = _build_session(
+        tmp_path,
+        local_strategy,
+        memory_backend=memory_backend,
+        session_id=f"carry_{memory_backend}",
+    )
     try:
         asyncio.run(session.start(duration_minutes=15))
         asyncio.run(session.handle_text("Yo soy estudiando español."))
@@ -118,7 +127,9 @@ def test_session_restart_resume_surfaces_previous_summary_and_recent_turns(
     memory_backend: str,
 ):
     session_id = f"resume_{memory_backend}"
-    first = _build_session(tmp_path, local_strategy, memory_backend=memory_backend, session_id=session_id)
+    first = _build_session(
+        tmp_path, local_strategy, memory_backend=memory_backend, session_id=session_id
+    )
     try:
         asyncio.run(first.start(duration_minutes=12))
         asyncio.run(first.handle_text("Ayer fui al mercado."))
@@ -127,7 +138,9 @@ def test_session_restart_resume_surfaces_previous_summary_and_recent_turns(
     finally:
         first.close()
 
-    second = _build_session(tmp_path, local_strategy, memory_backend=memory_backend, session_id=session_id)
+    second = _build_session(
+        tmp_path, local_strategy, memory_backend=memory_backend, session_id=session_id
+    )
     try:
         recent_turns = second.memory.get_recent_turns(n=10)
         assert recent_turns
@@ -149,7 +162,12 @@ def test_longer_session_prompt_building_compresses_when_budget_is_tight(
     recording_loader,
     memory_backend: str,
 ):
-    session = _build_session(tmp_path, local_strategy, memory_backend=memory_backend, session_id=f"compress_{memory_backend}")
+    session = _build_session(
+        tmp_path,
+        local_strategy,
+        memory_backend=memory_backend,
+        session_id=f"compress_{memory_backend}",
+    )
     try:
         asyncio.run(session.start(duration_minutes=10))
         for idx in range(12):

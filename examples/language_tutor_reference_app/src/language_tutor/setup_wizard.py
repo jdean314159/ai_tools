@@ -8,6 +8,7 @@ from llm_engines.discovery import detect_hardware
 
 from language_tutor.hardware_strategy import get_strategy
 
+
 def setup_wizard():
     """Interactive setup for hardware/cost preferences."""
 
@@ -31,13 +32,13 @@ def setup_wizard():
     print(f"   Cost per session: ${strategy['cost_per_session']:.2f}")
     print(f"   Estimated monthly (20 sessions): ${strategy['cost_per_session'] * 20:.2f}")
 
-    if strategy['cost_per_session'] > 0:
+    if strategy["cost_per_session"] > 0:
         print("\n   💡 This adds up over time. Consider:")
         print("      • Used GPU: RTX 3060 12GB (~$200) → $0.06/session")
         print("      • Used GPU: RTX 3090 24GB (~$600) → $0.00/session")
 
     # Voice availability
-    if strategy['voice_stt']['enabled']:
+    if strategy["voice_stt"]["enabled"]:
         print("\n🎤 Voice: Enabled")
     else:
         print("\n🔇 Voice: Disabled (requires local GPU)")
@@ -46,17 +47,22 @@ def setup_wizard():
     print("\n" + "=" * 50)
     response = input("Proceed with this configuration? (y/n): ")
 
-    if response.lower() != 'y':
+    if response.lower() != "y":
         print("Setup cancelled.")
         return None
 
     # Save config
     config_path = Path("~/.language_tutor_config.json").expanduser()
-    config_path.write_text(json.dumps({
-        "strategy": strategy,
-        "hardware": hardware.model_dump(mode="json"),
-        "created": datetime.now().isoformat(),
-    }, indent=2))
+    config_path.write_text(
+        json.dumps(
+            {
+                "strategy": strategy,
+                "hardware": hardware.model_dump(mode="json"),
+                "created": datetime.now().isoformat(),
+            },
+            indent=2,
+        )
+    )
 
     print(f"\n✓ Configuration saved to {config_path}")
     return strategy

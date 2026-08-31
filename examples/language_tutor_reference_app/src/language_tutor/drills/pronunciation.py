@@ -65,6 +65,7 @@ class PronunciationScorer:
     def _get_model(self):
         if self._model is None:
             from faster_whisper import WhisperModel
+
             self._model = WhisperModel(
                 self._whisper_model_name,
                 device=self._device,
@@ -97,9 +98,7 @@ class PronunciationScorer:
                 "word_timestamps":  list,
             }
         """
-        return await asyncio.to_thread(
-            self._score_sync, user_audio, expected_text, reference_audio
-        )
+        return await asyncio.to_thread(self._score_sync, user_audio, expected_text, reference_audio)
 
     # ------------------------------------------------------------------
     # Synchronous implementation
@@ -113,7 +112,7 @@ class PronunciationScorer:
     ) -> Dict:
         user_text, word_timestamps = self._transcribe_with_timestamps(user_audio)
         phonetic = self._phonetic_accuracy(user_text, expected_text)
-        fluency  = self._fluency_score(word_timestamps)
+        fluency = self._fluency_score(word_timestamps)
         acoustic = 100.0
         if reference_audio:
             acoustic = self._acoustic_similarity(user_audio, reference_audio)
@@ -122,19 +121,17 @@ class PronunciationScorer:
         feedback = self._generate_feedback(overall, phonetic, fluency, user_text, expected_text)
 
         return {
-            "score":             round(overall, 1),
+            "score": round(overall, 1),
             "phonetic_accuracy": round(phonetic, 1),
-            "fluency_score":     round(fluency, 1),
-            "acoustic_score":    round(acoustic, 1),
-            "feedback":          feedback,
-            "detected_text":     user_text,
-            "expected_text":     expected_text,
-            "word_timestamps":   word_timestamps,
+            "fluency_score": round(fluency, 1),
+            "acoustic_score": round(acoustic, 1),
+            "feedback": feedback,
+            "detected_text": user_text,
+            "expected_text": expected_text,
+            "word_timestamps": word_timestamps,
         }
 
-    def _transcribe_with_timestamps(
-        self, audio_bytes: bytes
-    ) -> Tuple[str, List[Dict]]:
+    def _transcribe_with_timestamps(self, audio_bytes: bytes) -> Tuple[str, List[Dict]]:
         """Transcribe audio, returning (text, word_timing_list)."""
         tmp_path: Optional[str] = None
         try:
@@ -156,12 +153,14 @@ class PronunciationScorer:
                 if hasattr(segment, "words") and segment.words:
                     for w in segment.words:
                         text_parts.append(w.word.strip())
-                        word_timings.append({
-                            "word":        w.word.strip(),
-                            "start":       round(w.start, 3),
-                            "end":         round(w.end, 3),
-                            "probability": round(w.probability, 3),
-                        })
+                        word_timings.append(
+                            {
+                                "word": w.word.strip(),
+                                "start": round(w.start, 3),
+                                "end": round(w.end, 3),
+                                "probability": round(w.probability, 3),
+                            }
+                        )
             return " ".join(text_parts).strip(), word_timings
 
         except Exception as e:
@@ -188,6 +187,7 @@ class PronunciationScorer:
             return 100.0
 
         import statistics
+
         durations = [w["end"] - w["start"] for w in word_timestamps]
         pauses = [
             word_timestamps[i + 1]["start"] - word_timestamps[i]["end"]
@@ -208,9 +208,7 @@ class PronunciationScorer:
             score -= 20.0
         return max(0.0, score)
 
-    def _acoustic_similarity(
-        self, user_audio: bytes, reference_audio: bytes
-    ) -> float:
+    def _acoustic_similarity(self, user_audio: bytes, reference_audio: bytes) -> float:
         """MFCC cosine similarity, 0–100.
 
         Requires librosa and scipy.  Returns 100.0 if they are not installed
@@ -235,7 +233,7 @@ class PronunciationScorer:
 
         try:
             user_mfcc = _mfcc(user_audio)
-            ref_mfcc  = _mfcc(reference_audio)
+            ref_mfcc = _mfcc(reference_audio)
             similarity = 1.0 - cosine(user_mfcc.flatten(), ref_mfcc.flatten())
             return float(max(0.0, min(100.0, similarity * 100.0)))
         except Exception:

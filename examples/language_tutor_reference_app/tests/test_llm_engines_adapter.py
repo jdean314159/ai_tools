@@ -7,6 +7,7 @@ These verify that the adapter correctly bridges the tutor's string-based engine
 interface to the llm_engines GenerationRequest/GenerationResponse protocol,
 without requiring any external services.
 """
+
 from __future__ import annotations
 
 import json
@@ -19,6 +20,7 @@ from language_tutor.llm_engines_adapter import LLMEnginesAdapter
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _adapter(response_fn=None, model: str = "mock-1b") -> LLMEnginesAdapter:
     engine = MockEngine(model=model, response_fn=response_fn)
@@ -33,6 +35,7 @@ class _Plan(BaseModel):
 # ---------------------------------------------------------------------------
 # generate()
 # ---------------------------------------------------------------------------
+
 
 def test_generate_returns_nonempty_string():
     adapter = _adapter()
@@ -83,6 +86,7 @@ def test_generate_passes_max_tokens():
 
 def test_generate_returns_empty_string_when_content_is_none(monkeypatch):
     from llm_engines.contracts import ChatMessage, GenerationResponse, UsageStats
+
     engine = MockEngine()
 
     def _null_generate(request):
@@ -102,6 +106,7 @@ def test_generate_returns_empty_string_when_content_is_none(monkeypatch):
 # ---------------------------------------------------------------------------
 # count_tokens()
 # ---------------------------------------------------------------------------
+
 
 def test_count_tokens_returns_positive_int():
     adapter = _adapter()
@@ -127,6 +132,7 @@ def test_count_tokens_longer_text_is_more_than_shorter():
 # generate_structured()
 # ---------------------------------------------------------------------------
 
+
 def test_generate_structured_returns_pydantic_model():
     def _json_response(req):
         return json.dumps({"topic": "food", "difficulty": "intermediate"})
@@ -140,7 +146,7 @@ def test_generate_structured_returns_pydantic_model():
 
 def test_generate_structured_handles_markdown_fenced_json():
     def _fenced(req):
-        return "```json\n{\"topic\": \"travel\", \"difficulty\": \"advanced\"}\n```"
+        return '```json\n{"topic": "travel", "difficulty": "advanced"}\n```'
 
     adapter = _adapter(response_fn=_fenced)
     result = adapter.generate_structured("Generate a plan.", response_model=_Plan)
@@ -165,6 +171,7 @@ def test_generate_structured_injects_schema_into_prompt():
 # generate_with_logprobs()
 # ---------------------------------------------------------------------------
 
+
 def test_generate_with_logprobs_returns_none_for_non_logprob_engine():
     # MockEngine does not implement LogprobModel
     adapter = _adapter()
@@ -175,6 +182,7 @@ def test_generate_with_logprobs_returns_none_for_non_logprob_engine():
 # ---------------------------------------------------------------------------
 # stream()
 # ---------------------------------------------------------------------------
+
 
 def test_stream_yields_string_chunks_when_streaming_not_supported():
     # MockEngine does not implement StreamingModel — falls back to generate
@@ -189,6 +197,7 @@ def test_stream_yields_string_chunks_when_streaming_not_supported():
 # ---------------------------------------------------------------------------
 # model_name
 # ---------------------------------------------------------------------------
+
 
 def test_model_name_taken_from_engine_when_not_passed():
     engine = MockEngine(model="test-model-xyz")
@@ -205,6 +214,7 @@ def test_model_name_explicit_overrides_engine():
 # ---------------------------------------------------------------------------
 # call counting via MockEngine.call_count
 # ---------------------------------------------------------------------------
+
 
 def test_call_count_increments_on_each_generate():
     engine = MockEngine()

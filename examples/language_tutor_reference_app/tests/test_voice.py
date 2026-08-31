@@ -14,6 +14,7 @@ Coverage:
   - VoicePipeline:       lazy init; language-specific preprocessing applied
   - STTService:          construction without a live model
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -36,6 +37,7 @@ pytestmark = pytest.mark.skip(
 # _find_model()
 # ---------------------------------------------------------------------------
 
+
 class TestFindModel:
     def test_env_var_valid_path_returns_path(self, tmp_path, monkeypatch):
         model = tmp_path / "voice.onnx"
@@ -43,12 +45,14 @@ class TestFindModel:
         monkeypatch.setenv("PIPER_MODEL_PATH", str(model))
 
         from language_tutor.voice.piper_tts import _find_model
+
         assert _find_model() == model
 
     def test_env_var_missing_file_raises(self, tmp_path, monkeypatch):
         monkeypatch.setenv("PIPER_MODEL_PATH", str(tmp_path / "nonexistent.onnx"))
 
         from language_tutor.voice.piper_tts import _find_model
+
         with pytest.raises(RuntimeError, match="PIPER_MODEL_PATH set but file not found"):
             _find_model()
 
@@ -59,6 +63,7 @@ class TestFindModel:
 
         # Also patch __file__ context so project-local piper/ dir doesn't exist
         from language_tutor.voice import piper_tts as _mod
+
         monkeypatch.setattr(_mod, "__file__", str(tmp_path / "piper_tts.py"))
 
         with pytest.raises(RuntimeError, match="No piper model found"):
@@ -74,8 +79,10 @@ class TestFindModel:
         model.write_bytes(b"fake")
 
         from language_tutor.voice import piper_tts as _mod
+
         monkeypatch.setattr(
-            _mod, "__file__",
+            _mod,
+            "__file__",
             # __file__ is language_tutor/voice/piper_tts.py → parent×3 / piper/
             str(tmp_path / "language_tutor" / "voice" / "piper_tts.py"),
         )
@@ -88,12 +95,14 @@ class TestFindModel:
 # PiperTTSService construction
 # ---------------------------------------------------------------------------
 
+
 class TestPiperTTSServiceConstruction:
     def test_explicit_model_path_accepted(self, tmp_path):
         model = tmp_path / "voice.onnx"
         model.write_bytes(b"x")
 
         from language_tutor.voice.piper_tts import PiperTTSService
+
         svc = PiperTTSService(model_path=model)
         assert svc.model_path == model
 
@@ -102,6 +111,7 @@ class TestPiperTTSServiceConstruction:
         monkeypatch.setattr(Path, "home", staticmethod(lambda: tmp_path))
 
         from language_tutor.voice import piper_tts as _mod
+
         monkeypatch.setattr(_mod, "__file__", str(tmp_path / "piper_tts.py"))
 
         with pytest.raises(RuntimeError):
@@ -112,9 +122,11 @@ class TestPiperTTSServiceConstruction:
 # _synthesise_sync()
 # ---------------------------------------------------------------------------
 
+
 class TestSynthesiseSync:
     def _make_svc(self, tmp_path: Path) -> "PiperTTSService":
         from language_tutor.voice.piper_tts import PiperTTSService
+
         model = tmp_path / "voice.onnx"
         model.write_bytes(b"x")
         return PiperTTSService(model_path=model)
@@ -162,7 +174,7 @@ class TestSynthesiseSync:
             svc._synthesise_sync("test slow", "slow")
             svc._synthesise_sync("test normal", "normal")
 
-        ls_slow   = captured_cmds[0][captured_cmds[0].index("--length_scale") + 1]
+        ls_slow = captured_cmds[0][captured_cmds[0].index("--length_scale") + 1]
         ls_normal = captured_cmds[1][captured_cmds[1].index("--length_scale") + 1]
         assert float(ls_slow) != float(ls_normal)
 
@@ -188,9 +200,11 @@ class TestSynthesiseSync:
 # generate_speech() async wrapper
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateSpeech:
     def test_generate_speech_returns_base64_string(self, tmp_path):
         from language_tutor.voice.piper_tts import PiperTTSService
+
         model = tmp_path / "m.onnx"
         model.write_bytes(b"x")
         svc = PiperTTSService(model_path=model)
@@ -208,21 +222,26 @@ class TestGenerateSpeech:
 # _latin_phonetic()
 # ---------------------------------------------------------------------------
 
+
 class TestLatinPhonetic:
     def test_v_becomes_w(self):
         from language_tutor.voice.tts import _latin_phonetic
+
         assert _latin_phonetic("veni vidi vici") == "weni widi wici"
 
     def test_uppercase_v_becomes_w(self):
         from language_tutor.voice.tts import _latin_phonetic
+
         assert _latin_phonetic("VENI VIDI VICI") == "WENI WIDI WICI"
 
     def test_non_v_chars_unchanged(self):
         from language_tutor.voice.tts import _latin_phonetic
+
         assert _latin_phonetic("Roma") == "Roma"
 
     def test_mixed_text(self):
         from language_tutor.voice.tts import _latin_phonetic
+
         result = _latin_phonetic("ave Caesar")
         assert result == "awe Caesar"
 
@@ -231,25 +250,30 @@ class TestLatinPhonetic:
 # VoicePipeline construction (no services loaded)
 # ---------------------------------------------------------------------------
 
+
 class TestVoicePipeline:
     def _make_profile(self, language: str = "spanish"):
         from language_tutor.config import get_language_profile
+
         return get_language_profile(language)
 
     def test_construction_does_not_load_stt(self):
         from language_tutor.voice.tts import VoicePipeline
+
         profile = self._make_profile("spanish")
         pipeline = VoicePipeline(profile)
         assert pipeline._stt is None
 
     def test_construction_does_not_load_tts(self):
         from language_tutor.voice.tts import VoicePipeline
+
         profile = self._make_profile("spanish")
         pipeline = VoicePipeline(profile)
         assert pipeline._tts is None
 
     def test_profile_stored(self):
         from language_tutor.voice.tts import VoicePipeline
+
         profile = self._make_profile("spanish")
         pipeline = VoicePipeline(profile)
         assert pipeline.profile is profile
@@ -257,6 +281,7 @@ class TestVoicePipeline:
     def test_synthesize_applies_latin_phonetic_preprocessing(self, tmp_path, monkeypatch):
         """Latin pipeline must call _latin_phonetic before TTS."""
         from language_tutor.voice.tts import VoicePipeline, _latin_phonetic
+
         profile = self._make_profile("latin")
         pipeline = VoicePipeline(profile)
 
@@ -278,6 +303,7 @@ class TestVoicePipeline:
 # STTService — construction without live model
 # ---------------------------------------------------------------------------
 
+
 class TestSTTService:
     @pytest.fixture(autouse=True)
     def _mock_whisper(self, monkeypatch):
@@ -285,29 +311,35 @@ class TestSTTService:
         fake_model = MagicMock()
         fake_model.transcribe.return_value = (iter([]), MagicMock())
         import language_tutor.voice.stt as _stt_mod
+
         monkeypatch.setattr(_stt_mod, "WhisperModel", lambda *a, **kw: fake_model)
         self._fake_model = fake_model
 
     def test_construction_stores_language(self):
         from language_tutor.voice.stt import STTService
+
         svc = STTService(language="es")
         assert svc.language == "es"
 
     def test_construction_stores_model_name(self):
         from language_tutor.voice.stt import STTService
+
         svc = STTService(model_name="base", language="es")
         assert svc.model_name == "base"
 
     def test_whisper_language_auto_env_sets_none(self, monkeypatch):
         import importlib
+
         monkeypatch.setenv("WHISPER_LANGUAGE", "auto")
         import language_tutor.voice.stt as _mod
+
         importlib.reload(_mod)
         svc = _mod.STTService()
         assert svc.language is None
 
     def test_transcribe_bytes_returns_string(self):
         from language_tutor.voice.stt import STTService
+
         seg = MagicMock()
         seg.text = "Hola mundo"
         self._fake_model.transcribe.return_value = (iter([seg]), MagicMock())
@@ -318,6 +350,7 @@ class TestSTTService:
 
     def test_transcribe_bytes_returns_error_string_on_failure(self):
         from language_tutor.voice.stt import STTService
+
         self._fake_model.transcribe.side_effect = RuntimeError("model error")
         svc = STTService(language="es")
         result = asyncio.run(svc.transcribe_bytes(b"bad-audio"))

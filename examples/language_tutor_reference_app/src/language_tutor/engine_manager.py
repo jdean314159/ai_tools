@@ -15,6 +15,7 @@ from pathlib import Path
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -63,10 +64,7 @@ class EngineManager:
             LLM engine configured for planning
         """
         if self.planner_engine is None:
-            self.planner_engine = self._load_engine(
-                self.strategy["planner"],
-                purpose="planning"
-            )
+            self.planner_engine = self._load_engine(self.strategy["planner"], purpose="planning")
             self._planner_loaded = True
 
         return self.planner_engine
@@ -84,10 +82,7 @@ class EngineManager:
             LLM engine configured for execution
         """
         if self.executor_engine is None:
-            self.executor_engine = self._load_engine(
-                self.strategy["executor"],
-                purpose="execution"
-            )
+            self.executor_engine = self._load_engine(self.strategy["executor"], purpose="execution")
             self._executor_loaded = True
 
         return self.executor_engine
@@ -107,7 +102,7 @@ class EngineManager:
             executor = self.get_executor()
 
             # Verify it supports logprobs
-            if hasattr(executor, 'generate_with_logprobs'):
+            if hasattr(executor, "generate_with_logprobs"):
                 return executor
             else:
                 print("⚠️  Executor doesn't support logprobs - surprise filter disabled")
@@ -141,11 +136,14 @@ class EngineManager:
             try:
                 import urllib.request
                 import json as _json
+
                 base = "http://localhost:11434"
-                payload = _json.dumps({
-                    "model": planner_model,
-                    "keep_alive": 0,           # unload immediately
-                }).encode()
+                payload = _json.dumps(
+                    {
+                        "model": planner_model,
+                        "keep_alive": 0,  # unload immediately
+                    }
+                ).encode()
                 req = urllib.request.Request(
                     f"{base}/api/generate",
                     data=payload,
@@ -200,9 +198,9 @@ class EngineManager:
 
         try:
             from language_tutor.llm_engines_adapter import build_engine
+
             engine = build_engine(config)
-            print(f"✓ {purpose} engine loaded via llm_engines "
-                  f"({engine_type} - {model_name})")
+            print(f"✓ {purpose} engine loaded via llm_engines ({engine_type} - {model_name})")
             return engine
 
         except Exception as e:
@@ -366,6 +364,7 @@ class CostTracker:
 
         try:
             import json
+
             data = json.loads(self.save_path.read_text())
             self.session_count = data.get("session_count", 0)
             self.estimated_cost = data.get("estimated_cost", 0.0)
@@ -395,6 +394,7 @@ class CostTracker:
 if __name__ == "__main__":
     # Test engine manager
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
     from hardware_strategy import detect_hardware, get_strategy

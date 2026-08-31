@@ -25,7 +25,7 @@ from typing import Optional
 
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
-DEFAULT_MODEL   = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-2.0-flash"
 
 
 class GeminiEngine:
@@ -43,9 +43,9 @@ class GeminiEngine:
         max_context: int = 32768,
         system_prompt: Optional[str] = None,
     ) -> None:
-        self.model_name    = model_name
-        self.api_key       = api_key or os.environ.get("GOOGLE_API_KEY", "")
-        self.timeout       = timeout
+        self.model_name = model_name
+        self.api_key = api_key or os.environ.get("GOOGLE_API_KEY", "")
+        self.timeout = timeout
         self.max_context_length = max_context
         self.system_prompt = system_prompt or ""
 
@@ -86,9 +86,7 @@ class GeminiEngine:
         import re as _re
 
         schema_hint = self._schema_hint(response_model)
-        full_prompt = (
-            f"{prompt}\n\nRespond with JSON only matching this schema:\n{schema_hint}"
-        )
+        full_prompt = f"{prompt}\n\nRespond with JSON only matching this schema:\n{schema_hint}"
         raw = self.generate(
             full_prompt,
             system_prompt=kwargs.get("system_prompt", self.system_prompt),
@@ -96,13 +94,13 @@ class GeminiEngine:
         )
 
         # Strip markdown fences if present
-        raw_clean = _re.sub(r'^```[a-z]*\s*|\s*```$', '', raw.strip(), flags=_re.MULTILINE)
+        raw_clean = _re.sub(r"^```[a-z]*\s*|\s*```$", "", raw.strip(), flags=_re.MULTILINE)
         try:
             data = json.loads(raw_clean)
             return response_model(**data)
         except Exception:
             # Try extracting first JSON object
-            m = _re.search(r'\{.*\}', raw_clean, _re.DOTALL)
+            m = _re.search(r"\{.*\}", raw_clean, _re.DOTALL)
             if m:
                 try:
                     return response_model(**json.loads(m.group()))
@@ -112,7 +110,9 @@ class GeminiEngine:
         try:
             return response_model()
         except Exception:
-            raise ValueError(f"Could not parse Gemini response as {response_model.__name__}: {raw[:200]}")
+            raise ValueError(
+                f"Could not parse Gemini response as {response_model.__name__}: {raw[:200]}"
+            )
 
     def count_tokens(self, text: str) -> int:
         """Rough token count — Gemini uses ~4 chars/token."""
@@ -130,17 +130,17 @@ class GeminiEngine:
     ) -> str:
         url = f"{GEMINI_BASE_URL}/chat/completions"
         payload = {
-            "model":       self.model_name,
-            "messages":    messages,
-            "max_tokens":  max_tokens,
+            "model": self.model_name,
+            "messages": messages,
+            "max_tokens": max_tokens,
             "temperature": temperature,
         }
         data = json.dumps(payload).encode("utf-8")
-        req  = urllib.request.Request(
+        req = urllib.request.Request(
             url,
             data=data,
             headers={
-                "Content-Type":  "application/json",
+                "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.api_key}",
             },
             method="POST",

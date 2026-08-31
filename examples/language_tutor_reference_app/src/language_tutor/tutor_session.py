@@ -40,6 +40,7 @@ from .engine_manager import EngineManager, CostTracker
 @dataclass
 class TutorResponse:
     """Response from tutor to user message."""
+
     text: str
     corrections: Optional[List[dict]] = None
     new_vocabulary: Optional[List[dict]] = None
@@ -48,6 +49,7 @@ class TutorResponse:
 
 class SessionState(Enum):
     """Session state machine."""
+
     IDLE = "idle"
     PLANNING = "planning"
     WARMUP = "warmup"
@@ -88,6 +90,7 @@ class TutorSession:
 
         # Load language profile
         from .config import get_language_profile
+
         self.profile = get_language_profile(language)
 
         # Initialize engine manager
@@ -98,8 +101,8 @@ class TutorSession:
 
         # Initialize memory with strategy-aware engine
         self.memory_backend = (
-            memory_backend or strategy.get("memory_backend") or "engram"
-        ).strip().lower()
+            (memory_backend or strategy.get("memory_backend") or "engram").strip().lower()
+        )
         self.memory = self._init_memory()
 
         # Cost tracking (if cloud-based)
@@ -118,9 +121,7 @@ class TutorSession:
         self.vocab_learned: List[dict] = []
 
         # Session persistence (survives restarts, feeds planner)
-        self.store = SessionStore(
-            db_path=base_dir / "memory" / f"{language}_sessions.db"
-        )
+        self.store = SessionStore(db_path=base_dir / "memory" / f"{language}_sessions.db")
         self.store.start_session(
             session_id=self.session_id,
             language=language,
@@ -200,7 +201,9 @@ class TutorSession:
                     summary = str(row.get("summary", "")).strip()
                     if not summary or summary in seen:
                         continue
-                    past_sessions.append(SimpleNamespace(text=summary, metadata={"source": "session_store", **row}))
+                    past_sessions.append(
+                        SimpleNamespace(text=summary, metadata={"source": "session_store", **row})
+                    )
                     seen.add(summary)
                     if len(past_sessions) >= 3:
                         break
@@ -236,7 +239,7 @@ class TutorSession:
             weaknesses=self.store.get_weaknesses(self.language),
         )
 
-        if hasattr(planner, 'generate_structured'):
+        if hasattr(planner, "generate_structured"):
             try:
                 plan = planner.generate_structured(
                     prompt=planning_prompt,
@@ -299,7 +302,9 @@ class TutorSession:
             if focus:
                 plan_prefix = f"[Session focus: {', '.join(focus)}]\n\n"
 
-        full_prompt = plan_prefix + prompt_result["prompt"] if plan_prefix else prompt_result["prompt"]
+        full_prompt = (
+            plan_prefix + prompt_result["prompt"] if plan_prefix else prompt_result["prompt"]
+        )
 
         response_text = self.executor.generate(
             prompt=full_prompt,
@@ -334,7 +339,7 @@ class TutorSession:
                 "compressed": prompt_result.get("compressed", False),
                 "prompt_tokens": prompt_result.get("prompt_tokens", 0),
                 "memory_tokens": prompt_result.get("memory_tokens", 0),
-            }
+            },
         )
 
     async def handle_text_interop(self, user_input: str):
@@ -422,8 +427,10 @@ class TutorSession:
         )
         for item in self.vocab_learned:
             self.store.log_vocab(
-                self.session_id, self.language,
-                item.get("word", ""), item.get("translation", ""),
+                self.session_id,
+                self.language,
+                item.get("word", ""),
+                item.get("translation", ""),
             )
 
         self.state = SessionState.COMPLETED
@@ -448,7 +455,7 @@ class TutorSession:
         if past_sessions:
             prompt += "\nPrevious sessions:\n"
             for session in past_sessions[:3]:
-                content = getattr(session, 'text', str(session))
+                content = getattr(session, "text", str(session))
                 prompt += f"- {content[:200]}...\n"
 
         if weaknesses:
@@ -457,7 +464,8 @@ class TutorSession:
                 examples = ", ".join(w.get("examples", [])[:2])
                 prompt += (
                     f"- {w['error_type']}: {w['count']} times"
-                    + (f" (e.g. {examples})" if examples else "") + "\n"
+                    + (f" (e.g. {examples})" if examples else "")
+                    + "\n"
                 )
 
         if unmastered:
@@ -467,7 +475,7 @@ class TutorSession:
 
         # Suggest a concrete warmup starter from the profile
         starter = self.profile.get_random_starter()
-        prompt += f"\nSuggested warmup opener: \"{starter}\"\n"
+        prompt += f'\nSuggested warmup opener: "{starter}"\n'
 
         prompt += """
 Create a balanced lesson plan with:
@@ -491,16 +499,16 @@ Format as JSON matching the SessionPlan schema.
         prompt = f"Summarize this {self.profile.name} tutoring session.\n\nPlanned objectives:\n"
 
         if plan and isinstance(plan, dict):
-            focus = plan.get('focus_areas', [])
-            prompt += ', '.join(focus) if focus else "General conversation"
+            focus = plan.get("focus_areas", [])
+            prompt += ", ".join(focus) if focus else "General conversation"
         else:
             prompt += "General conversation"
 
         prompt += "\n\nConversation:\n"
 
         for turn in turns[:50]:
-            role = getattr(turn, 'role', 'unknown')
-            content = getattr(turn, 'content', str(turn))
+            role = getattr(turn, "role", "unknown")
+            content = getattr(turn, "content", str(turn))
             prompt += f"{role}: {content}\n"
 
         prompt += """
@@ -553,11 +561,15 @@ Provide a summary including:
         if corrections and semantic is not None:
             # Ensure the "default" User node exists (idempotent via add_node's upsert)
             try:
-                semantic.add_node("User", "default", {
-                    "name": "default",
-                    "created": _time.time(),
-                    "metadata": "{}",
-                })
+                semantic.add_node(
+                    "User",
+                    "default",
+                    {
+                        "name": "default",
+                        "created": _time.time(),
+                        "metadata": "{}",
+                    },
+                )
             except Exception:
                 pass
 
@@ -570,8 +582,10 @@ Provide a summary including:
                 # Log to SessionStore for historical weakness analysis
                 try:
                     self.store.log_mistake(
-                        self.session_id, self.language,
-                        error, correction,
+                        self.session_id,
+                        self.language,
+                        error,
+                        correction,
                         error_type=explanation[:80] if explanation else "grammar",
                     )
                 except Exception:
@@ -579,19 +593,27 @@ Provide a summary including:
                 # Write to Engram semantic graph
                 try:
                     import hashlib
-                    mistake_id = "mistake_" + hashlib.sha256(
-                        f"{self.language}_{error}".encode()
-                    ).hexdigest()[:12]
-                    semantic.add_node("Mistake", mistake_id, {
-                        "incorrect": error[:200],
-                        "correct": correction[:200],
-                        "error_type": explanation[:200] if explanation else "grammar",
-                        "frequency": 1,
-                        "last_occurred": _time.time(),
-                    })
+
+                    mistake_id = (
+                        "mistake_"
+                        + hashlib.sha256(f"{self.language}_{error}".encode()).hexdigest()[:12]
+                    )
+                    semantic.add_node(
+                        "Mistake",
+                        mistake_id,
+                        {
+                            "incorrect": error[:200],
+                            "correct": correction[:200],
+                            "error_type": explanation[:200] if explanation else "grammar",
+                            "frequency": 1,
+                            "last_occurred": _time.time(),
+                        },
+                    )
                     semantic.add_relationship(
-                        "User", "default",
-                        "Mistake", mistake_id,
+                        "User",
+                        "default",
+                        "Mistake",
+                        mistake_id,
                         "MADE_MISTAKE",
                         {"timestamp": _time.time()},
                     )
@@ -606,8 +628,8 @@ Provide a summary including:
         """
         raw = raw.strip()
         # Strip markdown fences
-        raw = re.sub(r'^```[a-z]*\s*', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
+        raw = re.sub(r"^```[a-z]*\s*", "", raw, flags=re.MULTILINE)
+        raw = re.sub(r"```\s*$", "", raw, flags=re.MULTILINE)
         raw = raw.strip()
         try:
             result = json.loads(raw)
@@ -616,7 +638,7 @@ Provide a summary including:
         except json.JSONDecodeError:
             pass
         # Extract first [...] block
-        match = re.search(r'\[.*?\]', raw, re.DOTALL)
+        match = re.search(r"\[.*?\]", raw, re.DOTALL)
         if match:
             try:
                 result = json.loads(match.group())
@@ -728,7 +750,9 @@ Provide a summary including:
 
     async def explain_interop(self, text: str, question: Optional[str] = None):
         explanation = await self.explain(text, question)
-        return explanation_to_interop_result(self, text=text, question=question, explanation=explanation)
+        return explanation_to_interop_result(
+            self, text=text, question=question, explanation=explanation
+        )
 
     def get_capability_descriptor(self):
         return describe_language_tutor(
@@ -751,13 +775,13 @@ Provide a summary including:
 
         # Cache as plain dict so it survives JSON round-trips
         self._current_drill = {
-            "question_id":    question.question_id,
-            "drill_type":     question.drill_type,
-            "prompt":         question.prompt,
+            "question_id": question.question_id,
+            "drill_type": question.drill_type,
+            "prompt": question.prompt,
             "correct_answer": question.correct_answer,
-            "context":        question.context,
-            "hint":           question.hint,
-            "auto_play_tts":  question.auto_play_tts,
+            "context": question.context,
+            "hint": question.hint,
+            "auto_play_tts": question.auto_play_tts,
         }
         return self._current_drill
 
@@ -774,6 +798,7 @@ Provide a summary including:
             }
 
         from .drills.drill_system import DrillQuestion
+
         q = DrillQuestion(
             question_id=self._current_drill["question_id"],
             drill_type=self._current_drill["drill_type"],
@@ -789,24 +814,26 @@ Provide a summary including:
         if not result.correct:
             self._update_semantic_memory(
                 vocab=[],
-                corrections=[{
-                    "error":       user_answer,
-                    "correction":  result.correct_answer,
-                    "explanation": f"drill:{q.drill_type}",
-                }],
+                corrections=[
+                    {
+                        "error": user_answer,
+                        "correction": result.correct_answer,
+                        "explanation": f"drill:{q.drill_type}",
+                    }
+                ],
             )
 
         self._current_drill = None  # Consumed
         self.state = SessionState.CONVERSATION
 
         return {
-            "correct":        result.correct,
-            "accuracy":       result.accuracy,
-            "user_answer":    result.user_answer,
+            "correct": result.correct,
+            "accuracy": result.accuracy,
+            "user_answer": result.user_answer,
             "correct_answer": result.correct_answer,
-            "feedback":       result.feedback,
-            "drill_type":     result.drill_type,
-            "drill_stats":    self.drills.get_session_stats(),
+            "feedback": result.feedback,
+            "drill_type": result.drill_type,
+            "drill_stats": self.drills.get_session_stats(),
         }
 
     def get_stats(self) -> Dict[str, Any]:

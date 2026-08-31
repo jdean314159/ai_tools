@@ -13,7 +13,6 @@ Default target: ~/ai-projects/language_tutor
 import sys
 import shutil
 from pathlib import Path
-from datetime import datetime
 
 
 def create_project_structure(base_dir: Path):
@@ -25,7 +24,6 @@ def create_project_structure(base_dir: Path):
     dirs = [
         # Package root
         "language_tutor",
-
         # Core modules
         "language_tutor/voice",
         "language_tutor/drills",
@@ -36,11 +34,9 @@ def create_project_structure(base_dir: Path):
         "language_tutor/templates/static",
         "language_tutor/templates/static/css",
         "language_tutor/templates/static/js",
-
         # Tests
         "tests",
         "tests/integration",
-
         # Data directories
         "data/memory",
         "data/voices",
@@ -752,7 +748,7 @@ if __name__ == "__main__":
 def create_basic_ui(base_dir: Path):
     """Create minimal web UI."""
 
-    html_content = '''<!DOCTYPE html>
+    html_content = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -805,9 +801,9 @@ def create_basic_ui(base_dir: Path):
     <script llm_inspector_ui="/static/js/app.js"></script>
 </body>
 </html>
-'''
+"""
 
-    css_content = '''/* Language Tutor Styles */
+    css_content = """/* Language Tutor Styles */
 
 * {
     margin: 0;
@@ -961,9 +957,9 @@ footer {
     color: #6c757d;
     border-top: 1px solid #dee2e6;
 }
-'''
+"""
 
-    js_content = '''// Language Tutor Frontend
+    js_content = """// Language Tutor Frontend
 
 let currentLanguage = null;
 let sessionActive = false;
@@ -1064,7 +1060,7 @@ function addMessage(role, content) {
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
-'''
+"""
 
     # Create files
     templates_dir = base_dir / "language_tutor" / "templates"
@@ -1080,7 +1076,7 @@ function addMessage(role, content) {
 def create_requirements(base_dir: Path):
     """Create requirements.txt."""
 
-    content = '''# Language Tutor Requirements
+    content = """# Language Tutor Requirements
 
 # Core dependencies (already installed via llm-engine and memory-rag)
 # These are listed for reference but should already be available
@@ -1116,7 +1112,7 @@ psutil>=5.9.0
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 black>=23.0.0
-'''
+"""
 
     (base_dir / "requirements.txt").write_text(content)
     print("  ✓ Created requirements.txt")
@@ -1125,7 +1121,7 @@ black>=23.0.0
 def create_pyproject_toml(base_dir: Path):
     """Create pyproject.toml."""
 
-    content = '''[project]
+    content = """[project]
 name = "language-tutor"
 version = "0.1.0"
 description = "AI-powered language learning with voice interaction"
@@ -1168,7 +1164,7 @@ testpaths = ["tests"]
 [tool.black]
 line-length = 100
 target-version = ['py311']
-'''
+"""
 
     (base_dir / "pyproject.toml").write_text(content)
     print("  ✓ Created pyproject.toml")
@@ -1185,7 +1181,7 @@ def create_license(base_dir: Path):
 def create_readme(base_dir: Path):
     """Create README.md."""
 
-    content = '''# Language Tutor
+    content = """# Language Tutor
 
 AI-powered language learning with voice interaction and personalized practice.
 
@@ -1266,7 +1262,7 @@ black language_tutor/
 ## License
 
 Personal project - not for distribution
-'''
+"""
 
     (base_dir / "README.md").write_text(content)
     print("  ✓ Created README.md")
@@ -1275,7 +1271,7 @@ Personal project - not for distribution
 def create_gitignore(base_dir: Path):
     """Create .gitignore."""
 
-    content = '''# Python
+    content = """# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -1326,7 +1322,7 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
-'''
+"""
 
     (base_dir / ".gitignore").write_text(content)
     print("  ✓ Created .gitignore")
@@ -1352,8 +1348,8 @@ def main():
 
     # Confirm
     if target_dir.exists():
-        response = input(f"\n⚠️  Directory exists. Continue? (y/n): ")
-        if response.lower() != 'y':
+        response = input("\n⚠️  Directory exists. Continue? (y/n): ")
+        if response.lower() != "y":
             print("Aborted.")
             return
 

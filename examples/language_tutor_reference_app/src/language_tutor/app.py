@@ -27,13 +27,11 @@ app = FastAPI(
 _DEFAULT_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
-    "http://localhost:3000",   # common dev port
+    "http://localhost:3000",  # common dev port
 ]
 _env_origins = os.getenv("CORS_ORIGINS", "")
 ALLOWED_ORIGINS = (
-    [o.strip() for o in _env_origins.split(",") if o.strip()]
-    if _env_origins
-    else _DEFAULT_ORIGINS
+    [o.strip() for o in _env_origins.split(",") if o.strip()] if _env_origins else _DEFAULT_ORIGINS
 )
 
 app.add_middleware(
@@ -49,15 +47,13 @@ static_dir = Path(__file__).parent / "templates" / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
+
 # Basic health check
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {
-        "status": "ok",
-        "service": "language-tutor",
-        "version": "0.1.0"
-    }
+    return {"status": "ok", "service": "language-tutor", "version": "0.1.0"}
+
 
 # Serve main UI
 @app.get("/", response_class=HTMLResponse)
@@ -76,6 +72,7 @@ async def memory_viewer():
     if template_path.exists():
         return template_path.read_text()
     return "<h1>Memory viewer template not found</h1>"
+
 
 # Mount API routes
 app.include_router(session.router, prefix="/api/session", tags=["session"])

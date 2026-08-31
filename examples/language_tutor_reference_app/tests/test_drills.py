@@ -13,6 +13,7 @@ Coverage:
   - recommend_drill_type() falls back to day-of-week schedule
   - language dispatch: spanish vs latin
 """
+
 from __future__ import annotations
 
 import pytest
@@ -23,6 +24,7 @@ from language_tutor.drills.drill_system import DrillQuestion, DrillSystem
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def spanish_drills() -> DrillSystem:
@@ -52,11 +54,10 @@ def _make_question(
 # check_dictation()
 # ---------------------------------------------------------------------------
 
+
 class TestCheckDictation:
     def test_exact_match_is_correct(self, spanish_drills):
-        r = spanish_drills.check_dictation(
-            "Ayer fui al mercado", "Ayer fui al mercado"
-        )
+        r = spanish_drills.check_dictation("Ayer fui al mercado", "Ayer fui al mercado")
         assert r.correct is True
         assert r.accuracy == 1.0
         assert "Perfecto" in r.feedback
@@ -67,9 +68,7 @@ class TestCheckDictation:
 
     def test_partial_match_scoring(self, spanish_drills):
         # 3 correct of 4 expected words = 0.75
-        r = spanish_drills.check_dictation(
-            "ayer fui al mercado", "ayer fui al parque"
-        )
+        r = spanish_drills.check_dictation("ayer fui al mercado", "ayer fui al parque")
         assert r.correct is False
         assert abs(r.accuracy - 0.75) < 0.01
 
@@ -104,6 +103,7 @@ class TestCheckDictation:
 # _check_exact() — accent tolerance
 # ---------------------------------------------------------------------------
 
+
 class TestCheckExact:
     def test_exact_match_correct(self, spanish_drills):
         q = _make_question(correct_answer="fui")
@@ -121,13 +121,16 @@ class TestCheckExact:
         r = spanish_drills._check_exact(q, "esta")
         assert r.correct is True
 
-    @pytest.mark.parametrize("accented,plain", [
-        ("fútbol", "futbol"),
-        ("niño",   "nino"),
-        ("über",   "uber"),
-        ("señor",  "senor"),
-        ("año",    "ano"),
-    ])
+    @pytest.mark.parametrize(
+        "accented,plain",
+        [
+            ("fútbol", "futbol"),
+            ("niño", "nino"),
+            ("über", "uber"),
+            ("señor", "senor"),
+            ("año", "ano"),
+        ],
+    )
     def test_accent_variants(self, spanish_drills, accented, plain):
         q = _make_question(correct_answer=accented)
         r = spanish_drills._check_exact(q, plain)
@@ -154,6 +157,7 @@ class TestCheckExact:
 # ---------------------------------------------------------------------------
 # check_answer() — stat tracking
 # ---------------------------------------------------------------------------
+
 
 class TestCheckAnswerStats:
     def test_attempts_increments(self, spanish_drills):
@@ -188,9 +192,9 @@ class TestCheckAnswerStats:
 
     def test_multiple_rounds(self, spanish_drills):
         q = _make_question(correct_answer="fui")
-        spanish_drills.check_answer(q, "fui")   # correct
-        spanish_drills.check_answer(q, "iba")   # wrong
-        spanish_drills.check_answer(q, "fui")   # correct
+        spanish_drills.check_answer(q, "fui")  # correct
+        spanish_drills.check_answer(q, "iba")  # wrong
+        spanish_drills.check_answer(q, "fui")  # correct
         assert spanish_drills._attempts == 3
         assert spanish_drills._correct == 2
         assert len(spanish_drills._mistake_log) == 1
@@ -199,6 +203,7 @@ class TestCheckAnswerStats:
 # ---------------------------------------------------------------------------
 # Session accuracy / stats
 # ---------------------------------------------------------------------------
+
 
 class TestSessionStats:
     def test_accuracy_zero_before_any_attempt(self, spanish_drills):
@@ -279,6 +284,7 @@ def test_unknown_drill_type_falls_back_to_mixed(spanish_drills):
 # _check_translation() without engine falls back to fuzzy dictation
 # ---------------------------------------------------------------------------
 
+
 def test_translation_check_falls_back_to_dictation_without_engine(spanish_drills):
     assert spanish_drills.engine is None
     q = _make_question(
@@ -321,6 +327,7 @@ def test_translation_with_engine_calls_engine(spanish_drills):
 # recommend_drill_type() — falls back to day-of-week schedule
 # ---------------------------------------------------------------------------
 
+
 def test_recommend_drill_type_returns_string(spanish_drills):
     result = spanish_drills.recommend_drill_type()
     assert isinstance(result, str)
@@ -329,10 +336,16 @@ def test_recommend_drill_type_returns_string(spanish_drills):
 
 def test_recommend_drill_type_returns_valid_type(spanish_drills):
     valid = {
-        "irregular_verbs_preterite", "irregular_verbs_imperfect",
-        "reflexive_verbs", "prepositions", "sentence_dictation",
-        "pronunciation", "listening_comprehension", "vocabulary_review",
-        "translation", "mixed_review",
+        "irregular_verbs_preterite",
+        "irregular_verbs_imperfect",
+        "reflexive_verbs",
+        "prepositions",
+        "sentence_dictation",
+        "pronunciation",
+        "listening_comprehension",
+        "vocabulary_review",
+        "translation",
+        "mixed_review",
     }
     result = spanish_drills.recommend_drill_type()
     assert result in valid
@@ -340,9 +353,17 @@ def test_recommend_drill_type_returns_valid_type(spanish_drills):
 
 def test_latin_recommend_drill_type_returns_valid_type(latin_drills):
     valid = {
-        "irregular_verbs_present", "irregular_verbs_imperfect", "irregular_verbs_perfect",
-        "noun_declensions", "prepositions", "sentence_dictation", "pronunciation",
-        "listening_comprehension", "vocabulary_review", "translation", "mixed_review",
+        "irregular_verbs_present",
+        "irregular_verbs_imperfect",
+        "irregular_verbs_perfect",
+        "noun_declensions",
+        "prepositions",
+        "sentence_dictation",
+        "pronunciation",
+        "listening_comprehension",
+        "vocabulary_review",
+        "translation",
+        "mixed_review",
     }
     result = latin_drills.recommend_drill_type()
     assert result in valid
@@ -351,6 +372,7 @@ def test_latin_recommend_drill_type_returns_valid_type(latin_drills):
 # ---------------------------------------------------------------------------
 # vocabulary_review — degrades gracefully without SessionStore
 # ---------------------------------------------------------------------------
+
 
 def test_vocabulary_review_without_store_returns_fallback(spanish_drills):
     assert spanish_drills.store is None
@@ -362,12 +384,16 @@ def test_vocabulary_review_without_store_returns_fallback(spanish_drills):
 # _extract_json_list() helper
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("raw,expected", [
-    ('{"correct": true}', {"correct": True}),
-    ('```json\n[{"a": 1}]\n```', [{"a": 1}]),
-    ('Some preamble {"x": 2}', {"x": 2}),
-    ('not json at all', []),
-])
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ('{"correct": true}', {"correct": True}),
+        ('```json\n[{"a": 1}]\n```', [{"a": 1}]),
+        ('Some preamble {"x": 2}', {"x": 2}),
+        ("not json at all", []),
+    ],
+)
 def test_extract_json_list(raw, expected, spanish_drills):
     result = spanish_drills._extract_json_list(raw)
     assert result == expected

@@ -10,6 +10,7 @@ Tests cover:
   - Missing API keys (anthropic, gemini, openai) raise RuntimeError
   - build_engine connection failure raises RuntimeError
 """
+
 from __future__ import annotations
 
 import copy
@@ -29,6 +30,7 @@ def manager() -> EngineManager:
 # USE_LEGACY_ENGINE deprecation guard
 # ---------------------------------------------------------------------------
 
+
 def test_use_legacy_engine_raises_deprecation_error(manager, monkeypatch):
     monkeypatch.setenv("USE_LEGACY_ENGINE", "1")
     with pytest.raises(RuntimeError, match="USE_LEGACY_ENGINE is no longer supported"):
@@ -38,6 +40,7 @@ def test_use_legacy_engine_raises_deprecation_error(manager, monkeypatch):
 # ---------------------------------------------------------------------------
 # Unknown engine type
 # ---------------------------------------------------------------------------
+
 
 def test_unknown_engine_type_raises_runtime_error(manager, monkeypatch):
     monkeypatch.delenv("USE_LEGACY_ENGINE", raising=False)
@@ -54,14 +57,16 @@ def test_unknown_engine_type_raises_runtime_error(manager, monkeypatch):
 # API-key failures (build_engine propagates RuntimeError)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("env_var,engine_type,match", [
-    ("ANTHROPIC_API_KEY", "anthropic", "Cannot initialize"),
-    ("GOOGLE_API_KEY",    "gemini",    "Cannot initialize"),
-    ("OPENAI_API_KEY",    "openai",    "Cannot initialize"),
-])
-def test_missing_api_key_raises_runtime_error(
-    manager, monkeypatch, env_var, engine_type, match
-):
+
+@pytest.mark.parametrize(
+    "env_var,engine_type,match",
+    [
+        ("ANTHROPIC_API_KEY", "anthropic", "Cannot initialize"),
+        ("GOOGLE_API_KEY", "gemini", "Cannot initialize"),
+        ("OPENAI_API_KEY", "openai", "Cannot initialize"),
+    ],
+)
+def test_missing_api_key_raises_runtime_error(manager, monkeypatch, env_var, engine_type, match):
     monkeypatch.delenv("USE_LEGACY_ENGINE", raising=False)
     monkeypatch.delenv(env_var, raising=False)
 
@@ -76,6 +81,7 @@ def test_missing_api_key_raises_runtime_error(
 # ---------------------------------------------------------------------------
 # Connection / server-not-running failures
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("engine_type", ["ollama", "vllm", "llama_cpp"])
 def test_server_not_running_raises_runtime_error(manager, monkeypatch, engine_type):
@@ -93,6 +99,7 @@ def test_server_not_running_raises_runtime_error(manager, monkeypatch, engine_ty
 # Successful load path (sanity)
 # ---------------------------------------------------------------------------
 
+
 def test_successful_load_returns_adapter(manager, monkeypatch):
     monkeypatch.delenv("USE_LEGACY_ENGINE", raising=False)
 
@@ -109,6 +116,7 @@ def test_successful_load_returns_adapter(manager, monkeypatch):
 # ---------------------------------------------------------------------------
 # EngineManager.get_executor / get_planner use _load_engine
 # ---------------------------------------------------------------------------
+
 
 def test_get_executor_calls_load_engine(monkeypatch):
     called = []

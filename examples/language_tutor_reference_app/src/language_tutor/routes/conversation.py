@@ -4,7 +4,16 @@ Conversation Routes
 Endpoints for sending messages and receiving responses.
 """
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from pydantic import BaseModel
 from typing import TYPE_CHECKING, Dict, Optional, List
 
@@ -20,12 +29,14 @@ router = APIRouter()
 
 class MessageRequest(BaseModel):
     """Request to send a message."""
+
     session_id: str
     message: str
 
 
 class MessageResponse(BaseModel):
     """Response from tutor."""
+
     session_id: str
     message: str
     corrections: Optional[List[dict]] = None
@@ -81,10 +92,12 @@ async def websocket_conversation(websocket: WebSocket, session_id: str):
         # Get session
         session = active_sessions.get(session_id)
         if not session:
-            await websocket.send_json({
-                "error": "Session not found",
-                "session_id": session_id,
-            })
+            await websocket.send_json(
+                {
+                    "error": "Session not found",
+                    "session_id": session_id,
+                }
+            )
             await websocket.close()
             return
 
@@ -100,12 +113,14 @@ async def websocket_conversation(websocket: WebSocket, session_id: str):
             response = await session.handle_text(user_message)
 
             # Send response
-            await websocket.send_json({
-                "message": response.text,
-                "corrections": response.corrections,
-                "new_vocabulary": response.new_vocabulary,
-                "metadata": response.metadata,
-            })
+            await websocket.send_json(
+                {
+                    "message": response.text,
+                    "corrections": response.corrections,
+                    "new_vocabulary": response.new_vocabulary,
+                    "metadata": response.metadata,
+                }
+            )
 
     except WebSocketDisconnect:
         print(f"WebSocket disconnected for session {session_id}")
@@ -139,7 +154,7 @@ async def get_conversation_history(session_id: str, limit: int = 50):
                     "timestamp": getattr(turn, "timestamp", None),
                 }
                 for turn in turns
-            ]
+            ],
         }
 
     except HTTPException:
@@ -166,11 +181,13 @@ async def get_session_metrics(session_id: str):
 # Grammar explanation
 # ---------------------------------------------------------------------------
 
+
 class ExplainRequest(BaseModel):
     """Request a grammar explanation from the planner model."""
+
     session_id: str
-    text: str                        # The phrase, error, or concept to explain
-    question: Optional[str] = None   # Optional: "Why is X wrong?" "What does Y mean?"
+    text: str  # The phrase, error, or concept to explain
+    question: Optional[str] = None  # Optional: "Why is X wrong?" "What does Y mean?"
 
 
 @router.post("/explain")
@@ -190,8 +207,8 @@ async def explain_grammar(request: ExplainRequest):
 
 class LookupRequest(BaseModel):
     session_id: str
-    word: str                        # selected word or phrase
-    context: Optional[str] = None    # surrounding sentence for disambiguation
+    word: str  # selected word or phrase
+    context: Optional[str] = None  # surrounding sentence for disambiguation
 
 
 @router.post("/lookup")
@@ -228,12 +245,13 @@ async def lookup_word(request: LookupRequest):
         # Parse JSON response
         import json as _json
         import re as _re
+
         result = {}
         try:
-            raw_clean = _re.sub(r'^```[a-z]*\s*|\s*```$', '', raw.strip(), flags=_re.MULTILINE)
+            raw_clean = _re.sub(r"^```[a-z]*\s*|\s*```$", "", raw.strip(), flags=_re.MULTILINE)
             result = _json.loads(raw_clean)
         except Exception:
-            m = _re.search(r'\{.*\}', raw, _re.DOTALL)
+            m = _re.search(r"\{.*\}", raw, _re.DOTALL)
             if m:
                 try:
                     result = _json.loads(m.group())
@@ -248,8 +266,10 @@ async def lookup_word(request: LookupRequest):
             translation = result.get("translation", "")
             if translation:
                 session.store.log_vocab(
-                    session.session_id, session.language,
-                    request.word, translation,
+                    session.session_id,
+                    session.language,
+                    request.word,
+                    translation,
                 )
         except Exception:
             pass
@@ -264,7 +284,7 @@ async def lookup_word(request: LookupRequest):
 
 class CheckRequest(BaseModel):
     session_id: str
-    text: str    # user input to check before submitting
+    text: str  # user input to check before submitting
 
 
 @router.post("/check")
@@ -299,14 +319,15 @@ async def check_input(request: CheckRequest):
 
         import json as _json
         import re as _re
+
         errors = []
         try:
-            raw_clean = _re.sub(r'^```[a-z]*\s*|\s*```$', '', raw.strip(), flags=_re.MULTILINE)
+            raw_clean = _re.sub(r"^```[a-z]*\s*|\s*```$", "", raw.strip(), flags=_re.MULTILINE)
             parsed = _json.loads(raw_clean)
             if isinstance(parsed, list):
                 errors = parsed
         except Exception:
-            m = _re.search(r'\[.*\]', raw, _re.DOTALL)
+            m = _re.search(r"\[.*\]", raw, _re.DOTALL)
             if m:
                 try:
                     errors = _json.loads(m.group())
@@ -325,14 +346,17 @@ async def check_input(request: CheckRequest):
 # Drill endpoints
 # ---------------------------------------------------------------------------
 
+
 class DrillRequest(BaseModel):
     """Request a drill question."""
+
     session_id: str
     drill_type: Optional[str] = "auto"  # auto, mixed_review, irregular_verbs_preterite, etc.
 
 
 class DrillCheckRequest(BaseModel):
     """Submit an answer to the active drill question."""
+
     session_id: str
     user_answer: str
 
@@ -400,32 +424,32 @@ async def list_drill_types(language: str = Query(default="spanish")):
     """List drill types available for the given language."""
     if language in ("latin", "la"):
         types = [
-            {"id": "auto",                        "label": "Auto (recommended)"},
-            {"id": "mixed_review",                "label": "Mixed Review"},
-            {"id": "vocabulary_review",           "label": "Vocabulary Review (spaced repetition)"},
-            {"id": "translation",                  "label": "Translation (LLM graded)"},
-            {"id": "pronunciation",               "label": "Pronunciation (voice)"},
-            {"id": "irregular_verbs_present",     "label": "Irregular Verbs — Present"},
-            {"id": "irregular_verbs_imperfect",   "label": "Irregular Verbs — Imperfect"},
-            {"id": "irregular_verbs_perfect",     "label": "Irregular Verbs — Perfect"},
-            {"id": "noun_declensions",            "label": "Noun Declensions"},
-            {"id": "prepositions",                "label": "Prepositions + Case"},
-            {"id": "sentence_dictation",          "label": "Sentence Dictation"},
-            {"id": "listening_comprehension",     "label": "Listening Comprehension"},
+            {"id": "auto", "label": "Auto (recommended)"},
+            {"id": "mixed_review", "label": "Mixed Review"},
+            {"id": "vocabulary_review", "label": "Vocabulary Review (spaced repetition)"},
+            {"id": "translation", "label": "Translation (LLM graded)"},
+            {"id": "pronunciation", "label": "Pronunciation (voice)"},
+            {"id": "irregular_verbs_present", "label": "Irregular Verbs — Present"},
+            {"id": "irregular_verbs_imperfect", "label": "Irregular Verbs — Imperfect"},
+            {"id": "irregular_verbs_perfect", "label": "Irregular Verbs — Perfect"},
+            {"id": "noun_declensions", "label": "Noun Declensions"},
+            {"id": "prepositions", "label": "Prepositions + Case"},
+            {"id": "sentence_dictation", "label": "Sentence Dictation"},
+            {"id": "listening_comprehension", "label": "Listening Comprehension"},
         ]
     else:
         types = [
-            {"id": "auto",                        "label": "Auto (recommended)"},
-            {"id": "mixed_review",                "label": "Mixed Review"},
-            {"id": "vocabulary_review",           "label": "Vocabulary Review (spaced repetition)"},
-            {"id": "translation",                  "label": "Translation (LLM graded)"},
-            {"id": "pronunciation",               "label": "Pronunciation (voice)"},
-            {"id": "irregular_verbs_preterite",   "label": "Irregular Verbs — Preterite"},
-            {"id": "irregular_verbs_imperfect",   "label": "Irregular Verbs — Imperfect"},
-            {"id": "reflexive_verbs",             "label": "Reflexive Verbs"},
-            {"id": "prepositions",                "label": "Verb + Preposition"},
-            {"id": "sentence_dictation",          "label": "Sentence Dictation"},
-            {"id": "listening_comprehension",     "label": "Listening Comprehension"},
+            {"id": "auto", "label": "Auto (recommended)"},
+            {"id": "mixed_review", "label": "Mixed Review"},
+            {"id": "vocabulary_review", "label": "Vocabulary Review (spaced repetition)"},
+            {"id": "translation", "label": "Translation (LLM graded)"},
+            {"id": "pronunciation", "label": "Pronunciation (voice)"},
+            {"id": "irregular_verbs_preterite", "label": "Irregular Verbs — Preterite"},
+            {"id": "irregular_verbs_imperfect", "label": "Irregular Verbs — Imperfect"},
+            {"id": "reflexive_verbs", "label": "Reflexive Verbs"},
+            {"id": "prepositions", "label": "Verb + Preposition"},
+            {"id": "sentence_dictation", "label": "Sentence Dictation"},
+            {"id": "listening_comprehension", "label": "Listening Comprehension"},
         ]
     return {"language": language, "types": types}
 
@@ -437,13 +461,14 @@ async def list_drill_types(language: str = Query(default="spanish")):
 # Module-level singletons keyed by language — created lazily on first request.
 _stt_services: Dict[str, "STTService"] = {}
 _tts_service: Optional["PiperTTSService"] = None
-_tts_unavailable: bool = False   # Set True once we've confirmed piper model is missing
+_tts_unavailable: bool = False  # Set True once we've confirmed piper model is missing
 
 
 def _get_stt(language: str) -> "STTService":
     """Return (or create) the STTService for *language*."""
     from language_tutor.voice.stt import STTService
     from language_tutor.config import get_language_profile
+
     if language not in _stt_services:
         profile = get_language_profile(language)
         _stt_services[language] = STTService(
@@ -460,6 +485,7 @@ def _get_tts() -> Optional["PiperTTSService"]:
     if _tts_service is None:
         try:
             from language_tutor.voice.piper_tts import PiperTTSService
+
             _tts_service = PiperTTSService()
         except RuntimeError:
             # No piper model installed — TTS simply won't work
@@ -470,12 +496,13 @@ def _get_tts() -> Optional["PiperTTSService"]:
 
 class AudioMessageResponse(BaseModel):
     """Response from the audio endpoint — same fields as MessageResponse plus optional TTS audio."""
+
     session_id: str
     message: str
     transcription: str
     corrections: Optional[List[dict]] = None
     new_vocabulary: Optional[List[dict]] = None
-    audio_response: Optional[str] = None   # base64 WAV from piper, or None
+    audio_response: Optional[str] = None  # base64 WAV from piper, or None
     metadata: Optional[dict] = None
 
 
@@ -533,7 +560,7 @@ async def send_audio(
         try:
             audio_response = await tts.generate_speech(response.text, speed="normal")
         except Exception:
-            pass   # TTS failure should not break the conversation
+            pass  # TTS failure should not break the conversation
 
     return AudioMessageResponse(
         session_id=session_id,
@@ -549,9 +576,11 @@ async def send_audio(
 # Module-level scorer cache keyed by language
 _pronunciation_scorers: Dict[str, "PronunciationScorer"] = {}
 
+
 def _get_scorer(language: str) -> "PronunciationScorer":
     from language_tutor.drills.pronunciation import PronunciationScorer
     from language_tutor.config import get_language_profile
+
     if language not in _pronunciation_scorers:
         profile = get_language_profile(language)
         _pronunciation_scorers[language] = PronunciationScorer(
@@ -593,7 +622,7 @@ async def score_pronunciation(
         raise HTTPException(
             status_code=503,
             detail="Pronunciation scoring requires faster-whisper: "
-                   "pip install faster-whisper --break-system-packages",
+            "pip install faster-whisper --break-system-packages",
         )
     except HTTPException:
         raise
@@ -604,8 +633,10 @@ async def score_pronunciation(
     if result["score"] < 60 and session is not None:
         try:
             session.store.log_mistake(
-                session.session_id, session.language,
-                result["detected_text"], expected_text,
+                session.session_id,
+                session.language,
+                result["detected_text"],
+                expected_text,
                 error_type="pronunciation",
             )
         except Exception:
@@ -618,9 +649,10 @@ async def score_pronunciation(
 # Duolingo vocabulary import
 # ---------------------------------------------------------------------------
 
+
 class ImportRequest(BaseModel):
     session_id: str
-    text: str        # raw pasted text from Duolingo
+    text: str  # raw pasted text from Duolingo
 
 
 @router.post("/import/vocabulary")
@@ -642,7 +674,7 @@ async def import_vocabulary(request: ImportRequest):
         # --- Parse the paste ---
         # Split on blank lines to get pairs; handle both \r\n and \n
         raw_pairs = []
-        blocks = _re.split(r'\n\s*\n', request.text.strip())
+        blocks = _re.split(r"\n\s*\n", request.text.strip())
         for block in blocks:
             lines = [line.strip() for line in block.strip().splitlines() if line.strip()]
             if len(lines) >= 2:
@@ -652,7 +684,12 @@ async def import_vocabulary(request: ImportRequest):
                 raw_pairs.append((lines[0], ""))
 
         if not raw_pairs:
-            return {"imported": 0, "skipped": 0, "words": [], "error": "No word pairs found in paste."}
+            return {
+                "imported": 0,
+                "skipped": 0,
+                "words": [],
+                "error": "No word pairs found in paste.",
+            }
 
         # Deduplicate within the paste itself
         seen = set()
@@ -684,10 +721,10 @@ async def import_vocabulary(request: ImportRequest):
                 max_tokens=600,
             )
             try:
-                clean = _re.sub(r'^```[a-z]*\s*|\s*```$', '', raw.strip(), flags=_re.MULTILINE)
+                clean = _re.sub(r"^```[a-z]*\s*|\s*```$", "", raw.strip(), flags=_re.MULTILINE)
                 return _json.loads(clean)
             except Exception:
-                m = _re.search(r'\[.*\]', raw, _re.DOTALL)
+                m = _re.search(r"\[.*\]", raw, _re.DOTALL)
                 if m:
                     try:
                         return _json.loads(m.group())
@@ -699,7 +736,7 @@ async def import_vocabulary(request: ImportRequest):
         enriched = []
         batch_size = 5
         for i in range(0, len(pairs), batch_size):
-            batch = pairs[i:i + batch_size]
+            batch = pairs[i : i + batch_size]
             results = await enrich_batch(batch)
             # Align results with input batch (LLM may return fewer)
             for j, (word, orig_trans) in enumerate(batch):
@@ -711,11 +748,11 @@ async def import_vocabulary(request: ImportRequest):
 
         # --- Merge into vocabulary_mastery (never reset mastery) ---
         imported = 0
-        skipped  = 0
+        skipped = 0
         for entry in enriched:
-            word        = entry.get("word", "").strip()
+            word = entry.get("word", "").strip()
             translation = entry.get("translation", "").strip()
-            alts        = entry.get("alternatives", [])
+            alts = entry.get("alternatives", [])
             if alts:
                 full_translation = translation + "; " + "; ".join(alts)
             else:
@@ -743,7 +780,9 @@ async def import_vocabulary(request: ImportRequest):
                             )
                     skipped += 1
                 else:
-                    session.store.record_vocab_result(lang, word, full_translation[:300], correct=False)
+                    session.store.record_vocab_result(
+                        lang, word, full_translation[:300], correct=False
+                    )
                     session.store.log_vocab(session.session_id, lang, word, full_translation[:300])
                     imported += 1
             except Exception:
@@ -751,8 +790,11 @@ async def import_vocabulary(request: ImportRequest):
 
         return {
             "imported": imported,
-            "skipped":  skipped,
-            "words":    [{"word": e.get("word",""), "translation": e.get("translation","")} for e in enriched],
+            "skipped": skipped,
+            "words": [
+                {"word": e.get("word", ""), "translation": e.get("translation", "")}
+                for e in enriched
+            ],
         }
 
     except HTTPException:

@@ -332,6 +332,16 @@ already lint-clean; Ruff mechanically formatted 5 files, bringing the shared
 gate to 439 files. Its 3 offline tests and the full repository gate passed; the
 latter remains 1,268 passed, 304 skipped, with the same three warnings.
 
+The thirteenth Python-quality checkpoint adopts
+`examples/language_tutor_reference_app`. Classification confirmed that its
+generator writes to a separate target tree and that Ruff does not alter its
+embedded template strings; the committed runtime, generator, entry point, and
+tests are maintained source. Five dead-import or redundant-f-string findings
+were removed, and Ruff mechanically formatted 33 files, bringing the shared
+gate to 477 files. The dedicated suite passed 118 tests with 33 optional-feature
+skips, both entry scripts compiled, and the full repository gate remains 1,268
+passed, 304 skipped, with the same three warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

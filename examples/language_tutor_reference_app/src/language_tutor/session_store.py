@@ -209,6 +209,7 @@ class SessionStore:
         next_review is set to now + interval[mastery_level].
         """
         from datetime import datetime, timedelta
+
         now = datetime.utcnow().isoformat()
 
         with self._conn() as conn:
@@ -238,9 +239,7 @@ class SessionStore:
                 new_level = 0
 
             interval_days = self._SM2_INTERVALS[new_level]
-            next_review = (
-                datetime.utcnow() + timedelta(days=interval_days)
-            ).isoformat()
+            next_review = (datetime.utcnow() + timedelta(days=interval_days)).isoformat()
 
             if correct:
                 conn.execute(
@@ -365,8 +364,8 @@ class SessionStore:
         return [
             {
                 "error_type": row["error_type"] or "grammar",
-                "count":      row["cnt"],
-                "examples":   (row["examples"] or "").split(" | ")[:3],
+                "count": row["cnt"],
+                "examples": (row["examples"] or "").split(" | ")[:3],
             }
             for row in rows
         ]
@@ -383,14 +382,17 @@ class SessionStore:
                 (language,),
             ).fetchone()["c"]
 
-            avg_corrections = conn.execute(
-                """
+            avg_corrections = (
+                conn.execute(
+                    """
                 SELECT AVG(corrections_made) AS avg
                 FROM sessions
                 WHERE language=? AND completed_at IS NOT NULL
                 """,
-                (language,),
-            ).fetchone()["avg"] or 0.0
+                    (language,),
+                ).fetchone()["avg"]
+                or 0.0
+            )
 
             recent = conn.execute(
                 """
@@ -405,9 +407,9 @@ class SessionStore:
             ).fetchall()
 
         return {
-            "total_sessions":        total,
+            "total_sessions": total,
             "avg_corrections_per_session": round(avg_corrections, 1),
-            "recent_sessions":       [dict(r) for r in recent],
+            "recent_sessions": [dict(r) for r in recent],
         }
 
     def get_session_history(self, language: str, limit: int = 10) -> List[Dict]:

@@ -61,7 +61,9 @@ def _to_plain(value: Any) -> Any:
     return str(value)
 
 
-def recent_turns_to_records(turns: Iterable[Any], *, source: str = "language_tutor.working_memory") -> tuple[MemoryRecord, ...]:
+def recent_turns_to_records(
+    turns: Iterable[Any], *, source: str = "language_tutor.working_memory"
+) -> tuple[MemoryRecord, ...]:
     records: list[MemoryRecord] = []
     for idx, turn in enumerate(turns):
         role = getattr(turn, "role", "unknown")
@@ -73,7 +75,11 @@ def recent_turns_to_records(turns: Iterable[Any], *, source: str = "language_tut
             "turn_index": idx,
         }
         record_id = getattr(turn, "turn_id", None) or getattr(turn, "id", None)
-        records.append(MemoryRecord(text=str(content), source=source, record_id=record_id, metadata=_to_plain(metadata)))
+        records.append(
+            MemoryRecord(
+                text=str(content), source=source, record_id=record_id, metadata=_to_plain(metadata)
+            )
+        )
     return tuple(records)
 
 
@@ -91,7 +97,9 @@ def session_trace_events(
         "language": getattr(session, "language", None),
         "memory_backend": getattr(session, "memory_backend", None),
         "state": getattr(getattr(session, "state", None), "value", None),
-        "strategy": getattr(session, "strategy", {}).get("name") if getattr(session, "strategy", None) else None,
+        "strategy": getattr(session, "strategy", {}).get("name")
+        if getattr(session, "strategy", None)
+        else None,
         "exchange_count": getattr(session, "exchange_count", None),
     }
     if payload:
@@ -109,7 +117,9 @@ def session_trace_events(
     )
 
 
-def start_result_to_interop_result(session: Any, result: dict[str, Any]) -> OperationResult[dict[str, Any]]:
+def start_result_to_interop_result(
+    session: Any, result: dict[str, Any]
+) -> OperationResult[dict[str, Any]]:
     warnings = ()
     diagnostics = {
         "trace_events": session_trace_events(
@@ -132,7 +142,9 @@ def start_result_to_interop_result(session: Any, result: dict[str, Any]) -> Oper
     return OperationResult.success(_to_plain(result), warnings=warnings, diagnostics=diagnostics)
 
 
-def tutor_response_to_interop_result(session: Any, response: Any, *, user_message: str | None = None) -> OperationResult[dict[str, Any]]:
+def tutor_response_to_interop_result(
+    session: Any, response: Any, *, user_message: str | None = None
+) -> OperationResult[dict[str, Any]]:
     metadata = _to_plain(getattr(response, "metadata", None) or {})
     payload = {
         "user_message": user_message,
@@ -167,7 +179,9 @@ def tutor_response_to_interop_result(session: Any, response: Any, *, user_messag
     return OperationResult.success(value, diagnostics=diagnostics)
 
 
-def explanation_to_interop_result(session: Any, *, text: str, question: str | None, explanation: str) -> OperationResult[dict[str, Any]]:
+def explanation_to_interop_result(
+    session: Any, *, text: str, question: str | None, explanation: str
+) -> OperationResult[dict[str, Any]]:
     diagnostics = {
         "trace_events": session_trace_events(
             session=session,
@@ -184,4 +198,6 @@ def explanation_to_interop_result(session: Any, *, text: str, question: str | No
             features=("grammar_explanations",),
         ),
     }
-    return OperationResult.success({"text": text, "question": question, "explanation": explanation}, diagnostics=diagnostics)
+    return OperationResult.success(
+        {"text": text, "question": question, "explanation": explanation}, diagnostics=diagnostics
+    )

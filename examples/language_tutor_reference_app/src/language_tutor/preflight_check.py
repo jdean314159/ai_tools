@@ -25,7 +25,6 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 
 class PreFlightCheck:
-
     def __init__(self):
         self.errors: List[str] = []
         self.warnings: List[str] = []
@@ -36,16 +35,16 @@ class PreFlightCheck:
         print("=" * 60 + "\n")
 
         checks = [
-            ("GPU / CUDA",         self.check_gpu),
+            ("GPU / CUDA", self.check_gpu),
             ("Python dependencies", self.check_dependencies),
-            ("Engram library",     self.check_engram),
-            ("Configuration",      self.check_config),
+            ("Engram library", self.check_engram),
+            ("Configuration", self.check_config),
         ]
 
         if not quick:
             checks += [
-                ("Ollama server",  lambda: self.check_ollama(start_ollama)),
-                ("Ollama models",  self.check_ollama_models),
+                ("Ollama server", lambda: self.check_ollama(start_ollama)),
+                ("Ollama models", self.check_ollama_models),
             ]
 
         all_passed = True
@@ -99,8 +98,8 @@ class PreFlightCheck:
 
         name = torch.cuda.get_device_name(0)
         props = torch.cuda.get_device_properties(0)
-        vram_gb = props.total_memory / (1024 ** 3)
-        free_gb = (props.total_memory - torch.cuda.memory_allocated(0)) / (1024 ** 3)
+        vram_gb = props.total_memory / (1024**3)
+        free_gb = (props.total_memory - torch.cuda.memory_allocated(0)) / (1024**3)
 
         print(f"   GPU  : {name}")
         print(f"   VRAM : {vram_gb:.1f} GB total, {free_gb:.1f} GB free")
@@ -114,18 +113,18 @@ class PreFlightCheck:
 
     def check_dependencies(self) -> bool:
         required = {
-            "fastapi":              "API server",
-            "uvicorn":              "ASGI server",
-            "pydantic":             "Data validation",
-            "httpx":                "HTTP client",
-            "chromadb":             "Episodic memory (engram[episodic])",
-            "sentence_transformers":"Embeddings (engram[episodic])",
-            "kuzu":                 "Semantic memory (engram[semantic])",
-            "sklearn":              "Graph extraction (scikit-learn)",
+            "fastapi": "API server",
+            "uvicorn": "ASGI server",
+            "pydantic": "Data validation",
+            "httpx": "HTTP client",
+            "chromadb": "Episodic memory (engram[episodic])",
+            "sentence_transformers": "Embeddings (engram[episodic])",
+            "kuzu": "Semantic memory (engram[semantic])",
+            "sklearn": "Graph extraction (scikit-learn)",
         }
         optional = {
-            "torch":          "Neural memory layer / GPU acceleration",
-            "tiktoken":       "Accurate token counting",
+            "torch": "Neural memory layer / GPU acceleration",
+            "tiktoken": "Accurate token counting",
             "faster_whisper": "Speech-to-text / voice input (Phase 2)",
         }
 
@@ -162,8 +161,11 @@ class PreFlightCheck:
 
         # Check piper binary
         import shutil
+
         project_piper = Path(__file__).parent.parent / "piper" / "piper"
-        piper_path = shutil.which("piper") or (str(project_piper) if project_piper.exists() else None)
+        piper_path = shutil.which("piper") or (
+            str(project_piper) if project_piper.exists() else None
+        )
         if piper_path:
             print(f"   piper binary   : ✓  {piper_path}")
         else:
@@ -179,9 +181,7 @@ class PreFlightCheck:
             if Path(piper_model_env).exists():
                 print(f"   piper model    : ✓  {piper_model_env}")
             else:
-                self.warnings.append(
-                    f"PIPER_MODEL_PATH set but file not found: {piper_model_env}"
-                )
+                self.warnings.append(f"PIPER_MODEL_PATH set but file not found: {piper_model_env}")
         else:
             # Search project piper dir first, then ~/ai_tools/models/piper/
             project_piper_dir = Path(__file__).parent.parent / "piper"
@@ -193,7 +193,7 @@ class PreFlightCheck:
                     if models:
                         break
             if models:
-                print(f"   piper model    : ✓  {models[0].name} (+{len(models)-1} more)")
+                print(f"   piper model    : ✓  {models[0].name} (+{len(models) - 1} more)")
             else:
                 self.warnings.append(
                     "No piper voice model (.onnx) found in ./piper/ or ~/ai_tools/models/piper/ — "
@@ -206,11 +206,10 @@ class PreFlightCheck:
     def check_engram(self) -> bool:
         try:
             import engram
+
             print(f"   engram {engram.__version__}")
         except ImportError:
-            self.errors.append(
-                "engram not installed — run: pip install -e /path/to/engram"
-            )
+            self.errors.append("engram not installed — run: pip install -e /path/to/engram")
             return False
 
         # Verify key submodules load
@@ -253,15 +252,14 @@ class PreFlightCheck:
 
         # Check API keys based on strategy
         from language_tutor.hardware_strategy import STRATEGIES
+
         strategy = STRATEGIES.get(strategy_name)
         if strategy:
             for role in ("planner", "executor"):
                 cfg = strategy.get(role, {})
                 engine = cfg.get("engine", "")
                 if engine == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
-                    self.errors.append(
-                        f"Strategy '{strategy_name}' requires ANTHROPIC_API_KEY"
-                    )
+                    self.errors.append(f"Strategy '{strategy_name}' requires ANTHROPIC_API_KEY")
                     return False
                 if engine == "gemini" and not os.getenv("GOOGLE_API_KEY"):
                     self.errors.append(
@@ -277,9 +275,7 @@ class PreFlightCheck:
                 if engine == "llama_cpp":
                     gguf = cfg.get("gguf_path") or os.getenv("LLAMA_MODEL_PATH", "")
                     if gguf and not Path(gguf).exists():
-                        self.warnings.append(
-                            f"LLAMA_MODEL_PATH not found: {gguf}"
-                        )
+                        self.warnings.append(f"LLAMA_MODEL_PATH not found: {gguf}")
                     elif not gguf:
                         self.warnings.append(
                             "LLAMA_MODEL_PATH not set — set it before starting llama-server"
@@ -346,6 +342,7 @@ class PreFlightCheck:
             return True
 
         from language_tutor.hardware_strategy import STRATEGIES
+
         strategy = STRATEGIES.get(config.get("strategy", ""))
         if not strategy:
             return True
@@ -363,6 +360,7 @@ class PreFlightCheck:
         # Fetch pulled models
         import urllib.request
         import json as _json
+
         try:
             with urllib.request.urlopen(f"{OLLAMA_BASE_URL}/api/tags", timeout=5) as r:
                 data = _json.loads(r.read())
@@ -374,9 +372,7 @@ class PreFlightCheck:
         missing = [m for m in needed if m not in pulled]
         if missing:
             for m in missing:
-                self.errors.append(
-                    f"Ollama model not pulled: {m} — run:  ollama pull {m}"
-                )
+                self.errors.append(f"Ollama model not pulled: {m} — run:  ollama pull {m}")
             return False
 
         for m in needed:
@@ -388,10 +384,12 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Language tutor pre-flight check")
-    parser.add_argument("--quick", action="store_true",
-                        help="Skip Ollama and model checks")
-    parser.add_argument("--start-ollama", action="store_true",
-                        help="Start ollama serve automatically if not running")
+    parser.add_argument("--quick", action="store_true", help="Skip Ollama and model checks")
+    parser.add_argument(
+        "--start-ollama",
+        action="store_true",
+        help="Start ollama serve automatically if not running",
+    )
     args = parser.parse_args()
 
     checker = PreFlightCheck()

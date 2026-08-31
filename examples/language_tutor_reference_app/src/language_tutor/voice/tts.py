@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 # Classical Latin phonetic pre-processor (stub — Phase 4)
 # ---------------------------------------------------------------------------
 
+
 def _latin_phonetic(text: str) -> str:
     """Apply Classical Latin pronunciation rules before TTS synthesis.
 
@@ -55,6 +56,7 @@ def _latin_phonetic(text: str) -> str:
 # ---------------------------------------------------------------------------
 # VoicePipeline
 # ---------------------------------------------------------------------------
+
 
 class VoicePipeline:
     """Unified STT + TTS pipeline for one language profile.
@@ -125,6 +127,7 @@ class VoicePipeline:
     def _get_stt(self):
         if self._stt is None:
             from language_tutor.voice.stt import STTService
+
             self._stt = STTService(
                 language=self.profile.whisper_language or "es",
             )
@@ -134,10 +137,11 @@ class VoicePipeline:
         if self._tts is None:
             try:
                 from language_tutor.voice.piper_tts import PiperTTSService
+
                 self._tts = PiperTTSService()
             except RuntimeError:
                 # No piper model found — TTS disabled for this session
-                self._tts = False   # sentinel: tried and failed
+                self._tts = False  # sentinel: tried and failed
         return self._tts if self._tts is not False else None
 
     def close(self) -> None:

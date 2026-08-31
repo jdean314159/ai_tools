@@ -24,7 +24,7 @@ router = APIRouter()
 active_sessions = {}
 _sessions_lock = threading.Lock()
 
-SESSION_IDLE_TIMEOUT_S = 2 * 60 * 60   # 2 hours
+SESSION_IDLE_TIMEOUT_S = 2 * 60 * 60  # 2 hours
 
 
 def _reap_idle_sessions():
@@ -58,6 +58,7 @@ _reaper.start()
 
 class StartSessionRequest(BaseModel):
     """Request to start a new session."""
+
     language: str  # "spanish" or "latin"
     duration_minutes: Optional[int] = 30
     memory_backend: Optional[str] = None  # "engram"
@@ -65,6 +66,7 @@ class StartSessionRequest(BaseModel):
 
 class StartSessionResponse(BaseModel):
     """Response with session plan."""
+
     session_id: str
     language: str
     plan: dict
@@ -75,11 +77,13 @@ class StartSessionResponse(BaseModel):
 
 class EndSessionRequest(BaseModel):
     """Request to end a session."""
+
     session_id: str
 
 
 class EndSessionResponse(BaseModel):
     """Response with session summary."""
+
     session_id: str
     summary: str
     statistics: dict
@@ -87,6 +91,7 @@ class EndSessionResponse(BaseModel):
 
 class SessionStatusResponse(BaseModel):
     """Current session status."""
+
     session_id: str
     language: str
     state: str
@@ -96,6 +101,7 @@ class SessionStatusResponse(BaseModel):
 
 class ReferenceStackResponse(BaseModel):
     """Machine-readable description of the reference application stack."""
+
     app: str
     role: str
     learning_stage: str
@@ -126,12 +132,12 @@ async def start_session(request: StartSessionRequest):
         config_path = Path.home() / ".language_tutor_config.json"
         if not config_path.exists():
             raise HTTPException(
-                status_code=400,
-                detail="No configuration found. Run setup wizard first."
+                status_code=400, detail="No configuration found. Run setup wizard first."
             )
 
         config = load_config(config_path)
         from language_tutor.hardware_strategy import STRATEGIES
+
         strategy = STRATEGIES[config["strategy"]]
 
         # Create session
@@ -161,6 +167,7 @@ async def start_session(request: StartSessionRequest):
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()  # add this line
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -282,9 +289,7 @@ def _store_for_language(language: str) -> SessionStore:
         for session in active_sessions.values():
             if session.language == language:
                 base_dir = session.base_dir
-                return SessionStore(
-                    db_path=base_dir / "memory" / f"{language}_sessions.db"
-                )
+                return SessionStore(db_path=base_dir / "memory" / f"{language}_sessions.db")
 
     # No active session — derive from config or cwd default
     config_path = Path.home() / ".language_tutor_config.json"
@@ -334,10 +339,12 @@ async def get_memory_snapshot(session_id: str):
         try:
             raw_turns = mem.get_recent_turns(n=50)
             for t in raw_turns:
-                turns.append({
-                    "role":    getattr(t, "role", "?"),
-                    "content": getattr(t, "content", str(t))[:500],
-                })
+                turns.append(
+                    {
+                        "role": getattr(t, "role", "?"),
+                        "content": getattr(t, "content", str(t))[:500],
+                    }
+                )
         except Exception:
             pass
 
@@ -346,29 +353,31 @@ async def get_memory_snapshot(session_id: str):
         try:
             raw_eps = mem.search_episodes("session", n=10, min_importance=0.0)
             for ep in raw_eps:
-                episodes.append({
-                    "text":       getattr(ep, "text", str(ep))[:400],
-                    "importance": getattr(ep, "importance", None),
-                    "timestamp":  str(getattr(ep, "timestamp", "")),
-                })
+                episodes.append(
+                    {
+                        "text": getattr(ep, "text", str(ep))[:400],
+                        "importance": getattr(ep, "importance", None),
+                        "timestamp": str(getattr(ep, "timestamp", "")),
+                    }
+                )
         except Exception:
             pass
 
         # --- Semantic vocabulary ---
         vocabulary = []
-        mistakes   = []
+        mistakes = []
         try:
             if mem.helpers is not None:
                 for diff in ("beginner", "intermediate", "advanced"):
-                    rows = mem.helpers.find_unmastered_words(
-                        user_id="default", difficulty=diff
-                    )
+                    rows = mem.helpers.find_unmastered_words(user_id="default", difficulty=diff)
                     for r in rows:
-                        vocabulary.append({
-                            "word":        r.get("word", ""),
-                            "translation": r.get("translation", ""),
-                            "difficulty":  diff,
-                        })
+                        vocabulary.append(
+                            {
+                                "word": r.get("word", ""),
+                                "translation": r.get("translation", ""),
+                                "difficulty": diff,
+                            }
+                        )
         except Exception:
             pass
 
@@ -408,15 +417,15 @@ async def get_memory_snapshot(session_id: str):
             pass
 
         return {
-            "session_id":    session_id,
-            "language":      session.language,
+            "session_id": session_id,
+            "language": session.language,
             "working_turns": turns,
-            "episodes":      episodes,
-            "vocabulary":    vocabulary,
-            "mistakes":      mistakes,
-            "layer_stats":   stats,
+            "episodes": episodes,
+            "vocabulary": vocabulary,
+            "mistakes": mistakes,
+            "layer_stats": stats,
             "mastery_stats": mastery_stats,
-            "due_words":     due_words,
+            "due_words": due_words,
         }
 
     except Exception as e:

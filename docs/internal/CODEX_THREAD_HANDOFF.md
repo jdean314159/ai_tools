@@ -116,6 +116,10 @@ The work progressed through evidence rather than assuming a design:
     public-API teaching code and adopted. Ruff formatted 5 files, its 3 offline
     tests passed, the shared gate covers 439 files, and the full gate remains at
     1,268 passed.
+29. `examples/language_tutor_reference_app` is now adopted after separating its
+    maintained generator implementation from the external target tree it emits.
+    Ruff formatted 33 files; its dedicated suite passed 118 tests with 33 skips,
+    both entry scripts compiled, and the shared/full gates remain green.
 
 Key commits, oldest to newest:
 

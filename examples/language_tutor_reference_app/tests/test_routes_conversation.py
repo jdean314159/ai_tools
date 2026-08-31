@@ -18,6 +18,7 @@ Routes tested:
   GET  /api/conversation/history/{id}     — 404 / 200
   GET  /api/conversation/metrics/{id}     — 404 / 200
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -43,6 +44,7 @@ from language_tutor.tutor_session import TutorSession  # noqa: E402
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 class _FakePlan(BaseModel):
     warmup_topic: str = "travel"
     focus_areas: list[str] = ["past tense"]
@@ -57,8 +59,15 @@ class _FakeEngine:
     def generate(self, prompt: str, **kwargs: Any) -> str:
         # Return JSON for structured calls; plain text otherwise
         if "json" in prompt.lower() or "JSON" in prompt:
-            return json.dumps({"translation": "to go", "alternatives": [], "part_of_speech": "verb",
-                               "notes": "", "example": "Yo voy."})
+            return json.dumps(
+                {
+                    "translation": "to go",
+                    "alternatives": [],
+                    "part_of_speech": "verb",
+                    "notes": "",
+                    "example": "Yo voy.",
+                }
+            )
         return "Claro, eso es una buena pregunta sobre el español."
 
     def generate_structured(self, prompt: str, response_model, **kwargs: Any):
@@ -124,29 +133,39 @@ def session(tmp_path: Path, monkeypatch):
 # POST /api/conversation/message
 # ---------------------------------------------------------------------------
 
+
 class TestMessageRoute:
     def test_missing_session_returns_404(self, client):
-        r = client.post("/api/conversation/message", json={
-            "session_id": "no-such-session",
-            "message": "Hola",
-        })
+        r = client.post(
+            "/api/conversation/message",
+            json={
+                "session_id": "no-such-session",
+                "message": "Hola",
+            },
+        )
         assert r.status_code == 404
 
     def test_found_session_returns_200(self, client, session):
-        r = client.post("/api/conversation/message", json={
-            "session_id": session.session_id,
-            "message": "Yo quiero practicar español.",
-        })
+        r = client.post(
+            "/api/conversation/message",
+            json={
+                "session_id": session.session_id,
+                "message": "Yo quiero practicar español.",
+            },
+        )
         assert r.status_code == 200
         body = r.json()
         assert body["session_id"] == session.session_id
         assert body["message"]
 
     def test_response_includes_corrections_and_vocab(self, client, session):
-        r = client.post("/api/conversation/message", json={
-            "session_id": session.session_id,
-            "message": "Hola",
-        })
+        r = client.post(
+            "/api/conversation/message",
+            json={
+                "session_id": session.session_id,
+                "message": "Hola",
+            },
+        )
         body = r.json()
         assert "corrections" in body
         assert "new_vocabulary" in body
@@ -157,20 +176,27 @@ class TestMessageRoute:
 # POST /api/conversation/explain
 # ---------------------------------------------------------------------------
 
+
 class TestExplainRoute:
     def test_missing_session_returns_404(self, client):
-        r = client.post("/api/conversation/explain", json={
-            "session_id": "no-such",
-            "text": "Ayer fui al mercado.",
-        })
+        r = client.post(
+            "/api/conversation/explain",
+            json={
+                "session_id": "no-such",
+                "text": "Ayer fui al mercado.",
+            },
+        )
         assert r.status_code == 404
 
     def test_found_session_returns_explanation(self, client, session):
-        r = client.post("/api/conversation/explain", json={
-            "session_id": session.session_id,
-            "text": "Ayer fui al mercado.",
-            "question": "Why is 'fui' used?",
-        })
+        r = client.post(
+            "/api/conversation/explain",
+            json={
+                "session_id": session.session_id,
+                "text": "Ayer fui al mercado.",
+                "question": "Why is 'fui' used?",
+            },
+        )
         assert r.status_code == 200
         body = r.json()
         assert "explanation" in body
@@ -182,20 +208,27 @@ class TestExplainRoute:
 # POST /api/conversation/lookup
 # ---------------------------------------------------------------------------
 
+
 class TestLookupRoute:
     def test_missing_session_returns_404(self, client):
-        r = client.post("/api/conversation/lookup", json={
-            "session_id": "no-such",
-            "word": "mercado",
-        })
+        r = client.post(
+            "/api/conversation/lookup",
+            json={
+                "session_id": "no-such",
+                "word": "mercado",
+            },
+        )
         assert r.status_code == 404
 
     def test_found_session_returns_lookup(self, client, session):
-        r = client.post("/api/conversation/lookup", json={
-            "session_id": session.session_id,
-            "word": "mercado",
-            "context": "Fui al mercado ayer.",
-        })
+        r = client.post(
+            "/api/conversation/lookup",
+            json={
+                "session_id": session.session_id,
+                "word": "mercado",
+                "context": "Fui al mercado ayer.",
+            },
+        )
         assert r.status_code == 200
         body = r.json()
         assert body["word"] == "mercado"
@@ -206,19 +239,26 @@ class TestLookupRoute:
 # POST /api/conversation/check
 # ---------------------------------------------------------------------------
 
+
 class TestCheckInputRoute:
     def test_missing_session_returns_404(self, client):
-        r = client.post("/api/conversation/check", json={
-            "session_id": "no-such",
-            "text": "Yo soy estudiando.",
-        })
+        r = client.post(
+            "/api/conversation/check",
+            json={
+                "session_id": "no-such",
+                "text": "Yo soy estudiando.",
+            },
+        )
         assert r.status_code == 404
 
     def test_found_session_returns_errors_list(self, client, session):
-        r = client.post("/api/conversation/check", json={
-            "session_id": session.session_id,
-            "text": "Yo soy estudiando.",
-        })
+        r = client.post(
+            "/api/conversation/check",
+            json={
+                "session_id": session.session_id,
+                "text": "Yo soy estudiando.",
+            },
+        )
         assert r.status_code == 200
         body = r.json()
         assert "text" in body
@@ -230,19 +270,26 @@ class TestCheckInputRoute:
 # POST /api/conversation/drill + /drill/check
 # ---------------------------------------------------------------------------
 
+
 class TestDrillRoute:
     def test_get_drill_missing_session_returns_404(self, client):
-        r = client.post("/api/conversation/drill", json={
-            "session_id": "no-such",
-            "drill_type": "mixed_review",
-        })
+        r = client.post(
+            "/api/conversation/drill",
+            json={
+                "session_id": "no-such",
+                "drill_type": "mixed_review",
+            },
+        )
         assert r.status_code == 404
 
     def test_get_drill_returns_question(self, client, session):
-        r = client.post("/api/conversation/drill", json={
-            "session_id": session.session_id,
-            "drill_type": "mixed_review",
-        })
+        r = client.post(
+            "/api/conversation/drill",
+            json={
+                "session_id": session.session_id,
+                "drill_type": "mixed_review",
+            },
+        )
         assert r.status_code == 200
         body = r.json()
         assert "prompt" in body
@@ -250,22 +297,31 @@ class TestDrillRoute:
         assert "drill_type" in body
 
     def test_check_drill_missing_session_returns_404(self, client):
-        r = client.post("/api/conversation/drill/check", json={
-            "session_id": "no-such",
-            "user_answer": "fui",
-        })
+        r = client.post(
+            "/api/conversation/drill/check",
+            json={
+                "session_id": "no-such",
+                "user_answer": "fui",
+            },
+        )
         assert r.status_code == 404
 
     def test_check_drill_returns_result_after_get_drill(self, client, session):
         # Must call /drill first to set the active question
-        client.post("/api/conversation/drill", json={
-            "session_id": session.session_id,
-            "drill_type": "sentence_dictation",
-        })
-        r = client.post("/api/conversation/drill/check", json={
-            "session_id": session.session_id,
-            "user_answer": "Hola mundo",
-        })
+        client.post(
+            "/api/conversation/drill",
+            json={
+                "session_id": session.session_id,
+                "drill_type": "sentence_dictation",
+            },
+        )
+        r = client.post(
+            "/api/conversation/drill/check",
+            json={
+                "session_id": session.session_id,
+                "user_answer": "Hola mundo",
+            },
+        )
         assert r.status_code == 200
         body = r.json()
         assert "correct" in body
@@ -275,6 +331,7 @@ class TestDrillRoute:
 # ---------------------------------------------------------------------------
 # GET /api/conversation/drill/types
 # ---------------------------------------------------------------------------
+
 
 class TestDrillTypesRoute:
     def test_spanish_types_returned(self, client):
@@ -303,6 +360,7 @@ class TestDrillTypesRoute:
 # GET /api/conversation/history/{session_id}
 # ---------------------------------------------------------------------------
 
+
 class TestHistoryRoute:
     def test_missing_session_returns_404(self, client):
         r = client.get("/api/conversation/history/no-such")
@@ -310,10 +368,13 @@ class TestHistoryRoute:
 
     def test_found_session_returns_history(self, client, session):
         # Add a turn first
-        client.post("/api/conversation/message", json={
-            "session_id": session.session_id,
-            "message": "Hola",
-        })
+        client.post(
+            "/api/conversation/message",
+            json={
+                "session_id": session.session_id,
+                "message": "Hola",
+            },
+        )
         r = client.get(f"/api/conversation/history/{session.session_id}")
         assert r.status_code == 200
         body = r.json()
@@ -324,6 +385,7 @@ class TestHistoryRoute:
 # ---------------------------------------------------------------------------
 # GET /api/conversation/metrics/{session_id}
 # ---------------------------------------------------------------------------
+
 
 class TestMetricsRoute:
     def test_missing_session_returns_404(self, client):
