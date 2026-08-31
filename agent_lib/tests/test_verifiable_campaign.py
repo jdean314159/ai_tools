@@ -22,9 +22,7 @@ def _admission(snapshot: int, tasks: list[dict]) -> dict:
         "source_hashes": {f"snapshot_{snapshot}.py": f"hash-{snapshot}"},
         "tasks": tasks,
     }
-    canonical = json.dumps(
-        manifest, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
     manifest["admission_manifest_sha256"] = hashlib.sha256(canonical).hexdigest()
     return manifest
 
@@ -158,14 +156,10 @@ def test_campaign_admission_rejects_one_dominant_exploratory_shape() -> None:
             if task["difficulty"]["tier"] == "exploratory":
                 task["kind"] = "call_path"
         unhashed = {
-            key: value
-            for key, value in admission.items()
-            if key != "admission_manifest_sha256"
+            key: value for key, value in admission.items() if key != "admission_manifest_sha256"
         }
         admission["admission_manifest_sha256"] = hashlib.sha256(
-            json.dumps(
-                unhashed, sort_keys=True, separators=(",", ":")
-            ).encode("utf-8")
+            json.dumps(unhashed, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
 
     with pytest.raises(VerifiableNavigationError, match="more than half"):
@@ -209,15 +203,11 @@ def test_paired_summary_keeps_tiers_separate_and_uses_equal_tier_macro() -> None
     summary = summarize_paired_campaign(pairs)
 
     assert summary["primary_tier"] == "exploratory"
-    assert summary["tiers"]["exploratory"]["paired_exact_outcomes"][
-        "no_ledger_fail_ledger_pass"
-    ] == 1
-    assert summary["tiers"]["exploratory"][
-        "median_ledger_minus_no_ledger_tokens"
-    ] == -150
-    assert summary["overall_equal_tier_macro"]["exact_rate_ledger"] == pytest.approx(
-        2 / 3
+    assert (
+        summary["tiers"]["exploratory"]["paired_exact_outcomes"]["no_ledger_fail_ledger_pass"] == 1
     )
+    assert summary["tiers"]["exploratory"]["median_ledger_minus_no_ledger_tokens"] == -150
+    assert summary["overall_equal_tier_macro"]["exact_rate_ledger"] == pytest.approx(2 / 3)
     assert summary["pooled_primary_result_prohibited"] is True
 
 

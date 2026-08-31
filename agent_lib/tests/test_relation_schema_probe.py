@@ -78,7 +78,7 @@ def test_formatter_probe_requires_schema_and_exact_relations() -> None:
                                 "path": "sample.py",
                                 "start_line": 11,
                                 "end_line": 11,
-                            }
+                            },
                         ],
                     }
                 ]

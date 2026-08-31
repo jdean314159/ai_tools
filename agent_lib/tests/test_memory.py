@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from agent_lib import AgentAction, AgentContext, AgentRuntime, AgentTask, EngramLiteMemoryAdapter, LocalToolRuntime, SequencePlanner
+from agent_lib import (
+    AgentAction,
+    AgentContext,
+    AgentRuntime,
+    AgentTask,
+    EngramLiteMemoryAdapter,
+    LocalToolRuntime,
+)
 from engram import ProjectMemory
 
 
@@ -18,7 +25,9 @@ class RecordingPlanner:
 
 
 def test_engram_memory_adapter_replays_previous_step_as_evidence(tmp_path) -> None:
-    memory = ProjectMemory(base_dir=tmp_path / "memory", project_id="agent_demo", session_id="agent_s1")
+    memory = ProjectMemory(
+        base_dir=tmp_path / "memory", project_id="agent_demo", session_id="agent_s1"
+    )
     planner = RecordingPlanner()
     runtime = AgentRuntime(
         planner=planner,
@@ -26,7 +35,9 @@ def test_engram_memory_adapter_replays_previous_step_as_evidence(tmp_path) -> No
         memory=EngramLiteMemoryAdapter(memory),
     )
 
-    run = runtime.run(AgentTask(task_id="demo", goal="Say hello.", session_id="agent_s1"), max_steps=2)
+    run = runtime.run(
+        AgentTask(task_id="demo", goal="Say hello.", session_id="agent_s1"), max_steps=2
+    )
 
     assert run.status == "completed"
     assert len(planner.contexts) == 2

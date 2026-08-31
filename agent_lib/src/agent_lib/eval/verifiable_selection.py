@@ -22,9 +22,7 @@ from .verifiable_navigation import (
 CANDIDATE_POOL_SCHEMA_VERSION = 2
 CANDIDATE_SELECTION_SCHEMA_VERSION = 2
 CANDIDATE_ORDER_SALT = "NAV-VERIFIABLE-00-candidate-order-v2"
-REQUIRED_TASK_KINDS = frozenset(
-    {"definition", "direct_callers", "call_path", "mutation_target"}
-)
+REQUIRED_TASK_KINDS = frozenset({"definition", "direct_callers", "call_path", "mutation_target"})
 
 
 def build_candidate_pool(snapshot_roots: Sequence[str | Path]) -> dict[str, Any]:
@@ -37,20 +35,14 @@ def build_candidate_pool(snapshot_roots: Sequence[str | Path]) -> dict[str, Any]
         oracle = PythonRelationOracle(root)
         canonicalizer = RelationCanonicalizer(oracle)
         source_hashes = {
-            path.relative_to(root).as_posix(): hashlib.sha256(
-                path.read_bytes()
-            ).hexdigest()
+            path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted(root.rglob("*.py"))
         }
         snapshot_id = _sha256_json(source_hashes)
-        snapshot_records.append(
-            {"snapshot_id": snapshot_id, "source_hashes": source_hashes}
-        )
+        snapshot_records.append({"snapshot_id": snapshot_id, "source_hashes": source_hashes})
         seen_relations: set[str] = set()
         for task in _enumerate_snapshot_tasks(oracle, canonicalizer):
-            expected = tuple(
-                canonicalizer.relation(item) for item in oracle.expected(task)
-            )
+            expected = tuple(canonicalizer.relation(item) for item in oracle.expected(task))
             relation_payload = [
                 {
                     "kind": item.kind,
@@ -62,9 +54,7 @@ def build_candidate_pool(snapshot_roots: Sequence[str | Path]) -> dict[str, Any]
                 }
                 for item in expected
             ]
-            relation_key = _sha256_json(
-                {"snapshot_id": snapshot_id, "relations": relation_payload}
-            )
+            relation_key = _sha256_json({"snapshot_id": snapshot_id, "relations": relation_payload})
             if relation_key in seen_relations:
                 continue
             seen_relations.add(relation_key)
@@ -92,9 +82,7 @@ def build_candidate_pool(snapshot_roots: Sequence[str | Path]) -> dict[str, Any]
                     "selection_key": hashlib.sha256(
                         (
                             CANDIDATE_ORDER_SALT
-                            + json.dumps(
-                                descriptor, sort_keys=True, separators=(",", ":")
-                            )
+                            + json.dumps(descriptor, sort_keys=True, separators=(",", ":"))
                         ).encode("utf-8")
                     ).hexdigest(),
                 }
@@ -114,23 +102,13 @@ def select_campaign_candidates(pool: Mapping[str, Any]) -> dict[str, Any]:
     """Select a complete campaign mechanically from the frozen candidate pool."""
 
     supplied_hash = str(pool.get("candidate_pool_sha256") or "")
-    unhashed = {
-        key: value for key, value in pool.items() if key != "candidate_pool_sha256"
-    }
+    unhashed = {key: value for key, value in pool.items() if key != "candidate_pool_sha256"}
     if supplied_hash != _sha256_json(unhashed):
         raise VerifiableNavigationError("candidate pool hash mismatch")
-    candidates = [
-        dict(item)
-        for item in pool.get("candidates") or []
-        if isinstance(item, Mapping)
-    ]
+    candidates = [dict(item) for item in pool.get("candidates") or [] if isinstance(item, Mapping)]
     by_tier = {
         tier: sorted(
-            [
-                item
-                for item in candidates
-                if dict(item.get("difficulty") or {}).get("tier") == tier
-            ],
+            [item for item in candidates if dict(item.get("difficulty") or {}).get("tier") == tier],
             key=lambda item: str(item["selection_key"]),
         )
         for tier in CAMPAIGN_TIER_MINIMUMS
@@ -151,9 +129,7 @@ def select_campaign_candidates(pool: Mapping[str, Any]) -> dict[str, Any]:
     selected.extend(exploratory)
     selected_kinds = {str(item["kind"]) for item in selected}
     if selected_kinds != REQUIRED_TASK_KINDS:
-        raise VerifiableNavigationError(
-            "candidate pool cannot supply every required task shape"
-        )
+        raise VerifiableNavigationError("candidate pool cannot supply every required task shape")
     manifest: dict[str, Any] = {
         "schema_version": CANDIDATE_SELECTION_SCHEMA_VERSION,
         "track": "NAV-VERIFIABLE-00",
@@ -180,9 +156,7 @@ def _select_exploratory(
     graph_tasks = 0
     while len(selected) < count:
         allowed = [
-            item
-            for item in remaining
-            if kind_counts[str(item.get("kind") or "")] < count // 2
+            item for item in remaining if kind_counts[str(item.get("kind") or "")] < count // 2
         ]
         if not allowed:
             raise VerifiableNavigationError(
@@ -312,7 +286,5 @@ def _enumerate_snapshot_tasks(
 
 
 def _sha256_json(value: Mapping[str, Any]) -> str:
-    canonical = json.dumps(value, sort_keys=True, separators=(",", ":")).encode(
-        "utf-8"
-    )
+    canonical = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()

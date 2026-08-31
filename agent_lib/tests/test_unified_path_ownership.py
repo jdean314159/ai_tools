@@ -53,9 +53,20 @@ def test_managed_mailbox_reservation_is_the_enforced_lease_view(tmp_path: Path) 
     team = ExternalAgentTeam(
         project_id="ownership",
         mentor=ExternalAgentSession("mentor", "mentor"),
-        workers=[ExternalAgentSession("agent-a", "worker", capabilities=["replace_text"]), ExternalAgentSession("agent-b", "worker", capabilities=["replace_text"])],
+        workers=[
+            ExternalAgentSession("agent-a", "worker", capabilities=["replace_text"]),
+            ExternalAgentSession("agent-b", "worker", capabilities=["replace_text"]),
+        ],
     )
-    inner = LocalToolRuntime([LocalTool("replace_text", "replace", lambda path, old, new: _replace_on_disk(path, old, new, root=workspace))])
+    inner = LocalToolRuntime(
+        [
+            LocalTool(
+                "replace_text",
+                "replace",
+                lambda path, old, new: _replace_on_disk(path, old, new, root=workspace),
+            )
+        ]
+    )
     managed = build_managed_coordination(
         team,
         inner,
@@ -65,10 +76,17 @@ def test_managed_mailbox_reservation_is_the_enforced_lease_view(tmp_path: Path) 
     )
 
     assert managed.coordinator.mailbox.isolation_manager is managed.isolation_manager
-    assert all(runtime.isolation_manager is managed.isolation_manager for runtime in managed.worker_runtimes.values())
-    first = managed.coordinator.reserve_paths("agent-a", ["shared.py"], thread_id="task", note="editing")
+    assert all(
+        runtime.isolation_manager is managed.isolation_manager
+        for runtime in managed.worker_runtimes.values()
+    )
+    first = managed.coordinator.reserve_paths(
+        "agent-a", ["shared.py"], thread_id="task", note="editing"
+    )
     conflict = managed.coordinator.reserve_paths("agent-b", ["shared.py"])
-    denied = managed.worker_runtimes["agent-b"].invoke(ToolCall("replace_text", {"path": "shared.py", "old": "before", "new": "after"}))
+    denied = managed.worker_runtimes["agent-b"].invoke(
+        ToolCall("replace_text", {"path": "shared.py", "old": "before", "new": "after"})
+    )
 
     assert first[0].status == "active"
     assert conflict[0].status == "conflict"
@@ -93,16 +111,28 @@ def test_same_owner_reacquire_preserves_reservation_scope(tmp_path: Path) -> Non
     (workspace / "shared.py").write_text("before", encoding="utf-8")
     manager = WorkspaceIsolationManager(tmp_path / "state")
     mailbox = InMemoryMailbox(manager)
-    reserved = mailbox.reserve_paths("agent-a", ["shared.py"], thread_id="thread-a", note="keep this scope")[0]
+    reserved = mailbox.reserve_paths(
+        "agent-a", ["shared.py"], thread_id="thread-a", note="keep this scope"
+    )[0]
     runtime = ProgrammingToolRuntime(
-        LocalToolRuntime([LocalTool("replace_text", "replace", lambda path, old, new: _replace_on_disk(path, old, new, root=workspace))]),
+        LocalToolRuntime(
+            [
+                LocalTool(
+                    "replace_text",
+                    "replace",
+                    lambda path, old, new: _replace_on_disk(path, old, new, root=workspace),
+                )
+            ]
+        ),
         WorkspacePolicy(root=str(workspace), writable_paths=["shared.py"]),
         root=workspace,
         owner_id="agent-a",
         isolation_manager=manager,
     )
 
-    assert runtime.invoke(ToolCall("replace_text", {"path": "shared.py", "old": "before", "new": "after"})).success
+    assert runtime.invoke(
+        ToolCall("replace_text", {"path": "shared.py", "old": "before", "new": "after"})
+    ).success
     reread = mailbox.active_reservations()[0]
     assert (reread.thread_id, reread.note, reread.created_at, reread.metadata) == (
         reserved.thread_id,
@@ -114,7 +144,9 @@ def test_same_owner_reacquire_preserves_reservation_scope(tmp_path: Path) -> Non
 
 def test_legacy_lease_record_has_unknown_timestamp_until_acquired(tmp_path: Path) -> None:
     manager = WorkspaceIsolationManager(tmp_path / "state")
-    manager._leases_path.write_text(json.dumps({"shared.py": {"owner_id": "agent-a", "status": "active"}}), encoding="utf-8")
+    manager._leases_path.write_text(
+        json.dumps({"shared.py": {"owner_id": "agent-a", "status": "active"}}), encoding="utf-8"
+    )
     mailbox = InMemoryMailbox(manager)
 
     legacy = mailbox.active_reservations()[0]

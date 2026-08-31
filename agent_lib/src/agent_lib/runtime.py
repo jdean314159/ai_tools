@@ -5,7 +5,15 @@ from datetime import datetime, timezone
 import time
 from typing import Any, Sequence
 
-from llm_inspector import ContextResult, RunMetrics, Section, TokenAccounting, Trace, TraceEvent, Turn
+from llm_inspector import (
+    ContextResult,
+    RunMetrics,
+    Section,
+    TokenAccounting,
+    Trace,
+    TraceEvent,
+    Turn,
+)
 
 from .contracts import (
     AgentAction,
@@ -49,11 +57,15 @@ def _workspace_summary(task: AgentTask) -> dict[str, Any]:
         "command_isolation_backend": workspace.get("command_isolation_backend"),
         "command_isolation_image": workspace.get("command_isolation_image"),
         "command_isolation_network": bool(workspace.get("command_isolation_network", False)),
-        "command_isolation_fallback_to_host": bool(workspace.get("command_isolation_fallback_to_host", False)),
+        "command_isolation_fallback_to_host": bool(
+            workspace.get("command_isolation_fallback_to_host", False)
+        ),
     }
 
 
-def _agent_summary(context: AgentContext, observation: AgentObservation | None = None) -> dict[str, Any]:
+def _agent_summary(
+    context: AgentContext, observation: AgentObservation | None = None
+) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "active_controller": context.active_controller,
         "escalated": context.escalated,
@@ -71,9 +83,9 @@ def _agent_summary(context: AgentContext, observation: AgentObservation | None =
     return _merge_execution_observation(summary, observation)
 
 
-
-
-def _merge_execution_observation(summary: dict[str, Any], observation: AgentObservation | None) -> dict[str, Any]:
+def _merge_execution_observation(
+    summary: dict[str, Any], observation: AgentObservation | None
+) -> dict[str, Any]:
     merged = dict(summary)
     merged.setdefault("blocked_count", 0)
     merged.setdefault("degraded_count", 0)
@@ -93,7 +105,18 @@ def _merge_execution_observation(summary: dict[str, Any], observation: AgentObse
         "policy_reason": meta.get("policy_reason"),
         "returncode": meta.get("returncode"),
     }
-    blocked_errors = {"policy_violation", "tool_not_granted", "invalid_arguments", "invalid_path", "path_escape", "write_denied", "ownership_denied", "command_denied", "sandbox_unavailable", "invalid_sandbox_backend"}
+    blocked_errors = {
+        "policy_violation",
+        "tool_not_granted",
+        "invalid_arguments",
+        "invalid_path",
+        "path_escape",
+        "write_denied",
+        "ownership_denied",
+        "command_denied",
+        "sandbox_unavailable",
+        "invalid_sandbox_backend",
+    }
     blocked = str(meta.get("error") or "") in blocked_errors
     degraded = bool(meta.get("sandbox_fallback_used"))
     approval = bool(meta.get("approval_required"))
@@ -108,6 +131,7 @@ def _merge_execution_observation(summary: dict[str, Any], observation: AgentObse
         merged["approval_count"] = int(merged.get("approval_count", 0)) + 1
     merged["execution_modes"] = modes
     return merged
+
 
 def _observation_payload(observation: AgentObservation) -> dict[str, Any]:
     payload = {
@@ -152,7 +176,11 @@ class InspectorTraceEmitter:
                     origin="system",
                 )
             )
-        context_budget = context.task.context.get("context_budget") if isinstance(context.task.context, dict) else None
+        context_budget = (
+            context.task.context.get("context_budget")
+            if isinstance(context.task.context, dict)
+            else None
+        )
         if isinstance(context_budget, dict):
             compacted = int(context_budget.get("compacted_step_count") or 0)
             visible = int(context_budget.get("visible_step_count") or len(context.steps))
@@ -164,7 +192,11 @@ class InspectorTraceEmitter:
                     origin="system",
                 )
             )
-        programming_state = context.task.context.get("programming_state") if isinstance(context.task.context, dict) else None
+        programming_state = (
+            context.task.context.get("programming_state")
+            if isinstance(context.task.context, dict)
+            else None
+        )
         if isinstance(programming_state, dict):
             current_step = str(programming_state.get("current_step_id") or "(none)")
             status = str(programming_state.get("status") or "running")
@@ -269,7 +301,18 @@ class InspectorTraceEmitter:
                     tags.append("policy")
                 if observation.tool_result.meta.get("sandbox_fallback_used"):
                     tags.append("degraded")
-                blocked_errors = {"policy_violation", "tool_not_granted", "invalid_arguments", "invalid_path", "path_escape", "write_denied", "ownership_denied", "command_denied", "sandbox_unavailable", "invalid_sandbox_backend"}
+                blocked_errors = {
+                    "policy_violation",
+                    "tool_not_granted",
+                    "invalid_arguments",
+                    "invalid_path",
+                    "path_escape",
+                    "write_denied",
+                    "ownership_denied",
+                    "command_denied",
+                    "sandbox_unavailable",
+                    "invalid_sandbox_backend",
+                }
                 if str(observation.tool_result.meta.get("error") or "") in blocked_errors:
                     severity = "warning"
                     tags.append("blocked")
@@ -303,7 +346,9 @@ class InspectorTraceEmitter:
             metrics=RunMetrics(
                 engine=engine_role,
                 model=model,
-                inference_optimizations=[dict(item) for item in active_optimizations if isinstance(item, dict)],
+                inference_optimizations=[
+                    dict(item) for item in active_optimizations if isinstance(item, dict)
+                ],
             ),
             events=events,
         )
@@ -337,14 +382,17 @@ class AgentRuntime:
 
     def describe_component(self):
         from .interop import describe_agent_runtime
+
         return describe_agent_runtime(self)
 
     def get_capability_descriptor(self):
         from .interop import describe_agent_runtime
+
         return describe_agent_runtime(self)
 
     def run_interop(self, task: AgentTask, *, max_steps: int = 8):
         from .interop import run_to_operation_result
+
         run = self.run(task, max_steps=max_steps)
         return run_to_operation_result(run, runtime=self)
 
@@ -357,7 +405,11 @@ class AgentRuntime:
         escalated: bool,
         tool_specs_override: Sequence[ToolSpec] | None = None,
     ) -> AgentContext:
-        tool_specs = self.tool_runtime.list_tools() if tool_specs_override is None else list(tool_specs_override)
+        tool_specs = (
+            self.tool_runtime.list_tools()
+            if tool_specs_override is None
+            else list(tool_specs_override)
+        )
         if self.context_builder is not None:
             return self.context_builder.build_context(
                 task,
@@ -411,9 +463,7 @@ class AgentRuntime:
         )
         previous_telemetry = run.meta.get("action_guard")
         prior_checks = (
-            int(previous_telemetry.get("checks", 0))
-            if isinstance(previous_telemetry, dict)
-            else 0
+            int(previous_telemetry.get("checks", 0)) if isinstance(previous_telemetry, dict) else 0
         )
         guard_telemetry = {
             "fired": True,
@@ -497,7 +547,9 @@ class AgentRuntime:
             outcome = "no_answer"
             run.status = "stopped"
             run.stop_reason = "guard_no_answer"
-            run.final_output = "Loop detected; the single constrained finalization attempt returned no answer."
+            run.final_output = (
+                "Loop detected; the single constrained finalization attempt returned no answer."
+            )
         guard_telemetry["finalization_outcome"] = outcome
         run.meta["action_guard"] = guard_telemetry
         for hook in self.lifecycle_hooks:
@@ -508,7 +560,11 @@ class AgentRuntime:
         if self.critic is None or not run.steps:
             return False
         last = run.steps[-1]
-        if last.observation and last.observation.tool_result is not None and not last.observation.tool_result.success:
+        if (
+            last.observation
+            and last.observation.tool_result is not None
+            and not last.observation.tool_result.success
+        ):
             return True
         if bool(last.action.meta.get("needs_critic")):
             return True
@@ -546,7 +602,9 @@ class AgentRuntime:
         started_at = datetime.now(timezone.utc)
         started_clock = time.perf_counter()
         run = AgentRun(task=task, engine_roles=self.engine_roles, started_at=started_at)
-        active_controller = str(task.context.get("resume_controller") or "planner").strip().lower() or "planner"
+        active_controller = (
+            str(task.context.get("resume_controller") or "planner").strip().lower() or "planner"
+        )
 
         for hook in self.lifecycle_hooks:
             hook.on_start(task, max_steps=max_steps, engine_roles=self.engine_roles)
@@ -559,9 +617,17 @@ class AgentRuntime:
             elif active_controller == "critic" and self.critic is not None and run.steps:
                 last = run.steps[-1]
                 if str(last.action.meta.get("handoff", "")).strip().lower() == "planner":
-                    active_controller = str(task.context.get("resume_controller") or "planner").strip().lower() or "planner"
+                    active_controller = (
+                        str(task.context.get("resume_controller") or "planner").strip().lower()
+                        or "planner"
+                    )
 
-            context = self._build_context(task, run.steps, active_controller=active_controller, escalated=active_controller == "critic")
+            context = self._build_context(
+                task,
+                run.steps,
+                active_controller=active_controller,
+                escalated=active_controller == "critic",
+            )
             retry_payload = task.context.pop("_programming_retry_action", None)
             if isinstance(retry_payload, dict) and retry_payload.get("name"):
                 action = AgentAction.tool(
@@ -571,17 +637,30 @@ class AgentRuntime:
                     meta=dict(retry_payload.get("meta") or {}),
                 )
             else:
-                active_planner = self.critic if active_controller == "critic" and self.critic is not None else self.planner
+                active_planner = (
+                    self.critic
+                    if active_controller == "critic" and self.critic is not None
+                    else self.planner
+                )
                 action = active_planner.plan(context)
             if self._should_stop_for_repeat(run, action):
                 run.status = "stopped"
                 run.stop_reason = "planner_stop"
-                run.final_output = f"Interrupted repeated tool call: {action.tool_call.name}" if action.tool_call is not None else "Interrupted repeated tool call."
+                run.final_output = (
+                    f"Interrupted repeated tool call: {action.tool_call.name}"
+                    if action.tool_call is not None
+                    else "Interrupted repeated tool call."
+                )
                 for hook in self.lifecycle_hooks:
                     hook.on_finish(run)
                 return self._finalize_run(run, started_clock)
             action_meta = dict(action.meta)
-            action_meta.setdefault("engine_role", active_controller if active_controller != "planner" else ("executor" if action.kind == "tool" else "planner"))
+            action_meta.setdefault(
+                "engine_role",
+                active_controller
+                if active_controller != "planner"
+                else ("executor" if action.kind == "tool" else "planner"),
+            )
             action = AgentAction(
                 kind=action.kind,
                 message=action.message,
@@ -602,9 +681,13 @@ class AgentRuntime:
                     meta=dict(result.meta),
                 )
             elif action.kind == "message":
-                observation = AgentObservation(kind="message", text=action.message, meta=dict(action.meta))
+                observation = AgentObservation(
+                    kind="message", text=action.message, meta=dict(action.meta)
+                )
 
-            trace = self.trace_emitter.emit_step(context=context, action=action, observation=observation)
+            trace = self.trace_emitter.emit_step(
+                context=context, action=action, observation=observation
+            )
             step = AgentStep(index=index, action=action, observation=observation, trace=trace)
             run.steps.append(step)
             self.memory.record_step(task, step)
@@ -627,9 +710,19 @@ class AgentRuntime:
                             "checks": checks + 1,
                             "mode": candidate_metadata.get("mode", "enforce"),
                         }
-                        prior_trace = prior.get("detector_trace") if isinstance(prior, dict) else None
-                        trace_actions = list(prior_trace.get("actions", [])) if isinstance(prior_trace, dict) else []
-                        trace_decisions = list(prior_trace.get("decisions", [])) if isinstance(prior_trace, dict) else []
+                        prior_trace = (
+                            prior.get("detector_trace") if isinstance(prior, dict) else None
+                        )
+                        trace_actions = (
+                            list(prior_trace.get("actions", []))
+                            if isinstance(prior_trace, dict)
+                            else []
+                        )
+                        trace_decisions = (
+                            list(prior_trace.get("decisions", []))
+                            if isinstance(prior_trace, dict)
+                            else []
+                        )
                         detector_action = candidate_metadata.get("detector_action")
                         detector_decision = candidate_metadata.get("detector_decision")
                         if isinstance(detector_action, dict):
@@ -641,11 +734,18 @@ class AgentRuntime:
                                 "intervention": {
                                     key: value
                                     for key, value in candidate_metadata.items()
-                                    if key not in {
-                                        "control_hook", "mode", "fired", "would_fire",
-                                        "detector_schema_version", "detector_action", "detector_decision",
+                                    if key
+                                    not in {
+                                        "control_hook",
+                                        "mode",
+                                        "fired",
+                                        "would_fire",
+                                        "detector_schema_version",
+                                        "detector_action",
+                                        "detector_decision",
                                     }
-                                } or None,
+                                }
+                                or None,
                                 "would_fire": bool(candidate_metadata.get("would_fire")),
                                 "fired": isinstance(candidate, FinalizeOnce),
                             }
@@ -670,7 +770,11 @@ class AgentRuntime:
                         directive = candidate
                         break
                 if directive is not None:
-                    active_planner = self.critic if active_controller == "critic" and self.critic is not None else self.planner
+                    active_planner = (
+                        self.critic
+                        if active_controller == "critic" and self.critic is not None
+                        else self.planner
+                    )
                     return self._finish_after_guard(
                         task=task,
                         run=run,
@@ -689,7 +793,9 @@ class AgentRuntime:
                     hook.on_finish(run)
                 return self._finalize_run(run, started_clock)
 
-            next_controller = str(task.context.pop("_programming_next_controller", "") or "").strip().lower()
+            next_controller = (
+                str(task.context.pop("_programming_next_controller", "") or "").strip().lower()
+            )
             if next_controller in {"planner", "critic"}:
                 active_controller = next_controller
                 task.context["resume_controller"] = next_controller
@@ -698,7 +804,9 @@ class AgentRuntime:
 
             if action.kind == "final":
                 run.status = "completed"
-                run.stop_reason = "critic_completed" if active_controller == "critic" else "completed"
+                run.stop_reason = (
+                    "critic_completed" if active_controller == "critic" else "completed"
+                )
                 run.final_output = action.final_output or action.message
                 for hook in self.lifecycle_hooks:
                     hook.on_finish(run)

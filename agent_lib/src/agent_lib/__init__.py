@@ -69,7 +69,12 @@ from .memory import (
 
 # --- Planners ---
 from .planners import SequencePlanner
-from .llm_engines_adapter import LLMActionPlanner, RoleEngineSet, action_from_payload, extract_json_object
+from .llm_engines_adapter import (
+    LLMActionPlanner,
+    RoleEngineSet,
+    action_from_payload,
+    extract_json_object,
+)
 
 # --- Runtime ---
 from .runtime import AgentRuntime, InspectorTraceEmitter
@@ -136,6 +141,7 @@ __all__ = [
     "build_session_tool_runtime",
     "route_by_capability",
     # Memory adapters
+    "EngramLiteMemoryAdapter",
     "EngramMemoryAdapter",
     "NullMemoryAdapter",
     "create_memory_adapter",

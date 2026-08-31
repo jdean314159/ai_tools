@@ -3,8 +3,11 @@
 For each package that declares ``__all__``, every listed name must resolve as
 an attribute on the imported module.
 """
+
 import importlib
 
+import agent_lib
+import agent_lib.examples
 import engram
 import pytest
 
@@ -58,3 +61,11 @@ def test_expected_engram_public_names_are_exported() -> None:
         "EmbeddingService",
     }
     assert expected <= set(engram.__all__)
+
+
+def test_expected_agent_compatibility_and_example_names_are_exported() -> None:
+    assert "EngramLiteMemoryAdapter" in agent_lib.__all__
+    assert {
+        "build_default_benchmark_scenarios",
+        "run_programming_scenario_benchmark",
+    } <= set(agent_lib.examples.__all__)

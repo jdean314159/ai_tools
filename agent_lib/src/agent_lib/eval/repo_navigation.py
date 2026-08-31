@@ -164,9 +164,7 @@ def navigation_action_schema(
             branch["properties"][claim_name] = copy.deepcopy(dict(claim_schema))
             branch["required"].append(claim_name)
         if structured_navigation:
-            branch["properties"]["navigation_goals"] = copy.deepcopy(
-                NAVIGATION_GOAL_STATE_SCHEMA
-            )
+            branch["properties"]["navigation_goals"] = copy.deepcopy(NAVIGATION_GOAL_STATE_SCHEMA)
             branch["required"].append("navigation_goals")
             if branch["properties"]["kind"]["enum"] == ["tool"]:
                 branch["properties"]["serves_goal_ids"] = {
@@ -176,6 +174,7 @@ def navigation_action_schema(
                 }
                 branch["required"].append("serves_goal_ids")
     return schema
+
 
 FINALIZATION_ACTION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -192,19 +191,34 @@ NAVIGATION_TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
     "read_file": {
         "type": "object",
         "additionalProperties": False,
-        "properties": {"path": {"type": "string"}, "start_line": {"type": "integer"}, "line_count": {"type": "integer"}, "full": {"type": "boolean"}},
+        "properties": {
+            "path": {"type": "string"},
+            "start_line": {"type": "integer"},
+            "line_count": {"type": "integer"},
+            "full": {"type": "boolean"},
+        },
         "required": ["path"],
     },
     "grep": {
         "type": "object",
         "additionalProperties": False,
-        "properties": {"pattern": {"type": "string"}, "path": {"type": "string"}, "glob": {"type": "string"}, "max_matches": {"type": "integer"}, "case_sensitive": {"type": "boolean"}},
+        "properties": {
+            "pattern": {"type": "string"},
+            "path": {"type": "string"},
+            "glob": {"type": "string"},
+            "max_matches": {"type": "integer"},
+            "case_sensitive": {"type": "boolean"},
+        },
         "required": ["pattern"],
     },
     "list_files": {
         "type": "object",
         "additionalProperties": False,
-        "properties": {"path": {"type": "string"}, "glob": {"type": "string"}, "max_results": {"type": "integer"}},
+        "properties": {
+            "path": {"type": "string"},
+            "glob": {"type": "string"},
+            "max_results": {"type": "integer"},
+        },
     },
 }
 
@@ -217,7 +231,17 @@ class NavigationConfigurationError(ValueError):
 class NavigationPolicy:
     root: Path
     denied_directory_names: frozenset[str] = frozenset(
-        {".git", ".venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", "node_modules", "build", "dist"}
+        {
+            ".git",
+            ".venv",
+            "__pycache__",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".ruff_cache",
+            "node_modules",
+            "build",
+            "dist",
+        }
     )
     denied_path_globs: tuple[str, ...] = (
         "tests/**/runs",
@@ -226,10 +250,44 @@ class NavigationPolicy:
         "examples/asc_probe/runs/**",
     )
     denied_suffixes: frozenset[str] = frozenset(
-        {".db", ".sqlite", ".sqlite3", ".bin", ".jsonl", ".pem", ".key", ".p12", ".pfx", ".pyc", ".so", ".dylib", ".dll"}
+        {
+            ".db",
+            ".sqlite",
+            ".sqlite3",
+            ".bin",
+            ".jsonl",
+            ".pem",
+            ".key",
+            ".p12",
+            ".pfx",
+            ".pyc",
+            ".so",
+            ".dylib",
+            ".dll",
+        }
     )
     source_suffixes: frozenset[str] = frozenset(
-        {".py", ".pyi", ".md", ".rst", ".toml", ".yaml", ".yml", ".json", ".txt", ".ini", ".cfg", ".sh", ".js", ".jsx", ".ts", ".tsx", ".html", ".css", ".sql"}
+        {
+            ".py",
+            ".pyi",
+            ".md",
+            ".rst",
+            ".toml",
+            ".yaml",
+            ".yml",
+            ".json",
+            ".txt",
+            ".ini",
+            ".cfg",
+            ".sh",
+            ".js",
+            ".jsx",
+            ".ts",
+            ".tsx",
+            ".html",
+            ".css",
+            ".sql",
+        }
     )
     max_file_bytes: int = 256_000
     max_json_bytes: int = 64_000
@@ -289,7 +347,17 @@ class NavigationTelemetry:
 
 
 def _safe_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
-    allowed = {"path", "glob", "pattern", "start_line", "line_count", "full", "max_matches", "max_results", "case_sensitive"}
+    allowed = {
+        "path",
+        "glob",
+        "pattern",
+        "start_line",
+        "line_count",
+        "full",
+        "max_matches",
+        "max_results",
+        "case_sensitive",
+    }
     return {key: value for key, value in arguments.items() if key in allowed}
 
 
@@ -298,27 +366,26 @@ class NavigationWorkspace:
         self.policy = policy
 
     def _failure(self, name: str, message: str, category: str, **meta: Any) -> ToolResult:
-        return ToolResult(name=name, output=message, success=False, meta={"category": category, **meta})
+        return ToolResult(
+            name=name, output=message, success=False, meta={"category": category, **meta}
+        )
 
     def _relative(self, path: Path) -> str:
         return path.relative_to(self.policy.root).as_posix()
 
     def _is_secret_name(self, name: str) -> bool:
         lower = name.lower()
-        return (
-            lower.startswith(".env")
-            or lower in {
-                "id_rsa",
-                "id_dsa",
-                "id_ecdsa",
-                "id_ed25519",
-                "credentials.json",
-                "secrets.json",
-                "secrets.yaml",
-                "secrets.yml",
-                "secrets.toml",
-            }
-        )
+        return lower.startswith(".env") or lower in {
+            "id_rsa",
+            "id_dsa",
+            "id_ecdsa",
+            "id_ed25519",
+            "credentials.json",
+            "secrets.json",
+            "secrets.yaml",
+            "secrets.yml",
+            "secrets.toml",
+        }
 
     def _denied_relative(self, relative: str, *, is_dir: bool = False) -> str | None:
         parts = Path(relative).parts
@@ -328,7 +395,10 @@ class NavigationWorkspace:
             return "denied_path"
         if not is_dir:
             path = Path(relative)
-            if self._is_secret_name(path.name) or path.suffix.lower() in self.policy.denied_suffixes:
+            if (
+                self._is_secret_name(path.name)
+                or path.suffix.lower() in self.policy.denied_suffixes
+            ):
                 return "denied_content"
             try:
                 size = (self.policy.root / path).stat().st_size
@@ -340,7 +410,9 @@ class NavigationWorkspace:
                 return "oversized_file"
         return None
 
-    def _resolve(self, raw_path: str, *, expect_directory: bool | None = None) -> tuple[Path | None, ToolResult | None]:
+    def _resolve(
+        self, raw_path: str, *, expect_directory: bool | None = None
+    ) -> tuple[Path | None, ToolResult | None]:
         if not isinstance(raw_path, str):
             return None, self._failure("path", "path must be a string.", "invalid_arguments")
         text = str(raw_path or ".").strip()
@@ -352,7 +424,9 @@ class NavigationWorkspace:
             candidate = (self.policy.root / text).resolve(strict=True)
             candidate.relative_to(self.policy.root)
         except (OSError, ValueError):
-            return None, self._failure("path", "Path is missing or escapes the navigation root.", "path_escape")
+            return None, self._failure(
+                "path", "Path is missing or escapes the navigation root.", "path_escape"
+            )
         relative = self._relative(candidate) if candidate != self.policy.root else "."
         denied = self._denied_relative(relative, is_dir=candidate.is_dir())
         if denied:
@@ -378,14 +452,18 @@ class NavigationWorkspace:
             return None, "binary_content"
         sample = text[:4_000]
         if sample:
-            printable = sum(character.isprintable() or character in "\n\r\t" for character in sample)
+            printable = sum(
+                character.isprintable() or character in "\n\r\t" for character in sample
+            )
             if printable / len(sample) < self.policy.minimum_printable_ratio:
                 return None, "binary_content"
         return data, None
 
     def _walk_source_files(self, start: Path, glob: str) -> tuple[list[Path], int]:
         if start.is_file():
-            allowed = start.suffix.lower() in self.policy.source_suffixes and fnmatch(start.name, glob)
+            allowed = start.suffix.lower() in self.policy.source_suffixes and fnmatch(
+                start.name, glob
+            )
             return ([start] if allowed else []), 0
         files: list[Path] = []
         pruned = 0
@@ -416,7 +494,9 @@ class NavigationWorkspace:
                 if path.is_symlink() or self._denied_relative(relative):
                     pruned += 1
                     continue
-                if resolved.suffix.lower() not in self.policy.source_suffixes or not fnmatch(name, glob):
+                if resolved.suffix.lower() not in self.policy.source_suffixes or not fnmatch(
+                    name, glob
+                ):
                     continue
                 files.append(resolved)
         return files, pruned
@@ -430,13 +510,19 @@ class NavigationWorkspace:
     ) -> ToolResult:
         resolved, failure = self._resolve(path, expect_directory=False)
         if failure is not None:
-            return ToolResult(name="read_file", output=failure.output, success=False, meta=failure.meta)
+            return ToolResult(
+                name="read_file", output=failure.output, success=False, meta=failure.meta
+            )
         assert resolved is not None
         if resolved.suffix.lower() not in self.policy.source_suffixes:
-            return self._failure("read_file", "File type is outside the source allowlist.", "denied_content")
+            return self._failure(
+                "read_file", "File type is outside the source allowlist.", "denied_content"
+            )
         data, category = self._read_source_bytes(resolved)
         if data is None:
-            return self._failure("read_file", "File is denied by the size or binary-content guard.", str(category))
+            return self._failure(
+                "read_file", "File is denied by the size or binary-content guard.", str(category)
+            )
         if not isinstance(full, bool):
             return self._failure("read_file", "full must be a boolean.", "invalid_arguments")
         if full and (start_line != 1 or line_count is not None):
@@ -446,26 +532,47 @@ class NavigationWorkspace:
                 "invalid_arguments",
             )
         if not isinstance(start_line, int) or isinstance(start_line, bool) or start_line < 1:
-            return self._failure("read_file", "start_line must be a positive integer.", "invalid_arguments")
+            return self._failure(
+                "read_file", "start_line must be a positive integer.", "invalid_arguments"
+            )
         requested = self.policy.default_line_count if line_count is None else line_count
-        if not isinstance(requested, int) or isinstance(requested, bool) or requested < 1 or requested > self.policy.max_line_count:
-            return self._failure("read_file", f"line_count must be between 1 and {self.policy.max_line_count}.", "invalid_arguments")
+        if (
+            not isinstance(requested, int)
+            or isinstance(requested, bool)
+            or requested < 1
+            or requested > self.policy.max_line_count
+        ):
+            return self._failure(
+                "read_file",
+                f"line_count must be between 1 and {self.policy.max_line_count}.",
+                "invalid_arguments",
+            )
         lines = data.decode("utf-8").splitlines()
         if full:
             selected_start, selected_end = 1, len(lines)
         else:
             selected_start = start_line
             selected_end = min(len(lines), start_line + requested - 1)
-        rendered = "\n".join(f"{index}: {lines[index - 1]}" for index in range(selected_start, selected_end + 1))
+        rendered = "\n".join(
+            f"{index}: {lines[index - 1]}" for index in range(selected_start, selected_end + 1)
+        )
         if len(rendered) > self.policy.max_result_chars:
-            return self._failure("read_file", "Requested range exceeds the result-size cap.", "result_too_large")
+            return self._failure(
+                "read_file", "Requested range exceeds the result-size cap.", "result_too_large"
+            )
         relative = self._relative(resolved)
         evidence = [{"path": relative, "lines": list(range(selected_start, selected_end + 1))}]
         return ToolResult(
             name="read_file",
             output=rendered,
             success=True,
-            meta={"category": "ok", "paths": [relative], "evidence": evidence, "bytes": len(data), "full": bool(full)},
+            meta={
+                "category": "ok",
+                "paths": [relative],
+                "evidence": evidence,
+                "bytes": len(data),
+                "full": bool(full),
+            },
         )
 
     def grep(
@@ -477,14 +584,31 @@ class NavigationWorkspace:
         case_sensitive: bool = True,
     ) -> ToolResult:
         if not isinstance(pattern, str) or not pattern or len(pattern) > 1_000:
-            return self._failure("grep", "pattern must be a non-empty string of at most 1000 characters.", "invalid_arguments")
+            return self._failure(
+                "grep",
+                "pattern must be a non-empty string of at most 1000 characters.",
+                "invalid_arguments",
+            )
         if not isinstance(case_sensitive, bool):
             return self._failure("grep", "case_sensitive must be a boolean.", "invalid_arguments")
         if not isinstance(glob, str) or not glob or "/" in glob or "\\" in glob:
-            return self._failure("grep", "glob must be a filename pattern without path separators.", "invalid_arguments")
+            return self._failure(
+                "grep",
+                "glob must be a filename pattern without path separators.",
+                "invalid_arguments",
+            )
         limit = self.policy.default_max_matches if max_matches is None else max_matches
-        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1 or limit > self.policy.max_matches:
-            return self._failure("grep", f"max_matches must be between 1 and {self.policy.max_matches}.", "invalid_arguments")
+        if (
+            not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or limit < 1
+            or limit > self.policy.max_matches
+        ):
+            return self._failure(
+                "grep",
+                f"max_matches must be between 1 and {self.policy.max_matches}.",
+                "invalid_arguments",
+            )
         try:
             expression = re.compile(pattern, 0 if case_sensitive else re.IGNORECASE)
         except re.error as exc:
@@ -540,15 +664,32 @@ class NavigationWorkspace:
             },
         )
 
-    def list_files(self, path: str = ".", glob: str = "*.py", max_results: int | None = None) -> ToolResult:
+    def list_files(
+        self, path: str = ".", glob: str = "*.py", max_results: int | None = None
+    ) -> ToolResult:
         if not isinstance(glob, str) or not glob or "/" in glob or "\\" in glob:
-            return self._failure("list_files", "glob must be a filename pattern without path separators.", "invalid_arguments")
+            return self._failure(
+                "list_files",
+                "glob must be a filename pattern without path separators.",
+                "invalid_arguments",
+            )
         limit = self.policy.default_max_results if max_results is None else max_results
-        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1 or limit > self.policy.max_results:
-            return self._failure("list_files", f"max_results must be between 1 and {self.policy.max_results}.", "invalid_arguments")
+        if (
+            not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or limit < 1
+            or limit > self.policy.max_results
+        ):
+            return self._failure(
+                "list_files",
+                f"max_results must be between 1 and {self.policy.max_results}.",
+                "invalid_arguments",
+            )
         resolved, failure = self._resolve(path)
         if failure is not None:
-            return ToolResult(name="list_files", output=failure.output, success=False, meta=failure.meta)
+            return ToolResult(
+                name="list_files", output=failure.output, success=False, meta=failure.meta
+            )
         assert resolved is not None
         files, pruned = self._walk_source_files(resolved, glob)
         relative_paths: list[str] = []
@@ -564,12 +705,21 @@ class NavigationWorkspace:
             name="list_files",
             output="\n".join(relative_paths),
             success=True,
-            meta={"category": "ok", "paths": relative_paths, "evidence": [], "results": len(relative_paths), "truncated": len(files) > len(relative_paths), "pruned_paths": pruned},
+            meta={
+                "category": "ok",
+                "paths": relative_paths,
+                "evidence": [],
+                "results": len(relative_paths),
+                "truncated": len(files) > len(relative_paths),
+                "pruned_paths": pruned,
+            },
         )
 
 
 class NavigationToolRuntime:
-    def __init__(self, workspace: NavigationWorkspace, telemetry: NavigationTelemetry | None = None) -> None:
+    def __init__(
+        self, workspace: NavigationWorkspace, telemetry: NavigationTelemetry | None = None
+    ) -> None:
         self.workspace = workspace
         self.telemetry = telemetry or NavigationTelemetry()
         self._inner = LocalToolRuntime(
@@ -623,7 +773,11 @@ class NoWriteContextConfig:
     summary_max_chars: int = 8_000
 
     def __post_init__(self) -> None:
-        if self.max_visible_steps < 1 or self.max_tool_output_chars < 1 or self.summary_max_chars < 1:
+        if (
+            self.max_visible_steps < 1
+            or self.max_tool_output_chars < 1
+            or self.summary_max_chars < 1
+        ):
             raise NavigationConfigurationError("No-write context limits must be positive")
 
 
@@ -637,12 +791,27 @@ class NoWriteContextBuilder(AgentContextBuilder):
             return step
         from ..contracts import AgentObservation
 
-        bounded_text = observation.text[: self.config.max_tool_output_chars].rstrip() + "\n... [tool result truncated]"
+        bounded_text = (
+            observation.text[: self.config.max_tool_output_chars].rstrip()
+            + "\n... [tool result truncated]"
+        )
         tool_result = observation.tool_result
         if tool_result is not None:
-            tool_result = ToolResult(name=tool_result.name, output=bounded_text, success=tool_result.success, meta=dict(tool_result.meta))
-        bounded_observation = AgentObservation(kind=observation.kind, text=bounded_text, tool_result=tool_result, meta=dict(observation.meta))
-        return AgentStep(index=step.index, action=step.action, observation=bounded_observation, trace=step.trace)
+            tool_result = ToolResult(
+                name=tool_result.name,
+                output=bounded_text,
+                success=tool_result.success,
+                meta=dict(tool_result.meta),
+            )
+        bounded_observation = AgentObservation(
+            kind=observation.kind,
+            text=bounded_text,
+            tool_result=tool_result,
+            meta=dict(observation.meta),
+        )
+        return AgentStep(
+            index=step.index, action=step.action, observation=bounded_observation, trace=step.trace
+        )
 
     def build_context(
         self,
@@ -657,7 +826,11 @@ class NoWriteContextBuilder(AgentContextBuilder):
     ) -> AgentContext:
         all_steps = list(steps)
         recent = [self._bounded_step(step) for step in all_steps[-self.config.max_visible_steps :]]
-        older = all_steps[: -self.config.max_visible_steps] if len(all_steps) > self.config.max_visible_steps else []
+        older = (
+            all_steps[: -self.config.max_visible_steps]
+            if len(all_steps) > self.config.max_visible_steps
+            else []
+        )
         summary_lines: list[str] = []
         for step in older:
             label = step.action.tool_call.name if step.action.tool_call else step.action.kind
@@ -670,9 +843,25 @@ class NoWriteContextBuilder(AgentContextBuilder):
             task_id=task.task_id,
             goal=task.goal,
             session_id=task.session_id,
-            context={**dict(task.context), "context_budget": {"history_summary": summary, "visible_step_count": len(recent), "compacted_step_count": len(older), "artifacts": []}},
+            context={
+                **dict(task.context),
+                "context_budget": {
+                    "history_summary": summary,
+                    "visible_step_count": len(recent),
+                    "compacted_step_count": len(older),
+                    "artifacts": [],
+                },
+            },
         )
-        return AgentContext(task=managed_task, steps=recent, recalled=(), tool_specs=list(tool_specs), engine_roles=engine_roles, active_controller=active_controller, escalated=escalated)
+        return AgentContext(
+            task=managed_task,
+            steps=recent,
+            recalled=(),
+            tool_specs=list(tool_specs),
+            engine_roles=engine_roles,
+            active_controller=active_controller,
+            escalated=escalated,
+        )
 
 
 class ModelTokenizer:
@@ -690,13 +879,19 @@ class HuggingFaceModelTokenizer(ModelTokenizer):
         try:
             from transformers import AutoTokenizer
         except ImportError as exc:
-            raise NavigationConfigurationError("transformers is required to load the pinned Qwen tokenizer") from exc
+            raise NavigationConfigurationError(
+                "transformers is required to load the pinned Qwen tokenizer"
+            ) from exc
         self.path = str(Path(path).resolve(strict=True))
-        self.tokenizer = AutoTokenizer.from_pretrained(self.path, local_files_only=True, trust_remote_code=False)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.path, local_files_only=True, trust_remote_code=False
+        )
 
     def count_messages(self, messages: Sequence[ChatMessage]) -> int:
         payload = [{"role": message.role, "content": message.content or ""} for message in messages]
-        tokens = self.tokenizer.apply_chat_template(payload, tokenize=True, add_generation_prompt=True)
+        tokens = self.tokenizer.apply_chat_template(
+            payload, tokenize=True, add_generation_prompt=True
+        )
         return len(tokens)
 
     def count_text(self, text: str) -> int:
@@ -733,7 +928,9 @@ class LlamaServerClient(ModelTokenizer):
     def get_capabilities(self) -> EngineCapabilities:
         return EngineCapabilities(chat=True, usage_reporting=True, structured_output=True)
 
-    def _request_json(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _request_json(
+        self, method: str, path: str, payload: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         data = json.dumps(payload).encode("utf-8") if payload is not None else None
         request = urllib.request.Request(
             f"{self.base_url}{path}",
@@ -748,7 +945,9 @@ class LlamaServerClient(ModelTokenizer):
             body = exc.read().decode("utf-8", errors="replace")
             raise GenerationError(f"llama-server HTTP {exc.code} from {path}: {body}") from exc
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise BackendUnavailableError(f"llama-server unreachable at {self.base_url}: {exc}") from exc
+            raise BackendUnavailableError(
+                f"llama-server unreachable at {self.base_url}: {exc}"
+            ) from exc
         if not isinstance(parsed, dict):
             raise GenerationError(f"llama-server returned a non-object response from {path}")
         return parsed
@@ -835,7 +1034,9 @@ class LlamaServerClient(ModelTokenizer):
         raw = self._request_json("POST", "/completion", payload)
         latency_ms = (time.perf_counter() - started) * 1_000
         if raw.get("truncated"):
-            raise GenerationError("llama-server truncated the prompt or completion despite the preflight budget")
+            raise GenerationError(
+                "llama-server truncated the prompt or completion despite the preflight budget"
+            )
         generation_settings = raw.get("generation_settings")
         if not isinstance(generation_settings, dict):
             raise GenerationError("llama-server omitted generation_settings")
@@ -851,7 +1052,9 @@ class LlamaServerClient(ModelTokenizer):
         for name, expected in expected_settings.items():
             actual = generation_settings.get(name)
             if actual is None or abs(float(actual) - float(expected)) > 1e-6:
-                raise GenerationError(f"llama-server setting mismatch for {name}: requested={expected}, actual={actual}")
+                raise GenerationError(
+                    f"llama-server setting mismatch for {name}: requested={expected}, actual={actual}"
+                )
         timings = raw.get("timings")
         if not isinstance(timings, dict):
             raise GenerationError("llama-server omitted timing/cache telemetry")
@@ -880,7 +1083,11 @@ class LlamaServerClient(ModelTokenizer):
             usage=UsageStats(
                 input_tokens=input_count,
                 output_tokens=output_count,
-                total_tokens=(input_count + output_count if input_count is not None and output_count is not None else None),
+                total_tokens=(
+                    input_count + output_count
+                    if input_count is not None and output_count is not None
+                    else None
+                ),
                 latency_ms=round(latency_ms, 3),
             ),
             model_name=str(raw.get("model") or "llama-server-model"),
@@ -903,11 +1110,18 @@ class NavigationBudget:
     per_call_output_cap: int = 2_048
 
     def __post_init__(self) -> None:
-        values = (self.cumulative_token_limit, self.context_window, self.minimum_output_reserve, self.per_call_output_cap)
+        values = (
+            self.cumulative_token_limit,
+            self.context_window,
+            self.minimum_output_reserve,
+            self.per_call_output_cap,
+        )
         if any(value < 1 for value in values):
             raise NavigationConfigurationError("Navigation budget values must be positive")
         if self.minimum_output_reserve >= self.context_window:
-            raise NavigationConfigurationError("minimum_output_reserve must be smaller than context_window")
+            raise NavigationConfigurationError(
+                "minimum_output_reserve must be smaller than context_window"
+            )
 
 
 @dataclass
@@ -963,9 +1177,7 @@ class BudgetedNavigationPlanner:
         self.system_prompt = system_prompt
         self.final_claim_name = final_claim_name
         self.final_claim_validator = final_claim_validator
-        self.require_observed_evidence_before_final = (
-            require_observed_evidence_before_final
-        )
+        self.require_observed_evidence_before_final = require_observed_evidence_before_final
         self.action_schema = navigation_action_schema(
             claim_name=final_claim_name,
             claim_schema=final_claim_schema,
@@ -1002,16 +1214,22 @@ class BudgetedNavigationPlanner:
                 "advances. Resolve a goal only with exact observed evidence. Do not "
                 "finalize while a goal is open; abandon only with an explicit reason."
             )
-        history_summary = dict(context.task.context.get("context_budget") or {}).get("history_summary")
+        history_summary = dict(context.task.context.get("context_budget") or {}).get(
+            "history_summary"
+        )
         if history_summary:
             parts.append(f"Earlier bounded history:\n{history_summary}")
         if context.steps:
             rendered: list[str] = []
             for step in context.steps:
                 if step.action.tool_call:
-                    rendered.append(f"Step {step.index} request: {step.action.tool_call.name} {json.dumps(step.action.tool_call.arguments, sort_keys=True)}")
+                    rendered.append(
+                        f"Step {step.index} request: {step.action.tool_call.name} {json.dumps(step.action.tool_call.arguments, sort_keys=True)}"
+                    )
                 else:
-                    rendered.append(f"Step {step.index} action: {step.action.kind} {step.action.message}")
+                    rendered.append(
+                        f"Step {step.index} action: {step.action.kind} {step.action.message}"
+                    )
                 if step.observation:
                     rendered.append(f"Step {step.index} result: {step.observation.text}")
             parts.append("Recent tool history:\n" + "\n".join(rendered))
@@ -1020,7 +1238,9 @@ class BudgetedNavigationPlanner:
 
     def _finalization_user_prompt(self, context: AgentContext, instruction: str) -> str:
         parts = [f"Task:\n{context.task.goal}"]
-        history_summary = dict(context.task.context.get("context_budget") or {}).get("history_summary")
+        history_summary = dict(context.task.context.get("context_budget") or {}).get(
+            "history_summary"
+        )
         if history_summary:
             parts.append(f"Earlier bounded history:\n{history_summary}")
         if context.steps:
@@ -1032,7 +1252,9 @@ class BudgetedNavigationPlanner:
                         f"{json.dumps(step.action.tool_call.arguments, sort_keys=True)}"
                     )
                 else:
-                    rendered.append(f"Step {step.index} action: {step.action.kind} {step.action.message}")
+                    rendered.append(
+                        f"Step {step.index} action: {step.action.kind} {step.action.message}"
+                    )
                 if step.observation:
                     rendered.append(f"Step {step.index} result: {step.observation.text}")
             parts.append("Preserved tool history:\n" + "\n".join(rendered))
@@ -1042,16 +1264,19 @@ class BudgetedNavigationPlanner:
 
     def _budget_stop(self, reason: str) -> AgentAction:
         self.usage.stop_reason = reason
-        return AgentAction.final(f"Navigation stopped before model invocation: {reason}.", meta={"navigation_stop_reason": reason, "usage": asdict(self.usage)})
+        return AgentAction.final(
+            f"Navigation stopped before model invocation: {reason}.",
+            meta={"navigation_stop_reason": reason, "usage": asdict(self.usage)},
+        )
 
     def _validate_payload(self, payload: dict[str, Any]) -> str | None:
         kind = str(payload.get("kind") or "").strip().lower()
         if kind == "final":
-            if not str(payload.get("final_output") or payload.get("output") or payload.get("message") or "").strip():
+            if not str(
+                payload.get("final_output") or payload.get("output") or payload.get("message") or ""
+            ).strip():
                 return "final_output must be non-empty"
-            claim_error = self.final_claim_validator(
-                payload.get(self.final_claim_name)
-            )
+            claim_error = self.final_claim_validator(payload.get(self.final_claim_name))
             if claim_error:
                 return claim_error
             return None
@@ -1081,14 +1306,23 @@ class BudgetedNavigationPlanner:
         return None
 
     def plan(self, context: AgentContext) -> AgentAction:
-        messages = [ChatMessage(role="system", content=self.system_prompt), ChatMessage(role="user", content=self._user_prompt(context))]
+        messages = [
+            ChatMessage(role="system", content=self.system_prompt),
+            ChatMessage(role="user", content=self._user_prompt(context)),
+        ]
         prompt_tokens = self.tokenizer.count_messages(messages)
-        remaining_cumulative = self.budget.cumulative_token_limit - self.usage.cumulative_actual_tokens
+        remaining_cumulative = (
+            self.budget.cumulative_token_limit - self.usage.cumulative_actual_tokens
+        )
         if prompt_tokens + self.budget.minimum_output_reserve > remaining_cumulative:
             return self._budget_stop("token_budget")
         if prompt_tokens + self.budget.minimum_output_reserve > self.budget.context_window:
             return self._budget_stop("context_limit")
-        max_output = min(self.budget.per_call_output_cap, remaining_cumulative - prompt_tokens, self.budget.context_window - prompt_tokens)
+        max_output = min(
+            self.budget.per_call_output_cap,
+            remaining_cumulative - prompt_tokens,
+            self.budget.context_window - prompt_tokens,
+        )
         response = self.engine.generate(
             GenerationRequest(
                 messages=messages,
@@ -1133,10 +1367,14 @@ class BudgetedNavigationPlanner:
         try:
             payload = extract_json_object(response.message.content or "")
         except (ValueError, json.JSONDecodeError) as exc:
-            return AgentAction.message_only(f"Rejected invalid JSON action: {exc}", meta={"invalid_action": True})
+            return AgentAction.message_only(
+                f"Rejected invalid JSON action: {exc}", meta={"invalid_action": True}
+            )
         validation_error = self._validate_payload(payload)
         if validation_error:
-            return AgentAction.message_only(f"Rejected invalid action: {validation_error}", meta={"invalid_action": True})
+            return AgentAction.message_only(
+                f"Rejected invalid action: {validation_error}", meta={"invalid_action": True}
+            )
         if (
             self.require_observed_evidence_before_final
             and str(payload.get("kind") or "").strip().lower() == "final"
@@ -1202,7 +1440,9 @@ class BudgetedNavigationPlanner:
         ]
         prompt_tokens = self.tokenizer.count_messages(messages)
         full_prompt_tokens = self.tokenizer.count_messages(full_messages)
-        remaining_cumulative = self.budget.cumulative_token_limit - self.usage.cumulative_actual_tokens
+        remaining_cumulative = (
+            self.budget.cumulative_token_limit - self.usage.cumulative_actual_tokens
+        )
         required_minimum = prompt_tokens + self.budget.minimum_output_reserve
         telemetry = {
             "full_prompt_tokens": full_prompt_tokens,
@@ -1305,7 +1545,9 @@ class BudgetedNavigationPlanner:
                 meta={"finalization_outcome": "no_answer", **telemetry},
             )
         action = action_from_payload(payload, response=response, engine_role="planner")
-        return AgentAction.final(output, meta={**dict(action.meta), "finalization_outcome": "success", **telemetry})
+        return AgentAction.final(
+            output, meta={**dict(action.meta), "finalization_outcome": "success", **telemetry}
+        )
 
 
 class NavigationRunHook(AgentRunLifecycleHook):
@@ -1315,7 +1557,9 @@ class NavigationRunHook(AgentRunLifecycleHook):
     def on_start(self, task: AgentTask, *, max_steps: int, engine_roles: EngineRoles) -> None:
         self.planner.reset_navigation_goals()
 
-    def on_step(self, task: AgentTask, context: AgentContext, step: AgentStep, run: AgentRun) -> None:
+    def on_step(
+        self, task: AgentTask, context: AgentContext, step: AgentStep, run: AgentRun
+    ) -> None:
         return None
 
     def on_finish(self, run: AgentRun) -> None:
@@ -1344,7 +1588,10 @@ class NavigationHarness:
     structured_navigation: bool = False
 
     def run(self, question: str = LEAD_QUESTION, *, task_id: str = "nav-test-00") -> AgentRun:
-        return self.runtime.run(AgentTask(task_id=task_id, goal=question, context={"navigation_root": str(self.root)}), max_steps=self.max_steps)
+        return self.runtime.run(
+            AgentTask(task_id=task_id, goal=question, context={"navigation_root": str(self.root)}),
+            max_steps=self.max_steps,
+        )
 
 
 def build_navigation_harness(
@@ -1371,9 +1618,7 @@ def build_navigation_harness(
     if action_guard_mode not in {"off", "shadow", "enforce"}:
         raise NavigationConfigurationError("action_guard_mode must be one of: off, shadow, enforce")
     if structured_navigation and action_guard_mode != "off":
-        raise NavigationConfigurationError(
-            "structured navigation requires action_guard_mode='off'"
-        )
+        raise NavigationConfigurationError("structured navigation requires action_guard_mode='off'")
     resolved_policy = policy or NavigationPolicy(Path(root))
     workspace = NavigationWorkspace(resolved_policy)
     tools = NavigationToolRuntime(workspace)
@@ -1392,9 +1637,7 @@ def build_navigation_harness(
         require_observed_evidence_before_final=require_observed_evidence_before_final,
     )
     control_hooks = (
-        []
-        if action_guard_mode == "off"
-        else [ActionTrajectoryGuardHook(mode=action_guard_mode)]
+        [] if action_guard_mode == "off" else [ActionTrajectoryGuardHook(mode=action_guard_mode)]
     )
     runtime = AgentRuntime(
         planner=planner,
@@ -1435,19 +1678,32 @@ def load_ground_truth(path: str | Path) -> tuple[str, list[GroundTruthRegion]]:
             start_line=int(item["start_line"]),
             end_line=int(item["end_line"]),
             classification=str(item["classification"]),
-            required_answer_terms=tuple(str(term) for term in item.get("required_answer_terms") or []),
+            required_answer_terms=tuple(
+                str(term) for term in item.get("required_answer_terms") or []
+            ),
             symbol=str(item.get("symbol") or ""),
         )
         for item in payload["regions"]
     ]
     if not regions or len({region.id for region in regions}) != len(regions):
-        raise NavigationConfigurationError("Ground truth requires a non-empty set of unique region IDs")
+        raise NavigationConfigurationError(
+            "Ground truth requires a non-empty set of unique region IDs"
+        )
     for region in regions:
         region_path = Path(region.path)
-        if region_path.is_absolute() or ".." in region_path.parts or region.start_line < 1 or region.end_line < region.start_line:
-            raise NavigationConfigurationError(f"Invalid ground-truth region bounds or path: {region.id}")
+        if (
+            region_path.is_absolute()
+            or ".." in region_path.parts
+            or region.start_line < 1
+            or region.end_line < region.start_line
+        ):
+            raise NavigationConfigurationError(
+                f"Invalid ground-truth region bounds or path: {region.id}"
+            )
         if not region.classification.strip() or not region.required_answer_terms:
-            raise NavigationConfigurationError(f"Ground-truth region {region.id} requires classification and required_answer_terms")
+            raise NavigationConfigurationError(
+                f"Ground-truth region {region.id} requires classification and required_answer_terms"
+            )
     return str(payload.get("question") or LEAD_QUESTION), regions
 
 
@@ -1468,7 +1724,9 @@ def validate_ground_truth_snapshot(
     expected_sources = snapshot.get("source_sha256")
     if not isinstance(expected_sources, dict) or not expected_sources:
         raise NavigationConfigurationError("Ground truth requires snapshot.source_sha256")
-    manifest_sources = {item["path"]: item["sha256"] for item in manifest.get("allowed_sources") or []}
+    manifest_sources = {
+        item["path"]: item["sha256"] for item in manifest.get("allowed_sources") or []
+    }
     for source_path, expected_hash in expected_sources.items():
         actual_hash = manifest_sources.get(str(source_path))
         if actual_hash != expected_hash:
@@ -1479,14 +1737,18 @@ def validate_ground_truth_snapshot(
     for item in payload.get("regions") or []:
         source_path = str(item.get("path") or "")
         if source_path not in expected_sources:
-            raise NavigationConfigurationError(f"Ground-truth region uses an unpinned source: {source_path}")
+            raise NavigationConfigurationError(
+                f"Ground-truth region uses an unpinned source: {source_path}"
+            )
         start_line = int(item["start_line"])
         end_line = int(item["end_line"])
         lines = (resolved_root / source_path).read_text(encoding="utf-8").splitlines()
         region_text = "\n".join(lines[start_line - 1 : end_line])
         anchors = item.get("anchors")
         if not isinstance(anchors, list) or not anchors:
-            raise NavigationConfigurationError(f"Ground-truth region {item.get('id')} requires anchors")
+            raise NavigationConfigurationError(
+                f"Ground-truth region {item.get('id')} requires anchors"
+            )
         for anchor in anchors:
             if str(anchor) not in region_text:
                 raise NavigationConfigurationError(
@@ -1513,7 +1775,9 @@ def score_navigation_run(
         for evidence in call.get("evidence") or []:
             evidence_lines = set(int(line) for line in evidence.get("lines") or [])
             for region in regions:
-                if evidence.get("path") == region.path and evidence_lines.intersection(range(region.start_line, region.end_line + 1)):
+                if evidence.get("path") == region.path and evidence_lines.intersection(
+                    range(region.start_line, region.end_line + 1)
+                ):
                     surfaced.add(region.id)
                     call_useful = True
         if call_useful:
@@ -1550,8 +1814,23 @@ def score_navigation_run(
         }
     )
     claim_errors = [*claim_parse_errors, *claim_validation.errors]
-    blocked = [call for call in telemetry.calls if call["category"] in {"path_escape", "denied_path", "denied_content", "oversized_json", "oversized_file", "binary_content", "safety_guard"}]
-    blocked_signatures = [(call["tool"], json.dumps(call["arguments"], sort_keys=True)) for call in blocked]
+    blocked = [
+        call
+        for call in telemetry.calls
+        if call["category"]
+        in {
+            "path_escape",
+            "denied_path",
+            "denied_content",
+            "oversized_json",
+            "oversized_file",
+            "binary_content",
+            "safety_guard",
+        }
+    ]
+    blocked_signatures = [
+        (call["tool"], json.dumps(call["arguments"], sort_keys=True)) for call in blocked
+    ]
     repeated_blocked = len(blocked_signatures) - len(set(blocked_signatures))
     usage = dict(run.meta.get("planner_usage") or {})
     cumulative_tokens = int(usage.get("cumulative_actual_tokens") or 0)
@@ -1594,7 +1873,9 @@ def score_navigation_run(
 
 
 def _git_value(root: Path, *args: str) -> str | None:
-    result = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, check=False
+    )
     return result.stdout.strip() if result.returncode == 0 else None
 
 
@@ -1607,7 +1888,13 @@ def build_environment_manifest(policy: NavigationPolicy) -> dict[str, Any]:
         if data is None:
             pruned += 1
             continue
-        allowed_records.append({"path": workspace._relative(path), "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+        allowed_records.append(
+            {
+                "path": workspace._relative(path),
+                "bytes": len(data),
+                "sha256": hashlib.sha256(data).hexdigest(),
+            }
+        )
     denied_count = 0
     denied_bytes = 0
     total_count = 0
@@ -1625,7 +1912,12 @@ def build_environment_manifest(policy: NavigationPolicy) -> dict[str, Any]:
             total_count += 1
             total_bytes += size
             oversized_json = path.suffix.lower() == ".json" and size > policy.max_json_bytes
-            if workspace._denied_relative(relative) or path.suffix.lower() not in policy.source_suffixes or size > policy.max_file_bytes or oversized_json:
+            if (
+                workspace._denied_relative(relative)
+                or path.suffix.lower() not in policy.source_suffixes
+                or size > policy.max_file_bytes
+                or oversized_json
+            ):
                 denied_count += 1
                 denied_bytes += size
     payload = {
@@ -1633,9 +1925,26 @@ def build_environment_manifest(policy: NavigationPolicy) -> dict[str, Any]:
         "root_name": policy.root.name,
         "git_sha": _git_value(policy.root, "rev-parse", "HEAD"),
         "git_status_porcelain": _git_value(policy.root, "status", "--porcelain"),
-        "measurement": {"implementation": "agent_lib.eval.repo_navigation.build_environment_manifest", "git_commands": ["git rev-parse HEAD", "git status --porcelain"]},
-        "policy": {**asdict(policy), "root": str(policy.root), "denied_directory_names": sorted(policy.denied_directory_names), "denied_suffixes": sorted(policy.denied_suffixes), "source_suffixes": sorted(policy.source_suffixes)},
-        "totals": {"files": total_count, "bytes": total_bytes, "allowed_files": len(allowed_records), "allowed_bytes": sum(item["bytes"] for item in allowed_records), "denied_or_unscoped_files": denied_count, "denied_or_unscoped_bytes": denied_bytes, "pruned_paths": pruned},
+        "measurement": {
+            "implementation": "agent_lib.eval.repo_navigation.build_environment_manifest",
+            "git_commands": ["git rev-parse HEAD", "git status --porcelain"],
+        },
+        "policy": {
+            **asdict(policy),
+            "root": str(policy.root),
+            "denied_directory_names": sorted(policy.denied_directory_names),
+            "denied_suffixes": sorted(policy.denied_suffixes),
+            "source_suffixes": sorted(policy.source_suffixes),
+        },
+        "totals": {
+            "files": total_count,
+            "bytes": total_bytes,
+            "allowed_files": len(allowed_records),
+            "allowed_bytes": sum(item["bytes"] for item in allowed_records),
+            "denied_or_unscoped_files": denied_count,
+            "denied_or_unscoped_bytes": denied_bytes,
+            "pruned_paths": pruned,
+        },
         "allowed_sources": allowed_records,
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -1686,7 +1995,9 @@ def render_run_record(
             "message": step.action.message,
             "final_output": step.action.final_output,
             "meta": dict(step.action.meta),
-            "tool_call": asdict(step.action.tool_call) if step.action.tool_call is not None else None,
+            "tool_call": asdict(step.action.tool_call)
+            if step.action.tool_call is not None
+            else None,
         }
         observation = None
         if step.observation is not None:
@@ -1694,10 +2005,14 @@ def render_run_record(
                 "kind": step.observation.kind,
                 "text": step.observation.text,
                 "meta": dict(step.observation.meta),
-                "tool_result": asdict(step.observation.tool_result) if step.observation.tool_result is not None else None,
+                "tool_result": asdict(step.observation.tool_result)
+                if step.observation.tool_result is not None
+                else None,
             }
         trace = asdict(step.trace) if step.trace is not None else None
-        steps.append({"index": step.index, "action": action, "observation": observation, "trace": trace})
+        steps.append(
+            {"index": step.index, "action": action, "observation": observation, "trace": trace}
+        )
     return {
         "schema_version": 1,
         "config": dict(config or {}),
@@ -1705,7 +2020,15 @@ def render_run_record(
         "read_only_verified": pre_tree_digest == post_tree_digest,
         "pre_tree_digest": pre_tree_digest,
         "post_tree_digest": post_tree_digest,
-        "run": {"status": run.status, "stop_reason": run.stop_reason, "final_output": run.final_output, "elapsed_seconds": run.elapsed_seconds, "step_count": len(run.steps), "steps": steps, "meta": run.meta},
+        "run": {
+            "status": run.status,
+            "stop_reason": run.stop_reason,
+            "final_output": run.final_output,
+            "elapsed_seconds": run.elapsed_seconds,
+            "step_count": len(run.steps),
+            "steps": steps,
+            "meta": run.meta,
+        },
         "planner_usage": asdict(harness.planner.usage),
         "tool_telemetry": harness.tools.telemetry.calls,
         "automatic_pruned_paths": harness.tools.telemetry.automatic_pruned_paths,

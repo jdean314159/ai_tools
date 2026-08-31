@@ -40,9 +40,7 @@ def test_ledger_deduplicates_overlapping_source_lines_without_relevance_filterin
 
 
 def test_ledger_excludes_failed_results_and_retains_path_only_evidence() -> None:
-    failed = _read_step(
-        start=1, text="1: must not appear", lines=[1], success=False
-    )
+    failed = _read_step(start=1, text="1: must not appear", lines=[1], success=False)
     listing = {
         "action": {
             "kind": "tool",

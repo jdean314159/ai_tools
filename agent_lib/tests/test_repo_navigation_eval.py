@@ -38,7 +38,13 @@ from agent_lib.eval.verifiable_navigation import (
     relation_claims_shape_error,
 )
 from agent_lib.memory import NullMemoryAdapter
-from llm_engines.contracts import ChatMessage, EngineCapabilities, GenerationRequest, GenerationResponse, UsageStats
+from llm_engines.contracts import (
+    ChatMessage,
+    EngineCapabilities,
+    GenerationRequest,
+    GenerationResponse,
+    UsageStats,
+)
 from llm_engines.contracts import GenerationError
 
 
@@ -55,13 +61,9 @@ def _goal_payload(*, status: str = "open", with_evidence: bool = False) -> list[
         {
             **goal.as_dict(),
             "status": status,
-            "resolution_summary": (
-                f"Resolved {goal.goal_id}." if status != "open" else ""
-            ),
+            "resolution_summary": (f"Resolved {goal.goal_id}." if status != "open" else ""),
             "evidence": (
-                [{"path": "short.py", "start_line": 1, "end_line": 1}]
-                if with_evidence
-                else []
+                [{"path": "short.py", "start_line": 1, "end_line": 1}] if with_evidence else []
             ),
         }
         for goal in seed_navigation_goals()
@@ -96,7 +98,9 @@ class FakeLlamaServerClient(LlamaServerClient):
         self.returned_seed = returned_seed
         self.requests: list[tuple[str, str, dict[str, object] | None]] = []
 
-    def _request_json(self, method: str, path: str, payload: dict[str, object] | None = None) -> dict[str, object]:
+    def _request_json(
+        self, method: str, path: str, payload: dict[str, object] | None = None
+    ) -> dict[str, object]:
         self.requests.append((method, path, payload))
         if path == "/health":
             return {"status": "ok"}
@@ -167,11 +171,15 @@ def repo(tmp_path: Path) -> Path:
     )
     (tmp_path / "short.py").write_text("x = 1\n", encoding="utf-8")
     (tmp_path / "tests" / "case" / "runs").mkdir(parents=True)
-    (tmp_path / "tests" / "case" / "runs" / "trace.py").write_text("PersistentClient('junk')\n", encoding="utf-8")
+    (tmp_path / "tests" / "case" / "runs" / "trace.py").write_text(
+        "PersistentClient('junk')\n", encoding="utf-8"
+    )
     (tmp_path / "tests" / "case" / "runs" / "chroma.sqlite3").write_bytes(b"SQLite data")
     (tmp_path / "embedding_cache.db").write_bytes(b"SQLite data outside a run tree")
     (tmp_path / "examples" / "asc_probe" / "runs").mkdir(parents=True)
-    (tmp_path / "examples" / "asc_probe" / "runs" / "trace.py").write_text("PersistentClient('other junk')\n", encoding="utf-8")
+    (tmp_path / "examples" / "asc_probe" / "runs" / "trace.py").write_text(
+        "PersistentClient('other junk')\n", encoding="utf-8"
+    )
     (tmp_path / ".env").write_text("TOKEN=secret\n", encoding="utf-8")
     return tmp_path
 
@@ -205,7 +213,9 @@ def test_read_file_rejects_secrets_binary_and_oversized_content(repo: Path) -> N
     assert "secret" not in str(secret.output)
 
 
-def test_confinement_rejects_absolute_parent_encoded_and_symlink_escape(repo: Path, tmp_path_factory: pytest.TempPathFactory) -> None:
+def test_confinement_rejects_absolute_parent_encoded_and_symlink_escape(
+    repo: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
     outside = tmp_path_factory.mktemp("outside")
     (outside / "private.py").write_text("secret = True\n", encoding="utf-8")
     (repo / "escape").symlink_to(outside, target_is_directory=True)
@@ -260,13 +270,18 @@ def test_run_tree_traversal_and_database_reads_are_actually_blocked(repo: Path) 
 
     assert not denied_run_read.success and denied_run_read.meta["category"] == "denied_path"
     assert not denied_run_walk.success and denied_run_walk.meta["category"] == "denied_path"
-    assert not denied_database_read.success and denied_database_read.meta["category"] == "denied_content"
+    assert (
+        not denied_database_read.success
+        and denied_database_read.meta["category"] == "denied_content"
+    )
     assert "junk" not in str(denied_run_read.output)
     assert "SQLite data" not in str(denied_database_read.output)
 
 
 def test_result_character_cap_never_claims_unsurfaced_evidence(repo: Path) -> None:
-    (repo / "long.py").write_text("prefix " + "x" * 200 + " TARGET " + "y" * 200 + "\n", encoding="utf-8")
+    (repo / "long.py").write_text(
+        "prefix " + "x" * 200 + " TARGET " + "y" * 200 + "\n", encoding="utf-8"
+    )
     workspace = NavigationWorkspace(NavigationPolicy(repo, max_result_chars=80))
 
     grep_result = workspace.grep("TARGET", path="long.py")
@@ -294,9 +309,13 @@ def test_no_write_context_builder_bounds_outputs_without_creating_files(repo: Pa
     step = AgentStep(
         index=1,
         action=AgentAction.tool("read_file", {"path": "short.py"}),
-        observation=AgentObservation(kind="tool_result", text="x" * 100, tool_result=ToolResult("read_file", "x" * 100)),
+        observation=AgentObservation(
+            kind="tool_result", text="x" * 100, tool_result=ToolResult("read_file", "x" * 100)
+        ),
     )
-    builder = NoWriteContextBuilder(NoWriteContextConfig(max_visible_steps=1, max_tool_output_chars=20))
+    builder = NoWriteContextBuilder(
+        NoWriteContextConfig(max_visible_steps=1, max_tool_output_chars=20)
+    )
 
     context = builder.build_context(
         AgentTask(task_id="test", goal="find"),
@@ -314,11 +333,18 @@ def test_no_write_context_builder_bounds_outputs_without_creating_files(repo: Pa
 
 
 def test_budgeted_planner_validates_action_and_records_actual_usage() -> None:
-    engine = RecordingEngine(['{"kind":"tool","tool_name":"grep","arguments":{"pattern":"Chroma"}}'])
+    engine = RecordingEngine(
+        ['{"kind":"tool","tool_name":"grep","arguments":{"pattern":"Chroma"}}']
+    )
     planner = BudgetedNavigationPlanner(
         engine=engine,
         tokenizer=WordTokenizer(),
-        budget=NavigationBudget(cumulative_token_limit=10_000, context_window=2_000, minimum_output_reserve=10, per_call_output_cap=100),
+        budget=NavigationBudget(
+            cumulative_token_limit=10_000,
+            context_window=2_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
     )
 
     action = planner.plan(AgentContext(task=AgentTask(task_id="t", goal="find Chroma"), steps=[]))
@@ -329,20 +355,24 @@ def test_budgeted_planner_validates_action_and_records_actual_usage() -> None:
     assert "cache_prompt" not in engine.requests[0].metadata
     assert engine.requests[0].json_schema is not None
     assert [
-        branch["properties"]["kind"]["enum"]
-        for branch in engine.requests[0].json_schema["oneOf"]
+        branch["properties"]["kind"]["enum"] for branch in engine.requests[0].json_schema["oneOf"]
     ] == [["tool"], ["final"]]
 
 
 def test_llama_server_client_uses_exact_template_tokenizer_and_disables_cache() -> None:
     client = FakeLlamaServerClient()
-    messages = [ChatMessage(role="system", content="system"), ChatMessage(role="user", content="task")]
+    messages = [
+        ChatMessage(role="system", content="system"),
+        ChatMessage(role="user", content="task"),
+    ]
 
     assert client.count_messages(messages) == 3
     response = client.generate(GenerationRequest(messages=messages, max_tokens=20, temperature=0.0))
     deployment = client.deployment_info()
 
-    completion_payload = next(payload for _, path, payload in client.requests if path == "/completion")
+    completion_payload = next(
+        payload for _, path, payload in client.requests if path == "/completion"
+    )
     assert completion_payload is not None
     assert completion_payload["cache_prompt"] is False
     assert completion_payload["seed"] == 7
@@ -361,7 +391,9 @@ def test_llama_server_client_uses_exact_template_tokenizer_and_disables_cache() 
     "client",
     [FakeLlamaServerClient(reused_prompt_tokens=2), FakeLlamaServerClient(returned_seed=8)],
 )
-def test_llama_server_client_rejects_unverified_or_reused_prompt_cache(client: FakeLlamaServerClient) -> None:
+def test_llama_server_client_rejects_unverified_or_reused_prompt_cache(
+    client: FakeLlamaServerClient,
+) -> None:
     messages = [ChatMessage(role="user", content="task")]
     client.count_messages(messages)
 
@@ -378,7 +410,12 @@ def test_budget_stops_before_invocation(limit: int, context_window: int, reason:
     planner = BudgetedNavigationPlanner(
         engine=engine,
         tokenizer=WordTokenizer(),
-        budget=NavigationBudget(cumulative_token_limit=limit, context_window=context_window, minimum_output_reserve=5, per_call_output_cap=10),
+        budget=NavigationBudget(
+            cumulative_token_limit=limit,
+            context_window=context_window,
+            minimum_output_reserve=5,
+            per_call_output_cap=10,
+        ),
     )
 
     action = planner.plan(AgentContext(task=AgentTask(task_id="t", goal="find Chroma"), steps=[]))
@@ -389,11 +426,18 @@ def test_budget_stops_before_invocation(limit: int, context_window: int, reason:
 
 
 def test_invalid_model_tool_is_rejected_before_tool_runtime(repo: Path) -> None:
-    engine = RecordingEngine(['{"kind":"tool","tool_name":"write_file","arguments":{"path":"short.py"}}'])
+    engine = RecordingEngine(
+        ['{"kind":"tool","tool_name":"write_file","arguments":{"path":"short.py"}}']
+    )
     planner = BudgetedNavigationPlanner(
         engine=engine,
         tokenizer=WordTokenizer(),
-        budget=NavigationBudget(cumulative_token_limit=10_000, context_window=2_000, minimum_output_reserve=10, per_call_output_cap=100),
+        budget=NavigationBudget(
+            cumulative_token_limit=10_000,
+            context_window=2_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
     )
 
     action = planner.plan(AgentContext(task=AgentTask(task_id="t", goal="find"), steps=[]))
@@ -409,9 +453,7 @@ def test_budgeted_planner_preserves_structured_final_claims() -> None:
             "symbol": "Thing.run",
             "operation": "store.delete",
             "classification": "mutation",
-            "evidence": [
-                {"path": "pkg/module.py", "start_line": 10, "end_line": 11}
-            ],
+            "evidence": [{"path": "pkg/module.py", "start_line": 10, "end_line": 11}],
         }
     ]
     engine = RecordingEngine(
@@ -493,13 +535,8 @@ def test_structured_harness_completes_only_after_resolving_seeded_goals(
 
     assert run.status == "completed"
     assert run.final_output == "Resolved from observed evidence."
-    assert all(
-        goal["status"] == "resolved"
-        for goal in run.meta["structured_navigation"]["goals"]
-    )
-    assert run.steps[-1].action.meta["navigation_goals"] == final_payload[
-        "navigation_goals"
-    ]
+    assert all(goal["status"] == "resolved" for goal in run.meta["structured_navigation"]["goals"])
+    assert run.steps[-1].action.meta["navigation_goals"] == final_payload["navigation_goals"]
 
 
 def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:
@@ -513,7 +550,12 @@ def test_harness_runs_existing_runtime_and_preserves_tree(repo: Path) -> None:
         root=repo,
         engine=engine,
         tokenizer=WordTokenizer(),
-        budget=NavigationBudget(cumulative_token_limit=20_000, context_window=4_000, minimum_output_reserve=10, per_call_output_cap=100),
+        budget=NavigationBudget(
+            cumulative_token_limit=20_000,
+            context_window=4_000,
+            minimum_output_reserve=10,
+            per_call_output_cap=100,
+        ),
     )
     before = tree_content_digest(repo)
 
@@ -537,7 +579,12 @@ def test_harness_exposes_token_budget_stop_reason(repo: Path) -> None:
         root=repo,
         engine=engine,
         tokenizer=WordTokenizer(),
-        budget=NavigationBudget(cumulative_token_limit=10, context_window=2_000, minimum_output_reserve=5, per_call_output_cap=10),
+        budget=NavigationBudget(
+            cumulative_token_limit=10,
+            context_window=2_000,
+            minimum_output_reserve=5,
+            per_call_output_cap=10,
+        ),
     )
 
     run = harness.run("Find PersistentClient")
@@ -685,7 +732,9 @@ def test_action_guard_off_mode_records_no_guard_telemetry(repo: Path) -> None:
 
 
 def test_finalizer_budget_unavailable_does_not_call_engine() -> None:
-    engine = RecordingEngine(['{"kind":"final","final_output":"must not be used","navigation_claims":[]}'])
+    engine = RecordingEngine(
+        ['{"kind":"final","final_output":"must not be used","navigation_claims":[]}']
+    )
     planner = BudgetedNavigationPlanner(
         engine=engine,
         tokenizer=WordTokenizer(),
@@ -726,7 +775,9 @@ def test_ground_truth_loading_scoring_and_run_record(repo: Path, tmp_path: Path)
     answer_key = tmp_path / "answer.json"
     manifest = build_environment_manifest(NavigationPolicy(repo))
     source_hash = next(
-        item["sha256"] for item in manifest["allowed_sources"] if item["path"] == "rag_lib/src/chroma.py"
+        item["sha256"]
+        for item in manifest["allowed_sources"]
+        if item["path"] == "rag_lib/src/chroma.py"
     )
     answer_key.write_text(
         json.dumps(
@@ -821,12 +872,29 @@ def test_ground_truth_loading_scoring_and_run_record(repo: Path, tmp_path: Path)
 
 def test_repeated_blocked_requests_fail_scoring() -> None:
     region = GroundTruthRegion("GT-01", "x.py", 1, 1, "write", ("write",))
-    blocked_call = {"tool": "read_file", "arguments": {"path": ".env"}, "success": False, "category": "denied_content", "paths": [], "evidence": [], "result_chars": 10, "elapsed_ms": 1.0}
+    blocked_call = {
+        "tool": "read_file",
+        "arguments": {"path": ".env"},
+        "success": False,
+        "category": "denied_content",
+        "paths": [],
+        "evidence": [],
+        "result_chars": 10,
+        "elapsed_ms": 1.0,
+    }
     telemetry = NavigationTelemetry(calls=[blocked_call, dict(blocked_call)])
-    run = AgentRun(task=AgentTask(task_id="t", goal="find"), status="completed", stop_reason="completed", final_output="x.py write", meta={"planner_usage": {"cumulative_actual_tokens": 1}})
+    run = AgentRun(
+        task=AgentTask(task_id="t", goal="find"),
+        status="completed",
+        stop_reason="completed",
+        final_output="x.py write",
+        meta={"planner_usage": {"cumulative_actual_tokens": 1}},
+    )
     run.steps.append(AgentStep(1, AgentAction.final("x.py write")))
 
-    score = score_navigation_run(run, telemetry, [region], NavigationBudget(cumulative_token_limit=100))
+    score = score_navigation_run(
+        run, telemetry, [region], NavigationBudget(cumulative_token_limit=100)
+    )
 
     assert score["passed"] is False
     assert score["repeated_blocked_attempts"] == 1

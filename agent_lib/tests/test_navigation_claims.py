@@ -38,9 +38,7 @@ def test_valid_claim_requires_local_terms_and_observed_evidence() -> None:
         evidence=(EvidenceRef("pipeline.py", 310, 313),),
     )
 
-    result = validate_navigation_claims(
-        [claim], telemetry_calls=_telemetry(), regions=[_region()]
-    )
+    result = validate_navigation_claims([claim], telemetry_calls=_telemetry(), regions=[_region()])
 
     assert result.valid is True
     assert result.matched_region_ids == ("GT-01",)
@@ -55,9 +53,7 @@ def test_fabricated_symbol_is_an_unsupported_claim() -> None:
         evidence=(EvidenceRef("pipeline.py", 310, 313),),
     )
 
-    result = validate_navigation_claims(
-        [claim], telemetry_calls=_telemetry(), regions=[_region()]
-    )
+    result = validate_navigation_claims([claim], telemetry_calls=_telemetry(), regions=[_region()])
 
     assert result.valid is False
     assert result.matched_region_ids == ()
@@ -126,9 +122,7 @@ def test_python_symbol_must_enclose_cited_evidence(tmp_path) -> None:
 
 def test_symbol_grounding_does_not_claim_to_validate_call_relations(tmp_path) -> None:
     (tmp_path / "pipeline.py").write_text(
-        "class RAGPipeline:\n"
-        "    def ingest(self):\n"
-        "        self._embed_and_store()\n",
+        "class RAGPipeline:\n    def ingest(self):\n        self._embed_and_store()\n",
         encoding="utf-8",
     )
     claim = NavigationClaim(
@@ -172,9 +166,7 @@ def test_unobserved_line_reference_is_rejected() -> None:
         evidence=(EvidenceRef("pipeline.py", 310, 314),),
     )
 
-    result = validate_navigation_claims(
-        [claim], telemetry_calls=_telemetry(), regions=[_region()]
-    )
+    result = validate_navigation_claims([claim], telemetry_calls=_telemetry(), regions=[_region()])
 
     assert result.valid is False
     assert result.errors == ("claim 1 references unobserved evidence",)

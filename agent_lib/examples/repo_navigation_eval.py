@@ -52,11 +52,19 @@ class ResourceSampler:
         found = False
         for process_dir in Path("/proc").glob("[0-9]*"):
             try:
-                command = (process_dir / "cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", errors="ignore").lower()
+                command = (
+                    (process_dir / "cmdline")
+                    .read_bytes()
+                    .replace(b"\x00", b" ")
+                    .decode("utf-8", errors="ignore")
+                    .lower()
+                )
                 if "llama-server" not in command and "llama_server" not in command:
                     continue
                 status = (process_dir / "status").read_text(encoding="utf-8")
-                match = next((line for line in status.splitlines() if line.startswith("VmRSS:")), None)
+                match = next(
+                    (line for line in status.splitlines() if line.startswith("VmRSS:")), None
+                )
                 if match:
                     total += int(match.split()[1])
                     found = True
@@ -68,10 +76,14 @@ class ResourceSampler:
         while not self._stop.is_set():
             system_used = self._system_used_memory_kib()
             if system_used is not None:
-                self.peak_system_used_memory_kib = max(self.peak_system_used_memory_kib or 0, system_used)
+                self.peak_system_used_memory_kib = max(
+                    self.peak_system_used_memory_kib or 0, system_used
+                )
             server_rss = self._model_server_rss_kib()
             if server_rss is not None:
-                self.peak_model_server_rss_kib = max(self.peak_model_server_rss_kib or 0, server_rss)
+                self.peak_model_server_rss_kib = max(
+                    self.peak_model_server_rss_kib or 0, server_rss
+                )
             if self._has_nvidia_smi:
                 result = subprocess.run(
                     ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
@@ -80,7 +92,11 @@ class ResourceSampler:
                     check=False,
                 )
                 if result.returncode == 0:
-                    values = [int(line.strip()) for line in result.stdout.splitlines() if line.strip().isdigit()]
+                    values = [
+                        int(line.strip())
+                        for line in result.stdout.splitlines()
+                        if line.strip().isdigit()
+                    ]
                     if values:
                         current = sum(values)
                         self.peak_gpu_memory_mib = max(self.peak_gpu_memory_mib or 0, current)
@@ -119,7 +135,11 @@ def _deployment_record(client: LlamaServerClient, expected_context_window: int) 
         raise NavigationConfigurationError("llama-server did not report its chat template")
     deployment["chat_template_sha256"] = hashlib.sha256(template.encode("utf-8")).hexdigest()
     deployment["evaluation_context_limit"] = expected_context_window
-    deployment["cache_prompt"] = {"requested": False, "enforced_by": "native /completion request", "verified_per_response": True}
+    deployment["cache_prompt"] = {
+        "requested": False,
+        "enforced_by": "native /completion request",
+        "verified_per_response": True,
+    }
     return deployment
 
 
@@ -136,12 +156,29 @@ def _outside_root(path: Path, root: Path, label: str, *, must_exist: bool = True
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the NAV-TEST-00 Qwen repository-navigation evaluation.")
-    parser.add_argument("--root", type=Path, required=True, help="Confined ai_tools repository root")
-    parser.add_argument("--answer-key", type=Path, required=True, help="Ground-truth JSON outside the confined root")
-    parser.add_argument("--output-dir", type=Path, required=True, help="New or empty result directory outside the confined root")
-    parser.add_argument("--base-url", default="http://127.0.0.1:8080", help="llama-server native API root")
-    parser.add_argument("--model-label", default="qwen3.6:27b", help="Human label recorded with the pinned server deployment")
+    parser = argparse.ArgumentParser(
+        description="Run the NAV-TEST-00 Qwen repository-navigation evaluation."
+    )
+    parser.add_argument(
+        "--root", type=Path, required=True, help="Confined ai_tools repository root"
+    )
+    parser.add_argument(
+        "--answer-key", type=Path, required=True, help="Ground-truth JSON outside the confined root"
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="New or empty result directory outside the confined root",
+    )
+    parser.add_argument(
+        "--base-url", default="http://127.0.0.1:8080", help="llama-server native API root"
+    )
+    parser.add_argument(
+        "--model-label",
+        default="qwen3.6:27b",
+        help="Human label recorded with the pinned server deployment",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-k", type=int, default=20)
@@ -171,11 +208,15 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = args.root.resolve(strict=True)
     if "qwen3.6" not in args.model_label.lower():
-        raise NavigationConfigurationError("NAV-TEST-00 is restricted to a pinned Qwen3.6 deployment")
+        raise NavigationConfigurationError(
+            "NAV-TEST-00 is restricted to a pinned Qwen3.6 deployment"
+        )
     answer_key = _outside_root(args.answer_key, root, "answer key")
     output_dir = _outside_root(args.output_dir, root, "output directory", must_exist=False)
     if output_dir.exists() and (not output_dir.is_dir() or any(output_dir.iterdir())):
-        raise NavigationConfigurationError(f"Evaluation output directory must be new or empty: {output_dir}")
+        raise NavigationConfigurationError(
+            f"Evaluation output directory must be new or empty: {output_dir}"
+        )
     question, regions = load_ground_truth(answer_key)
     budget = NavigationBudget(
         cumulative_token_limit=args.token_limit,
@@ -273,8 +314,12 @@ def main(argv: list[str] | None = None) -> int:
         config=config,
     )
     output_dir.mkdir(parents=False, exist_ok=True)
-    (output_dir / "environment-manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    (output_dir / "run-record.json").write_text(json.dumps(record, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+    (output_dir / "environment-manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    (output_dir / "run-record.json").write_text(
+        json.dumps(record, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8"
+    )
     print(json.dumps(score, indent=2, sort_keys=True))
     return 0 if score["passed"] else 1
 

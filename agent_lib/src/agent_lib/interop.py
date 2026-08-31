@@ -20,15 +20,41 @@ def _dict_subset(source: dict[str, Any], *keys: str) -> dict[str, Any]:
 
 
 def _tool_execution_state(meta: dict[str, Any]) -> dict[str, Any]:
-    state = _dict_subset(meta, 'approval_required', 'approval_mode', 'patch_status', 'policy_reason', 'sandbox_requested_backend', 'sandbox_backend', 'sandbox_external', 'sandbox_fallback_used', 'available_sandbox_backends', 'environment_inherited', 'environment_keys', 'timeout_seconds', 'returncode')
-    error = meta.get('error')
+    state = _dict_subset(
+        meta,
+        "approval_required",
+        "approval_mode",
+        "patch_status",
+        "policy_reason",
+        "sandbox_requested_backend",
+        "sandbox_backend",
+        "sandbox_external",
+        "sandbox_fallback_used",
+        "available_sandbox_backends",
+        "environment_inherited",
+        "environment_keys",
+        "timeout_seconds",
+        "returncode",
+    )
+    error = meta.get("error")
     if error is not None:
-        state['error'] = error
-    blocked_errors = {'policy_violation', 'tool_not_granted', 'invalid_arguments', 'invalid_path', 'path_escape', 'write_denied', 'ownership_denied', 'command_denied', 'sandbox_unavailable', 'invalid_sandbox_backend'}
+        state["error"] = error
+    blocked_errors = {
+        "policy_violation",
+        "tool_not_granted",
+        "invalid_arguments",
+        "invalid_path",
+        "path_escape",
+        "write_denied",
+        "ownership_denied",
+        "command_denied",
+        "sandbox_unavailable",
+        "invalid_sandbox_backend",
+    }
     if error in blocked_errors:
-        state['blocked'] = True
-    if bool(meta.get('sandbox_fallback_used')):
-        state['degraded'] = True
+        state["blocked"] = True
+    if bool(meta.get("sandbox_fallback_used")):
+        state["degraded"] = True
     return state
 
 
@@ -36,16 +62,44 @@ def _tool_result_warnings(result: ToolResult) -> tuple[OperationWarning, ...]:
     meta = dict(result.meta)
     state = _tool_execution_state(meta)
     warnings: list[OperationWarning] = []
-    if state.get('blocked'):
-        warnings.append(OperationWarning(code='tool_execution_blocked', message=f'Tool {result.name} was blocked by runtime policy.', details={'tool_name': result.name, **state}))
-    if state.get('degraded'):
-        warnings.append(OperationWarning(code='tool_execution_degraded', message=f'Tool {result.name} used degraded execution mode.', details={'tool_name': result.name, **state}))
-    if meta.get('approval_required'):
-        warnings.append(OperationWarning(code='tool_approval_required', message=f'Tool {result.name} requires approval before applying changes.', details={'tool_name': result.name, **state}))
-    if meta.get('error') == 'command_timeout':
-        warnings.append(OperationWarning(code='tool_execution_timeout', message=f'Tool {result.name} timed out.', details={'tool_name': result.name, **state}))
-    if not result.success and meta.get('error') != 'command_timeout' and not state.get('blocked'):
-        warnings.append(OperationWarning(code='tool_invocation_failed', message=f'Tool {result.name} failed.', details=meta))
+    if state.get("blocked"):
+        warnings.append(
+            OperationWarning(
+                code="tool_execution_blocked",
+                message=f"Tool {result.name} was blocked by runtime policy.",
+                details={"tool_name": result.name, **state},
+            )
+        )
+    if state.get("degraded"):
+        warnings.append(
+            OperationWarning(
+                code="tool_execution_degraded",
+                message=f"Tool {result.name} used degraded execution mode.",
+                details={"tool_name": result.name, **state},
+            )
+        )
+    if meta.get("approval_required"):
+        warnings.append(
+            OperationWarning(
+                code="tool_approval_required",
+                message=f"Tool {result.name} requires approval before applying changes.",
+                details={"tool_name": result.name, **state},
+            )
+        )
+    if meta.get("error") == "command_timeout":
+        warnings.append(
+            OperationWarning(
+                code="tool_execution_timeout",
+                message=f"Tool {result.name} timed out.",
+                details={"tool_name": result.name, **state},
+            )
+        )
+    if not result.success and meta.get("error") != "command_timeout" and not state.get("blocked"):
+        warnings.append(
+            OperationWarning(
+                code="tool_invocation_failed", message=f"Tool {result.name} failed.", details=meta
+            )
+        )
     return tuple(warnings)
 
 
@@ -87,7 +141,9 @@ def describe_agent_runtime(runtime: Any) -> CapabilityDescriptor:
         "tool_count": len(tool_specs),
         "tool_names": [getattr(spec, "name", "") for spec in tool_specs],
         "max_repeated_tool_calls": getattr(runtime, "max_repeated_tool_calls", None),
-        "engine_roles": asdict(getattr(runtime, "engine_roles", None)) if getattr(runtime, "engine_roles", None) is not None else {},
+        "engine_roles": asdict(getattr(runtime, "engine_roles", None))
+        if getattr(runtime, "engine_roles", None) is not None
+        else {},
     }
     return CapabilityDescriptor(
         kind=CapabilityKind.AGENT_RUNTIME,
@@ -117,12 +173,23 @@ def describe_tool_runtime(tool_runtime: Any) -> CapabilityDescriptor:
     }
     workspace = getattr(tool_runtime, "workspace", None)
     if workspace is not None:
-        features.extend(["workspace_policy", "command_allowlist", "timeout_enforcement", "environment_scrubbing", "blocked_execution_reporting", "degraded_execution_reporting"])
+        features.extend(
+            [
+                "workspace_policy",
+                "command_allowlist",
+                "timeout_enforcement",
+                "environment_scrubbing",
+                "blocked_execution_reporting",
+                "degraded_execution_reporting",
+            ]
+        )
         if getattr(workspace, "approval_mode", "auto") != "auto":
             features.append("approval_gates")
         if getattr(workspace, "command_isolation_backend", "host") != "host":
             features.append("external_command_isolation")
-        metadata["workspace"] = asdict(workspace) if hasattr(workspace, "__dataclass_fields__") else str(workspace)
+        metadata["workspace"] = (
+            asdict(workspace) if hasattr(workspace, "__dataclass_fields__") else str(workspace)
+        )
     return CapabilityDescriptor(
         kind=CapabilityKind.TOOL_PROVIDER,
         provider="agent_lib",
@@ -195,12 +262,18 @@ def _step_memory_records(step: AgentStep) -> list[MemoryRecord]:
             )
         )
     if step.observation is not None and step.observation.text:
-        obs_meta = {**base_meta, "observation_kind": step.observation.kind, **dict(step.observation.meta)}
+        obs_meta = {
+            **base_meta,
+            "observation_kind": step.observation.kind,
+            **dict(step.observation.meta),
+        }
         if step.observation.tool_result is not None:
-            obs_meta.update({
-                "tool_name": step.observation.tool_result.name,
-                "tool_success": step.observation.tool_result.success,
-            })
+            obs_meta.update(
+                {
+                    "tool_name": step.observation.tool_result.name,
+                    "tool_success": step.observation.tool_result.success,
+                }
+            )
         records.append(
             MemoryRecord(
                 text=step.observation.text,
@@ -329,7 +402,9 @@ def run_to_interop_events(run: AgentRun) -> list[TraceEvent]:
     return events
 
 
-def tool_result_to_operation_result(result: ToolResult, *, call: ToolCall | None = None) -> OperationResult[dict[str, Any]]:
+def tool_result_to_operation_result(
+    result: ToolResult, *, call: ToolCall | None = None
+) -> OperationResult[dict[str, Any]]:
     meta = dict(result.meta)
     execution_state = _tool_execution_state(meta)
     diagnostics = {
@@ -339,14 +414,20 @@ def tool_result_to_operation_result(result: ToolResult, *, call: ToolCall | None
                 source_package="agent_lib",
                 source_component="LocalToolRuntime",
                 payload={
-                    "call": None if call is None else {"name": call.name, "arguments": dict(call.arguments)},
+                    "call": None
+                    if call is None
+                    else {"name": call.name, "arguments": dict(call.arguments)},
                     "name": result.name,
                     "success": result.success,
                     "meta": meta,
                     "execution_state": execution_state,
                 },
-                severity="info" if result.success and not execution_state.get("degraded") else "warning",
-                message=f"Tool {result.name} completed." if result.success else f"Tool {result.name} failed.",
+                severity="info"
+                if result.success and not execution_state.get("degraded")
+                else "warning",
+                message=f"Tool {result.name} completed."
+                if result.success
+                else f"Tool {result.name} failed.",
                 tags=("agent", "tool", "observation"),
             ),
         ),
@@ -360,10 +441,14 @@ def tool_result_to_operation_result(result: ToolResult, *, call: ToolCall | None
         "meta": meta,
         "execution_state": execution_state,
     }
-    return OperationResult.success(value, warnings=_tool_result_warnings(result), diagnostics=diagnostics)
+    return OperationResult.success(
+        value, warnings=_tool_result_warnings(result), diagnostics=diagnostics
+    )
 
 
-def run_to_operation_result(run: AgentRun, *, runtime: Any | None = None) -> OperationResult[dict[str, Any]]:
+def run_to_operation_result(
+    run: AgentRun, *, runtime: Any | None = None
+) -> OperationResult[dict[str, Any]]:
     events = run_to_interop_events(run)
     records = run_to_memory_records(run)
     warnings_list = list(_run_warnings(run))
@@ -377,13 +462,21 @@ def run_to_operation_result(run: AgentRun, *, runtime: Any | None = None) -> Ope
             continue
         state = _tool_execution_state(dict(tool_result.meta))
         if state:
-            execution_modes.append({'step_index': step.index, 'tool_name': tool_result.name, **state})
-        if state.get('blocked'):
-            blocked_actions.append({'step_index': step.index, 'tool_name': tool_result.name, **state})
-        if state.get('degraded'):
-            degraded_actions.append({'step_index': step.index, 'tool_name': tool_result.name, **state})
-        if state.get('approval_required'):
-            approval_actions.append({'step_index': step.index, 'tool_name': tool_result.name, **state})
+            execution_modes.append(
+                {"step_index": step.index, "tool_name": tool_result.name, **state}
+            )
+        if state.get("blocked"):
+            blocked_actions.append(
+                {"step_index": step.index, "tool_name": tool_result.name, **state}
+            )
+        if state.get("degraded"):
+            degraded_actions.append(
+                {"step_index": step.index, "tool_name": tool_result.name, **state}
+            )
+        if state.get("approval_required"):
+            approval_actions.append(
+                {"step_index": step.index, "tool_name": tool_result.name, **state}
+            )
         warnings_list.extend(_tool_result_warnings(tool_result))
     warnings = tuple(warnings_list)
     value = {

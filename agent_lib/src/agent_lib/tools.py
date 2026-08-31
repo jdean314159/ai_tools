@@ -60,7 +60,6 @@ class LocalToolRuntime:
             return output
         return ToolResult(name=call.name, output=output, success=True)
 
-
     def invoke_interop(self, call: ToolCall):
         result = self.invoke(call)
         op = tool_result_to_operation_result(result, call=call)

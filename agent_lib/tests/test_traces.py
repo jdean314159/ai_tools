@@ -20,17 +20,27 @@ def test_trace_emitter_produces_llm_inspector_trace_objects() -> None:
 
 def test_trace_emitter_carries_active_optimizations_from_action_meta() -> None:
     runtime = AgentRuntime(
-        planner=SequencePlanner([
-            AgentAction.final(
-                "Done.",
-                meta={
-                    "active_optimizations": [
-                        {"kind": "speculative_decoding", "backend": "demo", "parameters": {"speculative_tokens": 5}},
-                        {"kind": "kv_cache_compression", "backend": "demo", "parameters": {"mode": "turboquant", "bits": 4}},
-                    ]
-                },
-            )
-        ]),
+        planner=SequencePlanner(
+            [
+                AgentAction.final(
+                    "Done.",
+                    meta={
+                        "active_optimizations": [
+                            {
+                                "kind": "speculative_decoding",
+                                "backend": "demo",
+                                "parameters": {"speculative_tokens": 5},
+                            },
+                            {
+                                "kind": "kv_cache_compression",
+                                "backend": "demo",
+                                "parameters": {"mode": "turboquant", "bits": 4},
+                            },
+                        ]
+                    },
+                )
+            ]
+        ),
         tool_runtime=LocalToolRuntime([]),
     )
     run = runtime.run(AgentTask(task_id="opt", goal="Finish with optimization metadata."))

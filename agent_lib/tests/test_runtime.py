@@ -54,7 +54,9 @@ def test_runtime_escalates_to_critic_after_failed_tool_result() -> None:
     )
     critic = SequencePlanner(
         [
-            AgentAction.message_only("Escalating to the mentor after failure.", meta={"engine_role": "critic"}),
+            AgentAction.message_only(
+                "Escalating to the mentor after failure.", meta={"engine_role": "critic"}
+            ),
             AgentAction.final("Mentor fixed the issue.", meta={"engine_role": "critic"}),
         ]
     )
@@ -66,14 +68,18 @@ def test_runtime_escalates_to_critic_after_failed_tool_result() -> None:
                 LocalTool(
                     name="check",
                     description="Fail the local check.",
-                    handler=lambda: ToolResult(name="check", output="False", success=False, meta={"reason": "mismatch"}),
+                    handler=lambda: ToolResult(
+                        name="check", output="False", success=False, meta={"reason": "mismatch"}
+                    ),
                 )
             ]
         ),
         engine_roles=EngineRoles(planner="worker", executor="worker", critic="mentor"),
     )
 
-    run = runtime.run(AgentTask(task_id="verify", goal="Verify the patch.", session_id="agent_demo"), max_steps=4)
+    run = runtime.run(
+        AgentTask(task_id="verify", goal="Verify the patch.", session_id="agent_demo"), max_steps=4
+    )
 
     assert run.status == "completed"
     assert run.stop_reason == "critic_completed"
@@ -112,7 +118,9 @@ def test_runtime_does_not_escalate_on_worker_self_report_without_objective_signa
     assert run.stop_reason == "completed"
     assert run.final_output == "Worker finished without critic."
     assert run.escalations == 0
-    assert all(step.trace is not None and step.trace.metrics.engine != "critic" for step in run.steps)
+    assert all(
+        step.trace is not None and step.trace.metrics.engine != "critic" for step in run.steps
+    )
 
 
 def test_runtime_counts_but_does_not_cap_repeated_critic_escalations() -> None:
@@ -177,7 +185,9 @@ def test_runtime_critic_contract_is_implicit_planner_takeover_not_typed_feedback
         ),
     )
 
-    run = runtime.run(AgentTask(task_id="critic_contract", goal="Inspect critic contract."), max_steps=4)
+    run = runtime.run(
+        AgentTask(task_id="critic_contract", goal="Inspect critic contract."), max_steps=4
+    )
 
     assert run.status == "completed"
     assert run.stop_reason == "critic_completed"

@@ -35,15 +35,9 @@ def main() -> int:
     }
     admissions = []
     task_sets = []
-    for snapshot_id in sorted(
-        {str(item["snapshot_id"]) for item in selection["selected"]}
-    ):
+    for snapshot_id in sorted({str(item["snapshot_id"]) for item in selection["selected"]}):
         root = snapshot_roots[snapshot_id]
-        selected = [
-            item
-            for item in selection["selected"]
-            if item["snapshot_id"] == snapshot_id
-        ]
+        selected = [item for item in selection["selected"] if item["snapshot_id"] == snapshot_id]
         tasks = [_task_from_candidate(item) for item in selected]
         oracle = PythonRelationOracle(root)
         admission = build_task_admission_manifest(tasks, oracle=oracle)
@@ -83,12 +77,8 @@ def main() -> int:
             {
                 "track": "NAV-VERIFIABLE-00",
                 "candidate_pool_sha256": pool["candidate_pool_sha256"],
-                "candidate_selection_sha256": selection[
-                    "candidate_selection_sha256"
-                ],
-                "campaign_manifest_sha256": campaign_admission[
-                    "campaign_manifest_sha256"
-                ],
+                "candidate_selection_sha256": selection["candidate_selection_sha256"],
+                "campaign_manifest_sha256": campaign_admission["campaign_manifest_sha256"],
                 "task_sets": task_sets,
             },
             indent=2,
@@ -113,12 +103,8 @@ def main() -> int:
         json.dumps(
             {
                 "candidate_pool_sha256": pool["candidate_pool_sha256"],
-                "candidate_selection_sha256": selection[
-                    "candidate_selection_sha256"
-                ],
-                "campaign_manifest_sha256": campaign_admission[
-                    "campaign_manifest_sha256"
-                ],
+                "candidate_selection_sha256": selection["candidate_selection_sha256"],
+                "campaign_manifest_sha256": campaign_admission["campaign_manifest_sha256"],
                 "pool_size": len(pool["candidates"]),
                 "selected_tiers": tier_counts,
             },
@@ -133,9 +119,7 @@ def _snapshot_id(root: Path) -> str:
         path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(root.rglob("*.py"))
     }
-    canonical = json.dumps(
-        source_hashes, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    canonical = json.dumps(source_hashes, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()
 
 
@@ -154,11 +138,7 @@ def _task_from_candidate(candidate: dict) -> VerifiableTask:
         path=str(candidate["path"]),
         symbol=str(candidate["symbol"]),
         endpoint=str(candidate.get("endpoint") or ""),
-        line=(
-            int(candidate["line"])
-            if isinstance(candidate.get("line"), int)
-            else None
-        ),
+        line=(int(candidate["line"]) if isinstance(candidate.get("line"), int) else None),
         goal_requirements=tuple(
             (str(item["goal_id"]), str(item["requirement"]))
             for item in candidate["goal_requirements"]

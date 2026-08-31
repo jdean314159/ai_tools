@@ -30,9 +30,11 @@ def test_runtime_describes_agent_capability() -> None:
 
 
 def test_tool_runtime_describes_tool_provider_capability() -> None:
-    tools = LocalToolRuntime([
-        LocalTool(name="echo", description="Echo the text.", handler=lambda text: text),
-    ])
+    tools = LocalToolRuntime(
+        [
+            LocalTool(name="echo", description="Echo the text.", handler=lambda text: text),
+        ]
+    )
     descriptor = describe_tool_runtime(tools)
     assert descriptor.kind == "tool_provider"
     assert descriptor.metadata["tool_names"] == ["echo"]
@@ -40,13 +42,17 @@ def test_tool_runtime_describes_tool_provider_capability() -> None:
 
 def test_run_exports_shared_events_and_operation_result() -> None:
     runtime = AgentRuntime(
-        planner=SequencePlanner([
-            AgentAction.tool("echo", {"text": "hello"}, message="Use the tool."),
-            AgentAction.final("done"),
-        ]),
-        tool_runtime=LocalToolRuntime([
-            LocalTool(name="echo", description="Echo the text.", handler=lambda text: text),
-        ]),
+        planner=SequencePlanner(
+            [
+                AgentAction.tool("echo", {"text": "hello"}, message="Use the tool."),
+                AgentAction.final("done"),
+            ]
+        ),
+        tool_runtime=LocalToolRuntime(
+            [
+                LocalTool(name="echo", description="Echo the text.", handler=lambda text: text),
+            ]
+        ),
     )
     run = runtime.run(AgentTask(task_id="agent-1", goal="Echo hello."))
 
@@ -65,16 +71,49 @@ def test_run_exports_shared_events_and_operation_result() -> None:
     assert result.diagnostics["event_count"] >= len(events)
 
 
-
 def test_trace_emitter_surfaces_execution_status_in_agent_summary():
-    from agent_lib.programming import WorkspacePolicy, ProgrammingToolRuntime
-
-    task = AgentTask(task_id="t1", goal="Run a blocked command", context={"workspace_policy": {"root": ".", "approval_mode": "auto", "isolation_mode": "workspace", "writable_paths": [], "runnable_commands": [], "command_isolation_backend": "docker", "command_isolation_fallback_to_host": True}})
-    context = AgentContext(task=task, steps=[], recalled=[], tool_specs=[], active_controller="planner", escalated=False)
+    task = AgentTask(
+        task_id="t1",
+        goal="Run a blocked command",
+        context={
+            "workspace_policy": {
+                "root": ".",
+                "approval_mode": "auto",
+                "isolation_mode": "workspace",
+                "writable_paths": [],
+                "runnable_commands": [],
+                "command_isolation_backend": "docker",
+                "command_isolation_fallback_to_host": True,
+            }
+        },
+    )
+    context = AgentContext(
+        task=task,
+        steps=[],
+        recalled=[],
+        tool_specs=[],
+        active_controller="planner",
+        escalated=False,
+    )
     action = AgentAction.tool("run_command", {"command": "rm -rf /"})
-    result = ToolResult(name="run_command", output="Denied", success=False, meta={"error": "command_denied", "approval_required": True, "sandbox_requested_backend": "docker", "sandbox_backend": "host", "sandbox_fallback_used": True})
-    observation = AgentObservation(kind="tool_result", text="Denied", tool_result=result, meta=dict(result.meta))
-    trace = InspectorTraceEmitter().emit_step(context=context, action=action, observation=observation)
+    result = ToolResult(
+        name="run_command",
+        output="Denied",
+        success=False,
+        meta={
+            "error": "command_denied",
+            "approval_required": True,
+            "sandbox_requested_backend": "docker",
+            "sandbox_backend": "host",
+            "sandbox_fallback_used": True,
+        },
+    )
+    observation = AgentObservation(
+        kind="tool_result", text="Denied", tool_result=result, meta=dict(result.meta)
+    )
+    trace = InspectorTraceEmitter().emit_step(
+        context=context, action=action, observation=observation
+    )
     summary = trace.context.signals["agent_summary"]
     assert summary["blocked_count"] == 1
     assert summary["degraded_count"] == 1

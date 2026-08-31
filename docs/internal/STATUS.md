@@ -252,6 +252,15 @@ formatted 29 files. The shared gate now covers 71 files. All 44 UI tests and the
 full repository gate passed at 1,267 passed, 304 skipped, with the same three
 warnings. `agent_lib` is the next staged package.
 
+The fourth Python-quality checkpoint adopts all of `agent_lib`. Twelve lint
+findings were resolved as unused imports, misplaced test imports, and three
+incomplete `__all__` declarations. The compatibility memory adapter and two
+scenario helpers remain supported and now have explicit public-export coverage.
+Ruff mechanically formatted 56 files, and the shared gate now covers 148 files.
+The agent/public-API set passed 172 tests; the added export regression brings the
+full repository gate to 1,268 passed, 304 skipped, with the same three warnings.
+`llm_inspector` is the next staged package.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

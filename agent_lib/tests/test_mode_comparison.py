@@ -22,7 +22,9 @@ def test_integration_programming_demo_repairs_file_and_records_messages(tmp_path
     assert result.reservations[-1].status == "released"
 
 
-def test_mode_comparison_demo_shows_same_task_in_native_and_integration_modes(tmp_path: Path) -> None:
+def test_mode_comparison_demo_shows_same_task_in_native_and_integration_modes(
+    tmp_path: Path,
+) -> None:
     result = run_mode_comparison_demo(root=tmp_path, memory_backend="engram")
 
     native_file = result.native_root / "main.py"

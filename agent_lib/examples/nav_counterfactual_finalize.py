@@ -38,9 +38,7 @@ def _steps_through_action(record: dict[str, Any], action_cutoff: int) -> list[di
 
 
 def _observed_source(record: dict[str, Any], action_cutoff: int) -> str:
-    return build_evidence_ledger(
-        _steps_through_action(record, action_cutoff)
-    ).text
+    return build_evidence_ledger(_steps_through_action(record, action_cutoff)).text
 
 
 def _cumulative_tokens(record: dict[str, Any], action_cutoff: int) -> int:
@@ -69,7 +67,7 @@ def _surfaced_regions(
         tool_actions += 1
         if tool_actions > action_cutoff:
             break
-        result = ((step.get("observation") or {}).get("tool_result") or {})
+        result = (step.get("observation") or {}).get("tool_result") or {}
         for evidence in (result.get("meta") or {}).get("evidence") or []:
             evidence_lines = set(int(line) for line in evidence.get("lines") or [])
             for region in regions:
@@ -79,9 +77,7 @@ def _surfaced_regions(
     return surfaced
 
 
-def _score_answer(
-    answer: str, regions: list[dict[str, Any]], surfaced: set[str]
-) -> dict[str, Any]:
+def _score_answer(answer: str, regions: list[dict[str, Any]], surfaced: set[str]) -> dict[str, Any]:
     correct = set()
     for region in regions:
         terms = [str(term).lower() for term in region.get("required_answer_terms") or []]
@@ -94,9 +90,7 @@ def _score_answer(
         "surfaced_region_ids": sorted(surfaced),
         "correct_region_ids": sorted(correct),
         "surfaced_correct_region_ids": sorted(surfaced_correct),
-        "evidence_conditioned_recall": (
-            len(surfaced_correct) / len(surfaced) if surfaced else 0.0
-        ),
+        "evidence_conditioned_recall": (len(surfaced_correct) / len(surfaced) if surfaced else 0.0),
         "full_answer_recall": len(correct) / len(regions) if regions else 0.0,
         "unsupported_paths": sorted(mentioned_paths - known_paths),
     }
@@ -205,10 +199,20 @@ def main() -> None:
         "cutoffs": results,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
-        json.dumps(output, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    args.output.write_text(json.dumps(output, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(
+        json.dumps(
+            [
+                {
+                    key: value
+                    for key, value in item.items()
+                    if key not in {"user_prompt", "raw_response"}
+                }
+                for item in results
+            ],
+            indent=2,
+        )
     )
-    print(json.dumps([{key: value for key, value in item.items() if key not in {"user_prompt", "raw_response"}} for item in results], indent=2))
 
 
 if __name__ == "__main__":

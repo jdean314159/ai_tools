@@ -28,9 +28,13 @@ def test_tool_grant_precedes_path_policy_and_none_preserves_behavior(tmp_path) -
         WorkspacePolicy(root=str(tmp_path), allowed_tools=["read_file"]),
         root=tmp_path,
     )
-    assert granted.invoke(ToolCall(name="read_file", arguments={"path": "input.txt"})).success is True
+    assert (
+        granted.invoke(ToolCall(name="read_file", arguments={"path": "input.txt"})).success is True
+    )
 
-    denied = granted.invoke(ToolCall(name="replace_text", arguments={"path": "input.txt", "old": "a", "new": "b"}))
+    denied = granted.invoke(
+        ToolCall(name="replace_text", arguments={"path": "input.txt", "old": "a", "new": "b"})
+    )
     assert denied.success is False
     assert denied.meta["error"] == "tool_not_granted"
 
@@ -39,12 +43,22 @@ def test_tool_grant_precedes_path_policy_and_none_preserves_behavior(tmp_path) -
         WorkspacePolicy(root=str(tmp_path), allowed_tools=None, writable_paths=["input.txt"]),
         root=tmp_path,
     )
-    assert unrestricted.invoke(ToolCall(name="read_file", arguments={"path": "input.txt"})).success is True
-    assert unrestricted.invoke(ToolCall(name="replace_text", arguments={"path": "input.txt", "old": "a", "new": "b"})).success is True
+    assert (
+        unrestricted.invoke(ToolCall(name="read_file", arguments={"path": "input.txt"})).success
+        is True
+    )
+    assert (
+        unrestricted.invoke(
+            ToolCall(name="replace_text", arguments={"path": "input.txt", "old": "a", "new": "b"})
+        ).success
+        is True
+    )
 
 
 def test_routing_and_scoped_runtime_compose(tmp_path) -> None:
-    fs_agent = ExternalAgentSession("fs_agent", "filesystem", capabilities=["read_file", "replace_text"])
+    fs_agent = ExternalAgentSession(
+        "fs_agent", "filesystem", capabilities=["read_file", "replace_text"]
+    )
     search_agent = ExternalAgentSession("search_agent", "retrieval", capabilities=["retrieve"])
     calc_agent = ExternalAgentSession("calc_agent", "compute", capabilities=["compute"])
     team = ExternalAgentTeam("control-plane", mentor=fs_agent, workers=[search_agent, calc_agent])
@@ -54,16 +68,23 @@ def test_routing_and_scoped_runtime_compose(tmp_path) -> None:
     assert route_by_capability(team, "nonexistent") is None
 
     runtime = build_session_tool_runtime(
-        search_agent, _tools(), WorkspacePolicy(root=str(tmp_path), writable_paths=["input.txt"]), root=str(tmp_path)
+        search_agent,
+        _tools(),
+        WorkspacePolicy(root=str(tmp_path), writable_paths=["input.txt"]),
+        root=str(tmp_path),
     )
-    result = runtime.invoke(ToolCall(name="replace_text", arguments={"path": "input.txt", "old": "a", "new": "b"}))
+    result = runtime.invoke(
+        ToolCall(name="replace_text", arguments={"path": "input.txt", "old": "a", "new": "b"})
+    )
     assert result.success is False
     assert result.meta["error"] == "tool_not_granted"
 
 
 def test_coordinator_runtime_empty_grant_denies_every_tool(tmp_path) -> None:
     coordinator = ExternalAgentSession("coord", "coordinator")
-    runtime = build_coordinator_tool_runtime(coordinator, _tools(), WorkspacePolicy(root=str(tmp_path)), root=str(tmp_path))
+    runtime = build_coordinator_tool_runtime(
+        coordinator, _tools(), WorkspacePolicy(root=str(tmp_path)), root=str(tmp_path)
+    )
 
     for call in (
         ToolCall(name="read_file", arguments={"path": "input.txt"}),
@@ -74,5 +95,10 @@ def test_coordinator_runtime_empty_grant_denies_every_tool(tmp_path) -> None:
         assert result.success is False
         assert result.meta["error"] == "tool_not_granted"
 
-    unrestricted = EnforcingToolRuntime(_tools(), WorkspacePolicy(root=str(tmp_path), allowed_tools=None), root=tmp_path)
-    assert unrestricted.invoke(ToolCall(name="read_file", arguments={"path": "input.txt"})).success is True
+    unrestricted = EnforcingToolRuntime(
+        _tools(), WorkspacePolicy(root=str(tmp_path), allowed_tools=None), root=tmp_path
+    )
+    assert (
+        unrestricted.invoke(ToolCall(name="read_file", arguments={"path": "input.txt"})).success
+        is True
+    )

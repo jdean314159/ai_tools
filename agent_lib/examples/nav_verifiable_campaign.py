@@ -74,9 +74,7 @@ def main() -> int:
     parser.add_argument(
         "--run-plan",
         type=Path,
-        default=Path(
-            "agent_lib/eval_manifests/nav_verifiable_campaign_v1/run-plan.json"
-        ),
+        default=Path("agent_lib/eval_manifests/nav_verifiable_campaign_v1/run-plan.json"),
     )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
@@ -97,12 +95,8 @@ def main() -> int:
     campaign_manifest = json.loads(
         (manifest_dir / "campaign-admission.json").read_text(encoding="utf-8")
     )
-    selected = json.loads(
-        (manifest_dir / "candidate-selection.json").read_text(encoding="utf-8")
-    )
-    selected_by_id = {
-        str(item["task_id"]): item for item in selected["selected"]
-    }
+    selected = json.loads((manifest_dir / "candidate-selection.json").read_text(encoding="utf-8"))
+    selected_by_id = {str(item["task_id"]): item for item in selected["selected"]}
     tasks: list[tuple[VerifiableTask, Path]] = []
     for record in plan["task_sets"]:
         root = Path(record["source_root"]).resolve(strict=True)
@@ -125,20 +119,12 @@ def main() -> int:
     )
     client = LlamaServerClient(args.base_url, seed=args.seed)
     pairs_path = output_dir / "pairs.json"
-    pairs = (
-        json.loads(pairs_path.read_text(encoding="utf-8"))
-        if pairs_path.exists()
-        else []
-    )
+    pairs = json.loads(pairs_path.read_text(encoding="utf-8")) if pairs_path.exists() else []
     completed_task_ids = {str(item["task_id"]) for item in pairs}
     for index, (task, root) in enumerate(tasks):
         if task.task_id in completed_task_ids:
             continue
-        order = (
-            ("no_ledger", "ledger")
-            if index % 2 == 0
-            else ("ledger", "no_ledger")
-        )
+        order = ("no_ledger", "ledger") if index % 2 == 0 else ("ledger", "no_ledger")
         shared = {
             "model_label": args.model_label,
             "seed": args.seed,
@@ -164,8 +150,7 @@ def main() -> int:
                 "run_label": "ledger",
             },
             run_order=tuple(
-                "autonomous" if mode == "no_ledger" else "structured"
-                for mode in order
+                "autonomous" if mode == "no_ledger" else "structured" for mode in order
             ),
         )
         pair_dir = output_dir / task.task_id
@@ -220,9 +205,7 @@ def main() -> int:
         )
 
     if len(tasks) == len(selected_by_id):
-        summary = summarize_paired_campaign(
-            pairs, campaign_manifest=campaign_manifest
-        )
+        summary = summarize_paired_campaign(pairs, campaign_manifest=campaign_manifest)
         decision = decide_campaign(summary)
         (output_dir / "summary.json").write_text(
             json.dumps(summary, indent=2, sort_keys=True) + "\n",
@@ -309,8 +292,7 @@ def _run_arm(
         observed_lines=observed,
     )
     outcome = {
-        "completed_with_answer": run.status == "completed"
-        and bool(run.final_output.strip()),
+        "completed_with_answer": run.status == "completed" and bool(run.final_output.strip()),
         "relation_correct": score.relation_correct,
         "evidence_complete": score.evidence_complete,
         "evidence_precise": score.evidence_precise,
@@ -351,9 +333,7 @@ def _run_arm(
 def _raw_relation_claims(run: AgentRun) -> list[Any]:
     if isinstance(run.meta.get("relation_claims"), list):
         return list(run.meta["relation_claims"])
-    if run.steps and isinstance(
-        run.steps[-1].action.meta.get("relation_claims"), list
-    ):
+    if run.steps and isinstance(run.steps[-1].action.meta.get("relation_claims"), list):
         return list(run.steps[-1].action.meta["relation_claims"])
     return []
 

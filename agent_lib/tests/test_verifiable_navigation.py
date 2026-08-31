@@ -94,9 +94,7 @@ def _write_task_set(path: Path) -> None:
 
 
 def test_task_set_loads_and_oracle_resolves_all_shapes(tmp_path) -> None:
-    tasks = load_verifiable_task_set(
-        FIXTURE_ROOT / "tasks.json", source_root=FIXTURE_ROOT
-    )
+    tasks = load_verifiable_task_set(FIXTURE_ROOT / "tasks.json", source_root=FIXTURE_ROOT)
     oracle = PythonRelationOracle(FIXTURE_ROOT)
 
     definition = oracle.expected(tasks[0])
@@ -136,12 +134,8 @@ def test_exact_relation_scoring_rejects_indirect_call_as_direct(tmp_path) -> Non
         evidence=(EvidenceRef("sample.py", 8, 8),),
     )
 
-    accepted = score_verifiable_claims(
-        task, [correct], oracle=oracle, observed_lines=observed
-    )
-    rejected = score_verifiable_claims(
-        task, [indirect], oracle=oracle, observed_lines=observed
-    )
+    accepted = score_verifiable_claims(task, [correct], oracle=oracle, observed_lines=observed)
+    rejected = score_verifiable_claims(task, [indirect], oracle=oracle, observed_lines=observed)
 
     assert accepted.correct is True
     assert rejected.correct is False
@@ -234,12 +228,8 @@ def test_path_scoring_requires_every_edge_line_and_reports_extra_lines(
     missing_score = score_verifiable_claims(
         task, [missing_edge], oracle=oracle, observed_lines=observed
     )
-    broad_score = score_verifiable_claims(
-        task, [broad], oracle=oracle, observed_lines=observed
-    )
-    exact_score = score_verifiable_claims(
-        task, [exact], oracle=oracle, observed_lines=observed
-    )
+    broad_score = score_verifiable_claims(task, [broad], oracle=oracle, observed_lines=observed)
+    exact_score = score_verifiable_claims(task, [exact], oracle=oracle, observed_lines=observed)
 
     assert missing_score.correct is False
     assert missing_score.relation_correct is True
@@ -306,9 +296,7 @@ def test_task_set_rejects_unpinned_python_sources(tmp_path) -> None:
         (FIXTURE_ROOT / "sample.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
-    (source_root / "untracked.py").write_text(
-        "def hidden():\n    return None\n", encoding="utf-8"
-    )
+    (source_root / "untracked.py").write_text("def hidden():\n    return None\n", encoding="utf-8")
     fixture = tmp_path / "tasks.json"
     _write_task_set(fixture)
 
@@ -327,9 +315,7 @@ def test_task_set_rejects_empty_direct_caller_answer(tmp_path) -> None:
             {
                 "schema_version": 1,
                 "track": "NAV-VERIFIABLE-00",
-                "sources": {
-                    "sample.py": hashlib.sha256(source.read_bytes()).hexdigest()
-                },
+                "sources": {"sample.py": hashlib.sha256(source.read_bytes()).hexdigest()},
                 "tasks": [
                     {
                         "task_id": "empty",
@@ -420,13 +406,7 @@ def test_relation_claim_contract_rejects_invalid_paths() -> None:
 
 def test_oracle_rejects_aliases_instead_of_guessing_edges(tmp_path) -> None:
     (tmp_path / "sample.py").write_text(
-        "def target():\n"
-        "    return None\n"
-        "\n"
-        "alias = target\n"
-        "\n"
-        "def caller():\n"
-        "    alias()\n",
+        "def target():\n    return None\n\nalias = target\n\ndef caller():\n    alias()\n",
         encoding="utf-8",
     )
 
@@ -450,10 +430,7 @@ def test_same_named_methods_require_a_qualified_symbol(tmp_path) -> None:
     with pytest.raises(VerifiableNavigationError, match="resolve exactly once"):
         oracle.definition(path="sample.py", symbol="run")
 
-    assert (
-        oracle.definition(path="sample.py", symbol="Left.run").symbol
-        == "sample.Left.run"
-    )
+    assert oracle.definition(path="sample.py", symbol="Left.run").symbol == "sample.Left.run"
 
 
 def test_canonicalizer_rejects_fixture_wide_symbol_collisions(tmp_path) -> None:
@@ -487,9 +464,7 @@ def test_admission_manifest_freezes_structural_difficulty_before_runs(
     )
     for index in range(4):
         (tmp_path / f"decoy_{index}.py").write_text(
-            f"class Decoy{index}:\n"
-            "    def finish(self):\n"
-            "        return None\n",
+            f"class Decoy{index}:\n    def finish(self):\n        return None\n",
             encoding="utf-8",
         )
     task = VerifiableTask(
@@ -515,9 +490,7 @@ def test_admission_manifest_freezes_structural_difficulty_before_runs(
 
 
 def test_existing_direct_caller_fixture_is_predeclared_local() -> None:
-    task = load_verifiable_task_set(
-        FIXTURE_ROOT / "tasks.json", source_root=FIXTURE_ROOT
-    )[1]
+    task = load_verifiable_task_set(FIXTURE_ROOT / "tasks.json", source_root=FIXTURE_ROOT)[1]
     oracle = PythonRelationOracle(FIXTURE_ROOT)
 
     difficulty = classify_task_difficulty(task, oracle=oracle)

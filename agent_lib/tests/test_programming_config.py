@@ -4,8 +4,20 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from agent_lib import ProgrammingRoleBindings, ProgrammingRuntimeConfig
-from agent_lib.examples import build_default_programming_config, run_programming_demo_from_config
-from llm_engines.contracts import ChatMessage, EngineCapabilities, GenerationRequest, GenerationResponse, UsageStats
+from agent_lib.examples import (
+    build_default_programming_config,
+    run_programming_demo_from_config,
+    run_programming_demo_from_file,
+    write_programming_config_file,
+)
+from agent_lib.programming import load_programming_runtime_config, save_programming_runtime_config
+from llm_engines.contracts import (
+    ChatMessage,
+    EngineCapabilities,
+    GenerationRequest,
+    GenerationResponse,
+    UsageStats,
+)
 
 
 @dataclass
@@ -52,21 +64,27 @@ def test_programming_runtime_config_round_trip() -> None:
 
 
 def test_programming_demo_can_run_from_config_with_named_role_engines(tmp_path) -> None:
-    planner_payloads = iter([
-        '{"kind":"tool","tool_name":"read_file","arguments":{"path":"main.py"},"message":"Read the target file."}',
-        '{"kind":"tool","tool_name":"run_check","arguments":{"path":"main.py","must_contain":"return a + b"},"message":"Verify the patch."}',
-        '{"kind":"final","final_output":"Updated main.py so add(a, b) now returns a + b.","message":"Updated main.py so add(a, b) now returns a + b."}',
-    ])
+    planner_payloads = iter(
+        [
+            '{"kind":"tool","tool_name":"read_file","arguments":{"path":"main.py"},"message":"Read the target file."}',
+            '{"kind":"tool","tool_name":"run_check","arguments":{"path":"main.py","must_contain":"return a + b"},"message":"Verify the patch."}',
+            '{"kind":"final","final_output":"Updated main.py so add(a, b) now returns a + b.","message":"Updated main.py so add(a, b) now returns a + b."}',
+        ]
+    )
     mentor_engine = MockEngine(model="mentor-mock", response_fn=lambda req: next(planner_payloads))
     worker_engine = MockEngine(
         model="worker-mock",
-        response_fn=lambda req: '{"old":"return a - b","new":"return a + b","message":"Patch the buggy subtraction into addition."}',
+        response_fn=lambda req: (
+            '{"old":"return a - b","new":"return a + b","message":"Patch the buggy subtraction into addition."}'
+        ),
     )
 
     config = build_default_programming_config(
         session_id="cfg_demo",
         memory_backend="engram",
-        role_bindings=ProgrammingRoleBindings(planner="deepseek", executor="local_worker", critic="deepseek"),
+        role_bindings=ProgrammingRoleBindings(
+            planner="deepseek", executor="local_worker", critic="deepseek"
+        ),
     )
 
     run, root = run_programming_demo_from_config(
@@ -81,10 +99,6 @@ def test_programming_demo_can_run_from_config_with_named_role_engines(tmp_path) 
     assert (root / "main.py").read_text(encoding="utf-8").strip().endswith("return a + b")
     assert run.steps[0].trace is not None and run.steps[0].trace.metrics.model == "mentor-mock"
     assert run.steps[1].trace is not None and run.steps[1].trace.metrics.model == "worker-mock"
-
-
-from agent_lib.programming import load_programming_runtime_config, save_programming_runtime_config
-from agent_lib.examples import run_programming_demo_from_file, write_programming_config_file
 
 
 def test_programming_runtime_config_can_be_saved_and_loaded_from_json(tmp_path) -> None:
@@ -103,15 +117,19 @@ def test_programming_runtime_config_can_be_saved_and_loaded_from_json(tmp_path) 
 
 
 def test_programming_demo_can_run_from_file_config_with_named_engines(tmp_path) -> None:
-    planner_payloads = iter([
-        '{"kind":"tool","tool_name":"read_file","arguments":{"path":"main.py"},"message":"Read the target file."}',
-        '{"kind":"tool","tool_name":"run_check","arguments":{"path":"main.py","must_contain":"return a + b"},"message":"Verify the patch."}',
-        '{"kind":"final","final_output":"Updated main.py so add(a, b) now returns a + b.","message":"Updated main.py so add(a, b) now returns a + b."}',
-    ])
+    planner_payloads = iter(
+        [
+            '{"kind":"tool","tool_name":"read_file","arguments":{"path":"main.py"},"message":"Read the target file."}',
+            '{"kind":"tool","tool_name":"run_check","arguments":{"path":"main.py","must_contain":"return a + b"},"message":"Verify the patch."}',
+            '{"kind":"final","final_output":"Updated main.py so add(a, b) now returns a + b.","message":"Updated main.py so add(a, b) now returns a + b."}',
+        ]
+    )
     mentor_engine = MockEngine(model="mentor-mock", response_fn=lambda req: next(planner_payloads))
     worker_engine = MockEngine(
         model="worker-mock",
-        response_fn=lambda req: '{"old":"return a - b","new":"return a + b","message":"Patch the buggy subtraction into addition."}',
+        response_fn=lambda req: (
+            '{"old":"return a - b","new":"return a + b","message":"Patch the buggy subtraction into addition."}'
+        ),
     )
 
     config_path = write_programming_config_file(

@@ -32,11 +32,7 @@ def _record() -> dict:
                         ),
                         "tool_result": {
                             "success": True,
-                            "meta": {
-                                "evidence": [
-                                    {"path": "pkg/store.py", "lines": [1, 2, 3]}
-                                ]
-                            },
+                            "meta": {"evidence": [{"path": "pkg/store.py", "lines": [1, 2, 3]}]},
                         },
                     },
                 }
@@ -73,9 +69,7 @@ def test_evidence_conditioned_score_uses_only_surfaced_regions() -> None:
         },
     ]
     surfaced = _MODULE._surfaced_regions(_record(), regions, 1)
-    score = _MODULE._score_answer(
-        "pkg/store.py: ChromaStorage uses upsert.", regions, surfaced
-    )
+    score = _MODULE._score_answer("pkg/store.py: ChromaStorage uses upsert.", regions, surfaced)
 
     assert surfaced == {"GT-1"}
     assert score["evidence_conditioned_recall"] == 1.0

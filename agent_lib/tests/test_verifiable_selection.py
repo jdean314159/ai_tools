@@ -48,8 +48,7 @@ def _candidate(
         },
         "selection_key": hashlib.sha256(
             (
-                CANDIDATE_ORDER_SALT
-                + json.dumps(descriptor, sort_keys=True, separators=(",", ":"))
+                CANDIDATE_ORDER_SALT + json.dumps(descriptor, sort_keys=True, separators=(",", ":"))
             ).encode("utf-8")
         ).hexdigest(),
     }
@@ -133,9 +132,7 @@ def test_campaign_selection_is_deterministic_and_satisfies_frozen_counts() -> No
     assert first == second
     assert len(first["selected_task_ids"]) == 14
     exploratory = [
-        item
-        for item in first["selected"]
-        if item["difficulty"]["tier"] == "exploratory"
+        item for item in first["selected"] if item["difficulty"]["tier"] == "exploratory"
     ]
     assert len(exploratory) == 6
     assert len({item["snapshot_id"] for item in exploratory}) == 3

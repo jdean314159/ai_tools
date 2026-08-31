@@ -6,8 +6,18 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, Mapping, Literal
 
-from ..programming import ProgrammingRuntimeConfig, ProgrammingTask, ProgrammingTaskStateStore, WorkspacePolicy, ProgrammingRoleBindings
-from .programming_task import build_default_programming_config, build_minimum_reliable_programming_config, run_programming_demo_from_config
+from ..programming import (
+    ProgrammingRuntimeConfig,
+    ProgrammingTask,
+    ProgrammingTaskStateStore,
+    WorkspacePolicy,
+    ProgrammingRoleBindings,
+)
+from .programming_task import (
+    build_default_programming_config,
+    build_minimum_reliable_programming_config,
+    run_programming_demo_from_config,
+)
 
 
 @dataclass(frozen=True)
@@ -201,7 +211,9 @@ class ProgrammingScenarioComparisonReport:
         for case_name in case_names:
             by_scenario: dict[str, Any] = {}
             for scenario in self.scenarios:
-                match = next((item for item in scenario.report.results if item.case_name == case_name), None)
+                match = next(
+                    (item for item in scenario.report.results if item.case_name == case_name), None
+                )
                 if match is None:
                     continue
                 by_scenario[scenario.scenario.name] = {
@@ -250,7 +262,9 @@ def _copy_runtime_config(
     )
 
 
-def _replace_case_task(config: ProgrammingRuntimeConfig, **task_overrides: Any) -> ProgrammingRuntimeConfig:
+def _replace_case_task(
+    config: ProgrammingRuntimeConfig, **task_overrides: Any
+) -> ProgrammingRuntimeConfig:
     task = config.task
     new_task = ProgrammingTask(
         task_id=task_overrides.get("task_id", task.task_id),
@@ -258,23 +272,33 @@ def _replace_case_task(config: ProgrammingRuntimeConfig, **task_overrides: Any) 
         session_id=task_overrides.get("session_id", task.session_id),
         workspace=task_overrides.get("workspace", task.workspace),
         plan=task_overrides.get("plan", list(task.plan)),
-        verification_commands=task_overrides.get("verification_commands", list(task.verification_commands)),
+        verification_commands=task_overrides.get(
+            "verification_commands", list(task.verification_commands)
+        ),
         metadata=task_overrides.get("metadata", dict(task.metadata)),
     )
     return _copy_runtime_config(config, task=new_task)
 
 
-def build_representative_programming_cases(*, memory_backend: str = "engram") -> list[ProgrammingBenchmarkCase]:
+def build_representative_programming_cases(
+    *, memory_backend: str = "engram"
+) -> list[ProgrammingBenchmarkCase]:
     cases: list[ProgrammingBenchmarkCase] = []
 
-    minimal = build_minimum_reliable_programming_config(session_id="eval_minimal", memory_backend=memory_backend)
-    cases.append(ProgrammingBenchmarkCase(
-        name="minimal_reliable_auto_fix",
-        description="Minimum reliable path should repair a small single-file bug and verify it.",
-        config=minimal,
-    ))
+    minimal = build_minimum_reliable_programming_config(
+        session_id="eval_minimal", memory_backend=memory_backend
+    )
+    cases.append(
+        ProgrammingBenchmarkCase(
+            name="minimal_reliable_auto_fix",
+            description="Minimum reliable path should repair a small single-file bug and verify it.",
+            config=minimal,
+        )
+    )
 
-    proposal = build_minimum_reliable_programming_config(session_id="eval_proposal", memory_backend=memory_backend)
+    proposal = build_minimum_reliable_programming_config(
+        session_id="eval_proposal", memory_backend=memory_backend
+    )
     proposal_ws = WorkspacePolicy(
         root=proposal.task.workspace.root,
         writable_paths=list(proposal.task.workspace.writable_paths),
@@ -286,14 +310,16 @@ def build_representative_programming_cases(*, memory_backend: str = "engram") ->
         enforce_patch_ownership=proposal.task.workspace.enforce_patch_ownership,
     )
     proposal = _replace_case_task(proposal, workspace=proposal_ws)
-    cases.append(ProgrammingBenchmarkCase(
-        name="proposal_only_review_gate",
-        description="Proposal-only mode should avoid mutating the file while still producing a patch proposal.",
-        config=proposal,
-        expect_file_contains=None,
-        expect_file_unchanged=True,
-        expect_patch_status="proposed",
-    ))
+    cases.append(
+        ProgrammingBenchmarkCase(
+            name="proposal_only_review_gate",
+            description="Proposal-only mode should avoid mutating the file while still producing a patch proposal.",
+            config=proposal,
+            expect_file_contains=None,
+            expect_file_unchanged=True,
+            expect_patch_status="proposed",
+        )
+    )
 
     nested = build_minimum_reliable_programming_config(
         session_id="eval_nested",
@@ -307,21 +333,29 @@ def build_representative_programming_cases(*, memory_backend: str = "engram") ->
         goal="Fix src/math_ops.py so add(a, b) returns the sum and compiles.",
         metadata={**dict(nested.task.metadata), "path": "src/math_ops.py"},
     )
-    cases.append(ProgrammingBenchmarkCase(
-        name="nested_path_with_compile_check",
-        description="Nested-path task should repair the file and pass both content and compile verification.",
-        config=nested,
-    ))
+    cases.append(
+        ProgrammingBenchmarkCase(
+            name="nested_path_with_compile_check",
+            description="Nested-path task should repair the file and pass both content and compile verification.",
+            config=nested,
+        )
+    )
 
-    resume = build_minimum_reliable_programming_config(session_id="eval_resume", memory_backend=memory_backend)
-    cases.append(ProgrammingBenchmarkCase(
-        name="resume_after_partial_run",
-        description="Task should resume from persisted state after a short interrupted run.",
-        config=resume,
-        initial_max_steps=2,
-    ))
+    resume = build_minimum_reliable_programming_config(
+        session_id="eval_resume", memory_backend=memory_backend
+    )
+    cases.append(
+        ProgrammingBenchmarkCase(
+            name="resume_after_partial_run",
+            description="Task should resume from persisted state after a short interrupted run.",
+            config=resume,
+            initial_max_steps=2,
+        )
+    )
 
-    isolated = build_default_programming_config(session_id="eval_isolated", memory_backend=memory_backend)
+    isolated = build_default_programming_config(
+        session_id="eval_isolated", memory_backend=memory_backend
+    )
     isolated_task = ProgrammingTask(
         task_id=isolated.task.task_id,
         goal=isolated.task.goal,
@@ -341,11 +375,13 @@ def build_representative_programming_cases(*, memory_backend: str = "engram") ->
         metadata=dict(isolated.task.metadata),
     )
     isolated = _copy_runtime_config(isolated, task=isolated_task)
-    cases.append(ProgrammingBenchmarkCase(
-        name="isolated_workspace_fix",
-        description="Task should repair the file while running in an isolated workspace.",
-        config=isolated,
-    ))
+    cases.append(
+        ProgrammingBenchmarkCase(
+            name="isolated_workspace_fix",
+            description="Task should repair the file while running in an isolated workspace.",
+            config=isolated,
+        )
+    )
     return cases
 
 
@@ -366,14 +402,18 @@ def build_default_benchmark_scenarios() -> list[ProgrammingBenchmarkScenario]:
     ]
 
 
-def _apply_scenario_to_case(case: ProgrammingBenchmarkCase, scenario: ProgrammingBenchmarkScenario) -> ProgrammingBenchmarkCase:
+def _apply_scenario_to_case(
+    case: ProgrammingBenchmarkCase, scenario: ProgrammingBenchmarkScenario
+) -> ProgrammingBenchmarkCase:
     cfg = _copy_runtime_config(
         case.config,
         memory_backend=scenario.memory_backend,
         session_id=f"{case.config.session_id}_{scenario.name}",
         state_subdir=f"{case.config.state_subdir}_{scenario.name}",
         memory_subdir=f"{case.config.memory_subdir}_{scenario.name}",
-        role_bindings=scenario.role_bindings if scenario.role_bindings != ProgrammingRoleBindings() else case.config.role_bindings,
+        role_bindings=scenario.role_bindings
+        if scenario.role_bindings != ProgrammingRoleBindings()
+        else case.config.role_bindings,
     )
     if scenario.runtime_profile == "isolated_workspace":
         ws = cfg.task.workspace
@@ -404,12 +444,20 @@ def _apply_scenario_to_case(case: ProgrammingBenchmarkCase, scenario: Programmin
     )
 
 
-def _summarize_case(case: ProgrammingBenchmarkCase, *, run: Any, root: Path) -> ProgrammingBenchmarkResult:
+def _summarize_case(
+    case: ProgrammingBenchmarkCase, *, run: Any, root: Path
+) -> ProgrammingBenchmarkResult:
     state_store = ProgrammingTaskStateStore(root / case.config.state_subdir)
     state = state_store.load(case.config.task.task_id)
     retries = sum((state.retry_counts.values() if state is not None else []), 0)
-    patch_status = state.last_patch.status if state is not None and state.last_patch is not None else None
-    verification_success = state.last_verification.success if state is not None and state.last_verification is not None else None
+    patch_status = (
+        state.last_patch.status if state is not None and state.last_patch is not None else None
+    )
+    verification_success = (
+        state.last_verification.success
+        if state is not None and state.last_verification is not None
+        else None
+    )
     touched_files = list(state.touched_files) if state is not None else []
     verification_steps = [
         step
@@ -419,8 +467,14 @@ def _summarize_case(case: ProgrammingBenchmarkCase, *, run: Any, root: Path) -> 
         and step.observation.tool_result.name in {"run_check", "run_command"}
     ]
     verification_count = len(verification_steps)
-    verification_failures = sum(1 for step in verification_steps if not step.observation.tool_result.success)
-    patch_attempts = sum(1 for step in run.steps if step.action.tool_call is not None and step.action.tool_call.name == "replace_text")
+    verification_failures = sum(
+        1 for step in verification_steps if not step.observation.tool_result.success
+    )
+    patch_attempts = sum(
+        1
+        for step in run.steps
+        if step.action.tool_call is not None and step.action.tool_call.name == "replace_text"
+    )
     notes = list(case.notes)
     success = True
 
@@ -432,18 +486,25 @@ def _summarize_case(case: ProgrammingBenchmarkCase, *, run: Any, root: Path) -> 
     effective_root = Path(str(getattr(run, "programming_workspace_root", root)))
     target_path = effective_root / target
     if case.expect_file_contains is not None:
-        if not target_path.exists() or case.expect_file_contains not in target_path.read_text(encoding="utf-8"):
+        if not target_path.exists() or case.expect_file_contains not in target_path.read_text(
+            encoding="utf-8"
+        ):
             success = False
             notes.append(f"expected file {target!r} to contain {case.expect_file_contains!r}")
     if case.expect_file_unchanged:
-        if not target_path.exists() or target_path.read_text(encoding="utf-8") != case.config.seed_content:
+        if (
+            not target_path.exists()
+            or target_path.read_text(encoding="utf-8") != case.config.seed_content
+        ):
             success = False
             notes.append(f"expected file {target!r} to remain unchanged in proposal-only flow")
     if case.expect_patch_status is not None and patch_status != case.expect_patch_status:
         success = False
         notes.append(f"expected patch status {case.expect_patch_status!r}, got {patch_status!r}")
 
-    state_path = str((root / case.config.state_subdir / f"{case.config.task.task_id}.json").resolve())
+    state_path = str(
+        (root / case.config.state_subdir / f"{case.config.task.task_id}.json").resolve()
+    )
     return ProgrammingBenchmarkResult(
         case_name=case.name,
         description=case.description,
@@ -487,8 +548,18 @@ def run_programming_benchmark(
             case_root = root_path / case.name
             case_root.mkdir(parents=True, exist_ok=True)
             if case.initial_max_steps is not None:
-                run_programming_demo_from_config(case.config, root=case_root, engines_by_name=engines_by_name, max_steps=case.initial_max_steps)
-            run, actual_root = run_programming_demo_from_config(case.config, root=case_root, engines_by_name=engines_by_name, max_steps=case.max_steps)
+                run_programming_demo_from_config(
+                    case.config,
+                    root=case_root,
+                    engines_by_name=engines_by_name,
+                    max_steps=case.initial_max_steps,
+                )
+            run, actual_root = run_programming_demo_from_config(
+                case.config,
+                root=case_root,
+                engines_by_name=engines_by_name,
+                max_steps=case.max_steps,
+            )
             results.append(_summarize_case(case, run=run, root=Path(actual_root)))
         return ProgrammingBenchmarkReport(results=results)
     finally:
@@ -513,10 +584,16 @@ def run_programming_scenario_benchmark(
     try:
         scenario_reports: list[ProgrammingScenarioBenchmarkResult] = []
         for scenario in scenario_list:
-            base_cases = build_representative_programming_cases(memory_backend=scenario.memory_backend)
+            base_cases = build_representative_programming_cases(
+                memory_backend=scenario.memory_backend
+            )
             scenario_cases = [_apply_scenario_to_case(case, scenario) for case in base_cases]
-            report = run_programming_benchmark(scenario_cases, root=root_path / scenario.name, engines_by_name=engines_by_name)
-            scenario_reports.append(ProgrammingScenarioBenchmarkResult(scenario=scenario, report=report))
+            report = run_programming_benchmark(
+                scenario_cases, root=root_path / scenario.name, engines_by_name=engines_by_name
+            )
+            scenario_reports.append(
+                ProgrammingScenarioBenchmarkResult(scenario=scenario, report=report)
+            )
         return ProgrammingScenarioComparisonReport(scenarios=scenario_reports)
     finally:
         if keepalive is not None:

@@ -10,7 +10,13 @@ from agent_lib.llm_engines_adapter import (
     RoleEngineSet,
     action_from_payload,
 )
-from llm_engines.contracts import ChatMessage, EngineCapabilities, GenerationRequest, GenerationResponse, UsageStats
+from llm_engines.contracts import (
+    ChatMessage,
+    EngineCapabilities,
+    GenerationRequest,
+    GenerationResponse,
+    UsageStats,
+)
 
 
 @dataclass
@@ -40,7 +46,9 @@ class MockEngine:
 def test_llm_action_planner_invokes_planner_role_engine() -> None:
     planner_engine = MockEngine(
         model="mentor-mock",
-        response_fn=lambda req: '{"kind":"tool","tool_name":"add","arguments":{"a":2,"b":3},"message":"Use the tool."}',
+        response_fn=lambda req: (
+            '{"kind":"tool","tool_name":"add","arguments":{"a":2,"b":3},"message":"Use the tool."}'
+        ),
     )
     planner = LLMActionPlanner(
         engines=RoleEngineSet(planner=planner_engine),
@@ -48,7 +56,11 @@ def test_llm_action_planner_invokes_planner_role_engine() -> None:
         prompt_builder=lambda ctx: "Add 2 and 3.",
         engine_role="planner",
     )
-    context = AgentContext(task=AgentTask(task_id="sum", goal="Add 2 and 3."), engine_roles=EngineRoles(planner="mentor"), steps=[])
+    context = AgentContext(
+        task=AgentTask(task_id="sum", goal="Add 2 and 3."),
+        engine_roles=EngineRoles(planner="mentor"),
+        steps=[],
+    )
     action = planner.plan(context)
 
     assert planner_engine.call_count == 1
@@ -80,15 +92,19 @@ def test_action_adapter_preserves_relation_claims_on_final_action() -> None:
 
 
 def test_programming_demo_can_use_llm_engines_for_mentor_and_worker(tmp_path) -> None:
-    planner_payloads = iter([
-        '{"kind":"tool","tool_name":"read_file","arguments":{"path":"main.py"},"message":"Read the target file."}',
-        '{"kind":"tool","tool_name":"run_check","arguments":{"path":"main.py","must_contain":"return a + b"},"message":"Verify the patch."}',
-        '{"kind":"final","final_output":"Updated main.py so add(a, b) now returns a + b.","message":"Updated main.py so add(a, b) now returns a + b."}',
-    ])
+    planner_payloads = iter(
+        [
+            '{"kind":"tool","tool_name":"read_file","arguments":{"path":"main.py"},"message":"Read the target file."}',
+            '{"kind":"tool","tool_name":"run_check","arguments":{"path":"main.py","must_contain":"return a + b"},"message":"Verify the patch."}',
+            '{"kind":"final","final_output":"Updated main.py so add(a, b) now returns a + b.","message":"Updated main.py so add(a, b) now returns a + b."}',
+        ]
+    )
     planner_engine = MockEngine(model="mentor-mock", response_fn=lambda req: next(planner_payloads))
     executor_engine = MockEngine(
         model="worker-mock",
-        response_fn=lambda req: '{"old":"return a - b","new":"return a + b","message":"Patch the buggy subtraction into addition."}',
+        response_fn=lambda req: (
+            '{"old":"return a - b","new":"return a + b","message":"Patch the buggy subtraction into addition."}'
+        ),
     )
 
     run, root = run_programming_demo(

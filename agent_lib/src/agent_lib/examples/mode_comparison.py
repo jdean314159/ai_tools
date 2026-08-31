@@ -24,6 +24,7 @@ class ModeComparisonResult:
     native_final_output: str
     integration: IntegrationDemoResult
 
+
 class _WorkspaceHarness:
     def __init__(self, workspace: FileWorkspace) -> None:
         self.workspace = workspace
@@ -36,7 +37,6 @@ class _WorkspaceHarness:
 
     def verify(self, path: str, expected: str) -> bool:
         return self.workspace.contains_text(path, expected)
-
 
 
 def run_integration_programming_demo(
@@ -85,7 +85,9 @@ def run_integration_programming_demo(
         metadata={"path": "main.py"},
     )
 
-    reservations = coordinator.reserve_paths(worker, ["main.py"], thread_id=thread_id, note="Applying targeted patch")
+    reservations = coordinator.reserve_paths(
+        worker, ["main.py"], thread_id=thread_id, note="Applying targeted patch"
+    )
     patch_note = tools.patch("main.py", "return a - b", "return a + b")
     coordinator.send(
         mentor,
@@ -112,7 +114,9 @@ def run_integration_programming_demo(
         mentor,
         kind="verification_result",
         subject="Verification result",
-        body="Local verification passed for main.py." if verified else "Local verification failed for main.py.",
+        body="Local verification passed for main.py."
+        if verified
+        else "Local verification failed for main.py.",
         thread_id=thread_id,
         metadata={"path": "main.py", "success": verified},
     )
@@ -140,7 +144,6 @@ def run_integration_programming_demo(
         reservations=[*reservations, *released],
     )
     return result, root_path
-
 
 
 def run_mode_comparison_demo(

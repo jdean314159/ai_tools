@@ -2,40 +2,67 @@ from __future__ import annotations
 
 from typing import Sequence, Any
 
-from llm_inspector import ContextResult, EvidenceItem, RunMetrics, Section, TokenAccounting, Trace, TraceEvent, Turn
+from llm_inspector import (
+    ContextResult,
+    EvidenceItem,
+    RunMetrics,
+    Section,
+    TokenAccounting,
+    Trace,
+    TraceEvent,
+    Turn,
+)
 
 from .contracts import AgentMemoryAdapter, AgentStep, AgentTask
 
 
-def _trace_from_evidence(task: AgentTask, evidence: Sequence[EvidenceItem], *, backend_name: str) -> Trace:
+def _trace_from_evidence(
+    task: AgentTask, evidence: Sequence[EvidenceItem], *, backend_name: str
+) -> Trace:
     sections = []
     if evidence:
         grouped: dict[str, list[str]] = {}
         for item in evidence:
-            grouped.setdefault(item.source or 'memory', []).append(item.text)
+            grouped.setdefault(item.source or "memory", []).append(item.text)
         for origin, items in grouped.items():
             sections.append(Section(title=origin.title(), text="\n".join(items), origin=origin))
     context = ContextResult(
         sections=sections,
         evidence=list(evidence),
-        token_accounting=TokenAccounting(total_tokens=sum(max(1, len(item.text.split())) for item in evidence)),
-        signals={'memory_backend': backend_name, 'evidence_count': len(evidence)},
+        token_accounting=TokenAccounting(
+            total_tokens=sum(max(1, len(item.text.split())) for item in evidence)
+        ),
+        signals={"memory_backend": backend_name, "evidence_count": len(evidence)},
     )
     return Trace(
-        turn=Turn(role='user', text=task.goal, session_id=task.session_id),
+        turn=Turn(role="user", text=task.goal, session_id=task.session_id),
         context=context,
         metrics=RunMetrics(engine=backend_name, model=None),
-        events=[TraceEvent(event_type='agent_memory_recall', source_package='agent_lib', source_component='memory', payload={'memory_backend': backend_name, 'evidence_count': len(evidence)}, severity='info', message=f'Recalled {len(evidence)} evidence items from {backend_name}.', tags=('agent','memory'))],
+        events=[
+            TraceEvent(
+                event_type="agent_memory_recall",
+                source_package="agent_lib",
+                source_component="memory",
+                payload={"memory_backend": backend_name, "evidence_count": len(evidence)},
+                severity="info",
+                message=f"Recalled {len(evidence)} evidence items from {backend_name}.",
+                tags=("agent", "memory"),
+            )
+        ],
     )
 
 
 class NullMemoryAdapter:
     backend_name = "null"
 
-    def recall(self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5) -> list[EvidenceItem]:
+    def recall(
+        self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5
+    ) -> list[EvidenceItem]:
         return []
 
-    def trace_recall(self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5) -> Trace | None:
+    def trace_recall(
+        self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5
+    ) -> Trace | None:
         return None
 
     def record_step(self, task: AgentTask, step: AgentStep) -> None:
@@ -48,7 +75,9 @@ class EngramMemoryAdapter:
     def __init__(self, memory: Any) -> None:
         self.memory = memory
 
-    def recall(self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5) -> list[EvidenceItem]:
+    def recall(
+        self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5
+    ) -> list[EvidenceItem]:
         evidence: list[EvidenceItem] = []
 
         get_recent_turns = getattr(self.memory, "get_recent_turns", None)
@@ -80,7 +109,9 @@ class EngramMemoryAdapter:
                     meta = dict(getattr(turn, "metadata", {}) or {})
                 text = str(text).strip()
                 if text:
-                    evidence.append(EvidenceItem(text=text, source="working", meta={"role": str(role), **meta}))
+                    evidence.append(
+                        EvidenceItem(text=text, source="working", meta={"role": str(role), **meta})
+                    )
 
         search_episodes = getattr(self.memory, "search_episodes", None)
         if callable(search_episodes):
@@ -100,7 +131,9 @@ class EngramMemoryAdapter:
                     )
         return evidence[:limit]
 
-    def trace_recall(self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5) -> Trace | None:
+    def trace_recall(
+        self, task: AgentTask, steps: Sequence[AgentStep], *, limit: int = 5
+    ) -> Trace | None:
         evidence = self.recall(task, steps, limit=limit)
         return _trace_from_evidence(task, evidence, backend_name=self.backend_name)
 
@@ -138,8 +171,16 @@ def create_memory_adapter(
         if memory is None:
             from pathlib import Path
             from engram import ProjectMemory, ProjectType
-            project_type = getattr(ProjectType, "GENERAL_ASSISTANT", None) or getattr(ProjectType, "GENERAL")
+
+            project_type = getattr(ProjectType, "GENERAL_ASSISTANT", None) or getattr(
+                ProjectType, "GENERAL"
+            )
             memory_root = Path(base_dir or ".engram_agent_memory").expanduser()
-            memory = ProjectMemory(project_id=project_id, project_type=project_type, base_dir=memory_root, session_id=session_id)
+            memory = ProjectMemory(
+                project_id=project_id,
+                project_type=project_type,
+                base_dir=memory_root,
+                session_id=session_id,
+            )
         return EngramMemoryAdapter(memory)
     raise ValueError(f"Unsupported memory backend: {backend!r}")

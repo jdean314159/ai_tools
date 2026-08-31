@@ -64,7 +64,9 @@ def _unknown_time() -> TimeDeclaration:
     return TimeDeclaration(
         execution_started_at=TimeValue(status="unknown"),
         execution_finished_at=TimeValue(status="unknown"),
-        adapted_at=TimeValue(status="unknown", source="legacy adapter did not retain wall-clock adaptation time"),
+        adapted_at=TimeValue(
+            status="unknown", source="legacy adapter did not retain wall-clock adaptation time"
+        ),
     )
 
 
@@ -188,7 +190,9 @@ def adapt_nav_v1(record: Mapping[str, Any]) -> RunArtifact:
         raise ValueError("expected a NAV schema-v1 run record")
     run = dict(source["run"])
     steps = list(run.get("steps") or [])
-    profile_data = {key: value for key, value in source.items() if key not in {"schema_version", "run", "score"}}
+    profile_data = {
+        key: value for key, value in source.items() if key not in {"schema_version", "run", "score"}
+    }
     profile_data["run_meta"] = run.get("meta") or {}
     body = {
         "task": {"task_id": "nav-test-00"},
@@ -224,10 +228,17 @@ def adapt_nav_v1(record: Mapping[str, Any]) -> RunArtifact:
         envelope=_base_envelope(
             profile="agent_lib.nav",
             digest=digest,
-            privacy_categories=("prompt_or_task", "agent_trajectory", "tool_output", "filesystem_metadata"),
+            privacy_categories=(
+                "prompt_or_task",
+                "agent_trajectory",
+                "tool_output",
+                "filesystem_metadata",
+            ),
             omissions=(
                 Omission(field_path="/time/execution_started_at", reason="absent_in_source_format"),
-                Omission(field_path="/time/execution_finished_at", reason="absent_in_source_format"),
+                Omission(
+                    field_path="/time/execution_finished_at", reason="absent_in_source_format"
+                ),
                 Omission(field_path="/actors/original_producer", reason="absent_in_source_format"),
             ),
             capabilities=capabilities,
@@ -280,8 +291,15 @@ def adapt_asc_record(record: Mapping[str, Any]) -> RunArtifact:
         raise ValueError(f"ASC record missing required fields: {sorted(required - source.keys())}")
     step_observations = list(source.get("step_observations") or [])
     common_keys = {
-        "task_id", "status", "stop_reason", "elapsed_seconds", "steps",
-        "step_observations", "reasoning_trace", "worker", "mentor",
+        "task_id",
+        "status",
+        "stop_reason",
+        "elapsed_seconds",
+        "steps",
+        "step_observations",
+        "reasoning_trace",
+        "worker",
+        "mentor",
         *_ASC_EVALUATION_FIELDS,
     }
     profile_data = {key: value for key, value in source.items() if key not in common_keys}
@@ -305,10 +323,17 @@ def adapt_asc_record(record: Mapping[str, Any]) -> RunArtifact:
         envelope=_base_envelope(
             profile="agent_lib.asc",
             digest=digest,
-            privacy_categories=("agent_reasoning", "tool_output", "evaluation_detail", "filesystem_metadata"),
+            privacy_categories=(
+                "agent_reasoning",
+                "tool_output",
+                "evaluation_detail",
+                "filesystem_metadata",
+            ),
             omissions=(
                 Omission(field_path="/time/execution_started_at", reason="absent_in_source_format"),
-                Omission(field_path="/time/execution_finished_at", reason="absent_in_source_format"),
+                Omission(
+                    field_path="/time/execution_finished_at", reason="absent_in_source_format"
+                ),
                 Omission(field_path="/final_output", reason="absent_in_source_format"),
                 Omission(field_path="/actors/original_producer", reason="absent_in_source_format"),
             ),
@@ -489,7 +514,11 @@ def adapt_nav_campaign(
             raise ValueError(f"NAV campaign pair {index} is not an object")
         pair = dict(raw_pair)
         task_id = str(pair.get("task_id") or "")
-        if not task_id or not isinstance(pair.get("no_ledger"), Mapping) or not isinstance(pair.get("ledger"), Mapping):
+        if (
+            not task_id
+            or not isinstance(pair.get("no_ledger"), Mapping)
+            or not isinstance(pair.get("ledger"), Mapping)
+        ):
             raise ValueError("NAV campaign pairs require task_id and both arm outcomes")
         if task_id in task_ids:
             raise ValueError(f"duplicate NAV campaign task: {task_id}")
@@ -510,12 +539,12 @@ def adapt_nav_campaign(
         )
 
     extra_arm_keys = set(child_ids) - {
-        (task_id, mode)
-        for task_id in task_ids
-        for mode in ("no_ledger", "ledger")
+        (task_id, mode) for task_id in task_ids for mode in ("no_ledger", "ledger")
     }
     if extra_arm_keys:
-        raise ValueError(f"NAV arm records do not belong to a campaign pair: {sorted(extra_arm_keys)}")
+        raise ValueError(
+            f"NAV arm records do not belong to a campaign pair: {sorted(extra_arm_keys)}"
+        )
 
     body = {
         "campaign": {"name": "NAV-VERIFIABLE-00", "design": "paired"},
@@ -556,13 +585,10 @@ def prepare_experiment_bundle(
     related_child_ids = {
         relationship.target_id
         for relationship in experiment.envelope.relationships
-        if relationship.relation_type == "contains"
-        and relationship.target_kind == "agent_run"
+        if relationship.relation_type == "contains" and relationship.target_kind == "agent_run"
     }
     if set(children_by_id) != related_child_ids:
-        raise ValueError(
-            "published experiment children must exactly match contains relationships"
-        )
+        raise ValueError("published experiment children must exactly match contains relationships")
 
     attachments: list[Attachment] = []
     attachment_bytes: dict[str, bytes] = {}
@@ -589,9 +615,7 @@ def prepare_experiment_bundle(
         )
         attachment_bytes[attachment_id] = data
         reference_sensitivity[attachment_id] = "unknown"
-        digest_inputs.append(
-            {"record_id": record_id, "path": relative_path, "sha256": digest}
-        )
+        digest_inputs.append({"record_id": record_id, "path": relative_path, "sha256": digest})
 
     _, bundle_digest = _canonical_source(
         {

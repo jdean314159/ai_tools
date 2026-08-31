@@ -53,7 +53,9 @@ class ActionTrajectoryGuardHook:
             **detector_metadata,
         }
         if self.mode == "shadow":
-            return ContinueRun(metadata={**intervention_metadata, "fired": False, "would_fire": True})
+            return ContinueRun(
+                metadata={**intervention_metadata, "fired": False, "would_fire": True}
+            )
         return FinalizeOnce(
             truncation_point=intervention.truncation_point,
             instruction=intervention.instruction,

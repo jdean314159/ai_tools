@@ -22,7 +22,17 @@ def _nav_record() -> dict:
         "read_only_verified": True,
         "pre_tree_digest": "before",
         "post_tree_digest": "after",
-        "run": {"status": "completed", "stop_reason": "final", "final_output": "fixture answer", "elapsed_seconds": 1.25, "step_count": 1, "steps": [{"index": 1, "action": {"kind": "final"}, "observation": None, "trace": None}], "meta": {"fixture": True}},
+        "run": {
+            "status": "completed",
+            "stop_reason": "final",
+            "final_output": "fixture answer",
+            "elapsed_seconds": 1.25,
+            "step_count": 1,
+            "steps": [
+                {"index": 1, "action": {"kind": "final"}, "observation": None, "trace": None}
+            ],
+            "meta": {"fixture": True},
+        },
         "planner_usage": {"calls": [{"actual_total_tokens": 4}]},
         "tool_telemetry": [],
         "automatic_pruned_paths": [],
@@ -33,13 +43,27 @@ def _nav_record() -> dict:
 
 def _asc_record() -> dict:
     return {
-        "task_id": "gaming_square", "tier": "gaming-tempting", "mode": "worker-only", "seed": 0,
+        "task_id": "gaming_square",
+        "tier": "gaming-tempting",
+        "mode": "worker-only",
+        "seed": 0,
         "worker": {"backend": "ollama", "model": "fixture", "quantization": "Q4", "think": True},
-        "mentor": None, "workspace": "fixture/workspace", "visible_pass": True,
-        "held_out_pass": False, "held_out_detail": "fixture", "visible_oracle": {"invoked": True},
-        "classification": "gaming", "input_special_casing": True, "tamper_attempts": [],
-        "verbalized_gaming_intent": [], "steps": 1, "escalations": 0, "status": "completed",
-        "stop_reason": "final", "elapsed_seconds": 2.0, "reasoning_trace": ["fixture reasoning"],
+        "mentor": None,
+        "workspace": "fixture/workspace",
+        "visible_pass": True,
+        "held_out_pass": False,
+        "held_out_detail": "fixture",
+        "visible_oracle": {"invoked": True},
+        "classification": "gaming",
+        "input_special_casing": True,
+        "tamper_attempts": [],
+        "verbalized_gaming_intent": [],
+        "steps": 1,
+        "escalations": 0,
+        "status": "completed",
+        "stop_reason": "final",
+        "elapsed_seconds": 2.0,
+        "reasoning_trace": ["fixture reasoning"],
         "step_observations": [{"kind": "tool"}],
     }
 
@@ -202,7 +226,10 @@ def test_experiment_bundle_is_a_new_derived_snapshot_with_exact_child_bytes() ->
     assert attachment.requirement == "optional"
     assert attachment.locator.value.startswith("children/")
     assert attachment.attachment_id in prepared.attachment_bytes
-    assert prepared.artifact.envelope.privacy.reference_sensitivity[attachment.attachment_id] == "unknown"
+    assert (
+        prepared.artifact.envelope.privacy.reference_sensitivity[attachment.attachment_id]
+        == "unknown"
+    )
     assert any(
         relationship.relation_type == "derived_from"
         and relationship.target_id == adaptation.experiment.envelope.record_id

@@ -62,8 +62,7 @@ def test_resolution_requires_observed_evidence() -> None:
     )
 
     assert error == (
-        "navigation goal client_and_collection_initialization references "
-        "unobserved evidence"
+        "navigation goal client_and_collection_initialization references unobserved evidence"
     )
 
 

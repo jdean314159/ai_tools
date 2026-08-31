@@ -20,11 +20,17 @@ def make_external_programming_team(
     shared_memory_backend: str = "engram",
 ) -> ExternalAgentTeam:
     mentor = ExternalAgentSession(agent_id=mentor_id, role="mentor", runtime="external-session")
-    workers = [ExternalAgentSession(agent_id=agent_id, role="worker", runtime="external-session") for agent_id in worker_ids]
+    workers = [
+        ExternalAgentSession(agent_id=agent_id, role="worker", runtime="external-session")
+        for agent_id in worker_ids
+    ]
     critic = None
     if critic_id:
         critic = ExternalAgentSession(agent_id=critic_id, role="critic", runtime="external-session")
-    scouts = [ExternalAgentSession(agent_id=agent_id, role="scout", runtime="external-session") for agent_id in scout_ids]
+    scouts = [
+        ExternalAgentSession(agent_id=agent_id, role="scout", runtime="external-session")
+        for agent_id in scout_ids
+    ]
     return ExternalAgentTeam(
         project_id=project_id,
         mentor=mentor,
@@ -35,7 +41,9 @@ def make_external_programming_team(
     )
 
 
-def make_external_session_coordinator(team: ExternalAgentTeam | None = None) -> ExternalSessionCoordinator:
+def make_external_session_coordinator(
+    team: ExternalAgentTeam | None = None,
+) -> ExternalSessionCoordinator:
     coordinator = ExternalSessionCoordinator(InMemoryMailbox())
     if team is not None:
         coordinator.register_team(team)

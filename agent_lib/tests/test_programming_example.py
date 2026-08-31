@@ -64,6 +64,10 @@ def test_programming_demo_escalates_only_after_failed_local_check(tmp_path: Path
     assert run.steps[3].observation is not None
     assert run.steps[3].observation.tool_result is not None
     assert run.steps[3].observation.tool_result.success is False
-    critic_steps = [step for step in run.steps if step.trace is not None and step.trace.metrics.engine == "critic"]
+    critic_steps = [
+        step
+        for step in run.steps
+        if step.trace is not None and step.trace.metrics.engine == "critic"
+    ]
     assert critic_steps
     assert "mentor" in (critic_steps[0].trace.metrics.model or "")

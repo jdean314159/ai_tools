@@ -38,7 +38,9 @@ def test_external_session_reservations_are_advisory() -> None:
     team = make_external_programming_team(project_id="demo", worker_ids=("worker-a", "worker-b"))
     coordinator.register_team(team)
 
-    first = coordinator.reserve_paths("worker-a", ["src/parser.py"], thread_id="task-1", note="Investigating bug")
+    first = coordinator.reserve_paths(
+        "worker-a", ["src/parser.py"], thread_id="task-1", note="Investigating bug"
+    )
     second = coordinator.reserve_paths("worker-b", ["src/parser.py"], thread_id="task-1")
 
     assert first[0].status == "active"

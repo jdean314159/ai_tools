@@ -108,9 +108,7 @@ class VerifiableTask:
             goal_id = str(goal.get("goal_id") or "").strip()
             requirement = str(goal.get("requirement") or "").strip()
             if not goal_id or not requirement:
-                raise VerifiableNavigationError(
-                    "goal requirement needs goal_id and requirement"
-                )
+                raise VerifiableNavigationError("goal requirement needs goal_id and requirement")
             parsed_goals.append((goal_id, requirement))
         raw_line = value.get("line")
         return cls(
@@ -130,13 +128,9 @@ class VerifiableTask:
 
     def validate(self) -> None:
         if not self.task_id or not self.question or not self.path or not self.symbol:
-            raise VerifiableNavigationError(
-                "task_id, question, path, and symbol are required"
-            )
+            raise VerifiableNavigationError("task_id, question, path, and symbol are required")
         if not self.goal_requirements:
-            raise VerifiableNavigationError(
-                "task requires at least one user-visible goal"
-            )
+            raise VerifiableNavigationError("task requires at least one user-visible goal")
         if self.kind not in {
             "definition",
             "direct_callers",
@@ -146,15 +140,9 @@ class VerifiableTask:
             raise VerifiableNavigationError(f"unsupported task kind: {self.kind}")
         if self.kind == "call_path" and not self.endpoint:
             raise VerifiableNavigationError("call_path requires endpoint")
-        if self.kind == "mutation_target" and (
-            self.line is None or self.line < 1
-        ):
-            raise VerifiableNavigationError(
-                "mutation_target requires a positive line"
-            )
-        if len({goal_id for goal_id, _ in self.goal_requirements}) != len(
-            self.goal_requirements
-        ):
+        if self.kind == "mutation_target" and (self.line is None or self.line < 1):
+            raise VerifiableNavigationError("mutation_target requires a positive line")
+        if len({goal_id for goal_id, _ in self.goal_requirements}) != len(self.goal_requirements):
             raise VerifiableNavigationError("goal ids must be unique")
 
 
@@ -177,16 +165,12 @@ class RelationClaim:
             symbol=str(value.get("symbol") or "").strip(),
             target=str(value.get("target") or "").strip(),
             path_symbols=tuple(
-                str(item).strip()
-                for item in raw_path
-                if isinstance(item, str) and item.strip()
+                str(item).strip() for item in raw_path if isinstance(item, str) and item.strip()
             )
             if isinstance(raw_path, list)
             else (),
             evidence=tuple(
-                EvidenceRef.from_mapping(item)
-                for item in raw_evidence
-                if isinstance(item, Mapping)
+                EvidenceRef.from_mapping(item) for item in raw_evidence if isinstance(item, Mapping)
             )
             if isinstance(raw_evidence, list)
             else (),
@@ -230,9 +214,7 @@ def relation_claims_shape_error(value: object) -> str | None:
         if not claim.path or not claim.symbol or not claim.evidence:
             return f"relation claim {index} requires path, symbol, and evidence"
         if any(
-            ref.path != claim.path
-            or ref.start_line < 1
-            or ref.end_line < ref.start_line
+            ref.path != claim.path or ref.start_line < 1 or ref.end_line < ref.start_line
             for ref in claim.evidence
         ):
             return f"relation claim {index} has invalid evidence"
@@ -344,9 +326,8 @@ class PythonRelationOracle:
                     raise VerifiableNavigationError(
                         f"import alias is outside the v1 oracle: {relative}:{node.lineno}"
                     )
-                if (
-                    isinstance(node, (ast.Assign, ast.AnnAssign))
-                    and isinstance(node.value, (ast.Name, ast.Attribute))
+                if isinstance(node, (ast.Assign, ast.AnnAssign)) and isinstance(
+                    node.value, (ast.Name, ast.Attribute)
                 ):
                     raise VerifiableNavigationError(
                         f"assignment alias is outside the v1 oracle: {relative}:{node.lineno}"
@@ -412,9 +393,7 @@ class PythonRelationOracle:
                 raise VerifiableNavigationError(
                     f"dynamic call in {definition.symbol}:{node.lineno}"
                 )
-            resolved = self._resolve_call_text(
-                target, module=module, class_parents=class_parents
-            )
+            resolved = self._resolve_call_text(target, module=module, class_parents=class_parents)
             self.calls.append(
                 _Call(
                     path=definition.path,
@@ -499,9 +478,7 @@ class PythonRelationOracle:
 
         walk(start, (start,))
         if len(paths) != 1:
-            raise VerifiableNavigationError(
-                f"call path must be unique; found {len(paths)} paths"
-            )
+            raise VerifiableNavigationError(f"call path must be unique; found {len(paths)} paths")
         lines = [
             call.line
             for left, right in zip(paths[0], paths[0][1:])
@@ -530,9 +507,7 @@ class PythonRelationOracle:
         matches = [
             call
             for call in self.calls
-            if call.path == enclosing.path
-            and call.caller == enclosing.symbol
-            and call.line == line
+            if call.path == enclosing.path and call.caller == enclosing.symbol and call.line == line
         ]
         if len(matches) != 1:
             raise VerifiableNavigationError(
@@ -575,8 +550,7 @@ class PythonRelationOracle:
         matches = [
             definition
             for candidate, definition in self.definitions.items()
-            if definition.path == path
-            and (candidate == symbol or candidate.endswith(f".{symbol}"))
+            if definition.path == path and (candidate == symbol or candidate.endswith(f".{symbol}"))
         ]
         if len(matches) != 1:
             raise VerifiableNavigationError(
@@ -623,9 +597,7 @@ class RelationCanonicalizer:
         try:
             expression = ast.parse(text, mode="eval").body
         except SyntaxError as exc:
-            raise VerifiableNavigationError(
-                f"invalid callable expression: {value!r}"
-            ) from exc
+            raise VerifiableNavigationError(f"invalid callable expression: {value!r}") from exc
         if isinstance(expression, ast.Call):
             expression = expression.func
         dotted = _dotted_name(expression)
@@ -664,9 +636,7 @@ class RelationCanonicalizer:
             path=Path(relation.path).as_posix(),
             symbol=self.symbol(relation.symbol),
             target=target,
-            path_symbols=tuple(
-                self.symbol(item) for item in relation.path_symbols
-            ),
+            path_symbols=tuple(self.symbol(item) for item in relation.path_symbols),
             start_line=relation.start_line,
             end_line=relation.end_line,
             required_lines=relation.required_lines,
@@ -689,9 +659,7 @@ def load_verifiable_task_set(
     if not isinstance(expected_sources, Mapping) or not expected_sources:
         raise VerifiableNavigationError("task set requires pinned sources")
     pinned_paths = {str(raw_path) for raw_path in expected_sources}
-    discovered_paths = {
-        path.relative_to(root).as_posix() for path in root.rglob("*.py")
-    }
+    discovered_paths = {path.relative_to(root).as_posix() for path in root.rglob("*.py")}
     if pinned_paths != discovered_paths:
         raise VerifiableNavigationError(
             "pinned sources must exactly match the Python fixture snapshot"
@@ -701,16 +669,12 @@ def load_verifiable_task_set(
         source.relative_to(root)
         actual = hashlib.sha256(source.read_bytes()).hexdigest()
         if actual != str(expected_hash):
-            raise VerifiableNavigationError(
-                f"source hash mismatch for {raw_path}"
-            )
+            raise VerifiableNavigationError(f"source hash mismatch for {raw_path}")
     raw_tasks = payload.get("tasks")
     if not isinstance(raw_tasks, list) or not raw_tasks:
         raise VerifiableNavigationError("task set requires tasks")
     tasks = tuple(
-        VerifiableTask.from_mapping(item)
-        for item in raw_tasks
-        if isinstance(item, Mapping)
+        VerifiableTask.from_mapping(item) for item in raw_tasks if isinstance(item, Mapping)
     )
     if len(tasks) != len(raw_tasks):
         raise VerifiableNavigationError("every task must be an object")
@@ -720,9 +684,7 @@ def load_verifiable_task_set(
     RelationCanonicalizer(oracle)
     for task in tasks:
         if not oracle.expected(task):
-            raise VerifiableNavigationError(
-                f"task {task.task_id} has no exact expected relations"
-            )
+            raise VerifiableNavigationError(f"task {task.task_id} has no exact expected relations")
     return tasks
 
 
@@ -734,9 +696,7 @@ def score_verifiable_claims(
     observed_lines: Mapping[str, set[int]],
 ) -> VerifiableScore:
     canonicalizer = RelationCanonicalizer(oracle)
-    expected = tuple(
-        canonicalizer.relation(item) for item in oracle.expected(task)
-    )
+    expected = tuple(canonicalizer.relation(item) for item in oracle.expected(task))
     expected_by_key = {_relation_key(item): item for item in expected}
     matched: list[StaticRelation] = []
     unsupported: list[dict[str, Any]] = []
@@ -803,12 +763,7 @@ def score_verifiable_claims(
     relation_correct = set(seen) == set(expected_by_key) and not unsupported
     evidence_complete = relation_correct and not incomplete
     evidence_precise = evidence_complete and not imprecise
-    exact_correct = (
-        relation_correct
-        and evidence_complete
-        and evidence_precise
-        and not errors
-    )
+    exact_correct = relation_correct and evidence_complete and evidence_precise and not errors
     return VerifiableScore(
         relation_correct=relation_correct,
         evidence_complete=evidence_complete,
@@ -864,10 +819,7 @@ def classify_task_difficulty(
 
     decoys = 0
     for symbol in oracle.definitions:
-        if (
-            symbol.rsplit(".", 1)[-1] in terminals
-            and symbol not in answer_symbols
-        ):
+        if symbol.rsplit(".", 1)[-1] in terminals and symbol not in answer_symbols:
             decoys += 1
     for call in oracle.calls:
         if (
@@ -908,32 +860,22 @@ def build_task_admission_manifest(
 
     canonicalizer = RelationCanonicalizer(oracle)
     source_hashes = {
-        path.relative_to(oracle.root).as_posix(): hashlib.sha256(
-            path.read_bytes()
-        ).hexdigest()
+        path.relative_to(oracle.root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(oracle.root.rglob("*.py"))
     }
     task_records: list[dict[str, Any]] = []
     for task in tasks:
-        expected = tuple(
-            canonicalizer.relation(item) for item in oracle.expected(task)
-        )
+        expected = tuple(canonicalizer.relation(item) for item in oracle.expected(task))
         if not expected:
-            raise VerifiableNavigationError(
-                f"task {task.task_id} has no exact expected relations"
-            )
+            raise VerifiableNavigationError(f"task {task.task_id} has no exact expected relations")
         task_records.append(
             {
                 "task_id": task.task_id,
                 "kind": task.kind,
                 "oracle_resolvable": True,
                 "canonical_symbols_unique": True,
-                "difficulty": classify_task_difficulty(
-                    task, oracle=oracle
-                ).as_dict(),
-                "expected_relations": [
-                    _static_relation_dict(item) for item in expected
-                ],
+                "difficulty": classify_task_difficulty(task, oracle=oracle).as_dict(),
+                "expected_relations": [_static_relation_dict(item) for item in expected],
             }
         )
     manifest: dict[str, Any] = {
@@ -959,9 +901,7 @@ def build_task_admission_manifest(
         "source_hashes": source_hashes,
         "tasks": task_records,
     }
-    canonical = json.dumps(
-        manifest, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
     manifest["admission_manifest_sha256"] = hashlib.sha256(canonical).hexdigest()
     return manifest
 

@@ -48,8 +48,7 @@ def run_relation_schema_probe(
 ) -> dict[str, Any]:
     root = Path(fixture_root).resolve(strict=True)
     tasks = {
-        task.task_id: task
-        for task in load_verifiable_task_set(task_set_path, source_root=root)
+        task.task_id: task for task in load_verifiable_task_set(task_set_path, source_root=root)
     }
     oracle = PythonRelationOracle(root)
     source_text = {
@@ -104,8 +103,7 @@ def replay_relation_schema_probe(
 
     root = Path(fixture_root).resolve(strict=True)
     tasks = {
-        task.task_id: task
-        for task in load_verifiable_task_set(task_set_path, source_root=root)
+        task.task_id: task for task in load_verifiable_task_set(task_set_path, source_root=root)
     }
     oracle = PythonRelationOracle(root)
     observed_lines = {
@@ -154,8 +152,7 @@ def _probe_messages(
     rendered_sources = []
     for path, text in source_text.items():
         numbered = "\n".join(
-            f"{index}: {line}"
-            for index, line in enumerate(text.splitlines(), start=1)
+            f"{index}: {line}" for index, line in enumerate(text.splitlines(), start=1)
         )
         rendered_sources.append(f"FILE {path}\n{numbered}")
     return [
@@ -205,11 +202,7 @@ def _score_probe_response(
     if shape_error:
         errors.append(shape_error)
     elif isinstance(raw_claims, list):
-        claims = [
-            RelationClaim.from_mapping(item)
-            for item in raw_claims
-            if isinstance(item, dict)
-        ]
+        claims = [RelationClaim.from_mapping(item) for item in raw_claims if isinstance(item, dict)]
     score = score_verifiable_claims(
         task,
         claims,
@@ -220,9 +213,8 @@ def _score_probe_response(
     return {
         "task_id": task.task_id,
         "passed": not errors and score.correct,
-        "schema_valid": shape_error is None and not any(
-            error.startswith("invalid JSON") for error in errors
-        ),
+        "schema_valid": shape_error is None
+        and not any(error.startswith("invalid JSON") for error in errors),
         "relation_correct": score.relation_correct,
         "evidence_complete": score.evidence_complete,
         "evidence_precise": score.evidence_precise,

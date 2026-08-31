@@ -37,7 +37,12 @@ def build_evidence_ledger(steps: Sequence[object]) -> EvidenceLedger:
         call = _field(action, "tool_call")
         observation = _field(step, "observation")
         result = _field(observation, "tool_result")
-        if call is None or observation is None or result is None or not bool(_field(result, "success")):
+        if (
+            call is None
+            or observation is None
+            or result is None
+            or not bool(_field(result, "success"))
+        ):
             continue
         tool = str(_field(call, "name") or "")
         arguments = _mapping(_field(call, "arguments"))
@@ -78,9 +83,7 @@ def build_evidence_ledger(steps: Sequence[object]) -> EvidenceLedger:
     for (path, line), text in source_lines.items():
         by_path.setdefault(path, []).append((line, text))
     for path in sorted(by_path):
-        rendered = "\n".join(
-            f"{line}: {text}" for line, text in sorted(by_path[path])
-        )
+        rendered = "\n".join(f"{line}: {text}" for line, text in sorted(by_path[path]))
         sections.append(f"### {path}\n{rendered}")
 
     path_only = sorted(paths - set(by_path))

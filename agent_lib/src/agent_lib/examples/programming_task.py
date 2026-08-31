@@ -22,7 +22,6 @@ from ..programming import (
     ProgrammingTaskStateStore,
     ProgrammingStateTracker,
     ProgrammingToolRuntime,
-    WorkspaceAllocation,
     WorkspaceIsolationManager,
     WorkspacePolicy,
     execute_workspace_command,
@@ -37,7 +36,10 @@ from ..tools import LocalTool, LocalToolRuntime
 DEFAULT_PROGRAMMING_PLAN = [
     PlanStep(step_id="inspect_file", description="Inspect the target file and confirm the bug."),
     PlanStep(step_id="apply_patch", description="Apply a candidate patch to the target file."),
-    PlanStep(step_id="verify_patch", description="Verify the patch locally and escalate if the check fails."),
+    PlanStep(
+        step_id="verify_patch",
+        description="Verify the patch locally and escalate if the check fails.",
+    ),
     PlanStep(step_id="repair_patch", description="Repair the patch after escalation, if needed."),
     PlanStep(step_id="complete_task", description="Summarize the finished task and stop."),
 ]
@@ -94,7 +96,12 @@ class LLMProgrammingPlanner:
     def _latest_failed_check(self, context: AgentContext) -> bool:
         for step in reversed(context.steps):
             call = step.action.tool_call
-            if call is not None and call.name == "run_check" and step.observation and step.observation.tool_result is not None:
+            if (
+                call is not None
+                and call.name == "run_check"
+                and step.observation
+                and step.observation.tool_result is not None
+            ):
                 return not bool(step.observation.tool_result.success)
         return False
 
@@ -122,7 +129,9 @@ class LLMProgrammingPlanner:
             "Return JSON only with keys 'old', 'new', and optional 'message'."
         )
 
-    def _invoke_json(self, role: str, system_prompt: str, user_prompt: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    def _invoke_json(
+        self, role: str, system_prompt: str, user_prompt: str
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         response = self.engines.invoke(
             role,
             system_prompt=system_prompt,
@@ -132,7 +141,9 @@ class LLMProgrammingPlanner:
             metadata={"task": "programming_demo", "role": role},
         )
         payload = extract_json_object(response.message.content or "")
-        meta = action_from_payload({"kind": "message", "message": ""}, response=response, engine_role=role).meta
+        meta = action_from_payload(
+            {"kind": "message", "message": ""}, response=response, engine_role=role
+        ).meta
         return payload, meta
 
     def plan(self, context: AgentContext) -> AgentAction:
@@ -144,24 +155,40 @@ class LLMProgrammingPlanner:
                 payload, meta = self._invoke_json(
                     "critic",
                     "Return only JSON patch instructions for the repaired code.",
-                    self._patch_prompt(context, file_contents=file_text or "(file not read yet)", role="critic"),
+                    self._patch_prompt(
+                        context, file_contents=file_text or "(file not read yet)", role="critic"
+                    ),
                 )
                 return AgentAction.tool(
                     "replace_text",
-                    {"path": self.path, "old": str(payload["old"]), "new": str(payload["new"] )},
+                    {"path": self.path, "old": str(payload["old"]), "new": str(payload["new"])},
                     message=str(payload.get("message") or "Apply the mentor repair."),
-                    meta={**meta, "phase": "critic_repair", "engine_role": "critic", "plan_step_id": "repair_patch"},
+                    meta={
+                        **meta,
+                        "phase": "critic_repair",
+                        "engine_role": "critic",
+                        "plan_step_id": "repair_patch",
+                    },
                 )
             if not self._has_tool(context, "run_check", phase="critic_verify"):
                 return AgentAction.tool(
                     "run_check",
                     {"path": self.path, "must_contain": "return a + b"},
                     message="Verify the repaired patch.",
-                    meta={"phase": "critic_verify", "engine_role": "critic", "plan_step_id": "repair_patch"},
+                    meta={
+                        "phase": "critic_verify",
+                        "engine_role": "critic",
+                        "plan_step_id": "repair_patch",
+                    },
                 )
             return AgentAction.final(
                 "Updated main.py so add(a, b) now returns a + b after escalating to the mentor.",
-                meta={"phase": "finish", "engine_role": "critic", "handoff": "planner", "plan_step_id": "complete_task"},
+                meta={
+                    "phase": "finish",
+                    "engine_role": "critic",
+                    "handoff": "planner",
+                    "plan_step_id": "complete_task",
+                },
             )
 
         if not self._has_tool(context, "read_file"):
@@ -172,27 +199,48 @@ class LLMProgrammingPlanner:
             )
             if str(payload.get("kind") or "").strip().lower() == "final":
                 return AgentAction.final(
-                    str(payload.get("final_output") or payload.get("message") or "Completed programming task."),
-                    meta={**meta, "phase": "finish", "engine_role": "planner", "plan_step_id": "complete_task"},
+                    str(
+                        payload.get("final_output")
+                        or payload.get("message")
+                        or "Completed programming task."
+                    ),
+                    meta={
+                        **meta,
+                        "phase": "finish",
+                        "engine_role": "planner",
+                        "plan_step_id": "complete_task",
+                    },
                 )
             return AgentAction.tool(
                 str(payload.get("tool_name") or payload.get("name") or "read_file"),
                 dict(payload.get("arguments") or {"path": self.path}),
                 message=str(payload.get("message") or "Read the file."),
-                meta={**meta, "phase": "inspect", "engine_role": "planner", "plan_step_id": "inspect_file"},
+                meta={
+                    **meta,
+                    "phase": "inspect",
+                    "engine_role": "planner",
+                    "plan_step_id": "inspect_file",
+                },
             )
 
         if not self._has_tool(context, "replace_text", phase="edit"):
             payload, meta = self._invoke_json(
                 "executor",
                 "Return only JSON patch instructions.",
-                self._patch_prompt(context, file_contents=file_text or "(file not read yet)", role="executor"),
+                self._patch_prompt(
+                    context, file_contents=file_text or "(file not read yet)", role="executor"
+                ),
             )
             return AgentAction.tool(
                 "replace_text",
                 {"path": self.path, "old": str(payload["old"]), "new": str(payload["new"])},
                 message=str(payload.get("message") or "Apply the worker patch."),
-                meta={**meta, "phase": "edit", "engine_role": "executor", "plan_step_id": "apply_patch"},
+                meta={
+                    **meta,
+                    "phase": "edit",
+                    "engine_role": "executor",
+                    "plan_step_id": "apply_patch",
+                },
             )
 
         if not self._has_tool(context, "run_check", phase="verify"):
@@ -203,17 +251,22 @@ class LLMProgrammingPlanner:
             )
             return AgentAction.tool(
                 str(payload.get("tool_name") or "run_check"),
-                dict(payload.get("arguments") or {"path": self.path, "must_contain": "return a + b"}),
+                dict(
+                    payload.get("arguments") or {"path": self.path, "must_contain": "return a + b"}
+                ),
                 message=str(payload.get("message") or "Run the local verification."),
-                meta={**meta, "phase": "verify", "engine_role": "planner", "plan_step_id": "verify_patch"},
+                meta={
+                    **meta,
+                    "phase": "verify",
+                    "engine_role": "planner",
+                    "plan_step_id": "verify_patch",
+                },
             )
 
         return AgentAction.final(
             "Updated main.py so add(a, b) now returns a + b.",
             meta={"phase": "finish", "engine_role": "planner", "plan_step_id": "complete_task"},
         )
-
-
 
 
 def load_role_engines_from_llm_engines_config(
@@ -224,22 +277,28 @@ def load_role_engines_from_llm_engines_config(
     """Load named mentor/worker/critic engines from an llm_engines YAML config."""
     names = {
         str(name).strip()
-        for name in [config.role_bindings.planner, config.role_bindings.executor, config.role_bindings.critic]
-        if str(name or '').strip()
+        for name in [
+            config.role_bindings.planner,
+            config.role_bindings.executor,
+            config.role_bindings.critic,
+        ]
+        if str(name or "").strip()
     }
     if not names:
         return {}
     from llm_engines.factory import EngineFactory
 
-    return {name: EngineFactory.from_engine_name(name, engine_config_path) for name in sorted(names)}
+    return {
+        name: EngineFactory.from_engine_name(name, engine_config_path) for name in sorted(names)
+    }
 
 
 def write_programming_config_file(
     path: str | Path,
     *,
-    session_id: str = 'programming_demo',
-    task_path: str = 'main.py',
-    memory_backend: str = 'engram',
+    session_id: str = "programming_demo",
+    task_path: str = "main.py",
+    memory_backend: str = "engram",
     mentor: str | None = None,
     worker: str | None = None,
     critic: str | None = None,
@@ -266,7 +325,9 @@ def run_programming_demo_from_file(
     config = load_programming_runtime_config(config_path)
     registry = dict(engines_by_name or {})
     if not registry and engine_config_path is not None:
-        registry = load_role_engines_from_llm_engines_config(config, engine_config_path=engine_config_path)
+        registry = load_role_engines_from_llm_engines_config(
+            config, engine_config_path=engine_config_path
+        )
     return run_programming_demo_from_config(
         config,
         root=root,
@@ -283,14 +344,23 @@ def make_programming_tool_runtime(
     owner_id: str = "worker",
     isolation_manager: WorkspaceIsolationManager | None = None,
 ) -> ProgrammingToolRuntime:
-    policy = workspace_policy or WorkspacePolicy(root=str(workspace.root), writable_paths=["main.py"], runnable_commands=[], approval_mode="auto")
+    policy = workspace_policy or WorkspacePolicy(
+        root=str(workspace.root),
+        writable_paths=["main.py"],
+        runnable_commands=[],
+        approval_mode="auto",
+    )
     base_runtime = LocalToolRuntime(
         [
             LocalTool(
                 name="read_file",
                 description="Read the current contents of a source file.",
                 handler=workspace.read_text,
-                input_schema={"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
+                input_schema={
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                },
             ),
             LocalTool(
                 name="replace_text",
@@ -327,7 +397,9 @@ def make_programming_tool_runtime(
             LocalTool(
                 name="run_command",
                 description="Run an allowed verification or inspection command inside the workspace.",
-                handler=lambda command: execute_workspace_command(workspace.root, command, workspace_policy=policy),
+                handler=lambda command: execute_workspace_command(
+                    workspace.root, command, workspace_policy=policy
+                ),
                 input_schema={
                     "type": "object",
                     "properties": {"command": {"type": "string"}},
@@ -336,7 +408,13 @@ def make_programming_tool_runtime(
             ),
         ]
     )
-    return ProgrammingToolRuntime(base_runtime, policy, root=workspace.root, owner_id=owner_id, isolation_manager=isolation_manager)
+    return ProgrammingToolRuntime(
+        base_runtime,
+        policy,
+        root=workspace.root,
+        owner_id=owner_id,
+        isolation_manager=isolation_manager,
+    )
 
 
 def _default_programming_actions(path: str = "main.py") -> Iterable[AgentAction]:
@@ -382,11 +460,20 @@ def _default_critic_actions(path: str = "main.py") -> Iterable[AgentAction]:
             "run_check",
             {"path": path, "must_contain": "return a + b"},
             message="Verify the mentor patch.",
-            meta={"phase": "critic_verify", "engine_role": "critic", "plan_step_id": "repair_patch"},
+            meta={
+                "phase": "critic_verify",
+                "engine_role": "critic",
+                "plan_step_id": "repair_patch",
+            },
         ),
         AgentAction.final(
             "Updated main.py so add(a, b) now returns a + b after escalating to the mentor.",
-            meta={"phase": "finish", "engine_role": "critic", "handoff": "planner", "plan_step_id": "complete_task"},
+            meta={
+                "phase": "finish",
+                "engine_role": "critic",
+                "handoff": "planner",
+                "plan_step_id": "complete_task",
+            },
         ),
     ]
 
@@ -397,9 +484,15 @@ def _plan_status_map(state) -> dict[str, str]:
     return {step.step_id: step.status for step in state.plan}
 
 
-def _build_sequence_actions_for_state(state, *, path: str = "main.py") -> tuple[list[AgentAction], list[AgentAction], str]:
+def _build_sequence_actions_for_state(
+    state, *, path: str = "main.py"
+) -> tuple[list[AgentAction], list[AgentAction], str]:
     if state is None:
-        return list(_default_programming_actions(path)), list(_default_critic_actions(path)), "planner"
+        return (
+            list(_default_programming_actions(path)),
+            list(_default_critic_actions(path)),
+            "planner",
+        )
 
     status = _plan_status_map(state)
     planner_actions: list[AgentAction] = []
@@ -413,7 +506,12 @@ def _build_sequence_actions_for_state(state, *, path: str = "main.py") -> tuple[
                 "read_file",
                 {"path": path},
                 message="Resume by reading the target file.",
-                meta={"phase": "inspect", "engine_role": "executor", "plan_step_id": "inspect_file", "resumed": True},
+                meta={
+                    "phase": "inspect",
+                    "engine_role": "executor",
+                    "plan_step_id": "inspect_file",
+                    "resumed": True,
+                },
             )
         )
 
@@ -423,13 +521,22 @@ def _build_sequence_actions_for_state(state, *, path: str = "main.py") -> tuple[
                 "replace_text",
                 {"path": path, "old": "return a - b", "new": "return a * b"},
                 message="Resume the local patch attempt.",
-                meta={"phase": "edit", "engine_role": "executor", "plan_step_id": "apply_patch", "resumed": True},
+                meta={
+                    "phase": "edit",
+                    "engine_role": "executor",
+                    "plan_step_id": "apply_patch",
+                    "resumed": True,
+                },
             )
         )
 
     verify_status = status.get("verify_patch", "pending")
     repair_status = status.get("repair_patch", "pending")
-    if state.last_verification is not None and not state.last_verification.success and repair_status != "completed":
+    if (
+        state.last_verification is not None
+        and not state.last_verification.success
+        and repair_status != "completed"
+    ):
         controller = "critic"
     elif verify_status != "completed":
         planner_actions.append(
@@ -437,7 +544,12 @@ def _build_sequence_actions_for_state(state, *, path: str = "main.py") -> tuple[
                 "run_check",
                 {"path": path, "must_contain": "return a + b"},
                 message="Resume the local verification.",
-                meta={"phase": "verify", "engine_role": "executor", "plan_step_id": "verify_patch", "resumed": True},
+                meta={
+                    "phase": "verify",
+                    "engine_role": "executor",
+                    "plan_step_id": "verify_patch",
+                    "resumed": True,
+                },
             )
         )
 
@@ -447,48 +559,84 @@ def _build_sequence_actions_for_state(state, *, path: str = "main.py") -> tuple[
                 [
                     AgentAction.message_only(
                         "Resuming in mentor mode after a failed verification.",
-                        meta={"phase": "resume", "engine_role": "critic", "plan_step_id": "repair_patch", "resumed": True},
+                        meta={
+                            "phase": "resume",
+                            "engine_role": "critic",
+                            "plan_step_id": "repair_patch",
+                            "resumed": True,
+                        },
                     ),
                     AgentAction.tool(
                         "replace_text",
                         {"path": path, "old": "return a * b", "new": "return a + b"},
                         message="Apply the mentor repair after resume.",
-                        meta={"phase": "repair", "engine_role": "critic", "plan_step_id": "repair_patch", "resumed": True},
+                        meta={
+                            "phase": "repair",
+                            "engine_role": "critic",
+                            "plan_step_id": "repair_patch",
+                            "resumed": True,
+                        },
                     ),
                     AgentAction.tool(
                         "run_check",
                         {"path": path, "must_contain": "return a + b"},
                         message="Verify the mentor repair after resume.",
-                        meta={"phase": "critic_verify", "engine_role": "critic", "plan_step_id": "repair_patch", "resumed": True},
+                        meta={
+                            "phase": "critic_verify",
+                            "engine_role": "critic",
+                            "plan_step_id": "repair_patch",
+                            "resumed": True,
+                        },
                     ),
                 ]
             )
         if status.get("complete_task", "pending") != "completed":
             critic_actions.append(
                 AgentAction.final(
-                    state.final_output or "Updated main.py so add(a, b) now returns a + b after resuming the mentor flow.",
-                    meta={"phase": "finish", "engine_role": "critic", "handoff": "planner", "plan_step_id": "complete_task", "resumed": True},
+                    state.final_output
+                    or "Updated main.py so add(a, b) now returns a + b after resuming the mentor flow.",
+                    meta={
+                        "phase": "finish",
+                        "engine_role": "critic",
+                        "handoff": "planner",
+                        "plan_step_id": "complete_task",
+                        "resumed": True,
+                    },
                 )
             )
     elif status.get("complete_task", "pending") != "completed" and repair_status == "completed":
         critic_actions.append(
             AgentAction.final(
-                state.final_output or "Updated main.py so add(a, b) now returns a + b after resuming.",
-                meta={"phase": "finish", "engine_role": "critic", "handoff": "planner", "plan_step_id": "complete_task", "resumed": True},
+                state.final_output
+                or "Updated main.py so add(a, b) now returns a + b after resuming.",
+                meta={
+                    "phase": "finish",
+                    "engine_role": "critic",
+                    "handoff": "planner",
+                    "plan_step_id": "complete_task",
+                    "resumed": True,
+                },
             )
         )
 
-    if not planner_actions and controller == "planner" and status.get("complete_task", "pending") != "completed":
+    if (
+        not planner_actions
+        and controller == "planner"
+        and status.get("complete_task", "pending") != "completed"
+    ):
         planner_actions.append(
             AgentAction.final(
                 state.final_output or "Programming task ready to finalize.",
-                meta={"phase": "finish", "engine_role": "planner", "plan_step_id": "complete_task", "resumed": True},
+                meta={
+                    "phase": "finish",
+                    "engine_role": "planner",
+                    "plan_step_id": "complete_task",
+                    "resumed": True,
+                },
             )
         )
 
     return planner_actions, critic_actions or list(_default_critic_actions(path)), controller
-
-
 
 
 def build_minimum_reliable_programming_config(
@@ -538,6 +686,7 @@ def build_minimum_reliable_programming_config(
         seed_content=config.seed_content,
     )
 
+
 def build_default_programming_config(
     *,
     session_id: str = "programming_demo",
@@ -552,7 +701,10 @@ def build_default_programming_config(
         path=path,
         session_id=session_id,
         plan=list(DEFAULT_PROGRAMMING_PLAN),
-        verification_commands=[f"run_check:{path}:return a + b", f"run_command:{sys.executable} -m py_compile {path}"],
+        verification_commands=[
+            f"run_check:{path}:return a + b",
+            f"run_command:{sys.executable} -m py_compile {path}",
+        ],
     )
     task = ProgrammingTask(
         task_id=task.task_id,
@@ -578,7 +730,9 @@ def build_default_programming_config(
         project_id="agent_programming_demo",
         session_id=session_id,
         role_bindings=role_bindings or ProgrammingRoleBindings(),
-        context_budget=ContextBudgetConfig(max_visible_steps=4, max_tool_output_chars=120, summary_max_chars=500),
+        context_budget=ContextBudgetConfig(
+            max_visible_steps=4, max_tool_output_chars=120, summary_max_chars=500
+        ),
         failure_policy=FailurePolicy(),
         memory_subdir=".agent_memory",
         state_subdir=".agent_state",
@@ -626,7 +780,9 @@ def make_programming_runtime_from_config(
     state_root.mkdir(parents=True, exist_ok=True)
     worker_owner = str(config.role_bindings.executor or "worker").strip() or "worker"
     isolation_manager = WorkspaceIsolationManager(state_root)
-    allocation = isolation_manager.prepare_workspace(workspace.root, worker_owner, config.task.workspace)
+    allocation = isolation_manager.prepare_workspace(
+        workspace.root, worker_owner, config.task.workspace
+    )
     effective_workspace = FileWorkspace(Path(allocation.root))
     adapter = create_memory_adapter(
         config.memory_backend,
@@ -652,12 +808,24 @@ def make_programming_runtime_from_config(
         ),
         plan=list(base_task.plan),
         verification_commands=list(base_task.verification_commands),
-        metadata={**dict(base_task.metadata), "path": base_task.metadata.get("path", config.default_target_path), "workspace_allocation": {"owner_id": allocation.owner_id, "root": allocation.root, "source": allocation.source, "branch_name": allocation.branch_name, "isolation_mode": allocation.isolation_mode}},
+        metadata={
+            **dict(base_task.metadata),
+            "path": base_task.metadata.get("path", config.default_target_path),
+            "workspace_allocation": {
+                "owner_id": allocation.owner_id,
+                "root": allocation.root,
+                "source": allocation.source,
+                "branch_name": allocation.branch_name,
+                "isolation_mode": allocation.isolation_mode,
+            },
+        },
     )
     state_store = ProgrammingTaskStateStore(state_root)
     existing_state = state_store.load(programming_task.task_id)
     failure_policy = config.failure_policy
-    state_tracker = ProgrammingStateTracker(state_store, programming_task, failure_policy=failure_policy)
+    state_tracker = ProgrammingStateTracker(
+        state_store, programming_task, failure_policy=failure_policy
+    )
     failure_controller = ProgrammingFailureController(state_tracker, failure_policy=failure_policy)
 
     if planner_engine is not None:
@@ -674,7 +842,9 @@ def make_programming_runtime_from_config(
             critic=config.role_bindings.critic or config.role_bindings.planner or "mentor",
         )
     else:
-        planner_actions, critic_actions, resume_controller = _build_sequence_actions_for_state(existing_state, path=config.default_target_path)
+        planner_actions, critic_actions, resume_controller = _build_sequence_actions_for_state(
+            existing_state, path=config.default_target_path
+        )
         planner = SequencePlanner(planner_actions)
         critic = SequencePlanner(critic_actions)
         roles = EngineRoles(planner="worker", executor="worker", critic="mentor")
@@ -691,7 +861,12 @@ def make_programming_runtime_from_config(
     runtime = AgentRuntime(
         planner=planner,
         critic=critic,
-        tool_runtime=make_programming_tool_runtime(effective_workspace, programming_task.workspace, owner_id=worker_owner, isolation_manager=isolation_manager),
+        tool_runtime=make_programming_tool_runtime(
+            effective_workspace,
+            programming_task.workspace,
+            owner_id=worker_owner,
+            isolation_manager=isolation_manager,
+        ),
         memory=adapter,
         engine_roles=roles,
         lifecycle_hooks=[state_tracker, failure_controller],
@@ -723,7 +898,9 @@ def make_programming_demo_runtime(
     critic_engine=None,
     config: ProgrammingRuntimeConfig | None = None,
 ) -> AgentRuntime:
-    config_obj = config or build_default_programming_config(session_id=session_id, memory_backend=memory_backend)
+    config_obj = config or build_default_programming_config(
+        session_id=session_id, memory_backend=memory_backend
+    )
     config_obj = ProgrammingRuntimeConfig(
         task=config_obj.task,
         memory_backend=memory_backend or config_obj.memory_backend,
@@ -732,8 +909,12 @@ def make_programming_demo_runtime(
         role_bindings=config_obj.role_bindings,
         context_budget=config_obj.context_budget,
         failure_policy=config_obj.failure_policy,
-        memory_subdir=(Path(memory_base_dir).name if memory_base_dir is not None else config_obj.memory_subdir),
-        state_subdir=(Path(state_base_dir).name if state_base_dir is not None else config_obj.state_subdir),
+        memory_subdir=(
+            Path(memory_base_dir).name if memory_base_dir is not None else config_obj.memory_subdir
+        ),
+        state_subdir=(
+            Path(state_base_dir).name if state_base_dir is not None else config_obj.state_subdir
+        ),
         default_target_path=config_obj.default_target_path,
         seed_content=config_obj.seed_content,
     )
@@ -777,7 +958,11 @@ def run_programming_demo_from_config(
     programming_task = getattr(runtime, "programming_task")
     state_tracker = getattr(runtime, "programming_state_tracker")
     task = programming_task.to_agent_task()
-    resume_controller = str(programming_task.metadata.get("resume_controller") or task.context.get("resume_controller") or "").strip()
+    resume_controller = str(
+        programming_task.metadata.get("resume_controller")
+        or task.context.get("resume_controller")
+        or ""
+    ).strip()
     if resume_controller:
         task.context["resume_controller"] = resume_controller
     task.context.update(state_tracker.attach_to_context(task.context))
@@ -813,17 +998,21 @@ def run_programming_demo(
         engines_by_name = None
     else:
         engines_by_name = None
-    return run_programming_demo_from_config(
-        config,
-        root=root,
-        memory=None,
-        engines_by_name=engines_by_name,
-        max_steps=max_steps,
-    ) if not any(value is not None for value in runtime_kwargs.values()) else _run_programming_demo_with_direct_engines(
-        config,
-        root=root,
-        max_steps=max_steps,
-        **runtime_kwargs,
+    return (
+        run_programming_demo_from_config(
+            config,
+            root=root,
+            memory=None,
+            engines_by_name=engines_by_name,
+            max_steps=max_steps,
+        )
+        if not any(value is not None for value in runtime_kwargs.values())
+        else _run_programming_demo_with_direct_engines(
+            config,
+            root=root,
+            max_steps=max_steps,
+            **runtime_kwargs,
+        )
     )
 
 
@@ -858,7 +1047,11 @@ def _run_programming_demo_with_direct_engines(
     programming_task = getattr(runtime, "programming_task")
     state_tracker = getattr(runtime, "programming_state_tracker")
     task = programming_task.to_agent_task()
-    resume_controller = str(programming_task.metadata.get("resume_controller") or task.context.get("resume_controller") or "").strip()
+    resume_controller = str(
+        programming_task.metadata.get("resume_controller")
+        or task.context.get("resume_controller")
+        or ""
+    ).strip()
     if resume_controller:
         task.context["resume_controller"] = resume_controller
     task.context.update(state_tracker.attach_to_context(task.context))
@@ -883,15 +1076,19 @@ def resume_programming_demo(
         session_id="programming_demo",
         memory_backend=memory_backend,
     )
-    return _run_programming_demo_with_direct_engines(
-        config,
-        root=root,
-        planner_engine=planner_engine,
-        executor_engine=executor_engine,
-        critic_engine=critic_engine,
-        max_steps=max_steps,
-    ) if any(value is not None for value in (planner_engine, executor_engine, critic_engine)) else run_programming_demo_from_config(
-        config,
-        root=root,
-        max_steps=max_steps,
+    return (
+        _run_programming_demo_with_direct_engines(
+            config,
+            root=root,
+            planner_engine=planner_engine,
+            executor_engine=executor_engine,
+            critic_engine=critic_engine,
+            max_steps=max_steps,
+        )
+        if any(value is not None for value in (planner_engine, executor_engine, critic_engine))
+        else run_programming_demo_from_config(
+            config,
+            root=root,
+            max_steps=max_steps,
+        )
     )

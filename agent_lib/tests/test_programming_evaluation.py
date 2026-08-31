@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_lib.examples.programming_evaluation import build_representative_programming_cases, run_programming_benchmark
+from agent_lib.examples.programming_evaluation import (
+    build_representative_programming_cases,
+    run_programming_benchmark,
+)
 from agent_lib.examples.programming_task import build_minimum_reliable_programming_config
 
 
@@ -43,4 +46,12 @@ def test_programming_benchmark_report_includes_summary_metrics(tmp_path: Path) -
     assert payload["summary"]["total_verifications"] >= len(payload["results"])
     assert "comparison" in payload
     first = payload["comparison"][0]
-    assert {"case_name", "steps", "retries", "escalations", "verification_outcome", "patch_status", "elapsed_seconds"}.issubset(first)
+    assert {
+        "case_name",
+        "steps",
+        "retries",
+        "escalations",
+        "verification_outcome",
+        "patch_status",
+        "elapsed_seconds",
+    }.issubset(first)

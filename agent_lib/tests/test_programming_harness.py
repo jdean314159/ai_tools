@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-import subprocess
 import sys
 
 import agent_lib.programming as programming_module
@@ -19,30 +17,37 @@ from agent_lib import (
     WorkspacePolicy,
 )
 from agent_lib.programming import (
-    ProgrammingToolRuntime,
     WorkspaceIsolationManager,
     execute_workspace_command,
 )
-from agent_lib.examples import FileWorkspace, make_programming_tool_runtime, resume_programming_demo, run_programming_demo
-
-
+from agent_lib.examples import (
+    FileWorkspace,
+    make_programming_tool_runtime,
+    resume_programming_demo,
+    run_programming_demo,
+)
 
 
 def test_execute_workspace_command_refuses_without_policy(tmp_path: Path) -> None:
     marker = tmp_path / "ran.txt"
-    command = f"{sys.executable} -c 'from pathlib import Path; Path(\"{marker}\").write_text(\"ran\", encoding=\"utf-8\")'"
+    command = f'{sys.executable} -c \'from pathlib import Path; Path("{marker}").write_text("ran", encoding="utf-8")\''
 
     result = execute_workspace_command(tmp_path, command)
 
     assert result.success is False
     assert result.meta.get("error") == "no_workspace_policy"
-    assert str(result.output) == "run_command requires an explicit WorkspacePolicy; refusing to execute without one."
+    assert (
+        str(result.output)
+        == "run_command requires an explicit WorkspacePolicy; refusing to execute without one."
+    )
     assert not marker.exists()
 
 
-def test_execute_workspace_command_scrubs_environment_by_default(tmp_path: Path, monkeypatch) -> None:
+def test_execute_workspace_command_scrubs_environment_by_default(
+    tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setenv("AGENT_LIB_SECRET", "super-secret")
-    command = f"{sys.executable} -c 'import os; print(os.getenv(\"AGENT_LIB_SECRET\", \"missing\"))'"
+    command = f'{sys.executable} -c \'import os; print(os.getenv("AGENT_LIB_SECRET", "missing"))\''
     policy = WorkspacePolicy(root=str(tmp_path), runnable_commands=[command])
 
     result = execute_workspace_command(tmp_path, command, workspace_policy=policy)
@@ -53,9 +58,11 @@ def test_execute_workspace_command_scrubs_environment_by_default(tmp_path: Path,
     assert result.meta.get("environment_inherited") is False
 
 
-def test_execute_workspace_command_allows_selected_environment_keys(tmp_path: Path, monkeypatch) -> None:
+def test_execute_workspace_command_allows_selected_environment_keys(
+    tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setenv("AGENT_LIB_SECRET", "super-secret")
-    command = f"{sys.executable} -c 'import os; print(os.getenv(\"AGENT_LIB_SECRET\", \"missing\"))'"
+    command = f'{sys.executable} -c \'import os; print(os.getenv("AGENT_LIB_SECRET", "missing"))\''
     policy = WorkspacePolicy(
         root=str(tmp_path),
         runnable_commands=[command],
@@ -116,7 +123,9 @@ class _FakePopen:
         return ("sandbox-ok\n", "")
 
 
-def test_execute_workspace_command_uses_docker_backend_when_configured(tmp_path: Path, monkeypatch) -> None:
+def test_execute_workspace_command_uses_docker_backend_when_configured(
+    tmp_path: Path, monkeypatch
+) -> None:
     command = "python -c 'print(123)'"
     policy = WorkspacePolicy(
         root=str(tmp_path),
@@ -125,7 +134,11 @@ def test_execute_workspace_command_uses_docker_backend_when_configured(tmp_path:
         command_isolation_image="python:3.12-slim",
     )
 
-    monkeypatch.setattr(programming_module.shutil, "which", lambda name: "/usr/bin/docker" if name == "docker" else None)
+    monkeypatch.setattr(
+        programming_module.shutil,
+        "which",
+        lambda name: "/usr/bin/docker" if name == "docker" else None,
+    )
     monkeypatch.setattr(programming_module.subprocess, "Popen", _FakePopen)
 
     result = execute_workspace_command(tmp_path, command, workspace_policy=policy)
@@ -141,7 +154,9 @@ def test_execute_workspace_command_uses_docker_backend_when_configured(tmp_path:
     assert result.meta.get("sandbox_command") == argv
 
 
-def test_execute_workspace_command_reports_unavailable_explicit_sandbox(tmp_path: Path, monkeypatch) -> None:
+def test_execute_workspace_command_reports_unavailable_explicit_sandbox(
+    tmp_path: Path, monkeypatch
+) -> None:
     command = "python -c 'print(123)'"
     policy = WorkspacePolicy(
         root=str(tmp_path),
@@ -159,7 +174,9 @@ def test_execute_workspace_command_reports_unavailable_explicit_sandbox(tmp_path
     assert result.meta.get("sandbox_requested_backend") == "docker"
 
 
-def test_execute_workspace_command_can_fallback_to_host_when_requested(tmp_path: Path, monkeypatch) -> None:
+def test_execute_workspace_command_can_fallback_to_host_when_requested(
+    tmp_path: Path, monkeypatch
+) -> None:
     command = f"{sys.executable} -c 'print(\"host-fallback\")'"
     policy = WorkspacePolicy(
         root=str(tmp_path),
@@ -218,11 +235,15 @@ def test_runtime_interrupts_repeated_identical_tool_calls() -> None:
     )
     runtime = AgentRuntime(
         planner=planner,
-        tool_runtime=LocalToolRuntime([LocalTool(name="noop", description="Return ok.", handler=lambda x: f"ok:{x}")]),
+        tool_runtime=LocalToolRuntime(
+            [LocalTool(name="noop", description="Return ok.", handler=lambda x: f"ok:{x}")]
+        ),
         max_repeated_tool_calls=3,
     )
 
-    run = runtime.run(AgentTask(task_id="repeat", goal="Repeat the same tool.", session_id="repeat"), max_steps=5)
+    run = runtime.run(
+        AgentTask(task_id="repeat", goal="Repeat the same tool.", session_id="repeat"), max_steps=5
+    )
 
     assert run.status == "stopped"
     assert run.stop_reason == "planner_stop"
@@ -230,10 +251,13 @@ def test_runtime_interrupts_repeated_identical_tool_calls() -> None:
     assert len(run.steps) == 2
 
 
-
-def test_programming_context_budget_compacts_history_and_persists_large_output(tmp_path: Path) -> None:
+def test_programming_context_budget_compacts_history_and_persists_large_output(
+    tmp_path: Path,
+) -> None:
     large_seed = "def add(a, b):\n    return a - b\n\n" + ("# filler line\n" * 80)
-    run, root = run_programming_demo(root=tmp_path, memory_backend="engram", seed_content=large_seed)
+    run, root = run_programming_demo(
+        root=tmp_path, memory_backend="engram", seed_content=large_seed
+    )
 
     trace = run.steps[-1].trace
     assert trace is not None
@@ -248,12 +272,18 @@ def test_programming_context_budget_compacts_history_and_persists_large_output(t
 
 
 def test_programming_failure_policy_stops_on_empty_read_result(tmp_path: Path) -> None:
-    run, root = run_programming_demo(root=tmp_path, memory_backend="engram", seed_content="", max_steps=6)
+    run, root = run_programming_demo(
+        root=tmp_path, memory_backend="engram", seed_content="", max_steps=6
+    )
 
     assert run.status == "stopped"
     assert run.final_output == "Stopped after empty result from read_file."
-    payload = json.loads((root / ".agent_state" / "fix_add_function.json").read_text(encoding="utf-8"))
-    assert payload["last_policy_decision"] in {None, ""} or isinstance(payload["last_policy_decision"], str)
+    payload = json.loads(
+        (root / ".agent_state" / "fix_add_function.json").read_text(encoding="utf-8")
+    )
+    assert payload["last_policy_decision"] in {None, ""} or isinstance(
+        payload["last_policy_decision"], str
+    )
 
 
 def test_programming_demo_can_resume_from_persisted_state(tmp_path: Path) -> None:
@@ -265,7 +295,9 @@ def test_programming_demo_can_resume_from_persisted_state(tmp_path: Path) -> Non
     resumed_run, _ = resume_programming_demo(root=root, memory_backend="engram", max_steps=12)
 
     assert resumed_run.status == "completed"
-    state = json.loads((root / ".agent_state" / "fix_add_function.json").read_text(encoding="utf-8"))
+    state = json.loads(
+        (root / ".agent_state" / "fix_add_function.json").read_text(encoding="utf-8")
+    )
     assert state["status"] == "completed"
     assert state["context_window_index"] >= 1
     assert state["step_count"] >= 1
@@ -285,7 +317,12 @@ def test_programming_tool_runtime_blocks_writes_in_proposal_only_mode(tmp_path: 
         ),
     )
 
-    result = runtime.invoke(ToolCall(name="replace_text", arguments={"path": "main.py", "old": "return a - b", "new": "return a + b"}))
+    result = runtime.invoke(
+        ToolCall(
+            name="replace_text",
+            arguments={"path": "main.py", "old": "return a - b", "new": "return a + b"},
+        )
+    )
 
     assert result.success is True
     assert result.meta.get("approval_required") is True
@@ -293,7 +330,9 @@ def test_programming_tool_runtime_blocks_writes_in_proposal_only_mode(tmp_path: 
     assert "return a - b" in workspace.read_text("main.py")
 
 
-def test_programming_tool_runtime_default_denies_writes_when_allowlist_empty(tmp_path: Path) -> None:
+def test_programming_tool_runtime_default_denies_writes_when_allowlist_empty(
+    tmp_path: Path,
+) -> None:
     workspace = FileWorkspace(tmp_path)
     workspace.write_text("main.py", "def add(a, b):\n    return a - b\n")
     runtime = make_programming_tool_runtime(
@@ -306,7 +345,12 @@ def test_programming_tool_runtime_default_denies_writes_when_allowlist_empty(tmp
         ),
     )
 
-    result = runtime.invoke(ToolCall(name="replace_text", arguments={"path": "main.py", "old": "return a - b", "new": "return a + b"}))
+    result = runtime.invoke(
+        ToolCall(
+            name="replace_text",
+            arguments={"path": "main.py", "old": "return a - b", "new": "return a + b"},
+        )
+    )
 
     assert result.success is False
     assert result.meta.get("error") == "write_denied"
@@ -361,7 +405,13 @@ def test_workspace_isolation_manager_creates_fallback_worktree_copy(tmp_path: Pa
     (workspace_root / "main.py").write_text("def add(a, b):\n    return a - b\n", encoding="utf-8")
     state_root = workspace_root / ".agent_state"
     manager = WorkspaceIsolationManager(state_root)
-    policy = WorkspacePolicy(root=str(workspace_root), writable_paths=["main.py"], runnable_commands=[], approval_mode="auto", isolation_mode="worktree")
+    policy = WorkspacePolicy(
+        root=str(workspace_root),
+        writable_paths=["main.py"],
+        runnable_commands=[],
+        approval_mode="auto",
+        isolation_mode="worktree",
+    )
 
     allocation = manager.prepare_workspace(workspace_root, "worker_a", policy)
 
@@ -376,13 +426,29 @@ def test_programming_tool_runtime_enforces_patch_ownership(tmp_path: Path) -> No
     workspace.write_text("main.py", "def add(a, b):\n    return a - b\n")
     state_root = tmp_path / ".agent_state"
     manager = WorkspaceIsolationManager(state_root)
-    policy = WorkspacePolicy(root=str(tmp_path), writable_paths=["main.py"], runnable_commands=[], approval_mode="auto")
+    policy = WorkspacePolicy(
+        root=str(tmp_path), writable_paths=["main.py"], runnable_commands=[], approval_mode="auto"
+    )
 
-    runtime_a = make_programming_tool_runtime(workspace, policy, owner_id="worker_a", isolation_manager=manager)
-    runtime_b = make_programming_tool_runtime(workspace, policy, owner_id="worker_b", isolation_manager=manager)
+    runtime_a = make_programming_tool_runtime(
+        workspace, policy, owner_id="worker_a", isolation_manager=manager
+    )
+    runtime_b = make_programming_tool_runtime(
+        workspace, policy, owner_id="worker_b", isolation_manager=manager
+    )
 
-    first = runtime_a.invoke(ToolCall(name="replace_text", arguments={"path": "main.py", "old": "return a - b", "new": "return a + b"}))
-    second = runtime_b.invoke(ToolCall(name="replace_text", arguments={"path": "main.py", "old": "return a + b", "new": "return a * b"}))
+    first = runtime_a.invoke(
+        ToolCall(
+            name="replace_text",
+            arguments={"path": "main.py", "old": "return a - b", "new": "return a + b"},
+        )
+    )
+    second = runtime_b.invoke(
+        ToolCall(
+            name="replace_text",
+            arguments={"path": "main.py", "old": "return a + b", "new": "return a * b"},
+        )
+    )
 
     assert first.success is True
     assert second.success is False
@@ -391,7 +457,12 @@ def test_programming_tool_runtime_enforces_patch_ownership(tmp_path: Path) -> No
     release = manager.release_patch_lease("worker_a", ["main.py"])
     assert release.status == "released"
 
-    third = runtime_b.invoke(ToolCall(name="replace_text", arguments={"path": "main.py", "old": "return a + b", "new": "return a * b"}))
+    third = runtime_b.invoke(
+        ToolCall(
+            name="replace_text",
+            arguments={"path": "main.py", "old": "return a + b", "new": "return a * b"},
+        )
+    )
     assert third.success is True
 
 
@@ -405,11 +476,17 @@ def test_programming_tool_runtime_exposes_owned_idempotent_lease_release(tmp_pat
         allowed_tools=["replace_text", "release_patch_lease"],
         approval_mode="auto",
     )
-    runtime_a = make_programming_tool_runtime(workspace, policy, owner_id="worker_a", isolation_manager=manager)
-    runtime_b = make_programming_tool_runtime(workspace, policy, owner_id="worker_b", isolation_manager=manager)
+    runtime_a = make_programming_tool_runtime(
+        workspace, policy, owner_id="worker_a", isolation_manager=manager
+    )
+    runtime_b = make_programming_tool_runtime(
+        workspace, policy, owner_id="worker_b", isolation_manager=manager
+    )
 
     assert "release_patch_lease" in {tool.name for tool in runtime_a.list_tools()}
-    assert runtime_a.invoke(ToolCall("replace_text", {"path": "main.py", "old": "before", "new": "after"})).success
+    assert runtime_a.invoke(
+        ToolCall("replace_text", {"path": "main.py", "old": "before", "new": "after"})
+    ).success
     non_holder = runtime_b.invoke(ToolCall("release_patch_lease", {"path": "main.py"}))
     assert non_holder.success and non_holder.output["released"] is False
     assert manager.patch_lease("main.py")["status"] == "active"

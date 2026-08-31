@@ -20,7 +20,19 @@ try:  # The manager's multi-process state is supported on POSIX workstations.
 except ImportError:  # pragma: no cover - exercised only on unsupported platforms.
     fcntl = None  # type: ignore[assignment]
 
-from .contracts import AgentContext, AgentObservation, AgentRun, AgentRunLifecycleHook, AgentStep, AgentTask, EngineRoles, ToolCall, ToolResult, ToolSpec, ToolRuntime
+from .contracts import (
+    AgentContext,
+    AgentObservation,
+    AgentRun,
+    AgentRunLifecycleHook,
+    AgentStep,
+    AgentTask,
+    EngineRoles,
+    ToolCall,
+    ToolResult,
+    ToolSpec,
+    ToolRuntime,
+)
 
 PlanStatus = Literal["pending", "in_progress", "completed", "failed"]
 ApprovalMode = Literal["auto", "proposal_only", "human_checkpoint"]
@@ -61,7 +73,9 @@ class WorkspacePolicy:
     command_timeout_seconds: float = 30.0
     max_command_output_chars: int = 12000
     inherit_environment: bool = False
-    allowed_environment_keys: list[str] = field(default_factory=lambda: list(DEFAULT_ALLOWED_ENVIRONMENT_KEYS))
+    allowed_environment_keys: list[str] = field(
+        default_factory=lambda: list(DEFAULT_ALLOWED_ENVIRONMENT_KEYS)
+    )
     denied_environment_keys: list[str] = field(default_factory=list)
     command_isolation_backend: SandboxBackend = "host"
     command_isolation_image: str = "python:3.12-slim"
@@ -109,14 +123,24 @@ class ToolFailurePolicy:
 class FailurePolicy:
     max_retries_per_step: int = 2
     stop_on_repeated_tool_calls: int = 2
-    retryable_tools: list[str] = field(default_factory=lambda: ["read_file", "replace_text", "run_check", "run_command"])
+    retryable_tools: list[str] = field(
+        default_factory=lambda: ["read_file", "replace_text", "run_check", "run_command"]
+    )
     stop_on_empty_result: bool = True
     tool_policies: list[ToolFailurePolicy] = field(
         default_factory=lambda: [
-            ToolFailurePolicy("read_file", max_retries=1, failure_behavior="retry", empty_behavior="stop"),
-            ToolFailurePolicy("replace_text", max_retries=1, failure_behavior="retry", empty_behavior="retry"),
-            ToolFailurePolicy("run_check", max_retries=0, failure_behavior="escalate", empty_behavior="escalate"),
-            ToolFailurePolicy("run_command", max_retries=0, failure_behavior="escalate", empty_behavior="escalate"),
+            ToolFailurePolicy(
+                "read_file", max_retries=1, failure_behavior="retry", empty_behavior="stop"
+            ),
+            ToolFailurePolicy(
+                "replace_text", max_retries=1, failure_behavior="retry", empty_behavior="retry"
+            ),
+            ToolFailurePolicy(
+                "run_check", max_retries=0, failure_behavior="escalate", empty_behavior="escalate"
+            ),
+            ToolFailurePolicy(
+                "run_command", max_retries=0, failure_behavior="escalate", empty_behavior="escalate"
+            ),
         ]
     )
 
@@ -125,7 +149,9 @@ class FailurePolicy:
         for policy in self.tool_policies:
             if policy.tool_name == normalized:
                 return policy
-        default_behavior: Literal["retry", "escalate", "stop"] = "retry" if normalized in self.retryable_tools else "stop"
+        default_behavior: Literal["retry", "escalate", "stop"] = (
+            "retry" if normalized in self.retryable_tools else "stop"
+        )
         return ToolFailurePolicy(
             tool_name=normalized or "tool",
             max_retries=self.max_retries_per_step if normalized in self.retryable_tools else 0,
@@ -134,19 +160,15 @@ class FailurePolicy:
         )
 
 
-
-
-
-
 def _normalize_rel_path(path: str) -> str:
-    raw = str(path or '').strip().replace('\\', '/')
+    raw = str(path or "").strip().replace("\\", "/")
     if not raw:
-        return ''
-    normalized = os.path.normpath(raw).replace('\\', '/')
-    while normalized.startswith('./'):
+        return ""
+    normalized = os.path.normpath(raw).replace("\\", "/")
+    while normalized.startswith("./"):
         normalized = normalized[2:]
-    if normalized == '.':
-        return ''
+    if normalized == ".":
+        return ""
     return normalized
 
 
@@ -155,24 +177,26 @@ def _path_matches_allowlist(path: str, allowed: Sequence[str]) -> bool:
     if not normalized:
         return False
     for raw in allowed:
-        candidate = _normalize_rel_path(str(raw or ''))
+        candidate = _normalize_rel_path(str(raw or ""))
         if not candidate:
             continue
-        if normalized == candidate or normalized.startswith(candidate + '/'):
+        if normalized == candidate or normalized.startswith(candidate + "/"):
             return True
     return False
 
 
 def _command_allowed(command: str, allowed: Sequence[str]) -> bool:
-    normalized = ' '.join(shlex.split(str(command or '').strip())) if str(command or '').strip() else ''
+    normalized = (
+        " ".join(shlex.split(str(command or "").strip())) if str(command or "").strip() else ""
+    )
     if not normalized:
         return False
     allowed_norm = []
     for item in allowed:
-        raw = str(item or '').strip()
+        raw = str(item or "").strip()
         if not raw:
             continue
-        allowed_norm.append(' '.join(shlex.split(raw)))
+        allowed_norm.append(" ".join(shlex.split(raw)))
     return normalized in allowed_norm
 
 
@@ -193,7 +217,7 @@ def _build_command_environment(policy: WorkspacePolicy) -> tuple[dict[str, str],
 
 
 def _truncate_output(text: str, *, max_chars: int) -> tuple[str, bool, int]:
-    value = str(text or '')
+    value = str(text or "")
     length = len(value)
     if max_chars <= 0 or length <= max_chars:
         return value, False, length
@@ -206,37 +230,37 @@ def _truncate_output(text: str, *, max_chars: int) -> tuple[str, bool, int]:
 
 
 def _resolve_command_isolation_backend(policy: WorkspacePolicy) -> dict[str, Any]:
-    requested = str(getattr(policy, 'command_isolation_backend', 'host') or 'host').strip().lower()
+    requested = str(getattr(policy, "command_isolation_backend", "host") or "host").strip().lower()
     if not requested:
-        requested = 'host'
+        requested = "host"
     result: dict[str, Any] = {
-        'requested_backend': requested,
-        'backend': 'host',
-        'external': False,
-        'fallback_used': False,
-        'engine_path': None,
-        'error': None,
-        'available_backends': [name for name in ('docker', 'podman') if shutil.which(name)],
+        "requested_backend": requested,
+        "backend": "host",
+        "external": False,
+        "fallback_used": False,
+        "engine_path": None,
+        "error": None,
+        "available_backends": [name for name in ("docker", "podman") if shutil.which(name)],
     }
-    if requested == 'host':
+    if requested == "host":
         return result
     candidates = []
-    if requested == 'auto':
-        candidates = ['docker', 'podman']
-    elif requested in {'docker', 'podman'}:
+    if requested == "auto":
+        candidates = ["docker", "podman"]
+    elif requested in {"docker", "podman"}:
         candidates = [requested]
     else:
-        result['error'] = 'invalid_sandbox_backend'
+        result["error"] = "invalid_sandbox_backend"
         return result
     for candidate in candidates:
         engine_path = shutil.which(candidate)
         if engine_path:
-            result.update({'backend': candidate, 'external': True, 'engine_path': engine_path})
+            result.update({"backend": candidate, "external": True, "engine_path": engine_path})
             return result
-    if bool(getattr(policy, 'command_isolation_fallback_to_host', False)):
-        result['fallback_used'] = True
+    if bool(getattr(policy, "command_isolation_fallback_to_host", False)):
+        result["fallback_used"] = True
         return result
-    result['error'] = 'sandbox_unavailable'
+    result["error"] = "sandbox_unavailable"
     return result
 
 
@@ -248,21 +272,37 @@ def _build_container_command(
     backend: str,
     env: dict[str, str],
 ) -> list[str]:
-    mount_path = str(getattr(policy, 'command_isolation_mount_path', '/workspace') or '/workspace').strip() or '/workspace'
-    image = str(getattr(policy, 'command_isolation_image', 'python:3.12-slim') or 'python:3.12-slim').strip() or 'python:3.12-slim'
-    argv: list[str] = [backend, 'run', '--rm', '--workdir', mount_path, '--volume', f'{workspace}:{mount_path}']
-    if not bool(getattr(policy, 'command_isolation_network', False)):
-        argv.extend(['--network', 'none'])
-    if os.name == 'posix' and hasattr(os, 'getuid') and hasattr(os, 'getgid'):
-        argv.extend(['--user', f'{os.getuid()}:{os.getgid()}'])
+    mount_path = (
+        str(getattr(policy, "command_isolation_mount_path", "/workspace") or "/workspace").strip()
+        or "/workspace"
+    )
+    image = (
+        str(
+            getattr(policy, "command_isolation_image", "python:3.12-slim") or "python:3.12-slim"
+        ).strip()
+        or "python:3.12-slim"
+    )
+    argv: list[str] = [
+        backend,
+        "run",
+        "--rm",
+        "--workdir",
+        mount_path,
+        "--volume",
+        f"{workspace}:{mount_path}",
+    ]
+    if not bool(getattr(policy, "command_isolation_network", False)):
+        argv.extend(["--network", "none"])
+    if os.name == "posix" and hasattr(os, "getuid") and hasattr(os, "getgid"):
+        argv.extend(["--user", f"{os.getuid()}:{os.getgid()}"])
     for key, value in env.items():
-        argv.extend(['-e', f'{key}={value}'])
-    for item in list(getattr(policy, 'command_isolation_extra_args', []) or []):
-        raw = str(item or '').strip()
+        argv.extend(["-e", f"{key}={value}"])
+    for item in list(getattr(policy, "command_isolation_extra_args", []) or []):
+        raw = str(item or "").strip()
         if raw:
             argv.append(raw)
     argv.append(image)
-    argv.extend(['/bin/sh', '-lc', command])
+    argv.extend(["/bin/sh", "-lc", command])
     return argv
 
 
@@ -348,35 +388,73 @@ class WorkspaceIsolationManager:
     def _is_git_repo(self, root: Path) -> bool:
         if shutil.which("git") is None:
             return False
-        proc = subprocess.run(["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True, check=False)
+        proc = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         return proc.returncode == 0 and proc.stdout.strip() == "true"
 
-    def _prepare_git_worktree(self, base_root: Path, owner_id: str, policy: WorkspacePolicy, target: Path, *, mode: IsolationMode) -> WorkspaceAllocation | None:
+    def _prepare_git_worktree(
+        self,
+        base_root: Path,
+        owner_id: str,
+        policy: WorkspacePolicy,
+        target: Path,
+        *,
+        mode: IsolationMode,
+    ) -> WorkspaceAllocation | None:
         if mode not in {"branch", "worktree"} or not self._is_git_repo(base_root):
             return None
         branch_name = f"{policy.branch_prefix}{self._safe_owner(owner_id)}"
         if not target.exists():
             proc = subprocess.run(
-                ["git", "-C", str(base_root), "worktree", "add", "--force", "-B", branch_name, str(target), "HEAD"],
+                [
+                    "git",
+                    "-C",
+                    str(base_root),
+                    "worktree",
+                    "add",
+                    "--force",
+                    "-B",
+                    branch_name,
+                    str(target),
+                    "HEAD",
+                ],
                 capture_output=True,
                 text=True,
                 check=False,
             )
             if proc.returncode != 0:
                 return None
-        return WorkspaceAllocation(owner_id=owner_id, root=str(target), isolation_mode=mode, source="git_worktree", branch_name=branch_name)
+        return WorkspaceAllocation(
+            owner_id=owner_id,
+            root=str(target),
+            isolation_mode=mode,
+            source="git_worktree",
+            branch_name=branch_name,
+        )
 
-    def _prepare_copy_workspace(self, base_root: Path, owner_id: str, target: Path, *, mode: IsolationMode) -> WorkspaceAllocation:
+    def _prepare_copy_workspace(
+        self, base_root: Path, owner_id: str, target: Path, *, mode: IsolationMode
+    ) -> WorkspaceAllocation:
         if not target.exists():
             ignore_names = {self.state_root.name, "__pycache__", ".pytest_cache"}
             shutil.copytree(base_root, target, ignore=shutil.ignore_patterns(*ignore_names))
-        return WorkspaceAllocation(owner_id=owner_id, root=str(target), isolation_mode=mode, source="copy")
+        return WorkspaceAllocation(
+            owner_id=owner_id, root=str(target), isolation_mode=mode, source="copy"
+        )
 
-    def prepare_workspace(self, base_root: str | Path, owner_id: str, policy: WorkspacePolicy) -> WorkspaceAllocation:
+    def prepare_workspace(
+        self, base_root: str | Path, owner_id: str, policy: WorkspacePolicy
+    ) -> WorkspaceAllocation:
         base = Path(base_root).expanduser().resolve()
         mode = policy.isolation_mode
         if mode == "in_place":
-            allocation = WorkspaceAllocation(owner_id=owner_id, root=str(base), isolation_mode=mode, source="in_place")
+            allocation = WorkspaceAllocation(
+                owner_id=owner_id, root=str(base), isolation_mode=mode, source="in_place"
+            )
             data = self._load_json(self._allocations_path)
             data[self._safe_owner(owner_id)] = asdict(allocation)
             self._save_json(self._allocations_path, data)
@@ -408,8 +486,17 @@ class WorkspaceIsolationManager:
             leases = self.active_patch_owners()
             for path in normalized:
                 existing = dict(leases.get(path) or {})
-                if existing and existing.get("status") == "active" and existing.get("owner_id") != owner_id:
-                    return PatchOwnership(owner_id=owner_id, paths=normalized, status="denied", reason=f"{path} is currently owned by {existing.get('owner_id')}")
+                if (
+                    existing
+                    and existing.get("status") == "active"
+                    and existing.get("owner_id") != owner_id
+                ):
+                    return PatchOwnership(
+                        owner_id=owner_id,
+                        paths=normalized,
+                        status="denied",
+                        reason=f"{path} is currently owned by {existing.get('owner_id')}",
+                    )
             now = datetime.now(timezone.utc).isoformat()
             for path in normalized:
                 existing = dict(leases.get(path) or {})
@@ -445,7 +532,9 @@ class WorkspaceIsolationManager:
                     leases[path] = existing
                     released_paths.append(path)
             self._save_json(self._leases_path, leases)
-        return PatchOwnership(owner_id=owner_id, paths=normalized, status="released", released_paths=released_paths)
+        return PatchOwnership(
+            owner_id=owner_id, paths=normalized, status="released", released_paths=released_paths
+        )
 
     def patch_lease(self, path: str) -> dict[str, Any] | None:
         record = self.active_patch_owners().get(_normalize_rel_path(path))
@@ -453,7 +542,15 @@ class WorkspaceIsolationManager:
 
 
 class ProgrammingToolRuntime:
-    def __init__(self, inner: ToolRuntime, workspace: WorkspacePolicy, *, root: str | Path, owner_id: str = "worker", isolation_manager: WorkspaceIsolationManager | None = None) -> None:
+    def __init__(
+        self,
+        inner: ToolRuntime,
+        workspace: WorkspacePolicy,
+        *,
+        root: str | Path,
+        owner_id: str = "worker",
+        isolation_manager: WorkspaceIsolationManager | None = None,
+    ) -> None:
         self.inner = inner
         self.workspace = workspace
         self.root = Path(root).expanduser().resolve()
@@ -462,95 +559,151 @@ class ProgrammingToolRuntime:
 
     def describe_component(self):
         from .interop import describe_tool_runtime
+
         return describe_tool_runtime(self)
 
     def get_capability_descriptor(self):
         from .interop import describe_tool_runtime
+
         return describe_tool_runtime(self)
 
     def list_tools(self) -> list[ToolSpec]:
         tools = self.inner.list_tools()
-        if (
-            self.isolation_manager is not None
-            and (self.workspace.allowed_tools is None or RELEASE_PATCH_LEASE_TOOL in self.workspace.allowed_tools)
+        if self.isolation_manager is not None and (
+            self.workspace.allowed_tools is None
+            or RELEASE_PATCH_LEASE_TOOL in self.workspace.allowed_tools
         ):
-            tools.append(ToolSpec(
-                name=RELEASE_PATCH_LEASE_TOOL,
-                description="Release this worker's active patch lease for a workspace-relative path.",
-                input_schema={"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
-            ))
+            tools.append(
+                ToolSpec(
+                    name=RELEASE_PATCH_LEASE_TOOL,
+                    description="Release this worker's active patch lease for a workspace-relative path.",
+                    input_schema={
+                        "type": "object",
+                        "properties": {"path": {"type": "string"}},
+                        "required": ["path"],
+                    },
+                )
+            )
         return tools
 
-    def _deny(self, call: ToolCall, *, reason: str, error: str = 'policy_violation') -> ToolResult:
-        return ToolResult(name=call.name, output=reason, success=False, meta={'error': error, 'policy_reason': reason})
+    def _deny(self, call: ToolCall, *, reason: str, error: str = "policy_violation") -> ToolResult:
+        return ToolResult(
+            name=call.name,
+            output=reason,
+            success=False,
+            meta={"error": error, "policy_reason": reason},
+        )
 
-    def _proposal_result(self, call: ToolCall, *, message: str, approval_mode: ApprovalMode) -> ToolResult:
+    def _proposal_result(
+        self, call: ToolCall, *, message: str, approval_mode: ApprovalMode
+    ) -> ToolResult:
         return ToolResult(
             name=call.name,
             output=message,
             success=True,
             meta={
-                'approval_required': True,
-                'approval_mode': approval_mode,
-                'patch_status': 'proposed',
-                'patch_proposal': dict(call.arguments),
+                "approval_required": True,
+                "approval_mode": approval_mode,
+                "patch_status": "proposed",
+                "patch_proposal": dict(call.arguments),
             },
         )
 
     def invoke(self, call: ToolCall) -> ToolResult:
-        if self.workspace.allowed_tools is not None and call.name not in self.workspace.allowed_tools:
+        if (
+            self.workspace.allowed_tools is not None
+            and call.name not in self.workspace.allowed_tools
+        ):
             return self._deny(
                 call,
                 reason=f"Tool {call.name!r} is not granted to this agent.",
                 error="tool_not_granted",
             )
-        if call.name in {'read_file', 'replace_text', 'run_check', RELEASE_PATCH_LEASE_TOOL}:
-            path = str(call.arguments.get('path') or '').strip()
+        if call.name in {"read_file", "replace_text", "run_check", RELEASE_PATCH_LEASE_TOOL}:
+            path = str(call.arguments.get("path") or "").strip()
             if not path:
-                return self._deny(call, reason=f'{call.name} requires a path argument.', error='invalid_arguments')
+                return self._deny(
+                    call, reason=f"{call.name} requires a path argument.", error="invalid_arguments"
+                )
             try:
                 resolved = (self.root / path).resolve()
             except Exception as exc:
-                return self._deny(call, reason=f'Invalid path {path!r}: {exc}', error='invalid_path')
+                return self._deny(
+                    call, reason=f"Invalid path {path!r}: {exc}", error="invalid_path"
+                )
             if self.root not in resolved.parents and resolved != self.root:
-                return self._deny(call, reason=f'Path {path!r} escapes workspace root {self.root}.', error='path_escape')
+                return self._deny(
+                    call,
+                    reason=f"Path {path!r} escapes workspace root {self.root}.",
+                    error="path_escape",
+                )
             if call.name == RELEASE_PATCH_LEASE_TOOL:
                 if self.isolation_manager is None:
-                    return self._deny(call, reason="Patch lease release requires an isolation manager.", error="lease_unavailable")
+                    return self._deny(
+                        call,
+                        reason="Patch lease release requires an isolation manager.",
+                        error="lease_unavailable",
+                    )
                 release = self.isolation_manager.release_patch_lease(self.owner_id, [path])
                 return ToolResult(
                     name=call.name,
-                    output={"released": bool(release.released_paths), "released_paths": list(release.released_paths)},
+                    output={
+                        "released": bool(release.released_paths),
+                        "released_paths": list(release.released_paths),
+                    },
                     success=True,
                     meta={"lease_status": release.status},
                 )
-            if call.name == 'replace_text':
+            if call.name == "replace_text":
                 if not _path_matches_allowlist(path, self.workspace.writable_paths):
-                    return self._deny(call, reason=f'Writes to {path!r} are not allowed by workspace policy.', error='write_denied')
+                    return self._deny(
+                        call,
+                        reason=f"Writes to {path!r} are not allowed by workspace policy.",
+                        error="write_denied",
+                    )
                 if self.workspace.enforce_patch_ownership and self.isolation_manager is not None:
                     lease = self.isolation_manager.acquire_patch_lease(self.owner_id, [path])
-                    if lease.status == 'denied':
-                        return self._deny(call, reason=lease.reason or f'Patch ownership for {path!r} is held by another worker.', error='ownership_denied')
-                if self.workspace.approval_mode != 'auto':
+                    if lease.status == "denied":
+                        return self._deny(
+                            call,
+                            reason=lease.reason
+                            or f"Patch ownership for {path!r} is held by another worker.",
+                            error="ownership_denied",
+                        )
+                if self.workspace.approval_mode != "auto":
                     mode = self.workspace.approval_mode
-                    label = 'proposal-only mode' if mode == 'proposal_only' else 'human checkpoint required before applying patch'
-                    return self._proposal_result(call, message=f'Patch proposed for {path!r}; {label}.', approval_mode=mode)
-        if call.name == 'run_command':
-            command = str(call.arguments.get('command') or '').strip()
+                    label = (
+                        "proposal-only mode"
+                        if mode == "proposal_only"
+                        else "human checkpoint required before applying patch"
+                    )
+                    return self._proposal_result(
+                        call, message=f"Patch proposed for {path!r}; {label}.", approval_mode=mode
+                    )
+        if call.name == "run_command":
+            command = str(call.arguments.get("command") or "").strip()
             if not command:
-                return self._deny(call, reason='run_command requires a command argument.', error='invalid_arguments')
+                return self._deny(
+                    call,
+                    reason="run_command requires a command argument.",
+                    error="invalid_arguments",
+                )
             if not _command_allowed(command, self.workspace.runnable_commands):
-                return self._deny(call, reason=f'Command {command!r} is not allowed by workspace policy.', error='command_denied')
+                return self._deny(
+                    call,
+                    reason=f"Command {command!r} is not allowed by workspace policy.",
+                    error="command_denied",
+                )
             return execute_workspace_command(self.root, command, workspace_policy=self.workspace)
         return self.inner.invoke(call)
 
-
     def invoke_interop(self, call: ToolCall):
         from .interop import describe_tool_runtime, tool_result_to_operation_result
+
         result = self.invoke(call)
         op = tool_result_to_operation_result(result, call=call)
         diagnostics = dict(op.diagnostics)
-        diagnostics['capability'] = describe_tool_runtime(self)
+        diagnostics["capability"] = describe_tool_runtime(self)
         return type(op).success(op.value, warnings=op.warnings, diagnostics=diagnostics)
 
 
@@ -559,17 +712,19 @@ class ProgrammingToolRuntime:
 EnforcingToolRuntime = ProgrammingToolRuntime
 
 
-def execute_workspace_command(root: str | Path, command: str, workspace_policy: WorkspacePolicy | None = None) -> ToolResult:
+def execute_workspace_command(
+    root: str | Path, command: str, workspace_policy: WorkspacePolicy | None = None
+) -> ToolResult:
     workspace = Path(root).expanduser().resolve()
     if workspace_policy is None:
         return ToolResult(
-            name='run_command',
-            output='run_command requires an explicit WorkspacePolicy; refusing to execute without one.',
+            name="run_command",
+            output="run_command requires an explicit WorkspacePolicy; refusing to execute without one.",
             success=False,
             meta={
-                'error': 'no_workspace_policy',
-                'command': command,
-                'cwd': str(workspace),
+                "error": "no_workspace_policy",
+                "command": command,
+                "cwd": str(workspace),
             },
         )
     policy = workspace_policy
@@ -577,67 +732,71 @@ def execute_workspace_command(root: str | Path, command: str, workspace_policy: 
     timeout_seconds = max(0.1, float(policy.command_timeout_seconds))
     max_output_chars = max(256, int(policy.max_command_output_chars))
     sandbox = _resolve_command_isolation_backend(policy)
-    if sandbox.get('error') is not None:
+    if sandbox.get("error") is not None:
         return ToolResult(
-            name='run_command',
+            name="run_command",
             output=f"Command isolation backend {sandbox.get('requested_backend')!r} is not available.",
             success=False,
             meta={
-                'error': str(sandbox.get('error')),
-                'command': command,
-                'cwd': str(workspace),
-                'timeout_seconds': timeout_seconds,
-                'environment_keys': env_keys,
-                'environment_inherited': bool(policy.inherit_environment),
-                'sandbox_requested_backend': sandbox.get('requested_backend'),
-                'sandbox_backend': 'host',
-                'sandbox_external': False,
-                'sandbox_fallback_used': bool(sandbox.get('fallback_used')),
-                'available_sandbox_backends': list(sandbox.get('available_backends') or []),
+                "error": str(sandbox.get("error")),
+                "command": command,
+                "cwd": str(workspace),
+                "timeout_seconds": timeout_seconds,
+                "environment_keys": env_keys,
+                "environment_inherited": bool(policy.inherit_environment),
+                "sandbox_requested_backend": sandbox.get("requested_backend"),
+                "sandbox_backend": "host",
+                "sandbox_external": False,
+                "sandbox_fallback_used": bool(sandbox.get("fallback_used")),
+                "available_sandbox_backends": list(sandbox.get("available_backends") or []),
             },
         )
-    process_group_isolated = os.name == 'posix'
+    process_group_isolated = os.name == "posix"
     kwargs: dict[str, Any] = {
-        'cwd': str(workspace),
-        'stdout': subprocess.PIPE,
-        'stderr': subprocess.PIPE,
-        'text': True,
+        "cwd": str(workspace),
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+        "text": True,
     }
-    if os.name == 'posix':
-        kwargs['start_new_session'] = True
-    if bool(sandbox.get('external')):
+    if os.name == "posix":
+        kwargs["start_new_session"] = True
+    if bool(sandbox.get("external")):
         argv = _build_container_command(
             workspace=workspace,
             command=command,
             policy=policy,
-            backend=str(sandbox.get('backend') or 'docker'),
+            backend=str(sandbox.get("backend") or "docker"),
             env=env,
         )
     else:
-        kwargs['env'] = env
+        kwargs["env"] = env
         argv = shlex.split(command)
     proc = subprocess.Popen(argv, **kwargs)
     base_meta = {
-        'command': command,
-        'cwd': str(workspace),
-        'timeout_seconds': timeout_seconds,
-        'environment_keys': env_keys,
-        'environment_inherited': bool(policy.inherit_environment),
-        'process_group_isolated': process_group_isolated,
-        'sandbox_requested_backend': sandbox.get('requested_backend'),
-        'sandbox_backend': sandbox.get('backend'),
-        'sandbox_external': bool(sandbox.get('external')),
-        'sandbox_fallback_used': bool(sandbox.get('fallback_used')),
-        'sandbox_engine_path': sandbox.get('engine_path'),
-        'sandbox_image': policy.command_isolation_image if bool(sandbox.get('external')) else None,
-        'sandbox_network_enabled': bool(policy.command_isolation_network) if bool(sandbox.get('external')) else None,
-        'sandbox_mount_path': policy.command_isolation_mount_path if bool(sandbox.get('external')) else None,
-        'sandbox_command': list(argv) if bool(sandbox.get('external')) else None,
+        "command": command,
+        "cwd": str(workspace),
+        "timeout_seconds": timeout_seconds,
+        "environment_keys": env_keys,
+        "environment_inherited": bool(policy.inherit_environment),
+        "process_group_isolated": process_group_isolated,
+        "sandbox_requested_backend": sandbox.get("requested_backend"),
+        "sandbox_backend": sandbox.get("backend"),
+        "sandbox_external": bool(sandbox.get("external")),
+        "sandbox_fallback_used": bool(sandbox.get("fallback_used")),
+        "sandbox_engine_path": sandbox.get("engine_path"),
+        "sandbox_image": policy.command_isolation_image if bool(sandbox.get("external")) else None,
+        "sandbox_network_enabled": bool(policy.command_isolation_network)
+        if bool(sandbox.get("external"))
+        else None,
+        "sandbox_mount_path": policy.command_isolation_mount_path
+        if bool(sandbox.get("external"))
+        else None,
+        "sandbox_command": list(argv) if bool(sandbox.get("external")) else None,
     }
     try:
         stdout, stderr = proc.communicate(timeout=timeout_seconds)
     except subprocess.TimeoutExpired:
-        if os.name == 'posix':
+        if os.name == "posix":
             try:
                 os.killpg(proc.pid, signal.SIGKILL)
             except ProcessLookupError:
@@ -645,21 +804,27 @@ def execute_workspace_command(root: str | Path, command: str, workspace_policy: 
         else:
             proc.kill()
         stdout, stderr = proc.communicate()
-        stdout_value, stdout_truncated, stdout_length = _truncate_output(stdout or '', max_chars=max_output_chars)
-        stderr_value, stderr_truncated, stderr_length = _truncate_output(stderr or '', max_chars=max_output_chars)
+        stdout_value, stdout_truncated, stdout_length = _truncate_output(
+            stdout or "", max_chars=max_output_chars
+        )
+        stderr_value, stderr_truncated, stderr_length = _truncate_output(
+            stderr or "", max_chars=max_output_chars
+        )
         meta = dict(base_meta)
-        meta.update({
-            'error': 'command_timeout',
-            'stdout': stdout_value,
-            'stderr': stderr_value,
-            'stdout_length': stdout_length,
-            'stderr_length': stderr_length,
-            'stdout_truncated': stdout_truncated,
-            'stderr_truncated': stderr_truncated,
-        })
+        meta.update(
+            {
+                "error": "command_timeout",
+                "stdout": stdout_value,
+                "stderr": stderr_value,
+                "stdout_length": stdout_length,
+                "stderr_length": stderr_length,
+                "stdout_truncated": stdout_truncated,
+                "stderr_truncated": stderr_truncated,
+            }
+        )
         return ToolResult(
-            name='run_command',
-            output=f'Command timed out after {timeout_seconds:.2f} seconds.',
+            name="run_command",
+            output=f"Command timed out after {timeout_seconds:.2f} seconds.",
             success=False,
             meta=meta,
         )
@@ -669,23 +834,29 @@ def execute_workspace_command(root: str | Path, command: str, workspace_policy: 
         stdout=str(stdout),
         stderr=str(stderr),
     )
-    stdout_value, stdout_truncated, stdout_length = _truncate_output(result.stdout, max_chars=max_output_chars)
-    stderr_value, stderr_truncated, stderr_length = _truncate_output(result.stderr, max_chars=max_output_chars)
-    summary = (stdout_value or stderr_value or '').strip()
+    stdout_value, stdout_truncated, stdout_length = _truncate_output(
+        result.stdout, max_chars=max_output_chars
+    )
+    stderr_value, stderr_truncated, stderr_length = _truncate_output(
+        result.stderr, max_chars=max_output_chars
+    )
+    summary = (stdout_value or stderr_value or "").strip()
     if not summary:
-        summary = f'command exited with return code {result.returncode}'
+        summary = f"command exited with return code {result.returncode}"
     meta = dict(base_meta)
-    meta.update({
-        'returncode': result.returncode,
-        'stdout': stdout_value,
-        'stderr': stderr_value,
-        'stdout_length': stdout_length,
-        'stderr_length': stderr_length,
-        'stdout_truncated': stdout_truncated,
-        'stderr_truncated': stderr_truncated,
-    })
+    meta.update(
+        {
+            "returncode": result.returncode,
+            "stdout": stdout_value,
+            "stderr": stderr_value,
+            "stdout_length": stdout_length,
+            "stderr_length": stderr_length,
+            "stdout_truncated": stdout_truncated,
+            "stderr_truncated": stderr_truncated,
+        }
+    )
     return ToolResult(
-        name='run_command',
+        name="run_command",
         output=summary,
         success=result.returncode == 0,
         meta=meta,
@@ -699,6 +870,7 @@ class ContextBudgetConfig:
     summary_max_chars: int = 600
     artifact_dirname: str = "context_artifacts"
     memory_limit: int = 5
+
 
 @dataclass(frozen=True)
 class ProgrammingTask:
@@ -724,7 +896,6 @@ class ProgrammingTask:
         )
 
 
-
 @dataclass(frozen=True)
 class ProgrammingRoleBindings:
     planner: str | None = None
@@ -737,7 +908,11 @@ class ProgrammingRoleBindings:
     @classmethod
     def from_dict(cls, payload: dict[str, Any] | None) -> "ProgrammingRoleBindings":
         payload = dict(payload or {})
-        return cls(planner=payload.get("planner"), executor=payload.get("executor"), critic=payload.get("critic"))
+        return cls(
+            planner=payload.get("planner"),
+            executor=payload.get("executor"),
+            critic=payload.get("critic"),
+        )
 
 
 @dataclass(frozen=True)
@@ -784,16 +959,26 @@ class ProgrammingRuntimeConfig:
         task = ProgrammingTask(
             task_id=str(task_payload.get("task_id") or "programming_task"),
             goal=str(task_payload.get("goal") or ""),
-            session_id=str(task_payload.get("session_id") or payload.get("session_id") or "programming_demo"),
-            workspace=WorkspacePolicy(**workspace_payload) if workspace_payload else WorkspacePolicy(),
+            session_id=str(
+                task_payload.get("session_id") or payload.get("session_id") or "programming_demo"
+            ),
+            workspace=WorkspacePolicy(**workspace_payload)
+            if workspace_payload
+            else WorkspacePolicy(),
             plan=[PlanStep(**item) for item in list(task_payload.get("plan") or [])],
-            verification_commands=[str(item) for item in list(task_payload.get("verification_commands") or [])],
+            verification_commands=[
+                str(item) for item in list(task_payload.get("verification_commands") or [])
+            ],
             metadata=dict(task_payload.get("metadata") or {}),
         )
         fp_payload = dict(payload.get("failure_policy") or {})
         raw_tool_policies = list(fp_payload.pop("tool_policies", []) or [])
         tool_policies = [ToolFailurePolicy(**item) for item in raw_tool_policies]
-        failure_policy = FailurePolicy(tool_policies=tool_policies, **fp_payload) if fp_payload or tool_policies else FailurePolicy()
+        failure_policy = (
+            FailurePolicy(tool_policies=tool_policies, **fp_payload)
+            if fp_payload or tool_policies
+            else FailurePolicy()
+        )
         cb_payload = dict(payload.get("context_budget") or {})
         context_budget = ContextBudgetConfig(**cb_payload) if cb_payload else ContextBudgetConfig()
         return cls(
@@ -811,8 +996,6 @@ class ProgrammingRuntimeConfig:
         )
 
 
-
-
 def load_programming_runtime_config(path: str | Path) -> ProgrammingRuntimeConfig:
     """Load a programming runtime config from JSON or TOML."""
     config_path = Path(path).expanduser()
@@ -822,7 +1005,9 @@ def load_programming_runtime_config(path: str | Path) -> ProgrammingRuntimeConfi
     elif suffix == ".toml":
         payload = tomllib.loads(config_path.read_text(encoding="utf-8"))
     else:
-        raise ValueError(f"Unsupported programming config format: {config_path.suffix or '<none>'}. Use .json or .toml.")
+        raise ValueError(
+            f"Unsupported programming config format: {config_path.suffix or '<none>'}. Use .json or .toml."
+        )
     if not isinstance(payload, dict):
         raise ValueError(f"Programming runtime config at {config_path} must decode to an object.")
     return ProgrammingRuntimeConfig.from_dict(payload)
@@ -834,7 +1019,9 @@ def save_programming_runtime_config(config: ProgrammingRuntimeConfig, path: str 
     if config_path.suffix.lower() != ".json":
         raise ValueError("Programming runtime configs are currently saved as .json files.")
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text(json.dumps(config.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    config_path.write_text(
+        json.dumps(config.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return config_path
 
 
@@ -864,7 +1051,9 @@ def build_programming_task(
 
 
 class ProgrammingFailureController(AgentRunLifecycleHook):
-    def __init__(self, tracker: "ProgrammingStateTracker", *, failure_policy: FailurePolicy | None = None) -> None:
+    def __init__(
+        self, tracker: "ProgrammingStateTracker", *, failure_policy: FailurePolicy | None = None
+    ) -> None:
         self.tracker = tracker
         self.failure_policy = failure_policy or FailurePolicy()
 
@@ -897,7 +1086,9 @@ class ProgrammingFailureController(AgentRunLifecycleHook):
         task.context["_programming_next_controller"] = "critic"
         task.context["_programming_policy_note"] = message
 
-    def on_step(self, task: AgentTask, context: AgentContext, step: AgentStep, run: AgentRun) -> None:
+    def on_step(
+        self, task: AgentTask, context: AgentContext, step: AgentStep, run: AgentRun
+    ) -> None:
         observation = step.observation
         if observation is None or observation.tool_result is None or step.action.tool_call is None:
             return
@@ -942,10 +1133,14 @@ class ProgrammingContextManager:
 
     def _artifact_path(self, task: AgentTask, step: AgentStep) -> Path:
         safe_task = str(task.task_id or task.session_id or "task").strip().replace("/", "_")
-        tool_name = step.action.tool_call.name if step.action.tool_call is not None else step.action.kind
+        tool_name = (
+            step.action.tool_call.name if step.action.tool_call is not None else step.action.kind
+        )
         return self.artifact_root / f"{safe_task}_step{step.index}_{tool_name}.txt"
 
-    def _truncate_text(self, text: str, *, task: AgentTask, step: AgentStep) -> tuple[str, dict[str, Any] | None]:
+    def _truncate_text(
+        self, text: str, *, task: AgentTask, step: AgentStep
+    ) -> tuple[str, dict[str, Any] | None]:
         raw = str(text or "")
         if len(raw) <= self.config.max_tool_output_chars:
             return raw, None
@@ -965,10 +1160,14 @@ class ProgrammingContextManager:
             text = step.action.message
         text = str(text or "")
         truncated, artifact = self._truncate_text(text, task=task, step=step)
-        label = step.action.tool_call.name if step.action.tool_call is not None else step.action.kind
+        label = (
+            step.action.tool_call.name if step.action.tool_call is not None else step.action.kind
+        )
         return f"step {step.index}: {label} -> {truncated}", artifact
 
-    def _compact_history(self, task: AgentTask, steps: Sequence[AgentStep]) -> tuple[list[str], list[dict[str, Any]]]:
+    def _compact_history(
+        self, task: AgentTask, steps: Sequence[AgentStep]
+    ) -> tuple[list[str], list[dict[str, Any]]]:
         lines: list[str] = []
         artifacts: list[dict[str, Any]] = []
         for step in steps:
@@ -978,7 +1177,9 @@ class ProgrammingContextManager:
                 artifacts.append(artifact)
         return lines, artifacts
 
-    def _visible_steps(self, task: AgentTask, steps: Sequence[AgentStep]) -> tuple[list[AgentStep], list[dict[str, Any]]]:
+    def _visible_steps(
+        self, task: AgentTask, steps: Sequence[AgentStep]
+    ) -> tuple[list[AgentStep], list[dict[str, Any]]]:
         visible: list[AgentStep] = []
         artifacts: list[dict[str, Any]] = []
         for step in steps:
@@ -999,7 +1200,11 @@ class ProgrammingContextManager:
                 )
                 if artifact is not None:
                     artifacts.append(artifact)
-            visible.append(AgentStep(index=step.index, action=step.action, observation=observation, trace=step.trace))
+            visible.append(
+                AgentStep(
+                    index=step.index, action=step.action, observation=observation, trace=step.trace
+                )
+            )
         return visible, artifacts
 
     def build_context(
@@ -1014,12 +1219,19 @@ class ProgrammingContextManager:
         engine_roles: EngineRoles,
     ) -> AgentContext:
         recent = list(steps)[-self.config.max_visible_steps :]
-        compacted = list(steps)[:-self.config.max_visible_steps] if len(steps) > self.config.max_visible_steps else []
+        compacted = (
+            list(steps)[: -self.config.max_visible_steps]
+            if len(steps) > self.config.max_visible_steps
+            else []
+        )
         compacted_lines, compacted_artifacts = self._compact_history(task, compacted)
         visible_steps, visible_artifacts = self._visible_steps(task, recent)
         history_summary = "\n".join(compacted_lines)
         if len(history_summary) > self.config.summary_max_chars:
-            history_summary = history_summary[: self.config.summary_max_chars].rstrip() + "\n... [history compacted]"
+            history_summary = (
+                history_summary[: self.config.summary_max_chars].rstrip()
+                + "\n... [history compacted]"
+            )
         budget = {
             "visible_step_count": len(visible_steps),
             "compacted_step_count": len(compacted),
@@ -1027,10 +1239,19 @@ class ProgrammingContextManager:
             "artifacts": compacted_artifacts + visible_artifacts,
             "preserved_fields": ["goal", "workspace_policy", "programming_state", "failure_policy"],
         }
-        managed_task = AgentTask(task_id=task.task_id, goal=task.goal, session_id=task.session_id, context={**dict(task.context), "context_budget": budget})
+        managed_task = AgentTask(
+            task_id=task.task_id,
+            goal=task.goal,
+            session_id=task.session_id,
+            context={**dict(task.context), "context_budget": budget},
+        )
         recalled = memory.recall(managed_task, visible_steps, limit=self.config.memory_limit)
         trace_recall = getattr(memory, "trace_recall", None)
-        memory_trace = trace_recall(managed_task, visible_steps, limit=self.config.memory_limit) if callable(trace_recall) else None
+        memory_trace = (
+            trace_recall(managed_task, visible_steps, limit=self.config.memory_limit)
+            if callable(trace_recall)
+            else None
+        )
         return AgentContext(
             task=managed_task,
             steps=visible_steps,
@@ -1041,6 +1262,7 @@ class ProgrammingContextManager:
             active_controller=active_controller,
             escalated=escalated,
         )
+
 
 @dataclass
 class ProgrammingTaskState:
@@ -1074,7 +1296,9 @@ class ProgrammingTaskState:
             "retry_counts": dict(self.retry_counts),
             "touched_files": list(self.touched_files),
             "repeated_tool_calls": dict(self.repeated_tool_calls),
-            "last_verification": asdict(self.last_verification) if self.last_verification is not None else None,
+            "last_verification": asdict(self.last_verification)
+            if self.last_verification is not None
+            else None,
             "last_patch": asdict(self.last_patch) if self.last_patch is not None else None,
             "last_error": self.last_error,
             "last_policy_decision": self.last_policy_decision,
@@ -1096,10 +1320,16 @@ class ProgrammingTaskState:
             current_step_id=payload.get("current_step_id"),
             plan=plan,
             step_count=int(payload.get("step_count") or 0),
-            retry_counts={str(k): int(v) for k, v in dict(payload.get("retry_counts") or {}).items()},
+            retry_counts={
+                str(k): int(v) for k, v in dict(payload.get("retry_counts") or {}).items()
+            },
             touched_files=[str(item) for item in list(payload.get("touched_files") or [])],
-            repeated_tool_calls={str(k): int(v) for k, v in dict(payload.get("repeated_tool_calls") or {}).items()},
-            last_verification=VerificationResult(**last_verification) if isinstance(last_verification, dict) else None,
+            repeated_tool_calls={
+                str(k): int(v) for k, v in dict(payload.get("repeated_tool_calls") or {}).items()
+            },
+            last_verification=VerificationResult(**last_verification)
+            if isinstance(last_verification, dict)
+            else None,
             last_patch=PatchProposal(**last_patch) if isinstance(last_patch, dict) else None,
             last_error=payload.get("last_error"),
             last_policy_decision=payload.get("last_policy_decision"),
@@ -1144,7 +1374,13 @@ class ProgrammingTaskStateStore:
 
 
 class ProgrammingStateTracker:
-    def __init__(self, store: ProgrammingTaskStateStore, task: ProgrammingTask, *, failure_policy: FailurePolicy | None = None) -> None:
+    def __init__(
+        self,
+        store: ProgrammingTaskStateStore,
+        task: ProgrammingTask,
+        *,
+        failure_policy: FailurePolicy | None = None,
+    ) -> None:
         self.store = store
         self.task = task
         self.failure_policy = failure_policy or FailurePolicy()
@@ -1155,7 +1391,9 @@ class ProgrammingStateTracker:
         if norm and norm not in self.state.touched_files:
             self.state.touched_files.append(norm)
 
-    def _set_step_status(self, step_id: str | None, status: PlanStatus, note: str | None = None) -> None:
+    def _set_step_status(
+        self, step_id: str | None, status: PlanStatus, note: str | None = None
+    ) -> None:
         if not step_id:
             return
         updated: list[PlanStep] = []
@@ -1166,7 +1404,11 @@ class ProgrammingStateTracker:
             notes = list(step.notes)
             if note and note not in notes:
                 notes.append(note)
-            updated.append(PlanStep(step_id=step.step_id, description=step.description, status=status, notes=notes))
+            updated.append(
+                PlanStep(
+                    step_id=step.step_id, description=step.description, status=status, notes=notes
+                )
+            )
         self.state.plan = updated
         self.state.current_step_id = step_id
 
@@ -1186,8 +1428,9 @@ class ProgrammingStateTracker:
         task.context.update(self.attach_to_context(task.context))
         self.store.save(self.state)
 
-
-    def on_step(self, task: AgentTask, context: AgentContext, step: AgentStep, run: AgentRun) -> None:
+    def on_step(
+        self, task: AgentTask, context: AgentContext, step: AgentStep, run: AgentRun
+    ) -> None:
         self.state.step_count = len(run.steps)
         self.state.escalations = run.escalations
         step_id = str(step.action.meta.get("plan_step_id") or "").strip() or None
@@ -1197,20 +1440,30 @@ class ProgrammingStateTracker:
         if step.action.tool_call is not None:
             call = step.action.tool_call
             signature = f"{call.name}:{json.dumps(call.arguments, sort_keys=True)}"
-            self.state.repeated_tool_calls[signature] = self.state.repeated_tool_calls.get(signature, 0) + 1
+            self.state.repeated_tool_calls[signature] = (
+                self.state.repeated_tool_calls.get(signature, 0) + 1
+            )
             path = call.arguments.get("path")
             if isinstance(path, str):
                 self._touch_file(path)
             if call.name == "replace_text":
                 patch_status = "proposed"
-                if step.observation and step.observation.tool_result and step.observation.tool_result.success:
-                    patch_status = str(step.observation.tool_result.meta.get("patch_status") or "applied")
+                if (
+                    step.observation
+                    and step.observation.tool_result
+                    and step.observation.tool_result.success
+                ):
+                    patch_status = str(
+                        step.observation.tool_result.meta.get("patch_status") or "applied"
+                    )
                 self.state.last_patch = PatchProposal(
                     path=str(call.arguments.get("path") or ""),
                     old=str(call.arguments.get("old") or ""),
                     new=str(call.arguments.get("new") or ""),
                     rationale=str(step.action.message or ""),
-                    status=patch_status if patch_status in {"proposed", "applied", "rejected"} else "proposed",
+                    status=patch_status
+                    if patch_status in {"proposed", "applied", "rejected"}
+                    else "proposed",
                 )
 
         if step.observation and step.observation.tool_result is not None:
@@ -1220,7 +1473,11 @@ class ProgrammingStateTracker:
                     step_id=step_id or "verification",
                     success=bool(tool_result.success),
                     summary=str(tool_result.output),
-                    command=str(tool_result.meta.get("command") or tool_result.meta.get("must_contain") or ""),
+                    command=str(
+                        tool_result.meta.get("command")
+                        or tool_result.meta.get("must_contain")
+                        or ""
+                    ),
                 )
             if not tool_result.success:
                 self.state.last_error = str(tool_result.output)
@@ -1231,7 +1488,9 @@ class ProgrammingStateTracker:
                 self._set_step_status(step_id, "completed", note=str(tool_result.output))
         elif step.action.kind == "final":
             if step_id is not None:
-                self._set_step_status(step_id, "completed", note=step.action.final_output or step.action.message)
+                self._set_step_status(
+                    step_id, "completed", note=step.action.final_output or step.action.message
+                )
 
         task.context.update(self.attach_to_context(task.context))
         self.store.save(self.state)

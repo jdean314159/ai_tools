@@ -86,9 +86,7 @@ class NavigationGoal:
             status=str(value.get("status") or ""),  # type: ignore[arg-type]
             resolution_summary=str(value.get("resolution_summary") or ""),
             evidence=tuple(
-                EvidenceRef.from_mapping(item)
-                for item in evidence
-                if isinstance(item, Mapping)
+                EvidenceRef.from_mapping(item) for item in evidence if isinstance(item, Mapping)
             ),
         )
 
@@ -156,9 +154,7 @@ def validate_goal_transition(
         elif not current.resolution_summary.strip():
             return f"abandoned navigation goal {goal_id} requires a reason"
 
-    open_ids = {
-        goal.goal_id for goal in proposed if goal.status == "open"
-    }
+    open_ids = {goal.goal_id for goal in proposed if goal.status == "open"}
     if action_kind == "tool":
         if not serves_goal_ids:
             return "tool actions must serve at least one open navigation goal"

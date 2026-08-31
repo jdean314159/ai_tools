@@ -59,7 +59,9 @@ class FileReservation:
 class SessionMailbox(Protocol):
     def register(self, session: ExternalAgentSession) -> None: ...
     def send(self, message: CoordinationMessage) -> None: ...
-    def fetch_inbox(self, recipient: str, *, thread_id: str | None = None) -> list[CoordinationMessage]: ...
+    def fetch_inbox(
+        self, recipient: str, *, thread_id: str | None = None
+    ) -> list[CoordinationMessage]: ...
     def reserve_paths(
         self,
         holder: str,
@@ -90,7 +92,9 @@ class InMemoryMailbox:
             self.register(ExternalAgentSession(agent_id=message.recipient, role="unknown"))
         self._messages.append(message)
 
-    def fetch_inbox(self, recipient: str, *, thread_id: str | None = None) -> list[CoordinationMessage]:
+    def fetch_inbox(
+        self, recipient: str, *, thread_id: str | None = None
+    ) -> list[CoordinationMessage]:
         out = [m for m in self._messages if m.recipient == recipient]
         if thread_id is not None:
             out = [m for m in out if m.thread_id == thread_id]
@@ -125,12 +129,16 @@ class InMemoryMailbox:
                     )
                 )
                 continue
-            reservation = FileReservation(path=path, holder=holder, thread_id=thread_id, status="active", note=note)
+            reservation = FileReservation(
+                path=path, holder=holder, thread_id=thread_id, status="active", note=note
+            )
             self._reservations[path] = reservation
             results.append(reservation)
         return results
 
-    def _reservation_from_lease(self, path: str, record: dict[str, Any], *, status: ReservationStatus = "active") -> FileReservation:
+    def _reservation_from_lease(
+        self, path: str, record: dict[str, Any], *, status: ReservationStatus = "active"
+    ) -> FileReservation:
         created_at = record.get("created_at")
         if isinstance(created_at, str):
             try:
@@ -149,11 +157,15 @@ class InMemoryMailbox:
             metadata=dict(record.get("metadata") or {}),
         )
 
-    def _reserve_managed_path(self, holder: str, raw_path: str, *, thread_id: str, note: str) -> FileReservation:
+    def _reserve_managed_path(
+        self, holder: str, raw_path: str, *, thread_id: str, note: str
+    ) -> FileReservation:
         from .programming import _normalize_rel_path
 
         path = _normalize_rel_path(str(raw_path))
-        lease = self.isolation_manager.acquire_patch_lease(holder, [path], thread_id=thread_id, note=note)
+        lease = self.isolation_manager.acquire_patch_lease(
+            holder, [path], thread_id=thread_id, note=note
+        )
         record = self.isolation_manager.patch_lease(path) or {}
         if lease.status == "denied":
             current_holder = str(record.get("owner_id") or "")
@@ -203,7 +215,11 @@ class InMemoryMailbox:
                 if record.get("status") == "active"
             ]
             if thread_id is not None:
-                reservations = [reservation for reservation in reservations if reservation.thread_id == thread_id]
+                reservations = [
+                    reservation
+                    for reservation in reservations
+                    if reservation.thread_id == thread_id
+                ]
             return sorted(reservations, key=lambda item: item.path)
         reservations = [r for r in self._reservations.values() if r.status == "active"]
         if thread_id is not None:

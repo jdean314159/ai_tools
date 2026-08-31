@@ -112,9 +112,7 @@ class NavigationClaim:
             operation=str(value.get("operation") or ""),
             classification=str(value.get("classification") or ""),
             evidence=tuple(
-                EvidenceRef.from_mapping(item)
-                for item in raw_evidence
-                if isinstance(item, Mapping)
+                EvidenceRef.from_mapping(item) for item in raw_evidence if isinstance(item, Mapping)
             ),
         )
 
@@ -200,9 +198,7 @@ def validate_navigation_claims(
         if source_root is not None and not _symbol_encloses_evidence(
             claim, source_root=Path(source_root)
         ):
-            errors.append(
-                f"{prefix} symbol {claim.symbol!r} does not enclose its cited evidence"
-            )
+            errors.append(f"{prefix} symbol {claim.symbol!r} does not enclose its cited evidence")
             continue
 
         candidates = []
@@ -217,9 +213,7 @@ def validate_navigation_claims(
                 claim.path == str(getattr(region, "path"))
                 and claim.symbol == str(getattr(region, "symbol", "") or "")
                 and claim_lines.intersection(region_lines)
-                and _terms_are_claim_local(
-                    claim, getattr(region, "required_answer_terms", ())
-                )
+                and _terms_are_claim_local(claim, getattr(region, "required_answer_terms", ()))
             ):
                 candidates.append(str(getattr(region, "id")))
         if len(candidates) != 1:
@@ -241,9 +235,7 @@ def validate_navigation_claims(
 
 
 def _terms_are_claim_local(claim: NavigationClaim, terms: Sequence[str]) -> bool:
-    haystack = " ".join(
-        (claim.path, claim.symbol, claim.operation, claim.classification)
-    ).lower()
+    haystack = " ".join((claim.path, claim.symbol, claim.operation, claim.classification)).lower()
     return all(str(term).lower() in haystack for term in terms)
 
 
@@ -267,9 +259,7 @@ def _symbol_encloses_evidence(
 
     target = claim.symbol.split(".")
     cited_lines = {
-        line
-        for ref in claim.evidence
-        for line in range(ref.start_line, ref.end_line + 1)
+        line for ref in claim.evidence for line in range(ref.start_line, ref.end_line + 1)
     }
 
     def visit(node: ast.AST, parents: tuple[str, ...] = ()) -> bool:

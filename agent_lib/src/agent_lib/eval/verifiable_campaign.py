@@ -38,9 +38,7 @@ def build_shared_schema_pair_manifest(
         ("no_ledger", "ledger"),
         ("ledger", "no_ledger"),
     }:
-        raise VerifiableNavigationError(
-            "run_order must contain no_ledger and ledger exactly once"
-        )
+        raise VerifiableNavigationError("run_order must contain no_ledger and ledger exactly once")
     if tier not in CAMPAIGN_TIER_MINIMUMS:
         raise VerifiableNavigationError("pair requires a frozen valid tier")
     ignored = {
@@ -50,12 +48,8 @@ def build_shared_schema_pair_manifest(
         "output_dir",
         "run_label",
     }
-    left = {
-        key: value for key, value in no_ledger_config.items() if key not in ignored
-    }
-    right = {
-        key: value for key, value in ledger_config.items() if key not in ignored
-    }
+    left = {key: value for key, value in no_ledger_config.items() if key not in ignored}
+    right = {key: value for key, value in ledger_config.items() if key not in ignored}
     if left != right:
         raise VerifiableNavigationError(
             "paired arms must share task, model, schema, scorer, budget, and decoding"
@@ -66,13 +60,9 @@ def build_shared_schema_pair_manifest(
     }
     for key, expected in required_shared.items():
         if left.get(key) != expected:
-            raise VerifiableNavigationError(
-                f"paired arms require shared {key}={expected!r}"
-            )
+            raise VerifiableNavigationError(f"paired arms require shared {key}={expected!r}")
     if not left.get("relation_claim_schema_version"):
-        raise VerifiableNavigationError(
-            "paired arms require a relation claim schema version"
-        )
+        raise VerifiableNavigationError("paired arms require a relation claim schema version")
     if (
         no_ledger_config.get("ledger_enabled") is not False
         or no_ledger_config.get("navigation_goals_enabled") is not False
@@ -115,9 +105,7 @@ def build_campaign_admission_manifest(
             raise VerifiableNavigationError("unsupported admission schema version")
         supplied_hash = str(admission.get("admission_manifest_sha256") or "")
         unhashed = {
-            key: value
-            for key, value in admission.items()
-            if key != "admission_manifest_sha256"
+            key: value for key, value in admission.items() if key != "admission_manifest_sha256"
         }
         actual_hash = _sha256_json(unhashed)
         if supplied_hash != actual_hash:
@@ -138,9 +126,7 @@ def build_campaign_admission_manifest(
                 )
             tier = str(dict(task.get("difficulty") or {}).get("tier") or "")
             if tier not in CAMPAIGN_TIER_MINIMUMS:
-                raise VerifiableNavigationError(
-                    "campaign task has invalid frozen tier"
-                )
+                raise VerifiableNavigationError("campaign task has invalid frozen tier")
             tasks.append({**dict(task), "snapshot_id": snapshot_id})
 
     task_ids = [str(task.get("task_id") or "") for task in tasks]
@@ -149,20 +135,13 @@ def build_campaign_admission_manifest(
     if len(set(task_ids)) != len(task_ids):
         raise VerifiableNavigationError("campaign task ids must be unique")
 
-    tiers = Counter(
-        str(dict(task.get("difficulty") or {}).get("tier") or "")
-        for task in tasks
-    )
+    tiers = Counter(str(dict(task.get("difficulty") or {}).get("tier") or "") for task in tasks)
     for tier, minimum in CAMPAIGN_TIER_MINIMUMS.items():
         if tiers[tier] < minimum:
-            raise VerifiableNavigationError(
-                f"campaign requires at least {minimum} {tier} tasks"
-            )
+            raise VerifiableNavigationError(f"campaign requires at least {minimum} {tier} tasks")
 
     exploratory = [
-        task
-        for task in tasks
-        if dict(task.get("difficulty") or {}).get("tier") == "exploratory"
+        task for task in tasks if dict(task.get("difficulty") or {}).get("tier") == "exploratory"
     ]
     exploratory_snapshots = {str(task["snapshot_id"]) for task in exploratory}
     if len(exploratory_snapshots) < EXPLORATORY_MINIMUM_SNAPSHOTS:
@@ -175,8 +154,7 @@ def build_campaign_admission_manifest(
             "one task shape cannot supply more than half the exploratory tier"
         )
     decoy_tasks = sum(
-        int(dict(task.get("difficulty") or {}).get("decoy_count") or 0) >= 4
-        for task in exploratory
+        int(dict(task.get("difficulty") or {}).get("decoy_count") or 0) >= 4 for task in exploratory
     )
     if decoy_tasks < EXPLORATORY_MINIMUM_DECOY_TASKS:
         raise VerifiableNavigationError(
@@ -184,8 +162,7 @@ def build_campaign_admission_manifest(
         )
     graph_tasks = sum(
         int(dict(task.get("difficulty") or {}).get("hop_count") or 0) >= 3
-        or int(dict(task.get("difficulty") or {}).get("answer_file_count") or 0)
-        >= 3
+        or int(dict(task.get("difficulty") or {}).get("answer_file_count") or 0) >= 3
         for task in exploratory
     )
     if graph_tasks < EXPLORATORY_MINIMUM_GRAPH_TASKS:
@@ -224,9 +201,7 @@ def summarize_paired_campaign(
             raise VerifiableNavigationError("paired record has invalid tier")
         for mode in ("no_ledger", "ledger"):
             if not isinstance(pair.get(mode), Mapping):
-                raise VerifiableNavigationError(
-                    f"paired record requires {mode} result"
-                )
+                raise VerifiableNavigationError(f"paired record requires {mode} result")
         task_ids.add(task_id)
         by_tier[tier].append(pair)
 
@@ -238,19 +213,13 @@ def summarize_paired_campaign(
             for task in campaign_manifest.get("tasks") or []
             if isinstance(task, Mapping)
         }
-        actual = {
-            str(pair.get("task_id") or ""): str(pair.get("tier") or "")
-            for pair in pairs
-        }
+        actual = {str(pair.get("task_id") or ""): str(pair.get("tier") or "") for pair in pairs}
         if actual != expected:
             raise VerifiableNavigationError(
                 "paired records must exactly cover the admitted campaign tasks and tiers"
             )
 
-    tier_summaries = {
-        tier: _summarize_tier(records)
-        for tier, records in sorted(by_tier.items())
-    }
+    tier_summaries = {tier: _summarize_tier(records) for tier, records in sorted(by_tier.items())}
     rate_fields = (
         "termination_rate_no_ledger",
         "termination_rate_ledger",
@@ -263,12 +232,14 @@ def summarize_paired_campaign(
         "exact_rate_no_ledger",
         "exact_rate_ledger",
     )
-    macro = {
-        field: statistics.fmean(
-            float(summary[field]) for summary in tier_summaries.values()
-        )
-        for field in rate_fields
-    } if tier_summaries else {}
+    macro = (
+        {
+            field: statistics.fmean(float(summary[field]) for summary in tier_summaries.values())
+            for field in rate_fields
+        }
+        if tier_summaries
+        else {}
+    )
     return {
         "schema_version": 1,
         "track": "NAV-VERIFIABLE-00",
@@ -277,9 +248,7 @@ def summarize_paired_campaign(
         "overall_equal_tier_macro": macro,
         "pooled_primary_result_prohibited": True,
         "campaign_complete": (
-            bool(campaign_manifest.get("complete"))
-            if campaign_manifest is not None
-            else None
+            bool(campaign_manifest.get("complete")) if campaign_manifest is not None else None
         ),
     }
 
@@ -307,12 +276,8 @@ def decide_campaign(summary: Mapping[str, Any]) -> dict[str, Any]:
     )
     no_ledger_tokens = float(exploratory.get("total_tokens_no_ledger") or 0)
     ledger_tokens = float(exploratory.get("total_tokens_ledger") or 0)
-    token_ratio = (
-        ledger_tokens / no_ledger_tokens if no_ledger_tokens > 0 else float("inf")
-    )
-    median_overhead = exploratory.get(
-        "median_both_complete_ledger_token_overhead_fraction"
-    )
+    token_ratio = ledger_tokens / no_ledger_tokens if no_ledger_tokens > 0 else float("inf")
+    median_overhead = exploratory.get("median_both_complete_ledger_token_overhead_fraction")
     task_count = int(exploratory.get("task_count") or 0)
     termination_ceiling = (
         int(termination.get("both_pass") or 0) == task_count
@@ -330,9 +295,7 @@ def decide_campaign(summary: Mapping[str, Any]) -> dict[str, Any]:
         and float(median_overhead) <= 0.25
     )
     quality_or_cost_reject = (
-        exact_net <= -2
-        or relation_net <= -2
-        or (token_ratio > 1.25 and exact_net <= 0)
+        exact_net <= -2 or relation_net <= -2 or (token_ratio > 1.25 and exact_net <= 0)
     )
     termination_reject = termination_net <= 0 and not termination_ceiling
     reject = quality_or_cost_reject or termination_reject
@@ -382,9 +345,7 @@ def _summarize_tier(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         ):
             total_tokens["no_ledger"] += float(no_ledger["tokens"])
             total_tokens["ledger"] += float(ledger["tokens"])
-            token_deltas.append(
-                float(ledger["tokens"]) - float(no_ledger["tokens"])
-            )
+            token_deltas.append(float(ledger["tokens"]) - float(no_ledger["tokens"]))
             if (
                 bool(no_ledger.get("completed_with_answer"))
                 and bool(ledger.get("completed_with_answer"))
@@ -397,27 +358,17 @@ def _summarize_tier(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         if isinstance(no_ledger.get("tool_steps"), (int, float)) and isinstance(
             ledger.get("tool_steps"), (int, float)
         ):
-            step_deltas.append(
-                float(ledger["tool_steps"]) - float(no_ledger["tool_steps"])
-            )
+            step_deltas.append(float(ledger["tool_steps"]) - float(no_ledger["tool_steps"]))
     return {
         "task_count": count,
         "termination_rate_no_ledger": rate("no_ledger", "completed_with_answer"),
         "termination_rate_ledger": rate("ledger", "completed_with_answer"),
         "relation_rate_no_ledger": rate("no_ledger", "relation_correct"),
         "relation_rate_ledger": rate("ledger", "relation_correct"),
-        "evidence_complete_rate_no_ledger": rate(
-            "no_ledger", "evidence_complete"
-        ),
-        "evidence_complete_rate_ledger": rate(
-            "ledger", "evidence_complete"
-        ),
-        "evidence_precise_rate_no_ledger": rate(
-            "no_ledger", "evidence_precise"
-        ),
-        "evidence_precise_rate_ledger": rate(
-            "ledger", "evidence_precise"
-        ),
+        "evidence_complete_rate_no_ledger": rate("no_ledger", "evidence_complete"),
+        "evidence_complete_rate_ledger": rate("ledger", "evidence_complete"),
+        "evidence_precise_rate_no_ledger": rate("no_ledger", "evidence_precise"),
+        "evidence_precise_rate_ledger": rate("ledger", "evidence_precise"),
         "exact_rate_no_ledger": rate("no_ledger", "exact_correct"),
         "exact_rate_ledger": rate("ledger", "exact_correct"),
         "paired_termination_outcomes": _ordered_outcomes(termination_outcomes),
@@ -432,9 +383,7 @@ def _summarize_tier(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         ),
         "individual_token_deltas": token_deltas,
         "median_both_complete_ledger_token_overhead_fraction": (
-            statistics.median(both_complete_overheads)
-            if both_complete_overheads
-            else None
+            statistics.median(both_complete_overheads) if both_complete_overheads else None
         ),
         "median_ledger_minus_no_ledger_tool_steps": (
             statistics.median(step_deltas) if step_deltas else None
@@ -466,7 +415,5 @@ def _ordered_outcomes(counter: Counter[str]) -> dict[str, int]:
 
 
 def _sha256_json(value: Mapping[str, Any]) -> str:
-    canonical = json.dumps(value, sort_keys=True, separators=(",", ":")).encode(
-        "utf-8"
-    )
+    canonical = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()

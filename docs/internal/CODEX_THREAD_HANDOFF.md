@@ -77,6 +77,10 @@ The work progressed through evidence rather than assuming a design:
 19. `llm_inspector_ui` is now lint-clean, formatted, and included in the shared
     gate. Its 44 package tests and the full repository gate passed;
     `agent_lib` is the next adoption package.
+20. `agent_lib` is now lint-clean, formatted, and included in the shared gate.
+    Its compatibility adapter and two scenario helpers were added to their
+    existing `__all__` surfaces and locked by a public-API regression test. The
+    full gate now reports 1,268 passed; `llm_inspector` is next.
 
 Key commits, oldest to newest:
 
@@ -119,14 +123,14 @@ arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
 complete. The active maintenance sequence is Python-quality adoption, next
-through `agent_lib`. A deeper
+through `llm_inspector`. A deeper
 command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.
 
 ## Verification posture
 
-The latest repository gate passed with 1,267 tests, 304 skips, and three existing
+The latest repository gate passed with 1,268 tests, 304 skips, and three existing
 multiprocessing/fork deprecation warnings. Focused trust, temporal, security, and
 availability tests also pass. Use the root invocation documented in `AGENTS.md`
 with explicit source paths and plugin autoload disabled when reproducing this
