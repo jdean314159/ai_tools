@@ -309,6 +309,14 @@ lint-clean; Ruff mechanically formatted 15 files, bringing the shared gate to
 repository gate remains 1,268 passed, 304 skipped, with the same three warnings.
 Remaining examples still require per-project classification before adoption.
 
+The tenth Python-quality checkpoint adopts `examples/language_tutor`, another
+maintained CI-installed example. Its 11 lint findings were intentional delayed
+imports after direct-checkout source-path bootstrapping; those imports now carry
+narrow `E402` annotations. Ruff mechanically formatted 6 files, bringing the
+shared gate to 417 files. Its 3 dedicated tests and the full repository gate
+passed; the latter remains 1,268 passed, 304 skipped, with the same three
+warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

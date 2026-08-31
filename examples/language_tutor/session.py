@@ -11,7 +11,13 @@ from pydantic import BaseModel, Field
 
 from engram import ProjectMemory
 from llm_engines import ChatMessage, ChatModel, GenerationRequest, StructuredOutputHandler
-from llm_harness_core import CapabilityDescriptor, CapabilityKind, MemoryRecord, OperationResult, TraceEvent
+from llm_harness_core import (
+    CapabilityDescriptor,
+    CapabilityKind,
+    MemoryRecord,
+    OperationResult,
+    TraceEvent,
+)
 
 from .drills import DrillQuestion, DrillSystem
 from .profiles import get_profile
@@ -46,6 +52,7 @@ class VocabItem(BaseModel):
 
 class TurnAnalysis(BaseModel):
     """Merged per-turn extraction: corrections + new vocabulary in one call."""
+
     corrections: list[Correction] = Field(default_factory=list)
     new_vocabulary: list[VocabItem] = Field(default_factory=list)
 
@@ -124,17 +131,28 @@ class LanguageTutor:
             f"Prior sessions: {json.dumps(history)}"
         )
         plan = self._generate_structured(self.planner, instruction, LessonPlan, max_tokens=500)
-        parsed = plan.model_dump() if plan else {
-            "warmup_topic": self.profile.starter(),
-            "focus_areas": ["conversation", "useful vocabulary"],
-            "drill_type": "mixed_review",
-            "new_content": [],
-            "estimated_minutes": {"conversation": duration_minutes},
-        }
+        parsed = (
+            plan.model_dump()
+            if plan
+            else {
+                "warmup_topic": self.profile.starter(),
+                "focus_areas": ["conversation", "useful vocabulary"],
+                "drill_type": "mixed_review",
+                "new_content": [],
+                "estimated_minutes": {"conversation": duration_minutes},
+            }
+        )
         self.plan = parsed
         self.state = "warmup"
-        self._event("language_tutor.session.started", {"duration_minutes": duration_minutes, "plan": parsed})
-        return {"session_id": self.session_id, "language": self.language, "plan": parsed, "greeting": self.profile.greeting}
+        self._event(
+            "language_tutor.session.started", {"duration_minutes": duration_minutes, "plan": parsed}
+        )
+        return {
+            "session_id": self.session_id,
+            "language": self.language,
+            "plan": parsed,
+            "greeting": self.profile.greeting,
+        }
 
     def send_message(self, message: str) -> TutorResponse:
         self.exchange_count += 1
@@ -143,7 +161,9 @@ class LanguageTutor:
         prompt_result = self.memory.build_prompt(message)
         focus = self.plan.get("focus_areas") if isinstance(self.plan, dict) else None
         focus_prefix = f"Session focus: {', '.join(focus)}\n\n" if focus else ""
-        response_text = self._generate(self.engine, focus_prefix + prompt_result["prompt"], max_tokens=900)
+        response_text = self._generate(
+            self.engine, focus_prefix + prompt_result["prompt"], max_tokens=900
+        )
         self.memory.add_turn("assistant", response_text, self.session_id)
         try:
             self.memory.index_text(f"User: {message}\nAssistant: {response_text}")
@@ -155,7 +175,13 @@ class LanguageTutor:
         self.corrections_count += len(corrections)
         self.vocabulary.extend(vocab)
         for correction in corrections:
-            self.store.log_mistake(self.session_id, self.language, correction.get("error", ""), correction.get("correction", ""), correction.get("explanation", "grammar"))
+            self.store.log_mistake(
+                self.session_id,
+                self.language,
+                correction.get("error", ""),
+                correction.get("correction", ""),
+                correction.get("explanation", "grammar"),
+            )
         for item in vocab:
             self.store.add_vocab(self.language, item.get("word", ""), item.get("translation", ""))
         result = TutorResponse(
@@ -169,7 +195,15 @@ class LanguageTutor:
                 "state": self.state,
             },
         )
-        self._event("language_tutor.turn.completed", {"message": message, "response": response_text, "corrections": len(corrections), "vocabulary": len(vocab)})
+        self._event(
+            "language_tutor.turn.completed",
+            {
+                "message": message,
+                "response": response_text,
+                "corrections": len(corrections),
+                "vocabulary": len(vocab),
+            },
+        )
         return result
 
     def explain(self, text: str, question: str | None = None) -> str:
@@ -188,7 +222,9 @@ class LanguageTutor:
             f"Context: {context or ''}"
         )
         parsed = self._generate_structured(self.engine, instruction, WordLookup, max_tokens=250)
-        result = parsed.model_dump() if parsed else {"translation": "", "alternatives": [], "notes": ""}
+        result = (
+            parsed.model_dump() if parsed else {"translation": "", "alternatives": [], "notes": ""}
+        )
         if result.get("translation"):
             self.store.add_vocab(self.language, word, str(result["translation"]))
         return {"word": word, **result}
@@ -226,7 +262,13 @@ class LanguageTutor:
             return {"error": "No active drill question. Call get_drill first.", "correct": False}
         result = self.drills.check(self.active_drill, answer)
         if not result.correct:
-            self.store.log_mistake(self.session_id, self.language, answer, result.correct_answer, f"drill:{result.drill_type}")
+            self.store.log_mistake(
+                self.session_id,
+                self.language,
+                answer,
+                result.correct_answer,
+                f"drill:{result.drill_type}",
+            )
         self.active_drill = None
         self.state = "conversation"
         return {**asdict(result), "drill_stats": self.drills.stats()}
@@ -236,20 +278,44 @@ class LanguageTutor:
 
     def handle_audio_transcript(self, transcript: str) -> dict[str, Any]:
         response = self.send_message(transcript)
-        return {"session_id": self.session_id, "transcription": transcript, "message": response.text, "audio_response": None, "metadata": response.metadata}
+        return {
+            "session_id": self.session_id,
+            "transcription": transcript,
+            "message": response.text,
+            "audio_response": None,
+            "metadata": response.metadata,
+        }
 
     def score_pronunciation(self, expected_text: str, detected_text: str) -> dict[str, Any]:
         score = int(self.drills._similarity(expected_text, detected_text) * 100)
         if score < 60:
-            self.store.log_mistake(self.session_id, self.language, detected_text, expected_text, "pronunciation")
-        return {"score": score, "detected_text": detected_text, "expected_text": expected_text, "feedback": "Clear pronunciation." if score >= 80 else "Slow down and repeat the target sentence."}
+            self.store.log_mistake(
+                self.session_id, self.language, detected_text, expected_text, "pronunciation"
+            )
+        return {
+            "score": score,
+            "detected_text": detected_text,
+            "expected_text": expected_text,
+            "feedback": "Clear pronunciation."
+            if score >= 80
+            else "Slow down and repeat the target sentence.",
+        }
 
     def end_session(self) -> dict[str, Any]:
         turns = self.memory.get_recent_turns(self.session_id, limit=100)
         prompt = f"Summarize this {self.profile.name} session.\nTurns: {json.dumps(turns)}"
         summary = self._generate(self.planner, prompt, max_tokens=500)
         try:
-            self.memory.store_episode(summary, metadata={"type": "session_summary", "session_id": self.session_id, "language": self.language}, importance=0.95, bypass_filter=True)
+            self.memory.store_episode(
+                summary,
+                metadata={
+                    "type": "session_summary",
+                    "session_id": self.session_id,
+                    "language": self.language,
+                },
+                importance=0.95,
+                bypass_filter=True,
+            )
         except Exception:
             pass
         accuracy = self.drills.stats()["accuracy"]
@@ -285,7 +351,10 @@ class LanguageTutor:
         return {
             "session_id": self.session_id,
             "turns": self.memory.get_recent_turns(self.session_id, limit=50),
-            "episodes": [self._plain(item) for item in self.memory.search_episodes("session", n=5, min_relevance=0.0)],
+            "episodes": [
+                self._plain(item)
+                for item in self.memory.search_episodes("session", n=5, min_relevance=0.0)
+            ],
             "memory_stats": self.memory.get_stats(),
         }
 
@@ -295,7 +364,18 @@ class LanguageTutor:
             provider="examples.language_tutor",
             component="LanguageTutor",
             summary="Language tutor example built only on public ai_tools APIs.",
-            features=("conversation", "memory_augmented_prompting", "session_planning", "drills", "spaced_repetition", "lookup", "grammar_check", "voice_transcript_flow", "pronunciation_scoring", "session_history"),
+            features=(
+                "conversation",
+                "memory_augmented_prompting",
+                "session_planning",
+                "drills",
+                "spaced_repetition",
+                "lookup",
+                "grammar_check",
+                "voice_transcript_flow",
+                "pronunciation_scoring",
+                "session_history",
+            ),
             input_types=("user_message", "language_profile", "drill_answer"),
             output_types=("tutor_response", "session_plan", "trace_events", "memory_records"),
             metadata={"language": self.language, "session_id": self.session_id},
@@ -314,17 +394,35 @@ class LanguageTutor:
     def memory_records(self) -> tuple[MemoryRecord, ...]:
         records = []
         for idx, turn in enumerate(self.memory.get_recent_turns(self.session_id, limit=20)):
-            records.append(MemoryRecord(text=str(turn.get("text", "")), source="examples.language_tutor.working_memory", metadata={"role": turn.get("role"), "turn_index": idx, "session_id": self.session_id}))
+            records.append(
+                MemoryRecord(
+                    text=str(turn.get("text", "")),
+                    source="examples.language_tutor.working_memory",
+                    metadata={
+                        "role": turn.get("role"),
+                        "turn_index": idx,
+                        "session_id": self.session_id,
+                    },
+                )
+            )
         return tuple(records)
 
     def close(self) -> None:
         self.memory.close()
 
     def _generate(self, engine: ChatModel, prompt: str, *, max_tokens: int) -> str:
-        response = engine.generate(GenerationRequest(messages=[ChatMessage(role="user", content=prompt)], max_tokens=max_tokens, temperature=0.4))
+        response = engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content=prompt)],
+                max_tokens=max_tokens,
+                temperature=0.4,
+            )
+        )
         return response.text
 
-    def _generate_structured(self, engine: ChatModel, instruction: str, model_class: type[BaseModel], *, max_tokens: int):
+    def _generate_structured(
+        self, engine: ChatModel, instruction: str, model_class: type[BaseModel], *, max_tokens: int
+    ):
         """
         Generate and parse a structured response via the public
         StructuredOutputHandler. The schema prompt is derived from the model,
@@ -335,7 +433,9 @@ class LanguageTutor:
         result = StructuredOutputHandler.parse_with_details(raw, model_class)
         return result.data if result.success else None
 
-    def _analyze_turn(self, user_message: str, response_text: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    def _analyze_turn(
+        self, user_message: str, response_text: str
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """
         One merged extraction call: corrections + new vocabulary together.
         Returns ([], []) when analysis is disabled or parsing fails, so a turn
@@ -361,7 +461,12 @@ class LanguageTutor:
                 event_type=event_type,
                 source_package="examples.language_tutor",
                 source_component="LanguageTutor",
-                payload={"session_id": self.session_id, "language": self.language, "state": self.state, **payload},
+                payload={
+                    "session_id": self.session_id,
+                    "language": self.language,
+                    "state": self.state,
+                    **payload,
+                },
                 tags=("language_tutor",),
             )
         )

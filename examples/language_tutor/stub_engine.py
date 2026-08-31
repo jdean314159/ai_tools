@@ -64,7 +64,16 @@ class StubTutorEngine:
             )
         if "text for errors" in lower:
             errors = (
-                [{"start": 0, "end": 5, "error": "yo es", "suggestion": "yo soy", "type": "conjugation", "hint": "Use soy with yo."}]
+                [
+                    {
+                        "start": 0,
+                        "end": 5,
+                        "error": "yo es",
+                        "suggestion": "yo soy",
+                        "type": "conjugation",
+                        "hint": "Use soy with yo.",
+                    }
+                ]
                 if "yo es" in lower
                 else []
             )

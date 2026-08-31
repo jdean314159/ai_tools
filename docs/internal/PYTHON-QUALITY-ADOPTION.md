@@ -44,7 +44,7 @@ configuration.
 | `rag_lib` | 0 | 0 (adopted) |
 | `llm_engines` | 0 | 0 (adopted) |
 | `engram` | 0 | 0 (adopted) |
-| `examples/language_tutor` | 11 | 8 |
+| `examples/language_tutor` | 0 | 0 (adopted) |
 | `examples/language_tutor_reference_app` | 5 | 34 |
 | `examples/mail_assistant` | 1 | 13 |
 | `scripts` | 5 | 26 |
@@ -65,7 +65,8 @@ may need an explicit exclusion rather than automatic rewriting.
 7. `llm_engines` — adopted and enforced in CI.
 8. `engram` — adopted and enforced in CI.
 9. `examples/diagnostics_agent` — adopted and enforced in CI.
-10. Remaining examples, scripts, and root integration tests — classify generated
+10. `examples/language_tutor` — adopted and enforced in CI.
+11. Remaining examples, scripts, and root integration tests — classify generated
     and historical files before adoption.
 
 Each adoption commit must run that package's tests plus the repository gate.

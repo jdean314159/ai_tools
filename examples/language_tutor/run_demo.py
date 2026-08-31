@@ -7,10 +7,10 @@ from ._bootstrap import install_repo_source_paths
 
 install_repo_source_paths()
 
-from llm_engines import get_engine
+from llm_engines import get_engine  # noqa: E402
 
-from .session import LanguageTutor
-from .stub_engine import StubTutorEngine
+from .session import LanguageTutor  # noqa: E402
+from .stub_engine import StubTutorEngine  # noqa: E402
 
 
 def main() -> None:

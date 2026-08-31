@@ -10,13 +10,13 @@ from ._bootstrap import install_repo_source_paths
 
 install_repo_source_paths()
 
-from llm_engines import get_engine
+from llm_engines import get_engine  # noqa: E402
 
-from .drills import DrillSystem
-from .profiles import get_profile
-from .session import LanguageTutor
-from .store import TutorStore
-from .stub_engine import StubTutorEngine
+from .drills import DrillSystem  # noqa: E402
+from .profiles import get_profile  # noqa: E402
+from .session import LanguageTutor  # noqa: E402
+from .store import TutorStore  # noqa: E402
+from .stub_engine import StubTutorEngine  # noqa: E402
 
 try:
     from fastapi import FastAPI, HTTPException
@@ -224,7 +224,9 @@ async def check_text(request: CheckTextRequest) -> dict[str, Any]:
 @app.get("/api/conversation/drill/types")
 async def drill_types(language: str = "spanish") -> dict[str, Any]:
     language_code = get_profile(language).code
-    return _plain({"language": language_code, "types": DrillSystem(language_code, _store()).types()})
+    return _plain(
+        {"language": language_code, "types": DrillSystem(language_code, _store()).types()}
+    )
 
 
 @app.post("/api/conversation/drill")

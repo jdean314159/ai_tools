@@ -104,6 +104,10 @@ The work progressed through evidence rather than assuming a design:
     was already lint-clean; Ruff formatted 15 files, its dedicated suite passed
     167 tests with 8 skips, and the full gate remains at 1,268 passed. Remaining
     examples require per-project classification.
+26. `examples/language_tutor` is now adopted. Its direct-checkout bootstrap
+    requires delayed sibling-package imports, now documented with narrow `E402`
+    annotations. Its 3 dedicated tests passed, the shared gate covers 417 files,
+    and the full gate remains at 1,268 passed.
 
 Key commits, oldest to newest:
 

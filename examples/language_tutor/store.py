@@ -65,7 +65,16 @@ class TutorStore:
                 (session_id, language, datetime.now(UTC).isoformat()),
             )
 
-    def complete_session(self, session_id: str, *, exchanges: int, corrections: int, vocab_count: int, drill_accuracy: float, summary: str) -> None:
+    def complete_session(
+        self,
+        session_id: str,
+        *,
+        exchanges: int,
+        corrections: int,
+        vocab_count: int,
+        drill_accuracy: float,
+        summary: str,
+    ) -> None:
         with self._conn() as conn:
             conn.execute(
                 """
@@ -73,14 +82,36 @@ class TutorStore:
                     vocab_count=?, drill_accuracy=?, summary=?
                 WHERE session_id=?
                 """,
-                (datetime.now(UTC).isoformat(), exchanges, corrections, vocab_count, drill_accuracy, summary, session_id),
+                (
+                    datetime.now(UTC).isoformat(),
+                    exchanges,
+                    corrections,
+                    vocab_count,
+                    drill_accuracy,
+                    summary,
+                    session_id,
+                ),
             )
 
-    def log_mistake(self, session_id: str, language: str, error: str, correction: str, error_type: str = "grammar") -> None:
+    def log_mistake(
+        self,
+        session_id: str,
+        language: str,
+        error: str,
+        correction: str,
+        error_type: str = "grammar",
+    ) -> None:
         with self._conn() as conn:
             conn.execute(
                 "INSERT INTO mistakes(session_id, language, error, correction, error_type, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (session_id, language, error[:200], correction[:200], error_type[:80], datetime.now(UTC).isoformat()),
+                (
+                    session_id,
+                    language,
+                    error[:200],
+                    correction[:200],
+                    error_type[:80],
+                    datetime.now(UTC).isoformat(),
+                ),
             )
 
     def add_vocab(self, language: str, word: str, translation: str) -> None:
@@ -96,7 +127,9 @@ class TutorStore:
                 (language, word[:100], translation[:200], now),
             )
 
-    def record_vocab_result(self, language: str, word: str, translation: str, correct: bool) -> None:
+    def record_vocab_result(
+        self, language: str, word: str, translation: str, correct: bool
+    ) -> None:
         self.add_vocab(language, word, translation)
         with self._conn() as conn:
             row = conn.execute(

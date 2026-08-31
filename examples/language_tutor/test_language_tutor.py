@@ -12,7 +12,9 @@ from .stub_engine import StubTutorEngine
 
 
 def test_public_api_language_tutor_full_flow(tmp_path: Path) -> None:
-    tutor = LanguageTutor(language="spanish", engine=StubTutorEngine(), base_dir=tmp_path, session_id="s1")
+    tutor = LanguageTutor(
+        language="spanish", engine=StubTutorEngine(), base_dir=tmp_path, session_id="s1"
+    )
     try:
         started = tutor.start_session(duration_minutes=20)
         assert started["session_id"] == "s1"
@@ -44,7 +46,9 @@ def test_public_api_language_tutor_full_flow(tmp_path: Path) -> None:
         audio = tutor.handle_audio_transcript("yo es estudiante")
         assert audio["transcription"] == "yo es estudiante"
 
-        pronunciation = tutor.score_pronunciation("Estoy aprendiendo espanol.", "Estoy aprendiendo espanol.")
+        pronunciation = tutor.score_pronunciation(
+            "Estoy aprendiendo espanol.", "Estoy aprendiendo espanol."
+        )
         assert pronunciation["score"] == 100
 
         summary = tutor.end_session()
@@ -84,12 +88,16 @@ def test_graphical_app_stub_flow(tmp_path: Path, monkeypatch) -> None:
 
     first = asyncio.run(
         web_app.start_session(
-            web_app.StartRequest(language="spanish", backend="stub", model="stub", base_dir=str(tmp_path))
+            web_app.StartRequest(
+                language="spanish", backend="stub", model="stub", base_dir=str(tmp_path)
+            )
         )
     )
     second = asyncio.run(
         web_app.start_session(
-            web_app.StartRequest(language="spanish", backend="stub", model="stub", base_dir=str(tmp_path))
+            web_app.StartRequest(
+                language="spanish", backend="stub", model="stub", base_dir=str(tmp_path)
+            )
         )
     )
     try:
@@ -97,4 +105,6 @@ def test_graphical_app_stub_flow(tmp_path: Path, monkeypatch) -> None:
         assert first["session_id"] not in web_app._sessions
         assert second["session_id"] in web_app._sessions
     finally:
-        asyncio.run(web_app.end_session(web_app.MessageRequest(session_id=second["session_id"], message="")))
+        asyncio.run(
+            web_app.end_session(web_app.MessageRequest(session_id=second["session_id"], message=""))
+        )

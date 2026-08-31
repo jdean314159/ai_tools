@@ -43,9 +43,32 @@ class DrillSystem:
 
     def types(self) -> list[dict[str, str]]:
         if self.profile.code == "la":
-            ids = ["auto", "mixed_review", "vocabulary_review", "translation", "pronunciation", "irregular_verbs_present", "noun_declensions", "prepositions", "sentence_dictation", "listening_comprehension"]
+            ids = [
+                "auto",
+                "mixed_review",
+                "vocabulary_review",
+                "translation",
+                "pronunciation",
+                "irregular_verbs_present",
+                "noun_declensions",
+                "prepositions",
+                "sentence_dictation",
+                "listening_comprehension",
+            ]
         else:
-            ids = ["auto", "mixed_review", "vocabulary_review", "translation", "pronunciation", "irregular_verbs_preterite", "irregular_verbs_imperfect", "reflexive_verbs", "prepositions", "sentence_dictation", "listening_comprehension"]
+            ids = [
+                "auto",
+                "mixed_review",
+                "vocabulary_review",
+                "translation",
+                "pronunciation",
+                "irregular_verbs_preterite",
+                "irregular_verbs_imperfect",
+                "reflexive_verbs",
+                "prepositions",
+                "sentence_dictation",
+                "listening_comprehension",
+            ]
         return [{"id": item, "label": item.replace("_", " ").title()} for item in ids]
 
     def recommend_type(self) -> str:
@@ -64,7 +87,9 @@ class DrillSystem:
     def question(self, drill_type: str = "auto") -> DrillQuestion:
         drill_type = self.recommend_type() if drill_type in {"", "auto"} else drill_type
         if drill_type == "mixed_review":
-            drill_type = choice(["vocabulary_review", "translation", "prepositions", "sentence_dictation"])
+            drill_type = choice(
+                ["vocabulary_review", "translation", "prepositions", "sentence_dictation"]
+            )
         if drill_type == "vocabulary_review":
             return self._vocabulary()
         if drill_type == "translation":
@@ -78,13 +103,24 @@ class DrillSystem:
     def check(self, question: DrillQuestion, answer: str) -> DrillResult:
         self.attempts += 1
         accuracy = self._similarity(question.correct_answer, answer)
-        correct = accuracy >= (0.8 if question.drill_type in {"translation", "pronunciation", "sentence_dictation", "listening_comprehension"} else 0.98)
+        correct = accuracy >= (
+            0.8
+            if question.drill_type
+            in {"translation", "pronunciation", "sentence_dictation", "listening_comprehension"}
+            else 0.98
+        )
         if correct:
             self.correct += 1
             feedback = "Correct."
         else:
             feedback = f"Review this answer: {question.correct_answer}"
-            self.mistakes.append({"drill_type": question.drill_type, "answer": answer, "correct_answer": question.correct_answer})
+            self.mistakes.append(
+                {
+                    "drill_type": question.drill_type,
+                    "answer": answer,
+                    "correct_answer": question.correct_answer,
+                }
+            )
         if question.drill_type == "vocabulary_review":
             self.store.record_vocab_result(
                 self.profile.code,
@@ -92,7 +128,15 @@ class DrillSystem:
                 question.metadata.get("translation", question.context),
                 correct,
             )
-        return DrillResult(correct, accuracy, answer, question.correct_answer, feedback, question.drill_type, question.question_id)
+        return DrillResult(
+            correct,
+            accuracy,
+            answer,
+            question.correct_answer,
+            feedback,
+            question.drill_type,
+            question.question_id,
+        )
 
     def stats(self) -> dict[str, Any]:
         return {
@@ -114,29 +158,57 @@ class DrillSystem:
                 metadata={"word": item["word"], "translation": item["translation"]},
             )
         word, translation = choice(list(self.content["vocabulary"].items()))
-        return DrillQuestion(f"vocab_{word}", "vocabulary_review", f"Translate: {translation}", word, metadata={"word": word, "translation": translation})
+        return DrillQuestion(
+            f"vocab_{word}",
+            "vocabulary_review",
+            f"Translate: {translation}",
+            word,
+            metadata={"word": word, "translation": translation},
+        )
 
     def _translation(self) -> DrillQuestion:
         target, english = choice(self.content["sentences"])
-        return DrillQuestion(f"trans_{abs(hash(english))}", "translation", f"Translate into {self.profile.name}:", target, context=english)
+        return DrillQuestion(
+            f"trans_{abs(hash(english))}",
+            "translation",
+            f"Translate into {self.profile.name}:",
+            target,
+            context=english,
+        )
 
     def _preposition(self) -> DrillQuestion:
         item = choice(self.content["prepositions"])
         if self.profile.code == "la":
             prep, case, meaning = item
-            return DrillQuestion(f"prep_{prep}", "prepositions", f"What case does '{prep}' take for '{meaning}'?", case)
+            return DrillQuestion(
+                f"prep_{prep}",
+                "prepositions",
+                f"What case does '{prep}' take for '{meaning}'?",
+                case,
+            )
         verb, prep, meaning = item
         return DrillQuestion(f"prep_{verb}", "prepositions", f"{verb} ___", prep, context=meaning)
 
     def _listening(self, drill_type: str) -> DrillQuestion:
         target, english = choice(self.content["sentences"])
-        prompt = "Repeat aloud:" if drill_type == "pronunciation" else "Listen and type what you hear:"
-        return DrillQuestion(f"{drill_type}_{abs(hash(target))}", drill_type, prompt, target, context=english, auto_play_tts=True)
+        prompt = (
+            "Repeat aloud:" if drill_type == "pronunciation" else "Listen and type what you hear:"
+        )
+        return DrillQuestion(
+            f"{drill_type}_{abs(hash(target))}",
+            drill_type,
+            prompt,
+            target,
+            context=english,
+            auto_play_tts=True,
+        )
 
     def _verb(self, drill_type: str) -> DrillQuestion:
         verb, forms = choice(list(self.content["verbs"].items()))
         person, answer = choice(list(forms.items()))
-        return DrillQuestion(f"verb_{verb}_{person}", "irregular_verb", f"Conjugate '{verb}' for {person}:", answer)
+        return DrillQuestion(
+            f"verb_{verb}_{person}", "irregular_verb", f"Conjugate '{verb}' for {person}:", answer
+        )
 
     @staticmethod
     def _similarity(expected: str, answer: str) -> float:
