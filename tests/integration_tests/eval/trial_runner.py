@@ -55,9 +55,7 @@ class TrialRunner:
         self._warmup_complete = False
 
     async def run_all(self, resume: bool = True) -> list[TrialRecord]:
-        trial_indices = {
-            entry[0]: index for index, entry in enumerate(TRIAL_SCHEDULE)
-        }
+        trial_indices = {entry[0]: index for index, entry in enumerate(TRIAL_SCHEDULE)}
         for entry in self.config.schedule:
             label, subset_name, repetitions, distractors = entry
             trial_index = trial_indices[label]
@@ -71,9 +69,7 @@ class TrialRunner:
                         f"{saved_mode!r} != {self.config.mode!r}"
                     )
                 known = {item.name for item in fields(TrialRecord)}
-                record = TrialRecord(
-                    **{key: value for key, value in raw.items() if key in known}
-                )
+                record = TrialRecord(**{key: value for key, value in raw.items() if key in known})
                 self.records.append(record)
                 if label == "contradict":
                     self._contradicted_ids.update(
@@ -114,9 +110,7 @@ class TrialRunner:
         use_contradiction = subset_name == "contradictions"
 
         for _ in range(n_distractors):
-            result = await self.probe.inject_distractor(
-                self._distractor_counter
-            )
+            result = await self.probe.inject_distractor(self._distractor_counter)
             self._distractor_counter += 1
             injection_results.append(asdict(result))
 
@@ -169,9 +163,7 @@ class TrialRunner:
                     for query_type in query_types
                 ]
             )
-        expanded_facts = [
-            fact for fact in self.corpus.facts for _ in query_types
-        ]
+        expanded_facts = [fact for fact in self.corpus.facts for _ in query_types]
         judgments = await self.judge.judge_batch(
             expanded_facts,
             probe_results,
@@ -200,12 +192,8 @@ class TrialRunner:
                         "neural_hint_present",
                         False,
                     ),
-                    "neural_hint_text": getattr(
-                        probe_result, "neural_hint_text", None
-                    ),
-                    "neural_hint_episodes": getattr(
-                        probe_result, "neural_hint_episodes", None
-                    ),
+                    "neural_hint_text": getattr(probe_result, "neural_hint_text", None),
+                    "neural_hint_episodes": getattr(probe_result, "neural_hint_episodes", None),
                     "neural_hint_expected_present": getattr(
                         probe_result, "neural_hint_expected_present", None
                     ),

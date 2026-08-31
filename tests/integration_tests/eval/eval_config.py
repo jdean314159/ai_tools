@@ -19,9 +19,7 @@ TRIAL_SCHEDULE = (
 @dataclass
 class EvalConfig:
     backends: tuple[str, ...] = ("baseline", "neural_on")
-    schedule: list[tuple[str, str, int, int]] = field(
-        default_factory=lambda: list(TRIAL_SCHEDULE)
-    )
+    schedule: list[tuple[str, str, int, int]] = field(default_factory=lambda: list(TRIAL_SCHEDULE))
     retrieve_top_k: int = 3
     mode: str = "retrieval"
     warmup_replays: int = 1
@@ -41,21 +39,15 @@ class EvalConfig:
     neural_prompt_advisory_enabled: bool = False
     neural_importance_advisory_enabled: bool = False
     project_id: str = "neural_ab_eval"
-    output_root: Path = field(
-        default_factory=lambda: Path(__file__).resolve().parent / "runs"
-    )
+    output_root: Path = field(default_factory=lambda: Path(__file__).resolve().parent / "runs")
     corpus_path: Path = field(
         default_factory=lambda: Path(__file__).resolve().parent / "eval_corpus.json"
     )
 
     def validate_backend(self, backend: str) -> None:
         if backend not in self.backends:
-            raise ValueError(
-                f"Unknown backend {backend!r}; expected one of {self.backends}"
-            )
+            raise ValueError(f"Unknown backend {backend!r}; expected one of {self.backends}")
 
     def validate_mode(self) -> None:
         if self.mode not in {"retrieval", "generation"}:
-            raise ValueError(
-                f"Unknown mode {self.mode!r}; expected retrieval or generation"
-            )
+            raise ValueError(f"Unknown mode {self.mode!r}; expected retrieval or generation")

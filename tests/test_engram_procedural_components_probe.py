@@ -12,13 +12,19 @@ from examples.engram_procedural_components_probe import EXPECTED, cases, run_exp
 
 class SyntheticEngine:
     model = "/private/synthetic.gguf"
+
     def generate(self, request):
         prompt = request.messages[0].content
         case = next(case for case in cases() if case.query in prompt)
         payload = {"components": EXPECTED[case.case_id], "evidence_id": case.experience_id}
-        return GenerationResponse(message=ChatMessage(role="assistant", content=json.dumps(payload)),
-            finish_reason="stop", usage=UsageStats(input_tokens=100, output_tokens=12, latency_ms=1.0),
-            model_name=self.model, backend="synthetic", seed_status="accepted")
+        return GenerationResponse(
+            message=ChatMessage(role="assistant", content=json.dumps(payload)),
+            finish_reason="stop",
+            usage=UsageStats(input_tokens=100, output_tokens=12, latency_ms=1.0),
+            model_name=self.model,
+            backend="synthetic",
+            seed_status="accepted",
+        )
 
 
 def test_component_suite_scores_five_exact_cases(tmp_path):
@@ -38,9 +44,15 @@ def test_component_artifact_omits_raw_inputs_and_private_data(tmp_path):
 
 
 def test_committed_component_artifact_is_pinned_and_private():
-    path = Path(__file__).resolve().parents[1] / "docs/projects/runs/2026-08-30-spark-qwen-engram-procedural-components-v1.json"
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs/projects/runs/2026-08-30-spark-qwen-engram-procedural-components-v1.json"
+    )
     content = path.read_bytes()
-    assert hashlib.sha256(content).hexdigest() == "1eb4fadc613008e48e75706506d3090b9dc81eeb8a0ef01f2ac4aa50cbf57b10"
+    assert (
+        hashlib.sha256(content).hexdigest()
+        == "1eb4fadc613008e48e75706506d3090b9dc81eeb8a0ef01f2ac4aa50cbf57b10"
+    )
     decoded = content.decode()
     for forbidden in ("192.168.50.225", "/home/", "Prior incident:", "Question:"):
         assert forbidden not in decoded

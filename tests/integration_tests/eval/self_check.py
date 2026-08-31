@@ -78,9 +78,10 @@ def main() -> None:
         "forgetting",
         "cold_query",
     ]
-    assert OllamaJudge._extract_json(
-        '<think>hidden</think>```json\n{"retrieved": true}\n```'
-    ) == '{"retrieved": true}'
+    assert (
+        OllamaJudge._extract_json('<think>hidden</think>```json\n{"retrieved": true}\n```')
+        == '{"retrieved": true}'
+    )
 
     trial = {
         "trial_index": 0,
@@ -128,9 +129,7 @@ def main() -> None:
                     "recall_direct": 0.8,
                     "recall_paraphrase": 0.8,
                     "recall_decoy": 0.7 if neural_on else 0.6,
-                    "contradiction_bleed_rate": (
-                        0.1 if neural_on else 0.2
-                    ),
+                    "contradiction_bleed_rate": (0.1 if neural_on else 0.2),
                 }
                 for label in (
                     "baseline",

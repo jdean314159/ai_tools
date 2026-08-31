@@ -18,9 +18,12 @@ class SyntheticEngine:
         case = next(case for case in cases() if case.query in prompt)
         payload = {"value": case.expected_action, "evidence_id": case.experience_id}
         return GenerationResponse(
-            message=ChatMessage(role="assistant", content=json.dumps(payload)), finish_reason="stop",
+            message=ChatMessage(role="assistant", content=json.dumps(payload)),
+            finish_reason="stop",
             usage=UsageStats(input_tokens=100, output_tokens=8, latency_ms=1.0),
-            model_name=self.model, backend="synthetic", seed_status="accepted",
+            model_name=self.model,
+            backend="synthetic",
+            seed_status="accepted",
         )
 
 
@@ -40,9 +43,15 @@ def test_procedural_artifact_omits_raw_inputs_and_private_data(tmp_path):
 
 
 def test_committed_procedural_artifact_is_pinned_and_private():
-    path = Path(__file__).resolve().parents[1] / "docs/projects/runs/2026-08-30-spark-qwen-engram-procedural-transfer-v1.json"
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs/projects/runs/2026-08-30-spark-qwen-engram-procedural-transfer-v1.json"
+    )
     content = path.read_bytes()
-    assert hashlib.sha256(content).hexdigest() == "5bacd6a04b5ab252cdb7b584ae237066f8140a87b1eb4a038309771df8a7f146"
+    assert (
+        hashlib.sha256(content).hexdigest()
+        == "5bacd6a04b5ab252cdb7b584ae237066f8140a87b1eb4a038309771df8a7f146"
+    )
     decoded = content.decode()
     for forbidden in ("192.168.50.225", "/home/", "Prior incident:", "Question:"):
         assert forbidden not in decoded

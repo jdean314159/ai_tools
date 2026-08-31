@@ -81,9 +81,7 @@ class EngramProbe:
         self._memory: ProjectMemory | None = None
         self._session_counter = 0
         self._session: aiohttp.ClientSession | None = None
-        self._generation_semaphore = asyncio.Semaphore(
-            max(1, int(self.config.judge_concurrency))
-        )
+        self._generation_semaphore = asyncio.Semaphore(max(1, int(self.config.judge_concurrency)))
         self._generation_cache: dict[str, str] = {}
         self._generation_cache_path = self.storage_dir.parent / "generation_cache.json"
 
@@ -110,12 +108,8 @@ class EngramProbe:
                 min_warmup_steps=self.config.neural_min_warmup_steps,
                 surprise_threshold=self.config.surprise_threshold,
                 initialization_seed=self.config.neural_initialization_seed,
-                prompt_advisory_enabled=(
-                    self.config.neural_prompt_advisory_enabled
-                ),
-                importance_advisory_enabled=(
-                    self.config.neural_importance_advisory_enabled
-                ),
+                prompt_advisory_enabled=(self.config.neural_prompt_advisory_enabled),
+                importance_advisory_enabled=(self.config.neural_importance_advisory_enabled),
             )
             print(
                 "[probe] neural affinity weight="
@@ -234,9 +228,7 @@ class EngramProbe:
         try:
             before_writes = None
             if memory.neural_layer is not None:
-                before_writes = int(
-                    memory.neural_layer.get_stats().get("total_writes", 0)
-                )
+                before_writes = int(memory.neural_layer.get_stats().get("total_writes", 0))
             session_id = f"eval_session_{self._session_counter}"
             memory.add_turn("user", text, session_id=session_id)
             memory.add_turn(
@@ -247,9 +239,7 @@ class EngramProbe:
             novelty_score, novelty_ema, novelty_ratio = self._read_novelty()
             neural_written = None
             if memory.neural_layer is not None and before_writes is not None:
-                after_writes = int(
-                    memory.neural_layer.get_stats().get("total_writes", 0)
-                )
+                after_writes = int(memory.neural_layer.get_stats().get("total_writes", 0))
                 neural_written = after_writes > before_writes
             episode_id = memory.store_episode(
                 text,
@@ -348,18 +338,10 @@ class EngramProbe:
                 )
                 if hint is not None:
                     hint_text = hint.text
-                    hint_episodes = list(
-                        hint.metadata.get("aligned_episodes", [])
-                    )
-            expected_text = (
-                fact.contradiction if expect_contradiction else fact.canonical
-            )
-            stale_text = (
-                fact.canonical if expect_contradiction else fact.contradiction
-            )
-            aligned_texts = {
-                str(item.get("text", "")) for item in hint_episodes
-            }
+                    hint_episodes = list(hint.metadata.get("aligned_episodes", []))
+            expected_text = fact.contradiction if expect_contradiction else fact.canonical
+            stale_text = fact.canonical if expect_contradiction else fact.contradiction
+            aligned_texts = {str(item.get("text", "")) for item in hint_episodes}
             built = memory.build_prompt(query)
             prompt = str(built["prompt"])
             hint_present = "[Neural context]" in prompt
@@ -436,18 +418,12 @@ class EngramProbe:
                     async with self._session.post(
                         f"{self.config.judge_base_url.rstrip('/')}/api/chat",
                         json=payload,
-                        timeout=aiohttp.ClientTimeout(
-                            total=self.config.judge_timeout_sec
-                        ),
+                        timeout=aiohttp.ClientTimeout(total=self.config.judge_timeout_sec),
                     ) as response:
                         data = await response.json()
                         if response.status >= 400:
-                            raise RuntimeError(
-                                f"Ollama HTTP {response.status}: {data}"
-                            )
-                        answer = str(
-                            (data.get("message") or {}).get("content", "")
-                        ).strip()
+                            raise RuntimeError(f"Ollama HTTP {response.status}: {data}")
+                        answer = str((data.get("message") or {}).get("content", "")).strip()
                         if answer:
                             self._generation_cache[cache_key] = answer
                             self._generation_cache_path.parent.mkdir(
@@ -472,6 +448,4 @@ class EngramProbe:
 
     async def reset_working_memory(self) -> None:
         self._session_counter += 1
-        self._require_memory().new_session(
-            f"eval_session_{self._session_counter}"
-        )
+        self._require_memory().new_session(f"eval_session_{self._session_counter}")

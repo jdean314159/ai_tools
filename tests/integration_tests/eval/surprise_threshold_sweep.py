@@ -55,22 +55,16 @@ def evaluate_candidate(baseline: dict, neural: dict, threshold: float) -> dict:
     baseline_contradict = _trial(baseline, "contradict")
     neural_contradict = _trial(neural, "contradict")
     direct_delta = neural_overall["recall_direct"] - baseline_overall["recall_direct"]
-    paraphrase_delta = (
-        neural_overall["recall_paraphrase"]
-        - baseline_overall["recall_paraphrase"]
-    )
+    paraphrase_delta = neural_overall["recall_paraphrase"] - baseline_overall["recall_paraphrase"]
     decoy_delta = neural_overall["recall_decoy"] - baseline_overall["recall_decoy"]
     bleed_improvement = (
         baseline_contradict["contradiction_bleed_rate"]
         - neural_contradict["contradiction_bleed_rate"]
     )
-    failures = (
-        int(neural_overall.get("judge_failures", 0))
-        + int(neural_overall.get("injection_failures", 0))
+    failures = int(neural_overall.get("judge_failures", 0)) + int(
+        neural_overall.get("injection_failures", 0)
     )
-    observations = sum(
-        int(row.get("n_neural_observations", 0)) for row in neural["per_trial"]
-    )
+    observations = sum(int(row.get("n_neural_observations", 0)) for row in neural["per_trial"])
     writes = sum(int(row.get("n_neural_writes", 0)) for row in neural["per_trial"])
     return {
         "surprise_threshold": threshold,
@@ -96,7 +90,9 @@ def evaluate_candidate(baseline: dict, neural: dict, threshold: float) -> dict:
     }
 
 
-def _run_args(args: argparse.Namespace, *, backend: str, run_name: str, threshold: float) -> Namespace:
+def _run_args(
+    args: argparse.Namespace, *, backend: str, run_name: str, threshold: float
+) -> Namespace:
     return Namespace(
         backend=backend,
         trials=args.trials,
@@ -154,12 +150,8 @@ def render_table(rows: list[dict]) -> str:
 async def run_sweep(args: argparse.Namespace) -> dict:
     output_root = Path(args.output_root)
     output_root.mkdir(parents=True, exist_ok=True)
-    baseline = await run(
-        _run_args(args, backend="baseline", run_name="baseline", threshold=0.0)
-    )
-    await run(
-        _run_args(args, backend="neural_on", run_name="calibration", threshold=0.0)
-    )
+    baseline = await run(_run_args(args, backend="baseline", run_name="baseline", threshold=0.0))
+    await run(_run_args(args, backend="neural_on", run_name="calibration", threshold=0.0))
     values = _surprises(output_root / "calibration" / "results" / "all_trials.json")
     thresholds = calibration_thresholds(
         values,

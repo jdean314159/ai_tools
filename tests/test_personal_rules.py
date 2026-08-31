@@ -79,8 +79,7 @@ def test_action_is_validated_and_propagated_without_a_second_matcher(tmp_path: P
     loaded = load_personal_rules(
         _write_rules(
             tmp_path / "actions.toml",
-            "[[rule]]\nsender = 'sender@example.test'\npriority = 'low'\n"
-            "action = 'summarize'\n",
+            "[[rule]]\nsender = 'sender@example.test'\npriority = 'low'\naction = 'summarize'\n",
         )
     )
     message = _message()
@@ -99,8 +98,7 @@ def test_invalid_action_rejects_entire_file(tmp_path: Path, value: object) -> No
     loaded = load_personal_rules(
         _write_rules(
             tmp_path / "bad-action.toml",
-            "[[rule]]\nsender = 'sender@example.test'\npriority = 'low'\n"
-            f"action = {rendered}\n",
+            f"[[rule]]\nsender = 'sender@example.test'\npriority = 'low'\naction = {rendered}\n",
         )
     )
 
@@ -345,9 +343,7 @@ def test_self_mail_uses_graduated_link_floor() -> None:
 
 
 def test_html_href_survives_with_entities_decoded_and_non_http_excluded() -> None:
-    html_body = (
-        '<p>Read <a href="https://fixture.example.test/article?a=1&amp;b=2">this</a></p>'
-    )
+    html_body = '<p>Read <a href="https://fixture.example.test/article?a=1&amp;b=2">this</a></p>'
     non_http = '<a href="&#109;ailto:user@example.test">mail</a>'
 
     converted = _html_to_text(html_body)
@@ -428,9 +424,7 @@ def test_cli_validate_rules_never_reads_mail_or_index(
         lambda _path: pytest.fail("index must not be opened"),
     )
 
-    exit_code = mail_triage.main(
-        ["--validate-rules", "--rules", str(RULE_FIXTURE)]
-    )
+    exit_code = mail_triage.main(["--validate-rules", "--rules", str(RULE_FIXTURE)])
 
     captured = capsys.readouterr()
     assert exit_code == 0
@@ -455,9 +449,7 @@ def test_cli_validate_invalid_rules_returns_nonzero_without_reading_mail(
         lambda _path: pytest.fail("index must not be opened"),
     )
 
-    exit_code = mail_triage.main(
-        ["--validate-rules", "--rules", str(invalid_path)]
-    )
+    exit_code = mail_triage.main(["--validate-rules", "--rules", str(invalid_path)])
 
     captured = capsys.readouterr()
     assert exit_code != 0

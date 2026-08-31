@@ -13,10 +13,15 @@ def _synthetic_runner(root, command, policy):
     if "container-created-marker" in command:
         (root / "container-created-marker").write_text("isolated", encoding="utf-8")
     return ToolResult(
-        name="run_command", output="omitted", success=True,
+        name="run_command",
+        output="omitted",
+        success=True,
         meta={
-            "returncode": 0, "sandbox_backend": "docker", "sandbox_external": True,
-            "sandbox_fallback_used": False, "sandbox_network_enabled": False,
+            "returncode": 0,
+            "sandbox_backend": "docker",
+            "sandbox_external": True,
+            "sandbox_fallback_used": False,
+            "sandbox_network_enabled": False,
         },
     )
 
@@ -39,10 +44,8 @@ def test_command_isolation_artifact_omits_commands_outputs_and_paths(tmp_path):
 def test_committed_command_isolation_artifacts_are_pinned_and_private():
     root = Path(__file__).resolve().parents[1] / "docs" / "projects" / "agent_lib" / "runs"
     expected = {
-        "2026-08-31-agent-command-isolation-v1.json":
-            "ef6d5d2eb3745ce87d83898aef6abe46a0045b6db51f74abbec70529ee507386",
-        "2026-08-31-agent-command-isolation-v2.json":
-            "d78a0e6a94e1607a94be6f1c68b719f8a4c7b952aad484ed00d7e00b2b46904b",
+        "2026-08-31-agent-command-isolation-v1.json": "ef6d5d2eb3745ce87d83898aef6abe46a0045b6db51f74abbec70529ee507386",
+        "2026-08-31-agent-command-isolation-v2.json": "d78a0e6a94e1607a94be6f1c68b719f8a4c7b952aad484ed00d7e00b2b46904b",
     }
     for name, digest in expected.items():
         content = (root / name).read_bytes()

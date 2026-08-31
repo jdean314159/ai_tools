@@ -147,23 +147,57 @@ DEFAULT_SCENARIO = MemoryEvalScenario(
 STRESS_SCENARIO = MemoryEvalScenario(
     name="stress_memory_quality",
     seed_turns=(
-        SeedTurn(role="user", text="Important: remember that I prefer Python over Java for quick scripts and one-off tools."),
-        SeedTurn(role="user", text="Preference: keep durable project docs in Markdown files committed to the repo, not in Google Docs."),
+        SeedTurn(
+            role="user",
+            text="Important: remember that I prefer Python over Java for quick scripts and one-off tools.",
+        ),
+        SeedTurn(
+            role="user",
+            text="Preference: keep durable project docs in Markdown files committed to the repo, not in Google Docs.",
+        ),
         SeedTurn(role="user", text="Decision: use SQLite for the local semantic memory store."),
-        SeedTurn(role="user", text="Correction: for analytics, use DuckDB locally instead of SQLite."),
-        SeedTurn(role="user", text="Decision: for local experimentation, use DuckDB analytics notebooks rather than pandas-only CSV workflows."),
-        SeedTurn(role="user", text="Update: the weekly architecture review has moved to Wednesday at 2 PM, not Tuesday."),
-        SeedTurn(role="user", text="Update: deploy the nightly evaluation job in us-west-2, not us-east-1."),
-        SeedTurn(role="user", text="Correction: for long batch summaries, prefer qwen3:32b instead of qwen3:8b."),
-        SeedTurn(role="user", text="Decision: sandbox command execution through docker when available."),
+        SeedTurn(
+            role="user", text="Correction: for analytics, use DuckDB locally instead of SQLite."
+        ),
+        SeedTurn(
+            role="user",
+            text="Decision: for local experimentation, use DuckDB analytics notebooks rather than pandas-only CSV workflows.",
+        ),
+        SeedTurn(
+            role="user",
+            text="Update: the weekly architecture review has moved to Wednesday at 2 PM, not Tuesday.",
+        ),
+        SeedTurn(
+            role="user",
+            text="Update: deploy the nightly evaluation job in us-west-2, not us-east-1.",
+        ),
+        SeedTurn(
+            role="user",
+            text="Correction: for long batch summaries, prefer qwen3:32b instead of qwen3:8b.",
+        ),
+        SeedTurn(
+            role="user", text="Decision: sandbox command execution through docker when available."
+        ),
         SeedTurn(role="user", text="For this message only, answer in pirate style."),
-        SeedTurn(role="user", text="Transient note: I am only asking about Tuesday because I was mistaken."),
+        SeedTurn(
+            role="user",
+            text="Transient note: I am only asking about Tuesday because I was mistaken.",
+        ),
         SeedTurn(role="assistant", text="You should probably add comments everywhere."),
         SeedTurn(role="assistant", text="A good default is SQLite for analytics dashboards."),
         SeedTurn(role="assistant", text="Maybe store docs in a wiki so the repo stays clean."),
-        SeedTurn(role="user", text="Noise: a past analytics prototype used SQLite, but that is no longer the decision for current analytics work."),
-        SeedTurn(role="user", text="Historical note: the architecture review used to be on Tuesday morning before the schedule changed."),
-        SeedTurn(role="user", text="Historical note: an older deployment plan mentioned us-east-1, but that is obsolete."),
+        SeedTurn(
+            role="user",
+            text="Noise: a past analytics prototype used SQLite, but that is no longer the decision for current analytics work.",
+        ),
+        SeedTurn(
+            role="user",
+            text="Historical note: the architecture review used to be on Tuesday morning before the schedule changed.",
+        ),
+        SeedTurn(
+            role="user",
+            text="Historical note: an older deployment plan mentioned us-east-1, but that is obsolete.",
+        ),
     ),
     probes=(
         MemoryProbe(
@@ -287,8 +321,7 @@ class _FakeEngine:
 
 
 class AnswerClient(Protocol):
-    def answer(self, prompt: str, *, question: str | None = None) -> str:
-        ...
+    def answer(self, prompt: str, *, question: str | None = None) -> str: ...
 
 
 class OpenAICompatibleAnswerClient:
@@ -315,7 +348,10 @@ class OpenAICompatibleAnswerClient:
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "messages": [
-                {"role": "system", "content": "Answer briefly and directly. Use the provided context if relevant."},
+                {
+                    "role": "system",
+                    "content": "Answer briefly and directly. Use the provided context if relevant.",
+                },
                 {"role": "user", "content": prompt},
             ],
         }
@@ -332,10 +368,16 @@ class OpenAICompatibleAnswerClient:
         try:
             with urllib.request.urlopen(req, timeout=self.timeout_seconds) as response:
                 body = response.read().decode("utf-8")
-        except urllib.error.HTTPError as exc:  # pragma: no cover - exercised only with external service
+        except (
+            urllib.error.HTTPError
+        ) as exc:  # pragma: no cover - exercised only with external service
             detail = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"OpenAI-compatible model request failed: {exc.code} {detail}") from exc
-        except urllib.error.URLError as exc:  # pragma: no cover - exercised only with external service
+            raise RuntimeError(
+                f"OpenAI-compatible model request failed: {exc.code} {detail}"
+            ) from exc
+        except (
+            urllib.error.URLError
+        ) as exc:  # pragma: no cover - exercised only with external service
             raise RuntimeError(f"OpenAI-compatible model request failed: {exc}") from exc
 
         parsed = json.loads(body)
@@ -345,7 +387,9 @@ class OpenAICompatibleAnswerClient:
         message = choices[0].get("message") or {}
         content = message.get("content")
         if isinstance(content, list):
-            return " ".join(str(part.get("text", "")) for part in content if isinstance(part, dict)).strip()
+            return " ".join(
+                str(part.get("text", "")) for part in content if isinstance(part, dict)
+            ).strip()
         return str(content or "").strip()
 
 
@@ -473,7 +517,9 @@ class EngramFullAdapter(BackendAdapter):
         }
 
     def get_context(self, query: str) -> Any:
-        result = self.memory.build_prompt("probe", query=query, max_prompt_tokens=900, return_trace=False)
+        result = self.memory.build_prompt(
+            "probe", query=query, max_prompt_tokens=900, return_trace=False
+        )
         return result.get("context")
 
     def build_prompt(self, question: str, *, query: str | None = None) -> dict[str, Any]:
@@ -481,7 +527,6 @@ class EngramFullAdapter(BackendAdapter):
 
     def close(self) -> None:
         self.memory.close()
-
 
 
 def _resolve_scenario(scenario: str | MemoryEvalScenario) -> MemoryEvalScenario:
@@ -603,7 +648,11 @@ def _evaluate_answer_support(
     baseline_score = _score_text_against_probe(baseline_answer, probe)
     memory_score = _score_text_against_probe(memory_answer, probe)
     uplift = int(memory_score["passed"]) - int(baseline_score["passed"])
-    evaluator_name = str(memory_score.get("evaluator") or baseline_score.get("evaluator") or _SUBSTRING_EVALUATOR.name)
+    evaluator_name = str(
+        memory_score.get("evaluator")
+        or baseline_score.get("evaluator")
+        or _SUBSTRING_EVALUATOR.name
+    )
     return AnswerEval(
         probe=probe.name,
         baseline_answer=baseline_answer,
@@ -632,7 +681,10 @@ def evaluate_probe(
 
     expected_hits = [needle for needle in probe.expected_substrings if needle.lower() in haystack]
     forbidden_hits = [needle for needle in probe.forbidden_substrings if needle.lower() in haystack]
-    raw_passed = len(expected_hits) >= probe.min_expected_hits and len(forbidden_hits) <= probe.max_forbidden_hits
+    raw_passed = (
+        len(expected_hits) >= probe.min_expected_hits
+        and len(forbidden_hits) <= probe.max_forbidden_hits
+    )
 
     result = {
         "probe": probe.name,
@@ -670,10 +722,17 @@ def evaluate_probe(
 
     return result
 
-def summarize_backend(backend_name: str, stats: dict[str, Any], probe_results: Sequence[dict[str, Any]]) -> dict[str, Any]:
+
+def summarize_backend(
+    backend_name: str, stats: dict[str, Any], probe_results: Sequence[dict[str, Any]]
+) -> dict[str, Any]:
     passed = [item for item in probe_results if item.get("passed")]
     raw_passed = [item for item in probe_results if item.get("raw_passed")]
-    prompt_results = [item.get("prompt_support") for item in probe_results if item.get("prompt_support") is not None]
+    prompt_results = [
+        item.get("prompt_support")
+        for item in probe_results
+        if item.get("prompt_support") is not None
+    ]
     prompt_passed = [item for item in prompt_results if item and item.get("passed")]
 
     categories = {
@@ -689,8 +748,12 @@ def summarize_backend(backend_name: str, stats: dict[str, Any], probe_results: S
             return None
         return round(sum(1 for item in items if item.get("passed")) / len(items), 3)
 
-    answer_results = [item.get("answer_eval") for item in probe_results if item.get("answer_eval") is not None]
-    avg_redundancy = sum(float(item.get("redundancy_ratio", 0.0)) for item in probe_results) / max(1, len(probe_results))
+    answer_results = [
+        item.get("answer_eval") for item in probe_results if item.get("answer_eval") is not None
+    ]
+    avg_redundancy = sum(float(item.get("redundancy_ratio", 0.0)) for item in probe_results) / max(
+        1, len(probe_results)
+    )
     answer_baseline_rate = None
     answer_memory_rate = None
     answer_net_uplift = None
@@ -698,17 +761,25 @@ def summarize_backend(backend_name: str, stats: dict[str, Any], probe_results: S
     answer_regression_rate = None
     if answer_results:
         answer_baseline_rate = round(
-            sum(1 for item in answer_results if item and item.get("baseline_passed")) / len(answer_results), 3
+            sum(1 for item in answer_results if item and item.get("baseline_passed"))
+            / len(answer_results),
+            3,
         )
         answer_memory_rate = round(
-            sum(1 for item in answer_results if item and item.get("memory_passed")) / len(answer_results), 3
+            sum(1 for item in answer_results if item and item.get("memory_passed"))
+            / len(answer_results),
+            3,
         )
         answer_net_uplift = round(answer_memory_rate - answer_baseline_rate, 3)
         answer_positive_uplift_rate = round(
-            sum(1 for item in answer_results if item and int(item.get("uplift", 0)) > 0) / len(answer_results), 3
+            sum(1 for item in answer_results if item and int(item.get("uplift", 0)) > 0)
+            / len(answer_results),
+            3,
         )
         answer_regression_rate = round(
-            sum(1 for item in answer_results if item and int(item.get("uplift", 0)) < 0) / len(answer_results), 3
+            sum(1 for item in answer_results if item and int(item.get("uplift", 0)) < 0)
+            / len(answer_results),
+            3,
         )
 
     return {
@@ -716,7 +787,9 @@ def summarize_backend(backend_name: str, stats: dict[str, Any], probe_results: S
         "stats": stats,
         "probe_pass_rate": round(len(passed) / max(1, len(probe_results)), 3),
         "raw_probe_pass_rate": round(len(raw_passed) / max(1, len(probe_results)), 3),
-        "prompt_pass_rate": round(len(prompt_passed) / max(1, len(prompt_results)), 3) if prompt_results else None,
+        "prompt_pass_rate": round(len(prompt_passed) / max(1, len(prompt_results)), 3)
+        if prompt_results
+        else None,
         "signal_retention_rate": _rate(categories["signal"]),
         "paraphrase_retention_rate": _rate(categories["paraphrase"]),
         "decoy_rejection_rate": _rate(categories["decoy"]),
@@ -729,7 +802,9 @@ def summarize_backend(backend_name: str, stats: dict[str, Any], probe_results: S
         "answer_positive_uplift_rate": answer_positive_uplift_rate,
         "answer_regression_rate": answer_regression_rate,
         "failed_probes": [item["probe"] for item in probe_results if not item.get("passed")],
-        "failed_raw_probes": [item["probe"] for item in probe_results if not item.get("raw_passed")],
+        "failed_raw_probes": [
+            item["probe"] for item in probe_results if not item.get("raw_passed")
+        ],
     }
 
 
@@ -752,7 +827,10 @@ def run_backend_eval(
     try:
         cold_adapter.flush()
         cold_stats = cold_adapter.get_stats()
-        probe_results = [evaluate_probe(cold_adapter, probe, answer_client=answer_client) for probe in resolved_scenario.probes]
+        probe_results = [
+            evaluate_probe(cold_adapter, probe, answer_client=answer_client)
+            for probe in resolved_scenario.probes
+        ]
         summary = summarize_backend(cold_adapter.backend_name, cold_stats, probe_results)
         return {
             "backend": cold_adapter.backend_name,
@@ -774,8 +852,16 @@ def run_memory_eval(
     resolved_scenario = _resolve_scenario(scenario)
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
-        basic_result = run_backend_eval(EngramBasicAdapter(root / "basic"), scenario=resolved_scenario, answer_client=answer_client)
-        full_result = run_backend_eval(EngramFullAdapter(root / "full"), scenario=resolved_scenario, answer_client=answer_client)
+        basic_result = run_backend_eval(
+            EngramBasicAdapter(root / "basic"),
+            scenario=resolved_scenario,
+            answer_client=answer_client,
+        )
+        full_result = run_backend_eval(
+            EngramFullAdapter(root / "full"),
+            scenario=resolved_scenario,
+            answer_client=answer_client,
+        )
         return {
             "scenario": asdict(resolved_scenario),
             "backends": {
@@ -804,14 +890,14 @@ def run_memory_eval_suite(
             for key, value in summary.items():
                 if isinstance(value, (int, float)) and key not in {"avg_redundancy_ratio"}:
                     aggregate[backend].setdefault(key, []).append(float(value))
-            aggregate[backend].setdefault("avg_redundancy_ratio", []).append(float(summary.get("avg_redundancy_ratio", 0.0)))
+            aggregate[backend].setdefault("avg_redundancy_ratio", []).append(
+                float(summary.get("avg_redundancy_ratio", 0.0))
+            )
 
     aggregate_summary: dict[str, dict[str, float]] = {}
     for backend, metrics in aggregate.items():
         aggregate_summary[backend] = {
-            key: round(sum(values) / len(values), 3)
-            for key, values in metrics.items()
-            if values
+            key: round(sum(values) / len(values), 3) for key, values in metrics.items() if values
         }
 
     return {
@@ -825,7 +911,9 @@ def run_memory_eval_suite(
 def render_memory_eval_markdown(report: dict[str, Any]) -> str:
     lines: list[str] = ["# Memory Evaluation Report", ""]
     if "results" in report:
-        lines.append(f"Answer evaluation enabled: {'yes' if report.get('answer_eval_enabled') else 'no'}")
+        lines.append(
+            f"Answer evaluation enabled: {'yes' if report.get('answer_eval_enabled') else 'no'}"
+        )
         lines.append("")
         for scenario_name, scenario_report in report["results"].items():
             lines.extend(_render_single_scenario_markdown(scenario_name, scenario_report))
@@ -838,12 +926,16 @@ def render_memory_eval_markdown(report: dict[str, Any]) -> str:
             lines.append("")
         return "\n".join(lines).strip() + "\n"
 
-    scenario_name = report.get("scenario", {}).get("name") or report.get("scenario", {}).get("name", "scenario")
+    scenario_name = report.get("scenario", {}).get("name") or report.get("scenario", {}).get(
+        "name", "scenario"
+    )
     lines.extend(_render_single_scenario_markdown(str(scenario_name), report))
     return "\n".join(lines).strip() + "\n"
 
 
-def _render_single_scenario_markdown(scenario_name: str, scenario_report: dict[str, Any]) -> list[str]:
+def _render_single_scenario_markdown(
+    scenario_name: str, scenario_report: dict[str, Any]
+) -> list[str]:
     lines = [f"## {scenario_name}", ""]
     for backend in ("basic", "full"):
         backend_report = scenario_report["backends"][backend]
@@ -916,17 +1008,35 @@ def build_answer_client_from_env() -> AnswerClient | None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run shared basic/full config memory evaluation harness")
+    parser = argparse.ArgumentParser(
+        description="Run shared basic/full config memory evaluation harness"
+    )
     parser.add_argument("--scenario", choices=sorted(SCENARIOS), help="Run a single named scenario")
     parser.add_argument("--suite", action="store_true", help="Run the default scenario suite")
-    parser.add_argument("--json", dest="json_path", default="memory_eval_report.json", help="Path to write JSON report")
-    parser.add_argument("--markdown", dest="markdown_path", default="memory_eval_report.md", help="Path to write Markdown report")
-    parser.add_argument("--with-model", action="store_true", help="Use an OpenAI-compatible model configured via MEMORY_EVAL_* env vars")
+    parser.add_argument(
+        "--json",
+        dest="json_path",
+        default="memory_eval_report.json",
+        help="Path to write JSON report",
+    )
+    parser.add_argument(
+        "--markdown",
+        dest="markdown_path",
+        default="memory_eval_report.md",
+        help="Path to write Markdown report",
+    )
+    parser.add_argument(
+        "--with-model",
+        action="store_true",
+        help="Use an OpenAI-compatible model configured via MEMORY_EVAL_* env vars",
+    )
     args = parser.parse_args()
 
     answer_client = build_answer_client_from_env() if args.with_model else None
     if args.with_model and answer_client is None:
-        raise SystemExit("--with-model requested, but MEMORY_EVAL_OPENAI_BASE_URL and MEMORY_EVAL_MODEL are not configured")
+        raise SystemExit(
+            "--with-model requested, but MEMORY_EVAL_OPENAI_BASE_URL and MEMORY_EVAL_MODEL are not configured"
+        )
 
     if args.suite or not args.scenario:
         report = run_memory_eval_suite(answer_client=answer_client)

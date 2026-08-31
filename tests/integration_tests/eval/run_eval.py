@@ -96,17 +96,12 @@ async def run(args: argparse.Namespace) -> dict:
 
     if args.trials:
         labels = {
-            label.strip()
-            for value in args.trials
-            for label in value.split(",")
-            if label.strip()
+            label.strip() for value in args.trials for label in value.split(",") if label.strip()
         }
         unknown = labels - {entry[0] for entry in config.schedule}
         if unknown:
             raise ValueError(f"Unknown trial labels: {sorted(unknown)}")
-        config.schedule = [
-            entry for entry in config.schedule if entry[0] in labels
-        ]
+        config.schedule = [entry for entry in config.schedule if entry[0] in labels]
 
     backend_root = config.output_root / (args.run_name or args.backend)
     output_dir = backend_root / "results"

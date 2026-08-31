@@ -16,9 +16,15 @@ def test_temporal_vector_cold_suite_is_frozen_and_distinct():
 
 
 def test_committed_temporal_vector_cold_artifact_is_pinned_and_private():
-    path = Path(__file__).resolve().parents[1] / "docs/projects/runs/2026-08-30-engram-temporal-vector-cold-v1.json"
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs/projects/runs/2026-08-30-engram-temporal-vector-cold-v1.json"
+    )
     content = path.read_bytes()
-    assert hashlib.sha256(content).hexdigest() == "0f49ef95c0c84f26bf5f377753056884d7191c92154e3723ede79c20ab4d5634"
+    assert (
+        hashlib.sha256(content).hexdigest()
+        == "0f49ef95c0c84f26bf5f377753056884d7191c92154e3723ede79c20ab4d5634"
+    )
     decoded = content.decode()
     for forbidden in ("/home/", "cybernaif", "Virginia", "Frankfurt", "Where do", "Retraction:"):
         assert forbidden not in decoded

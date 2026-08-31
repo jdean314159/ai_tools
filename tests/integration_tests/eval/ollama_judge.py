@@ -148,9 +148,7 @@ class OllamaJudge:
 
     async def start(self) -> None:
         if self._cache_path is not None and self._cache_path.exists():
-            self._cache = json.loads(
-                self._cache_path.read_text(encoding="utf-8")
-            )
+            self._cache = json.loads(self._cache_path.read_text(encoding="utf-8"))
         self._session = aiohttp.ClientSession()
 
     async def stop(self) -> None:
@@ -176,9 +174,7 @@ class OllamaJudge:
 
         expected = fact.contradiction if expect_contradiction else fact.canonical
         stale = fact.canonical if expect_contradiction else fact.contradiction
-        expected_snippet = (
-            expected if expect_contradiction else fact.expected_snippet
-        )
+        expected_snippet = expected if expect_contradiction else fact.expected_snippet
         mode = "generation" if isinstance(result, GenerationResult) else "retrieval"
         evidence = (
             result.answer
@@ -225,9 +221,7 @@ class OllamaJudge:
             )
 
         async with self._semaphore:
-            raw, error = await self._call_ollama(
-                f"/no_think\n{JUDGE_SYSTEM}\n\n{prompt}"
-            )
+            raw, error = await self._call_ollama(f"/no_think\n{JUDGE_SYSTEM}\n\n{prompt}")
         if raw is None:
             return self._failed(fact, result, trial, error or "Ollama call failed")
 
@@ -286,9 +280,7 @@ class OllamaJudge:
                 ) as response:
                     data = await response.json()
                     if response.status >= 400:
-                        raise RuntimeError(
-                            f"Ollama HTTP {response.status}: {data}"
-                        )
+                        raise RuntimeError(f"Ollama HTTP {response.status}: {data}")
                     raw = str(data.get("response", "")).strip()
                     if raw:
                         return raw, None
@@ -351,8 +343,7 @@ class OllamaJudge:
         ).strip()
         if "```" in without_thinking:
             parts = [
-                part.strip().removeprefix("json").strip()
-                for part in without_thinking.split("```")
+                part.strip().removeprefix("json").strip() for part in without_thinking.split("```")
             ]
             without_thinking = next(
                 (part for part in parts if part.startswith("{")),
@@ -361,9 +352,7 @@ class OllamaJudge:
         start = without_thinking.find("{")
         end = without_thinking.rfind("}")
         return (
-            without_thinking[start : end + 1]
-            if start >= 0 and end >= start
-            else without_thinking
+            without_thinking[start : end + 1] if start >= 0 and end >= start else without_thinking
         )
 
     @staticmethod

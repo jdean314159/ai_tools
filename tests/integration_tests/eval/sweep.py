@@ -41,33 +41,24 @@ def evaluate_candidate(
     baseline_contradict = _trial(baseline, "contradict")
     neural_contradict = _trial(neural, "contradict")
 
-    direct_delta = (
-        neural_overall["recall_direct"] - baseline_overall["recall_direct"]
-    )
-    paraphrase_delta = (
-        neural_overall["recall_paraphrase"]
-        - baseline_overall["recall_paraphrase"]
-    )
-    decoy_delta = (
-        neural_overall["recall_decoy"] - baseline_overall["recall_decoy"]
-    )
+    direct_delta = neural_overall["recall_direct"] - baseline_overall["recall_direct"]
+    paraphrase_delta = neural_overall["recall_paraphrase"] - baseline_overall["recall_paraphrase"]
+    decoy_delta = neural_overall["recall_decoy"] - baseline_overall["recall_decoy"]
     bleed_improvement = (
         baseline_contradict["contradiction_bleed_rate"]
         - neural_contradict["contradiction_bleed_rate"]
     )
-    failures = (
-        int(neural_overall.get("judge_failures", 0))
-        + int(neural_overall.get("injection_failures", 0))
+    failures = int(neural_overall.get("judge_failures", 0)) + int(
+        neural_overall.get("injection_failures", 0)
     )
-    
-    decoy_passed = decoy_delta > 0 or \
-       (decoy_delta == 0 and baseline_overall["recall_decoy"] >= 1.0)
-    
+
+    decoy_passed = decoy_delta > 0 or (decoy_delta == 0 and baseline_overall["recall_decoy"] >= 1.0)
+
     passed = (
         failures == 0
         and direct_delta >= -NOISE_THRESHOLD
         and paraphrase_delta >= -NOISE_THRESHOLD
-        and decoy_passed                   # Uses the updated fallback check
+        and decoy_passed  # Uses the updated fallback check
         and bleed_improvement > 0
     )
     return {
@@ -75,9 +66,7 @@ def evaluate_candidate(
         "recall_direct": neural_overall["recall_direct"],
         "recall_paraphrase": neural_overall["recall_paraphrase"],
         "recall_decoy": neural_overall["recall_decoy"],
-        "contradiction_bleed_rate": neural_contradict[
-            "contradiction_bleed_rate"
-        ],
+        "contradiction_bleed_rate": neural_contradict["contradiction_bleed_rate"],
         "direct_delta": direct_delta,
         "paraphrase_delta": paraphrase_delta,
         "decoy_delta": decoy_delta,

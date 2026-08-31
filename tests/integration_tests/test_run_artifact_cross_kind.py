@@ -30,7 +30,9 @@ def _nav_record() -> dict:
             "final_output": "fixture",
             "elapsed_seconds": 1.0,
             "step_count": 1,
-            "steps": [{"index": 1, "action": {"kind": "final"}, "observation": None, "trace": None}],
+            "steps": [
+                {"index": 1, "action": {"kind": "final"}, "observation": None, "trace": None}
+            ],
             "meta": {},
         },
         "planner_usage": {"calls": []},

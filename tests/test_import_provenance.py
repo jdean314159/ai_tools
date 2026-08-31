@@ -16,7 +16,10 @@ PACKAGE_EXPECTATIONS = {
     "engram": REPO_ROOT / "engram" / "src" / "engram",
     "llm_engines": REPO_ROOT / "llm_engines" / "src" / "llm_engines",
     "reasoning_loop_guard": REPO_ROOT / "reasoning_loop_guard" / "src" / "reasoning_loop_guard",
-    "action_trajectory_loop_guard": REPO_ROOT / "action_trajectory_loop_guard" / "src" / "action_trajectory_loop_guard",
+    "action_trajectory_loop_guard": REPO_ROOT
+    / "action_trajectory_loop_guard"
+    / "src"
+    / "action_trajectory_loop_guard",
     "examples.language_tutor": REPO_ROOT / "examples" / "language_tutor",
     "mail_lib": REPO_ROOT / "mail_lib",
 }
@@ -26,12 +29,7 @@ MODULE_EXPECTATIONS = {
     "llm_inspector.rag": REPO_ROOT / "llm_inspector" / "src" / "llm_inspector" / "rag.py",
     "rag_lib.pipeline": REPO_ROOT / "rag_lib" / "src" / "rag_lib" / "pipeline.py",
     "llm_inspector_ui.utils.trace_access": (
-        REPO_ROOT
-        / "llm_inspector_ui"
-        / "src"
-        / "llm_inspector_ui"
-        / "utils"
-        / "trace_access.py"
+        REPO_ROOT / "llm_inspector_ui" / "src" / "llm_inspector_ui" / "utils" / "trace_access.py"
     ),
 }
 

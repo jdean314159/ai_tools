@@ -161,10 +161,7 @@ def build_dataset(corpus: FactCorpus, embeddings: dict[str, np.ndarray]) -> list
                             not positive
                             and (
                                 candidate["id"] == stale_id
-                                or (
-                                    query_type == "decoy"
-                                    and candidate["fact_id"] == fact.id
-                                )
+                                or (query_type == "decoy" and candidate["fact_id"] == fact.id)
                             )
                         ),
                     }
@@ -308,10 +305,7 @@ def run(args: argparse.Namespace) -> dict:
                 "training_examples": len(data),
                 "initial_error": history[0]["avg_error"],
                 "final_error": history[-1]["avg_error"],
-                "weights": [
-                    _evaluate(test_rows, network, weight)
-                    for weight in args.weights
-                ],
+                "weights": [_evaluate(test_rows, network, weight) for weight in args.weights],
             }
         )
     result = {
@@ -345,8 +339,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", required=True)
     parser.add_argument("--ollama-url", default="http://localhost:11434")
     parser.add_argument("--embed-model", default="nomic-embed-text")
-    parser.add_argument("--seeds", type=lambda raw: [int(x) for x in raw.split(",")], default=[0, 1, 2])
-    parser.add_argument("--weights", type=lambda raw: [float(x) for x in raw.split(",")], default=[0.05, 0.1, 0.2])
+    parser.add_argument(
+        "--seeds", type=lambda raw: [int(x) for x in raw.split(",")], default=[0, 1, 2]
+    )
+    parser.add_argument(
+        "--weights", type=lambda raw: [float(x) for x in raw.split(",")], default=[0.05, 0.1, 0.2]
+    )
     return parser.parse_args()
 
 

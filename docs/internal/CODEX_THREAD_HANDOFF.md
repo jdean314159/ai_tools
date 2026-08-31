@@ -132,6 +132,9 @@ The work progressed through evidence rather than assuming a design:
     parse compatibility in the knowledge-review script, all 60 script tests
     passed, Ruff's `py310` parser accepts the scope, the shared gate covers 525
     files, and the full gate remains green.
+33. Root unit and integration tests are now adopted. Ruff formatted 38 files,
+    the shared gate covers 571 files, and the full repository result remains
+    1,268 passed, 304 skipped, with the same three warnings.
 
 Key commits, oldest to newest:
 

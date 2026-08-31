@@ -97,7 +97,10 @@ def test_memory_eval_suite_runs_default_and_stress_scenarios() -> None:
     suite = run_memory_eval_suite()
 
     assert suite["answer_eval_enabled"] is False
-    assert {item["name"] for item in suite["scenarios"]} == {"default_memory_quality", "stress_memory_quality"}
+    assert {item["name"] for item in suite["scenarios"]} == {
+        "default_memory_quality",
+        "stress_memory_quality",
+    }
     assert set(suite["results"]) == {"default_memory_quality", "stress_memory_quality"}
     for backend in ("basic", "full"):
         assert suite["aggregate"][backend]["probe_pass_rate"] >= 0.5

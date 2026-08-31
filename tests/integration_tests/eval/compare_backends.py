@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from pathlib import Path
 
 METRICS = (
@@ -64,9 +63,7 @@ def compare_metrics(baseline: dict, neural: dict) -> dict:
                     status = "improved"
                 elif improvement < -NOISE_THRESHOLD:
                     status = "regressed"
-                    regressions.append(
-                        {"metric": metric, "trial": label, "delta": improvement}
-                    )
+                    regressions.append({"metric": metric, "trial": label, "delta": improvement})
                 else:
                     status = "within_noise"
             rows.append(
@@ -106,8 +103,7 @@ def compare_metrics(baseline: dict, neural: dict) -> dict:
     contradict_row = next(
         row
         for row in rows
-        if row["metric"] == "contradiction_bleed_rate"
-        and row["trial"] == "contradict"
+        if row["metric"] == "contradiction_bleed_rate" and row["trial"] == "contradict"
     )
     contradiction_delta = contradict_row["improvement_delta"]
     direct_delta = overall["recall_direct"]["improvement_delta"]
@@ -131,8 +127,7 @@ def compare_metrics(baseline: dict, neural: dict) -> dict:
             direct_delta is not None and direct_delta >= -NOISE_THRESHOLD
         ),
         "paraphrase_recall_no_material_drop": (
-            paraphrase_delta is not None
-            and paraphrase_delta >= -NOISE_THRESHOLD
+            paraphrase_delta is not None and paraphrase_delta >= -NOISE_THRESHOLD
         ),
         "no_metric_regresses_beyond_noise": not regressions,
     }
@@ -170,6 +165,7 @@ def render_markdown(report: dict) -> str:
         "|---|---:|---:|---:|",
     ]
     for metric, values in report["overall"].items():
+
         def overall_fmt(value):
             return "n/a" if value is None else f"{value:.1%}"
 
@@ -183,11 +179,12 @@ def render_markdown(report: dict) -> str:
             "",
             "## Per Trial",
             "",
-        "| Metric | Trial | Baseline | Neural | Delta | Status |",
-        "|---|---|---:|---:|---:|---|",
+            "| Metric | Trial | Baseline | Neural | Delta | Status |",
+            "|---|---|---:|---:|---:|---|",
         ]
     )
     for row in report["per_trial"]:
+
         def fmt(value):
             return "n/a" if value is None else f"{value:.1%}"
 

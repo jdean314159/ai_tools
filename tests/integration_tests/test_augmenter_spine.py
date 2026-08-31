@@ -5,6 +5,7 @@ The goal is to catch repo-level drift between llm_inspector_ui, engram,
 optional full engram, rag_lib-shaped traces, and llm_inspector trace
 normalization. These tests avoid live model calls and external services.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -185,7 +186,9 @@ def test_full_engram_augmenter_normalizes_or_skips_cleanly(tmp_path):
     # persistence layers. Keep the default repo smoke test fast and deterministic;
     # run the live full-Engram augmentation path explicitly when desired.
     if os.environ.get("AI_TOOLS_TEST_FULL_ENGRAM") != "1":
-        pytest.skip("set AI_TOOLS_TEST_FULL_ENGRAM=1 to run the live full-Engram augmenter smoke test")
+        pytest.skip(
+            "set AI_TOOLS_TEST_FULL_ENGRAM=1 to run the live full-Engram augmenter smoke test"
+        )
 
     request = _request()
     augmenter = service.create(

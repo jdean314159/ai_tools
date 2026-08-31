@@ -34,10 +34,8 @@ def test_policy_observability_artifact_is_privacy_minimized(tmp_path):
 def test_committed_policy_observability_artifacts_are_pinned_and_private():
     root = Path(__file__).resolve().parents[1] / "docs" / "projects" / "agent_lib" / "runs"
     expected = {
-        "2026-08-30-agent-policy-observability-v1.json":
-            "b65b2591202221b13c341e293d4525d0a92b73e912c8f2ce1af2451056c9b063",
-        "2026-08-30-agent-policy-observability-v2.json":
-            "3044149abef32e2abc9fbbca7f9ba329d67e367451bdc864e5173d8e6465cc85",
+        "2026-08-30-agent-policy-observability-v1.json": "b65b2591202221b13c341e293d4525d0a92b73e912c8f2ce1af2451056c9b063",
+        "2026-08-30-agent-policy-observability-v2.json": "3044149abef32e2abc9fbbca7f9ba329d67e367451bdc864e5173d8e6465cc85",
     }
     for name, digest in expected.items():
         content = (root / name).read_bytes()

@@ -14,11 +14,20 @@ class ExactSyntheticEngine:
         prompt = request.messages[0].content
         case = next(case for case in cases() if case.question in prompt)
         return GenerationResponse(
-            message=ChatMessage(role="assistant", content=json.dumps({
-                "value": case.value, "evidence_id": case.evidence_id,
-            })), finish_reason="stop",
+            message=ChatMessage(
+                role="assistant",
+                content=json.dumps(
+                    {
+                        "value": case.value,
+                        "evidence_id": case.evidence_id,
+                    }
+                ),
+            ),
+            finish_reason="stop",
             usage=UsageStats(input_tokens=100, output_tokens=8, latency_ms=1.0),
-            model_name=self.model, backend="synthetic", seed_status="accepted",
+            model_name=self.model,
+            backend="synthetic",
+            seed_status="accepted",
         )
 
 
@@ -36,14 +45,25 @@ def test_availability_suite_separates_false_positives_from_workflow_blocks(tmp_p
 
 def test_availability_artifact_omits_raw_content(tmp_path):
     encoded = json.dumps(run_experiment(ExactSyntheticEngine(), memory_root=tmp_path))
-    for forbidden in ("/private/", "192.168.50.225", "approved color is BLUE", "suggested color is GOLD"):
+    for forbidden in (
+        "/private/",
+        "192.168.50.225",
+        "approved color is BLUE",
+        "suggested color is GOLD",
+    ):
         assert forbidden not in encoded
 
 
 def test_committed_availability_artifact_is_pinned_and_private():
-    path = Path(__file__).resolve().parents[1] / "docs/projects/runs/2026-08-30-spark-qwen-engram-trust-availability-v1.json"
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs/projects/runs/2026-08-30-spark-qwen-engram-trust-availability-v1.json"
+    )
     content = path.read_bytes()
-    assert hashlib.sha256(content).hexdigest() == "1e235079bbba922bc183147cd13bf5948bd164afa171ed0d7e0e9ecd7a5daa62"
+    assert (
+        hashlib.sha256(content).hexdigest()
+        == "1e235079bbba922bc183147cd13bf5948bd164afa171ed0d7e0e9ecd7a5daa62"
+    )
     decoded = content.decode()
     for forbidden in ("192.168.50.225", "/home/", "approved color is", "suggested color is"):
         assert forbidden not in decoded

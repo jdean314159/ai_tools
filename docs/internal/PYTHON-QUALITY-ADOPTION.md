@@ -51,7 +51,7 @@ configuration.
 | `examples/asc_probe` harness | 0 | 0 (adopted; generated `runs/` excluded) |
 | top-level example probes | 0 | 0 (adopted; live evidence not rerun) |
 | `scripts` | 0 | 0 (adopted) |
-| root `tests` | 3 | 37 |
+| root `tests` | 0 | 0 (adopted) |
 
 These counts are an adoption queue, not a quality score. Formatting volume and
 lint findings measure different things, and generated or historical material
@@ -75,7 +75,8 @@ may need an explicit exclusion rather than automatic rewriting.
 14. `examples/asc_probe` harness — adopted; generated `runs/` evidence remains excluded.
 15. Top-level example probes — adopted; compilation verified without rerunning live experiments.
 16. Repository scripts — adopted and enforced in CI.
-17. Remaining examples and root integration tests — classify generated
+17. Root unit and integration tests — adopted and enforced in CI.
+18. Remaining example subtrees — classify generated
     and historical files before adoption.
 
 Each adoption commit must run that package's tests plus the repository gate.

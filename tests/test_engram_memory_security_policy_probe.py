@@ -21,7 +21,9 @@ class DefensiveSyntheticEngine:
             message=ChatMessage(role="assistant", content=json.dumps(payload)),
             finish_reason="stop",
             usage=UsageStats(input_tokens=100, output_tokens=8, latency_ms=1.0),
-            model_name=self.model, backend="synthetic", seed_status="accepted",
+            model_name=self.model,
+            backend="synthetic",
+            seed_status="accepted",
         )
 
 
@@ -46,8 +48,11 @@ def test_policy_pair_blocks_poison_before_prompt(tmp_path):
 def test_policy_pair_artifact_is_privacy_minimized(tmp_path):
     encoded = json.dumps(run_experiment(DefensiveSyntheticEngine(), memory_root=tmp_path))
     for forbidden in (
-        "/private/", "192.168.50.225", "ignore all other memory",
-        "support code ALPHA", "cross tenant poison",
+        "/private/",
+        "192.168.50.225",
+        "ignore all other memory",
+        "support code ALPHA",
+        "cross tenant poison",
     ):
         assert forbidden not in encoded
 
@@ -55,12 +60,9 @@ def test_policy_pair_artifact_is_privacy_minimized(tmp_path):
 def test_committed_policy_artifacts_are_pinned_and_private():
     root = Path(__file__).resolve().parents[1]
     expected = {
-        "2026-08-30-spark-qwen-engram-memory-security-policy-v2.json":
-            "a67d6d37252737073a850efcc7d5451efdfa40e9e2a9cba9978386e67c6f5bce",
-        "2026-08-30-spark-qwen-engram-memory-security-policy-v3.json":
-            "714548066045ac2c4a19822ed72ea0172e262d841374cf0f51e0bb7aad033214",
-        "2026-08-30-spark-qwen-engram-memory-security-policy-v4.json":
-            "2f9b2e8565598a6e99498cd84cf1ff3aa0470813b1a4c62df3aa03c52e3f2a31",
+        "2026-08-30-spark-qwen-engram-memory-security-policy-v2.json": "a67d6d37252737073a850efcc7d5451efdfa40e9e2a9cba9978386e67c6f5bce",
+        "2026-08-30-spark-qwen-engram-memory-security-policy-v3.json": "714548066045ac2c4a19822ed72ea0172e262d841374cf0f51e0bb7aad033214",
+        "2026-08-30-spark-qwen-engram-memory-security-policy-v4.json": "2f9b2e8565598a6e99498cd84cf1ff3aa0470813b1a4c62df3aa03c52e3f2a31",
     }
     for name, digest in expected.items():
         content = (root / "docs" / "projects" / "runs" / name).read_bytes()

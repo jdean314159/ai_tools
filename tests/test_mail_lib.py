@@ -133,9 +133,7 @@ def test_iter_messages_skips_mbox_records_absent_from_parseable_msf(tmp_path: Pa
 
     messages = list(iter_messages(tmp_path))
 
-    assert [message.header_message_id for message in messages] == [
-        "visible@example.test"
-    ]
+    assert [message.header_message_id for message in messages] == ["visible@example.test"]
 
 
 def test_msf_read_state_wins_when_duplicate_has_stale_mbox_state() -> None:

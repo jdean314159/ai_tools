@@ -1,4 +1,5 @@
 """Cross-package tests for Engram semantic extraction with llm_engines engines."""
+
 from __future__ import annotations
 
 import json
@@ -8,14 +9,16 @@ from llm_engines.backends.mock import MockEngine
 
 
 def test_semantic_extractor_can_use_llm_engines_chat_model() -> None:
-    payload = json.dumps([
-        {
-            "type": "preference",
-            "subject": "parsing",
-            "value": "lxml",
-            "confidence": 0.82,
-        }
-    ])
+    payload = json.dumps(
+        [
+            {
+                "type": "preference",
+                "subject": "parsing",
+                "value": "lxml",
+                "confidence": 0.82,
+            }
+        ]
+    )
     captured = {}
 
     def respond(request):

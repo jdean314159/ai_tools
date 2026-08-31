@@ -198,10 +198,7 @@ def test_generation_requests_respect_configured_concurrency(tmp_path):
 
     async def run_many():
         return await asyncio.gather(
-            *[
-                probe._generate(f"prompt {index}", f"query {index}")
-                for index in range(8)
-            ]
+            *[probe._generate(f"prompt {index}", f"query {index}") for index in range(8)]
         )
 
     answers = asyncio.run(run_many())

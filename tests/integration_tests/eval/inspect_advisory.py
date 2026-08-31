@@ -52,16 +52,12 @@ def inspect(args: argparse.Namespace) -> dict:
                 ("paraphrase", fact.paraphrase_query),
                 ("decoy", fact.decoy_query),
             ):
-                retrieval_texts = {
-                    str(item.text) for item in memory.search_episodes(query, n=3)
-                }
+                retrieval_texts = {str(item.text) for item in memory.search_episodes(query, n=3)}
                 hint = memory.neural_layer.contribute_to_prompt(
                     RecallQuery(query=query, session_id=memory.session_id)
                 )
                 episodes = (
-                    list(hint.metadata.get("aligned_episodes", []))
-                    if hint is not None
-                    else []
+                    list(hint.metadata.get("aligned_episodes", [])) if hint is not None else []
                 )
                 texts = {str(item.get("text", "")) for item in episodes}
                 rows.append(
@@ -86,17 +82,11 @@ def inspect(args: argparse.Namespace) -> dict:
         bucket["queries"] += 1
         bucket["expected"] += int(row["expected_present"])
         bucket["stale"] += int(row["stale_present"])
-        bucket["retrieval_expected"] += int(
-            row["retrieval_expected_present"]
-        )
+        bucket["retrieval_expected"] += int(row["retrieval_expected_present"])
         bucket["retrieval_stale"] += int(row["retrieval_stale_present"])
-        bucket["neither"] += int(
-            not row["expected_present"] and not row["stale_present"]
-        )
+        bucket["neither"] += int(not row["expected_present"] and not row["stale_present"])
     summary = {
-        query_type: {
-            key: int(value) for key, value in counts.items()
-        }
+        query_type: {key: int(value) for key, value in counts.items()}
         for query_type, counts in by_type.items()
     }
     report = {"summary": summary, "rows": rows}
