@@ -206,6 +206,18 @@ behavior at the boundary, or middle-context retrieval quality. See
 The subsequent repository gate passed with 1,258 tests, 304 skips, and the same
 three multiprocessing/fork deprecation warnings.
 
+The first real-runtime `agent_lib` command-isolation characterization exercised
+the public workspace command path through Docker with host fallback disabled.
+The corrected version-2 profile passed its workspace-write, exact host-marker
+invisibility, and default network-denial cases in 3/3 runs. Version 1 is retained
+and disclosed as infrastructure-invalid because it checked a different marker
+path than the one created. This is not a general container-security audit;
+resource limits, `no-new-privileges`, capabilities, seccomp, and container
+escape resistance remain unvalidated. See
+`docs/projects/agent_lib/AGENT-COMMAND-ISOLATION-2026-08-31.md`.
+The subsequent repository gate passed with 1,261 tests, 304 skips, and the same
+three multiprocessing/fork deprecation warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

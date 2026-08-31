@@ -1,0 +1,156 @@
+{
+  "body": {
+    "acceptance_gate": {
+      "case_semantics": true,
+      "external_docker_without_fallback": true,
+      "passed": true,
+      "require_case_semantics": true,
+      "require_external_docker_without_fallback": true
+    },
+    "case_count": 3,
+    "finished_at": "2026-08-31T13:18:42.976262Z",
+    "image_label": "nvidia/cuda:12.4.0-base-ubuntu22.04",
+    "interpretation_limit": "Three local Docker cases validate one workspace write, host-marker invisibility, and default network denial; not a general container escape, resource-limit, or daemon-security audit.",
+    "observations": [
+      {
+        "case_id": "workspace_write",
+        "error": null,
+        "network_enabled": false,
+        "returncode": 0,
+        "sandbox_backend": "docker",
+        "sandbox_external": true,
+        "sandbox_fallback_used": false,
+        "semantic_pass": true,
+        "tool_success": true
+      },
+      {
+        "case_id": "host_escape_blocked",
+        "error": null,
+        "network_enabled": false,
+        "returncode": 0,
+        "sandbox_backend": "docker",
+        "sandbox_external": true,
+        "sandbox_fallback_used": false,
+        "semantic_pass": true,
+        "tool_success": true
+      },
+      {
+        "case_id": "network_blocked",
+        "error": null,
+        "network_enabled": false,
+        "returncode": 0,
+        "sandbox_backend": "docker",
+        "sandbox_external": true,
+        "sandbox_fallback_used": false,
+        "semantic_pass": true,
+        "tool_success": true
+      }
+    ],
+    "privacy": {
+      "environment_values_retained": false,
+      "raw_commands_retained": false,
+      "raw_outputs_retained": false,
+      "workspace_paths_retained": false
+    },
+    "profile": "agent_lib.command_isolation",
+    "profile_version": 2,
+    "runtime_backend": "docker",
+    "schema_version": 1,
+    "started_at": "2026-08-31T13:18:42.090720Z",
+    "suite_digest": "sha256:858a9c41bc93bf1f1fd59ac4131bb34914b66fd160122b5d338b60a23d620986"
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "command-isolation-runner",
+        "name": "agent_lib.command_isolation",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "cached image",
+            "network disabled"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "state_changing",
+        "execution_mode": "local_compute",
+        "implementation_version": "1",
+        "operation": "container_command_isolation",
+        "requirements": [
+          {
+            "ref": "agent_lib",
+            "type": "implementation"
+          },
+          {
+            "ref": "docker_daemon",
+            "type": "external_service"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "image_label": "nvidia/cuda:12.4.0-base-ubuntu22.04",
+      "runtime_backend": "docker"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; commands, outputs, paths, and environment values omitted",
+      "declared_content_categories": [
+        "synthetic_command"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "retain_outcomes_and_isolation_metadata_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-isolation-no-raw-content",
+        "policy_version": "1",
+        "scope": [
+          "no raw commands, output, workspace paths, or environment values"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-31T13:18:42.976262Z",
+        "validator": "agent_lib.command_isolation"
+      }
+    },
+    "profile": "agent_lib.command_isolation",
+    "profile_version": 2,
+    "record_id": "ci_a6dbb33f98fe20a919b1b0d9dc00fb69",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-31T13:18:42.976262Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-31T13:18:42.976262Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-31T13:18:42.090720Z"
+      }
+    }
+  }
+}

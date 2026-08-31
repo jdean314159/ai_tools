@@ -59,6 +59,10 @@ The work progressed through evidence rather than assuming a design:
 14. A bounded context-retention profile preserved exact start/end values with
     monotonic server usage at approximately 1K, 8K, and 32K input tokens. It did
     not test the advertised maximum or middle-context retrieval.
+15. A real Docker-backed `agent_lib` command-isolation profile passed workspace
+    mutation, exact host-marker invisibility, and default network denial in 3/3
+    corrected cases without host fallback. The green version-1 artifact is
+    retained as infrastructure-invalid because its marker paths differed.
 
 Key commits, oldest to newest:
 
@@ -95,15 +99,18 @@ Do not extend the policy from this bounded matrix. Choose one next validation:
 The Engram prompt-budget choice, first bounded `agent_lib` policy/trace
 characterization, and Flash-Next core, tool-decision, and valid recovery
 baselines plus a conservative context-retention gate are complete. Do not
-generalize the agent result to OS/container isolation, the recovery ceiling to
+generalize the policy/trace result to OS isolation, or the bounded Docker result
+to general container security; do not generalize the recovery ceiling to
 arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
-extending these ceiling profiles. The leading non-model candidates are
-`agent_lib` command isolation or Inspector/UI replay.
+extending these ceiling profiles. The leading non-model candidate is now
+Inspector/UI artifact replay. A deeper command-sandbox project would first need
+a new concrete question around the still-missing resource limits,
+`no-new-privileges`, capabilities, or seccomp controls.
 
 ## Verification posture
 
-The latest repository gate passed with 1,258 tests, 304 skips, and three existing
+The latest repository gate passed with 1,261 tests, 304 skips, and three existing
 multiprocessing/fork deprecation warnings. Focused trust, temporal, security, and
 availability tests also pass. Use the root invocation documented in `AGENTS.md`
 with explicit source paths and plugin autoload disabled when reproducing this
