@@ -124,6 +124,10 @@ The work progressed through evidence rather than assuming a design:
     `runs/` evidence remains excluded. Both harness scripts compiled, the 3
     fixture tests passed, the shared gate covers 481 files, and the full gate
     remains at 1,268 passed.
+31. Top-level example probes are now adopted as maintained characterization
+    tooling; recorded evidence was untouched and live experiments were not
+    rerun. Ruff expanded compact statements across 16 files, all modules
+    compiled, the shared gate covers 498 files, and the full gate remains green.
 
 Key commits, oldest to newest:
 

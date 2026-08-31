@@ -24,7 +24,5 @@ def install_repo_source_paths(
         module_file = str(getattr(module, "__file__", "") or "")
         if module is not None and not module_file.startswith(expected_roots):
             for loaded_name in tuple(sys.modules):
-                if loaded_name == package_name or loaded_name.startswith(
-                    f"{package_name}."
-                ):
+                if loaded_name == package_name or loaded_name.startswith(f"{package_name}."):
                     sys.modules.pop(loaded_name, None)

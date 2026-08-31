@@ -349,6 +349,15 @@ formatted 2 files, bringing the shared gate to 481 files. Both harness scripts
 compiled, the fixture's 3 tests passed, and the full repository gate remains
 1,268 passed, 304 skipped, with the same three warnings.
 
+The fifteenth Python-quality checkpoint adopts the top-level example probes as
+maintained characterization tooling while leaving their recorded evidence
+untouched. Ruff expanded compact semicolon and one-line-suite constructs and
+split one combined import across 16 files; no experiment logic or constants
+changed. The shared gate now covers 498 files, all top-level example modules
+compile, and live model/hardware experiments were intentionally not rerun. The
+full repository gate remains 1,268 passed, 304 skipped, with the same three
+warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

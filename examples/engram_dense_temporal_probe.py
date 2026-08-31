@@ -37,40 +37,80 @@ class DenseCase:
 
 def cases() -> tuple[DenseCase, ...]:
     return (
-        DenseCase("atlas_current", "deployment region", "What is Project Atlas's current deployment region?",
-                  "eu-central-1", "TARGET-ATLAS-2", (
-                      "[TARGET-ATLAS-1] Project Atlas deployment region was us-east-1.",
-                      "[TARGET-ATLAS-2] Correction: Project Atlas deployment region is now eu-central-1; us-east-1 is obsolete.",
-                  )),
-        DenseCase("beacon_retracted", "retention period", "What is Project Beacon's current retention period?",
-                  "UNKNOWN", "TARGET-BEACON-3", (
-                      "[TARGET-BEACON-1] Project Beacon retention period was 90 days.",
-                      "[TARGET-BEACON-2] Project Beacon retention period changed to 45 days.",
-                      "[TARGET-BEACON-3] Retraction: Project Beacon has no current retention period; the 45-day decision is withdrawn.",
-                  )),
-        DenseCase("cedar_current", "escalation team", "Which team currently handles Project Cedar escalations?",
-                  "ORANGE", "TARGET-CEDAR-2", (
-                      "[TARGET-CEDAR-1] Project Cedar escalation team was BLUE.",
-                      "[TARGET-CEDAR-2] Update: Project Cedar escalation team is now ORANGE, replacing BLUE.",
-                  )),
-        DenseCase("delta_historical", "maintenance time", "What was Project Delta's maintenance time before its latest reschedule?",
-                  "01:00 UTC", "TARGET-DELTA-1", (
-                      "[TARGET-DELTA-1] Project Delta maintenance time was 01:00 UTC.",
-                      "[TARGET-DELTA-2] Project Delta maintenance time is now 03:30 UTC; 01:00 UTC is historical.",
-                  )),
-        DenseCase("ember_retracted", "export format", "Which export format does Project Ember currently require?",
-                  "UNKNOWN", "TARGET-EMBER-3", (
-                      "[TARGET-EMBER-1] Project Ember export format was CSV.",
-                      "[TARGET-EMBER-2] Project Ember export format changed to PARQUET.",
-                      "[TARGET-EMBER-3] Retraction: Project Ember has no current export-format requirement.",
-                  )),
+        DenseCase(
+            "atlas_current",
+            "deployment region",
+            "What is Project Atlas's current deployment region?",
+            "eu-central-1",
+            "TARGET-ATLAS-2",
+            (
+                "[TARGET-ATLAS-1] Project Atlas deployment region was us-east-1.",
+                "[TARGET-ATLAS-2] Correction: Project Atlas deployment region is now eu-central-1; us-east-1 is obsolete.",
+            ),
+        ),
+        DenseCase(
+            "beacon_retracted",
+            "retention period",
+            "What is Project Beacon's current retention period?",
+            "UNKNOWN",
+            "TARGET-BEACON-3",
+            (
+                "[TARGET-BEACON-1] Project Beacon retention period was 90 days.",
+                "[TARGET-BEACON-2] Project Beacon retention period changed to 45 days.",
+                "[TARGET-BEACON-3] Retraction: Project Beacon has no current retention period; the 45-day decision is withdrawn.",
+            ),
+        ),
+        DenseCase(
+            "cedar_current",
+            "escalation team",
+            "Which team currently handles Project Cedar escalations?",
+            "ORANGE",
+            "TARGET-CEDAR-2",
+            (
+                "[TARGET-CEDAR-1] Project Cedar escalation team was BLUE.",
+                "[TARGET-CEDAR-2] Update: Project Cedar escalation team is now ORANGE, replacing BLUE.",
+            ),
+        ),
+        DenseCase(
+            "delta_historical",
+            "maintenance time",
+            "What was Project Delta's maintenance time before its latest reschedule?",
+            "01:00 UTC",
+            "TARGET-DELTA-1",
+            (
+                "[TARGET-DELTA-1] Project Delta maintenance time was 01:00 UTC.",
+                "[TARGET-DELTA-2] Project Delta maintenance time is now 03:30 UTC; 01:00 UTC is historical.",
+            ),
+        ),
+        DenseCase(
+            "ember_retracted",
+            "export format",
+            "Which export format does Project Ember currently require?",
+            "UNKNOWN",
+            "TARGET-EMBER-3",
+            (
+                "[TARGET-EMBER-1] Project Ember export format was CSV.",
+                "[TARGET-EMBER-2] Project Ember export format changed to PARQUET.",
+                "[TARGET-EMBER-3] Retraction: Project Ember has no current export-format requirement.",
+            ),
+        ),
     )
 
 
 def distractors(case: DenseCase) -> tuple[str, ...]:
     project = case.case_id.split("_", 1)[0].upper()
-    values = ("BLUE", "ORANGE", "CSV", "PARQUET", "30 days", "60 days",
-              "us-west-2", "ap-south-1", "00:30 UTC", "04:00 UTC")
+    values = (
+        "BLUE",
+        "ORANGE",
+        "CSV",
+        "PARQUET",
+        "30 days",
+        "60 days",
+        "us-west-2",
+        "ap-south-1",
+        "00:30 UTC",
+        "04:00 UTC",
+    )
     rows = []
     for index in range(DISTRACTOR_COUNT):
         other = chr(ord("F") + (index % 20)) + f"-{index:02d}"
@@ -92,28 +132,47 @@ def run_experiment(engine: Any, *, memory_root: Path, seed: int = 43) -> dict[st
     observations = []
     for case in cases():
         root = memory_root / case.case_id
-        memory = ProjectMemory(base_dir=root, project_id=case.case_id, session_id="seed",
-                               enable_semantic_graph=False, total_prompt_tokens=PROMPT_BUDGET)
+        memory = ProjectMemory(
+            base_dir=root,
+            project_id=case.case_id,
+            session_id="seed",
+            enable_semantic_graph=False,
+            total_prompt_tokens=PROMPT_BUDGET,
+        )
         stored = []
         try:
             # Interleave target events so recency/insertion order alone cannot solve every case.
             all_events = list(distractors(case)[:24]) + list(case.target_events[:-1])
             all_events += list(distractors(case)[24:]) + [case.target_events[-1]]
             for index, text in enumerate(all_events):
-                stored.append(bool(memory.store_episode(
-                    text, {"sequence": index}, importance=0.8 if text.startswith("[NOISE") else 1.0,
-                    bypass_filter=True, bypass_dedup=True,
-                )))
+                stored.append(
+                    bool(
+                        memory.store_episode(
+                            text,
+                            {"sequence": index},
+                            importance=0.8 if text.startswith("[NOISE") else 1.0,
+                            bypass_filter=True,
+                            bypass_dedup=True,
+                        )
+                    )
+                )
         finally:
             memory.close()
-        memory = ProjectMemory(base_dir=root, project_id=case.case_id, session_id="probe",
-                               enable_semantic_graph=False, total_prompt_tokens=PROMPT_BUDGET)
+        memory = ProjectMemory(
+            base_dir=root,
+            project_id=case.case_id,
+            session_id="probe",
+            enable_semantic_graph=False,
+            total_prompt_tokens=PROMPT_BUDGET,
+        )
         try:
             result = memory.build_prompt(
                 "Return JSON only. Use project memory chronologically. Corrections replace earlier values; "
                 "retractions leave UNKNOWN unless a later replacement exists. evidence_id must identify the "
                 "single event establishing the answer.\nQuestion: " + case.question,
-                query=case.question, max_prompt_tokens=PROMPT_BUDGET, reserve_output_tokens=96,
+                query=case.question,
+                max_prompt_tokens=PROMPT_BUDGET,
+                reserve_output_tokens=96,
                 return_trace=True,
             )
             prompt = str(result["prompt"])
@@ -122,28 +181,42 @@ def run_experiment(engine: Any, *, memory_root: Path, seed: int = 43) -> dict[st
             value_ok = value is not None and value.casefold() == case.expected_value.casefold()
             evidence_ok = evidence_id == case.expected_evidence_id
             evidence_selected = case.expected_evidence_id in selected
-            observations.append({
-                "case_id": case.case_id, "expected_value": case.expected_value,
-                "expected_evidence_id": case.expected_evidence_id,
-                "stored_count": sum(stored), "declared_count": len(all_events),
-                "selected_event_ids": selected, "selected_count": len(selected),
-                "expected_evidence_selected": evidence_selected,
-                "observed_value": value, "observed_evidence_id": evidence_id,
-                "value_correct": value_ok, "evidence_correct": evidence_ok,
-                "end_to_end_passed": evidence_selected and value_ok and evidence_ok,
-                "prompt_tokens": result.get("prompt_tokens"), "memory_tokens": result.get("memory_tokens"),
-                **meta,
-            })
+            observations.append(
+                {
+                    "case_id": case.case_id,
+                    "expected_value": case.expected_value,
+                    "expected_evidence_id": case.expected_evidence_id,
+                    "stored_count": sum(stored),
+                    "declared_count": len(all_events),
+                    "selected_event_ids": selected,
+                    "selected_count": len(selected),
+                    "expected_evidence_selected": evidence_selected,
+                    "observed_value": value,
+                    "observed_evidence_id": evidence_id,
+                    "value_correct": value_ok,
+                    "evidence_correct": evidence_ok,
+                    "end_to_end_passed": evidence_selected and value_ok and evidence_ok,
+                    "prompt_tokens": result.get("prompt_tokens"),
+                    "memory_tokens": result.get("memory_tokens"),
+                    **meta,
+                }
+            )
         finally:
             memory.close()
     finished = datetime.now(timezone.utc)
     return {
-        "schema_version": 1, "profile": PROFILE, "profile_version": PROFILE_VERSION,
-        "suite_digest": suite_digest(), "started_at": started.isoformat().replace("+00:00", "Z"),
+        "schema_version": 1,
+        "profile": PROFILE,
+        "profile_version": PROFILE_VERSION,
+        "suite_digest": suite_digest(),
+        "started_at": started.isoformat().replace("+00:00", "Z"),
         "finished_at": finished.isoformat().replace("+00:00", "Z"),
         "model_label": Path(str(getattr(engine, "model", "unreported"))).name,
-        "seed_requested": seed, "thinking_requested": False, "oracle_or_llm_judge_used": False,
-        "case_count": len(observations), "distractors_per_case": DISTRACTOR_COUNT,
+        "seed_requested": seed,
+        "thinking_requested": False,
+        "oracle_or_llm_judge_used": False,
+        "case_count": len(observations),
+        "distractors_per_case": DISTRACTOR_COUNT,
         "prompt_budget": PROMPT_BUDGET,
         "storage_pass_count": sum(o["stored_count"] == o["declared_count"] for o in observations),
         "retrieval_pass_count": sum(o["expected_evidence_selected"] for o in observations),
@@ -157,18 +230,23 @@ def run_experiment(engine: Any, *, memory_root: Path, seed: int = 43) -> dict[st
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", required=True); parser.add_argument("--base-url", required=True)
-    parser.add_argument("--artifact", type=Path, required=True); parser.add_argument("--seed", type=int, default=43)
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--base-url", required=True)
+    parser.add_argument("--artifact", type=Path, required=True)
+    parser.add_argument("--seed", type=int, default=43)
     args = parser.parse_args(argv)
     args.artifact.parent.mkdir(parents=True, exist_ok=True)
     if args.artifact.exists():
         parser.error(f"artifact already exists: {args.artifact}")
-    engine = EngineFactory.create("openai", model=args.model, base_url=args.base_url,
-                                  api_key="not-required", is_cloud=False)
+    engine = EngineFactory.create(
+        "openai", model=args.model, base_url=args.base_url, api_key="not-required", is_cloud=False
+    )
     with tempfile.TemporaryDirectory(prefix="engram-dense-temporal-") as tmp:
         body = run_experiment(engine, memory_root=Path(tmp), seed=args.seed)
     args.artifact.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({k: v for k, v in body.items() if k != "observations"}, indent=2, sort_keys=True))
+    print(
+        json.dumps({k: v for k, v in body.items() if k != "observations"}, indent=2, sort_keys=True)
+    )
     return 0
 
 

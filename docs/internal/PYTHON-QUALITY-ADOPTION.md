@@ -49,6 +49,7 @@ configuration.
 | `examples/mail_assistant` | 0 | 0 (adopted) |
 | `examples/agent_coordination_teaching` | 0 | 0 (adopted after classification) |
 | `examples/asc_probe` harness | 0 | 0 (adopted; generated `runs/` excluded) |
+| top-level example probes | 0 | 0 (adopted; live evidence not rerun) |
 | `scripts` | 5 | 26 |
 | root `tests` | 3 | 37 |
 
@@ -72,7 +73,8 @@ may need an explicit exclusion rather than automatic rewriting.
 12. `examples/agent_coordination_teaching` — adopted and enforced in CI.
 13. `examples/language_tutor_reference_app` — adopted and enforced in CI.
 14. `examples/asc_probe` harness — adopted; generated `runs/` evidence remains excluded.
-15. Remaining examples, scripts, and root integration tests — classify generated
+15. Top-level example probes — adopted; compilation verified without rerunning live experiments.
+16. Remaining examples, scripts, and root integration tests — classify generated
     and historical files before adoption.
 
 Each adoption commit must run that package's tests plus the repository gate.

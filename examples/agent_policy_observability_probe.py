@@ -1,4 +1,5 @@
 """Frozen deterministic probe for agent policy and observability completeness."""
+
 from __future__ import annotations
 
 import argparse
@@ -40,10 +41,18 @@ class PolicyCase:
 
 def cases() -> tuple[PolicyCase, ...]:
     return (
-        PolicyCase("tool_not_granted", "replace_text", {"path": "main.py"}, "tool_not_granted", "blocked"),
-        PolicyCase("path_escape", "read_file", {"path": "../outside.txt"}, "path_escape", "blocked"),
-        PolicyCase("write_denied", "replace_text", {"path": "denied.py"}, "write_denied", "blocked"),
-        PolicyCase("command_denied", "run_command", {"command": "echo denied"}, "command_denied", "blocked"),
+        PolicyCase(
+            "tool_not_granted", "replace_text", {"path": "main.py"}, "tool_not_granted", "blocked"
+        ),
+        PolicyCase(
+            "path_escape", "read_file", {"path": "../outside.txt"}, "path_escape", "blocked"
+        ),
+        PolicyCase(
+            "write_denied", "replace_text", {"path": "denied.py"}, "write_denied", "blocked"
+        ),
+        PolicyCase(
+            "command_denied", "run_command", {"command": "echo denied"}, "command_denied", "blocked"
+        ),
         PolicyCase("approval_required", "replace_text", {"path": "main.py"}, None, "approval"),
         PolicyCase("objective_failure", "check", {}, "verification_mismatch", "escalation"),
     )
@@ -61,13 +70,17 @@ def _policy_for(case: PolicyCase, root: Path) -> WorkspacePolicy:
     if case.case_id == "path_escape":
         return WorkspacePolicy(allowed_tools=["read_file"], **common)
     if case.case_id == "write_denied":
-        return WorkspacePolicy(allowed_tools=["replace_text"], writable_paths=["allowed.py"], **common)
+        return WorkspacePolicy(
+            allowed_tools=["replace_text"], writable_paths=["allowed.py"], **common
+        )
     if case.case_id == "command_denied":
         return WorkspacePolicy(allowed_tools=["run_command"], runnable_commands=[], **common)
     if case.case_id == "approval_required":
         return WorkspacePolicy(
-            allowed_tools=["replace_text"], writable_paths=["main.py"],
-            approval_mode="human_checkpoint", **common,
+            allowed_tools=["replace_text"],
+            writable_paths=["main.py"],
+            approval_mode="human_checkpoint",
+            **common,
         )
     return WorkspacePolicy(allowed_tools=["check"], **common)
 
@@ -77,39 +90,57 @@ def _inner_runtime() -> LocalToolRuntime:
         del kwargs
         return ToolResult(name="unexpected", output="handler unexpectedly executed", success=False)
 
-    return LocalToolRuntime([
-        LocalTool("read_file", "Synthetic read target.", unexpected),
-        LocalTool("replace_text", "Synthetic write target.", unexpected),
-        LocalTool("run_command", "Synthetic command target.", unexpected),
-        LocalTool(
-            "check", "Deterministic objective verifier.",
-            lambda: ToolResult(
-                name="check", output="synthetic mismatch", success=False,
-                meta={"error": "verification_mismatch"},
+    return LocalToolRuntime(
+        [
+            LocalTool("read_file", "Synthetic read target.", unexpected),
+            LocalTool("replace_text", "Synthetic write target.", unexpected),
+            LocalTool("run_command", "Synthetic command target.", unexpected),
+            LocalTool(
+                "check",
+                "Deterministic objective verifier.",
+                lambda: ToolResult(
+                    name="check",
+                    output="synthetic mismatch",
+                    success=False,
+                    meta={"error": "verification_mismatch"},
+                ),
             ),
-        ),
-    ])
+        ]
+    )
 
 
 def _event_types(step: Any) -> set[str]:
-    return {event.event_type for event in step.trace.to_interop_events()} if step.trace is not None else set()
+    return (
+        {event.event_type for event in step.trace.to_interop_events()}
+        if step.trace is not None
+        else set()
+    )
 
 
 def _run_case(case: PolicyCase, *, root: Path) -> dict[str, Any]:
     policy = _policy_for(case, root)
-    planner = SequencePlanner([
-        AgentAction.tool(case.tool_name, case.arguments, message="Exercise the frozen policy boundary."),
-        AgentAction.final("Worker completed after the observed tool result."),
-    ])
+    planner = SequencePlanner(
+        [
+            AgentAction.tool(
+                case.tool_name, case.arguments, message="Exercise the frozen policy boundary."
+            ),
+            AgentAction.final("Worker completed after the observed tool result."),
+        ]
+    )
     critic = None
     if case.expected_signal == "escalation":
-        critic = SequencePlanner([
-            AgentAction.final("Critic acknowledged the objective failure.", meta={"engine_role": "critic"}),
-        ])
+        critic = SequencePlanner(
+            [
+                AgentAction.final(
+                    "Critic acknowledged the objective failure.", meta={"engine_role": "critic"}
+                ),
+            ]
+        )
     tools = ProgrammingToolRuntime(_inner_runtime(), policy, root=root)
     runtime = AgentRuntime(planner=planner, critic=critic, tool_runtime=tools)
     task = AgentTask(
-        task_id=case.case_id, goal="Characterize one deterministic policy boundary.",
+        task_id=case.case_id,
+        goal="Characterize one deterministic policy boundary.",
         context={"workspace_policy": asdict(policy)},
     )
     run = runtime.run(task, max_steps=3)
@@ -118,7 +149,9 @@ def _run_case(case: PolicyCase, *, root: Path) -> dict[str, Any]:
     tool_result = first.observation.tool_result if first.observation is not None else None
     first_events = _event_types(first)
     trace_tags = {
-        tag for event in (first.trace.events if first.trace is not None else []) for tag in event.tags
+        tag
+        for event in (first.trace.events if first.trace is not None else [])
+        for tag in event.tags
     }
     warning_codes = {warning.code for warning in result.warnings}
     blocked_interop = len(result.diagnostics["blocked_actions"]) == 1
@@ -137,7 +170,10 @@ def _run_case(case: PolicyCase, *, root: Path) -> dict[str, Any]:
         for step in run.steps
     )
     common_trace_complete = {
-        "agent_action_selected", "agent_workspace_policy", "agent_tool_invoked", "agent_tool_result",
+        "agent_action_selected",
+        "agent_workspace_policy",
+        "agent_tool_invoked",
+        "agent_tool_result",
     }.issubset(first_events)
 
     if case.expected_signal == "blocked":
@@ -177,10 +213,14 @@ def run_experiment(*, workspace_root: Path) -> dict[str, Any]:
     common_traces_complete = all(item["common_trace_complete"] for item in observations)
     signals_complete = all(item["signal_complete"] for item in observations)
     return {
-        "schema_version": 1, "profile": PROFILE, "profile_version": PROFILE_VERSION,
-        "suite_digest": suite_digest(), "started_at": started.isoformat().replace("+00:00", "Z"),
+        "schema_version": 1,
+        "profile": PROFILE,
+        "profile_version": PROFILE_VERSION,
+        "suite_digest": suite_digest(),
+        "started_at": started.isoformat().replace("+00:00", "Z"),
         "finished_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "model_used": False, "case_count": len(observations),
+        "model_used": False,
+        "case_count": len(observations),
         "acceptance_gate": {
             "require_expected_policy_outcomes": True,
             "require_common_trace_events": True,
@@ -192,7 +232,8 @@ def run_experiment(*, workspace_root: Path) -> dict[str, Any]:
         },
         "observations": observations,
         "privacy": {
-            "raw_tool_outputs_retained": False, "workspace_paths_retained": False,
+            "raw_tool_outputs_retained": False,
+            "workspace_paths_retained": False,
             "environment_retained": False,
         },
         "interpretation_limit": (
@@ -205,11 +246,18 @@ def run_experiment(*, workspace_root: Path) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifact", type=Path, required=True)
-    args = parser.parse_args(argv); target = prepare_new_artifact_path(args.artifact)
+    args = parser.parse_args(argv)
+    target = prepare_new_artifact_path(args.artifact)
     with tempfile.TemporaryDirectory(prefix="agent-policy-observability-") as tmp:
         body = run_experiment(workspace_root=Path(tmp))
     target.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({key: value for key, value in body.items() if key != "observations"}, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {key: value for key, value in body.items() if key != "observations"},
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0 if body["acceptance_gate"]["passed"] else 1
 
 
