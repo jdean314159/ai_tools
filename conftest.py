@@ -36,9 +36,7 @@ TEST_SOURCE_PATHS = [
 SOURCE_PACKAGE_EXPECTATIONS = {
     "llm_harness_core": REPO_ROOT / "llm_harness_core" / "src" / "llm_harness_core",
     "llm_engines": REPO_ROOT / "llm_engines" / "src" / "llm_engines",
-    "reasoning_loop_guard": (
-        REPO_ROOT / "reasoning_loop_guard" / "src" / "reasoning_loop_guard"
-    ),
+    "reasoning_loop_guard": (REPO_ROOT / "reasoning_loop_guard" / "src" / "reasoning_loop_guard"),
     "action_trajectory_loop_guard": (
         REPO_ROOT / "action_trajectory_loop_guard" / "src" / "action_trajectory_loop_guard"
     ),
@@ -159,16 +157,14 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    run_engram = config.getoption("--run-engram") or os.environ.get(
-        "AI_TOOLS_RUN_ENGRAM_TESTS"
-    ) == "1"
+    run_engram = (
+        config.getoption("--run-engram") or os.environ.get("AI_TOOLS_RUN_ENGRAM_TESTS") == "1"
+    )
 
     if run_engram:
         return
 
-    skip_engram = pytest.mark.skip(
-        reason="requires --run-engram or AI_TOOLS_RUN_ENGRAM_TESTS=1"
-    )
+    skip_engram = pytest.mark.skip(reason="requires --run-engram or AI_TOOLS_RUN_ENGRAM_TESTS=1")
 
     for item in items:
         if "engram" in item.keywords:

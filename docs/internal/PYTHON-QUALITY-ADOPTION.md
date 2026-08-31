@@ -2,11 +2,11 @@
 
 ## Policy
 
-The repository root owns the shared Ruff baseline. Adoption is deliberately
-staged so formatting changes remain reviewable and are not mixed with behavioral
-refactors. `make quality-python` is the enforced gate; its default scope is
-`llm_harness_core`, both loop-guard packages, `mail_lib`, `llm_inspector_ui`,
-`agent_lib`, `llm_inspector`, `rag_lib`, `llm_engines`, and `engram`.
+The repository root owns the shared Ruff baseline. Adoption was deliberately
+staged so formatting changes remained reviewable and were not mixed with
+behavioral refactors. `make quality-python` now enforces the entire tracked
+repository; Git-ignored generated evidence plus the configured virtualenv and
+build-output exclusions remain outside the gate.
 
 The initial policy uses Ruff's conservative `E4`, `E7`, `E9`, and `F` rules,
 100-character lines, and a Python 3.10 syntax target. Python 3.10 remains the
@@ -76,8 +76,8 @@ may need an explicit exclusion rather than automatic rewriting.
 15. Top-level example probes — adopted; compilation verified without rerunning live experiments.
 16. Repository scripts — adopted and enforced in CI.
 17. Root unit and integration tests — adopted and enforced in CI.
-18. Remaining example subtrees — classify generated
-    and historical files before adoption.
+18. Root configuration and whole-repository scope — adopted. The staged path
+    list is consolidated to `.` after verifying the full tracked tree.
 
 Each adoption commit must run that package's tests plus the repository gate.
 Do not combine formatting with API renames or structural refactors.

@@ -135,6 +135,10 @@ The work progressed through evidence rather than assuming a design:
 33. Root unit and integration tests are now adopted. Ruff formatted 38 files,
     the shared gate covers 571 files, and the full repository result remains
     1,268 passed, 304 skipped, with the same three warnings.
+34. Repository-wide Python-quality adoption is complete. Root `conftest.py` was
+    the final formatting holdout, and the Make scope is now consolidated to `.`.
+    Ruff covers 572 tracked files; generated evidence and configured build
+    outputs remain excluded.
 
 Key commits, oldest to newest:
 
