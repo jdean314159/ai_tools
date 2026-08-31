@@ -56,6 +56,9 @@ The work progressed through evidence rather than assuming a design:
 13. Its valid frozen tool-recovery baseline passed all four failure families
     3/3 with zero fabricated success. The ceiling rule stopped the campaign
     before thinking on; version-4 development remains closed.
+14. A bounded context-retention profile preserved exact start/end values with
+    monotonic server usage at approximately 1K, 8K, and 32K input tokens. It did
+    not test the advertised maximum or middle-context retrieval.
 
 Key commits, oldest to newest:
 
@@ -91,15 +94,16 @@ Do not extend the policy from this bounded matrix. Choose one next validation:
 
 The Engram prompt-budget choice, first bounded `agent_lib` policy/trace
 characterization, and Flash-Next core, tool-decision, and valid recovery
-baselines are complete. Do not generalize the agent result to OS/container
-isolation or the recovery ceiling to arbitrary failures. Further model testing
-should select a genuinely new frozen boundary such as context/truncation rather
-than tuning the stopped recovery suite. Other bounded candidates are
+baselines plus a conservative context-retention gate are complete. Do not
+generalize the agent result to OS/container isolation, the recovery ceiling to
+arbitrary failures, or the 32K retention result to the advertised maximum.
+Further model testing should require a new concrete question rather than
+extending these ceiling profiles. The leading non-model candidates are
 `agent_lib` command isolation or Inspector/UI replay.
 
 ## Verification posture
 
-The latest repository gate passed with 1,255 tests, 304 skips, and three existing
+The latest repository gate passed with 1,258 tests, 304 skips, and three existing
 multiprocessing/fork deprecation warnings. Focused trust, temporal, security, and
 availability tests also pass. Use the root invocation documented in `AGENTS.md`
 with explicit source paths and plugin autoload disabled when reproducing this

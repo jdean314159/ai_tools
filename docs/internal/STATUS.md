@@ -196,6 +196,16 @@ the experiment, so no thinking-on recovery comparison was run and the stopped
 version-4 development suite remains closed. See
 `docs/projects/llm_engines/SPARK-QWEN38-FLASH-NEXT-TOOL-RECOVERY-2026-08-31.md`.
 
+A new bounded Flash-Next context-retention profile passed exact start/end
+recovery at 1,024, 8,192, and 32,768 filler words. The server reported 1,070,
+8,238, and 32,814 input tokens respectively, with normal stops and accepted seed
+status. This provides no evidence of unexpected truncation through the tested
+32K-word range, but it does not establish the advertised 262K maximum, rejection
+behavior at the boundary, or middle-context retrieval quality. See
+`docs/projects/llm_engines/SPARK-QWEN38-FLASH-NEXT-CONTEXT-RETENTION-2026-08-31.md`.
+The subsequent repository gate passed with 1,258 tests, 304 skips, and the same
+three multiprocessing/fork deprecation warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

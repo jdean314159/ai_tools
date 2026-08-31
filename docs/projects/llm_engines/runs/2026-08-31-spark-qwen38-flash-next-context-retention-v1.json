@@ -1,0 +1,171 @@
+{
+  "body": {
+    "acceptance_gate": {
+      "exact_start_end_retention": true,
+      "no_errors": true,
+      "passed": true,
+      "require_exact_start_end_retention": true,
+      "require_no_errors": true,
+      "require_usage_monotonic": true,
+      "require_usage_reported": true,
+      "usage_monotonic": true,
+      "usage_reported": true
+    },
+    "backend": "OpenAIEngine",
+    "case_count": 3,
+    "finished_at": "2026-08-31T12:57:20.660601Z",
+    "interpretation_limit": "Three synthetic prompts through roughly 32K filler words; validates endpoint-reported usage and boundary retention below the advertised maximum, not the maximum context length.",
+    "model_label": "Qwen3.8-Flash-Next-UD-IQ4_XS",
+    "privacy": {
+      "anchor_values_retained": false,
+      "endpoint_retained": false,
+      "raw_outputs_retained": false,
+      "raw_prompts_retained": false
+    },
+    "profile": "llm_engines.context_retention_campaign",
+    "profile_version": 1,
+    "results": [
+      {
+        "case_id": "filler_words_1024",
+        "end_correct": true,
+        "error_type": null,
+        "exact_output": true,
+        "filler_word_count": 1024,
+        "finish_reason": "stop",
+        "input_tokens": 1070,
+        "latency_ms": 2655.584,
+        "output_tokens": 24,
+        "seed_status": "accepted",
+        "start_correct": true,
+        "status": "passed"
+      },
+      {
+        "case_id": "filler_words_8192",
+        "end_correct": true,
+        "error_type": null,
+        "exact_output": true,
+        "filler_word_count": 8192,
+        "finish_reason": "stop",
+        "input_tokens": 8238,
+        "latency_ms": 10826.523,
+        "output_tokens": 24,
+        "seed_status": "accepted",
+        "start_correct": true,
+        "status": "passed"
+      },
+      {
+        "case_id": "filler_words_32768",
+        "end_correct": true,
+        "error_type": null,
+        "exact_output": true,
+        "filler_word_count": 32768,
+        "finish_reason": "stop",
+        "input_tokens": 32814,
+        "latency_ms": 38015.953,
+        "output_tokens": 24,
+        "seed_status": "accepted",
+        "start_correct": true,
+        "status": "passed"
+      }
+    ],
+    "schema_version": 1,
+    "seed_requested": 101,
+    "started_at": "2026-08-31T12:56:29.162113Z",
+    "suite_digest": "sha256:e25c815a7a31d86f880a1b8d43c6775ed7dda8bd55da5955f52b2a26d6e87b99",
+    "thinking_requested": false
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "context-retention-runner",
+        "name": "llm_engines.context_retention_campaign",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "temperature=0",
+            "seed requested"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "read_only",
+        "execution_mode": "live_external",
+        "implementation_version": "1",
+        "operation": "context_retention_characterization",
+        "requirements": [
+          {
+            "ref": "model_endpoint",
+            "type": "external_service"
+          },
+          {
+            "ref": "llm_engines.context_retention_campaign",
+            "type": "implementation"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "backend": "OpenAIEngine",
+      "model_label": "Qwen3.8-Flash-Next-UD-IQ4_XS"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw prompt and output omitted",
+      "declared_content_categories": [
+        "synthetic_prompt"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "retain_counts_and_exactness_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-context-no-raw-content",
+        "policy_version": "1",
+        "scope": [
+          "no endpoint, raw prompt, output, or anchor values"
+        ],
+        "status": "validated",
+        "validated_at": "2026-08-31T12:57:20.660601Z",
+        "validator": "llm_engines.context_retention_campaign"
+      }
+    },
+    "profile": "llm_engines.context_retention_campaign",
+    "profile_version": 1,
+    "record_id": "cr_008282914fcede529889de69657f4e19",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-31T12:57:20.660601Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-31T12:57:20.660601Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-08-31T12:56:29.162113Z"
+      }
+    }
+  }
+}
