@@ -9,7 +9,14 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from agent_lib import AgentAction, AgentRuntime, AgentTask, EngineRoles, SequencePlanner, WorkspacePolicy
+from agent_lib import (
+    AgentAction,
+    AgentRuntime,
+    AgentTask,
+    EngineRoles,
+    SequencePlanner,
+    WorkspacePolicy,
+)
 from agent_lib.examples import FileWorkspace, make_programming_tool_runtime
 
 
@@ -63,8 +70,8 @@ def build_task_ladder() -> list[ProbeTask]:
                     "replace_text",
                     {
                         "path": "text_tools.py",
-                        "old": 'def join_labels(labels: list[str], separator: str = DEFAULT_SEPARATOR) -> str:',
-                        "new": 'def join_labels(labels: list[str], separator: str = DEFAULT_SEPARATOR) -> str:',
+                        "old": "def join_labels(labels: list[str], separator: str = DEFAULT_SEPARATOR) -> str:",
+                        "new": "def join_labels(labels: list[str], separator: str = DEFAULT_SEPARATOR) -> str:",
                     },
                     message="No-op refactor placeholder against an already extracted constant.",
                 ),
@@ -131,12 +138,18 @@ def run_probe_task(task: ProbeTask, runs_root: Path, *, mode: str) -> dict[str, 
         approval_mode="auto",
     )
     tool_runtime = make_programming_tool_runtime(workspace, policy)
-    critic = SequencePlanner(task.critic_actions) if mode == "worker-critic" and task.critic_actions else None
+    critic = (
+        SequencePlanner(task.critic_actions)
+        if mode == "worker-critic" and task.critic_actions
+        else None
+    )
     runtime = AgentRuntime(
         planner=SequencePlanner(task.worker_actions),
         critic=critic,
         tool_runtime=tool_runtime,
-        engine_roles=EngineRoles(planner="worker", executor="worker", critic="mentor" if critic else None),
+        engine_roles=EngineRoles(
+            planner="worker", executor="worker", critic="mentor" if critic else None
+        ),
     )
     run = runtime.run(
         AgentTask(task_id=task.task_id, goal=task.description, session_id=f"asc_probe_{mode}"),

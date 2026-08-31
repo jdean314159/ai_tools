@@ -120,6 +120,10 @@ The work progressed through evidence rather than assuming a design:
     maintained generator implementation from the external target tree it emits.
     Ruff formatted 33 files; its dedicated suite passed 118 tests with 33 skips,
     both entry scripts compiled, and the shared/full gates remain green.
+30. The maintained `examples/asc_probe` harness is now adopted while generated
+    `runs/` evidence remains excluded. Both harness scripts compiled, the 3
+    fixture tests passed, the shared gate covers 481 files, and the full gate
+    remains at 1,268 passed.
 
 Key commits, oldest to newest:
 

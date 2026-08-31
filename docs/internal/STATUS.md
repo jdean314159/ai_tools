@@ -342,6 +342,13 @@ gate to 477 files. The dedicated suite passed 118 tests with 33 optional-feature
 skips, both entry scripts compiled, and the full repository gate remains 1,268
 passed, 304 skipped, with the same three warnings.
 
+The fourteenth Python-quality checkpoint adopts the maintained
+`examples/asc_probe` harness while explicitly excluding generated `runs/`
+evidence. Its two lint findings were dead imports, and Ruff mechanically
+formatted 2 files, bringing the shared gate to 481 files. Both harness scripts
+compiled, the fixture's 3 tests passed, and the full repository gate remains
+1,268 passed, 304 skipped, with the same three warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key
