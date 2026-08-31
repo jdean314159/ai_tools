@@ -25,6 +25,7 @@ The workbench lets you:
 - run baseline, memory-augmented, and RAG-augmented queries side by side
 - inspect what context and evidence reached the model
 - export traces for offline analysis
+- replay a shared run-artifact JSON file as a read-only Inspector summary
 
 
 

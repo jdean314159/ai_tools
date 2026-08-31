@@ -18,6 +18,7 @@ from llm_inspector_ui.services.engine_registry_bootstrap import bootstrap_llm_en
 from llm_inspector_ui.panels.startup_panel import render_startup_panel
 from llm_inspector_ui.panels.synthesis_panel import render_synthesis_panel
 from llm_inspector_ui.panels.audit_panel import render_audit_panel
+from llm_inspector_ui.panels.artifact_replay_panel import render_artifact_replay_panel
 
 from llm_inspector_ui.utils.trace_access import (
     get_evidence,
@@ -627,8 +628,8 @@ def render_inspector_area():
     runs = store.list_runs(st.session_state.current_session_id)
     controls = st.session_state.current_controls
 
-    single_tab, compare_tab, models_tab, synthesis_tab, audit_tab, startup_tab = st.tabs(
-        ["Single run", "Compare", "Models", "Synthesis", "Audit", "Startup"]
+    single_tab, compare_tab, replay_tab, models_tab, synthesis_tab, audit_tab, startup_tab = st.tabs(
+        ["Single run", "Compare", "Artifact replay", "Models", "Synthesis", "Audit", "Startup"]
     )
     with single_tab:
         render_single_run_panel(runs)
@@ -636,6 +637,11 @@ def render_inspector_area():
         render_compare_panel(
             runs,
             inspector_service=st.session_state.inspector_service,
+            beginner_mode=bool(st.session_state.get("ui_beginner_mode", True)),
+        )
+    with replay_tab:
+        render_artifact_replay_panel(
+            st.session_state.inspector_service,
             beginner_mode=bool(st.session_state.get("ui_beginner_mode", True)),
         )
     with models_tab:

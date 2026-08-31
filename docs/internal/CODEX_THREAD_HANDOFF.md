@@ -63,6 +63,10 @@ The work progressed through evidence rather than assuming a design:
     mutation, exact host-marker invisibility, and default network denial in 3/3
     corrected cases without host fallback. The green version-1 artifact is
     retained as infrastructure-invalid because its marker paths differed.
+16. Inspector UI can now replay one shared artifact JSON into a read-only
+    inspection summary. A supported Flash-Next campaign and an unsupported
+    command-isolation profile validate body-summary and envelope-only behavior;
+    this does not execute or import the recorded run.
 
 Key commits, oldest to newest:
 
@@ -103,14 +107,14 @@ generalize the policy/trace result to OS isolation, or the bounded Docker result
 to general container security; do not generalize the recovery ceiling to
 arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
-extending these ceiling profiles. The leading non-model candidate is now
-Inspector/UI artifact replay. A deeper command-sandbox project would first need
+extending these ceiling profiles. Inspector/UI single-artifact replay is now
+complete. A deeper command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.
 
 ## Verification posture
 
-The latest repository gate passed with 1,261 tests, 304 skips, and three existing
+The latest repository gate passed with 1,267 tests, 304 skips, and three existing
 multiprocessing/fork deprecation warnings. Focused trust, temporal, security, and
 availability tests also pass. Use the root invocation documented in `AGENTS.md`
 with explicit source paths and plugin autoload disabled when reproducing this

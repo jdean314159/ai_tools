@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Iterable
 
-from llm_inspector import describe_inspector
+from llm_inspector import (
+    artifact_inspection_to_dict,
+    describe_inspector,
+    inspect_artifact,
+)
+from llm_harness_core import ArtifactValidationError, artifact_from_dict
 from llm_inspector.core import (
     ContextResult,
     EvidenceItem,
@@ -32,6 +38,29 @@ class InspectorService:
 
     def describe_component(self):
         return describe_inspector(self)
+
+    def replay_artifact_json(
+        self,
+        payload: bytes,
+        *,
+        max_bytes: int = 5_000_000,
+    ) -> dict[str, Any]:
+        """Parse and inspect one shared run artifact without executing it."""
+        if len(payload) > max_bytes:
+            raise ValueError(f"Artifact exceeds the {max_bytes}-byte replay limit.")
+        try:
+            decoded = json.loads(payload.decode("utf-8"))
+            if not isinstance(decoded, dict):
+                raise ValueError("artifact JSON must contain an object")
+            artifact = artifact_from_dict(decoded)
+        except (
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+            ArtifactValidationError,
+            ValueError,
+        ) as exc:
+            raise ValueError(f"Invalid run artifact: {type(exc).__name__}") from None
+        return artifact_inspection_to_dict(inspect_artifact(artifact))
 
     def inspect(
         self,

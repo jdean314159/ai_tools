@@ -218,6 +218,17 @@ escape resistance remain unvalidated. See
 The subsequent repository gate passed with 1,261 tests, 304 skips, and the same
 three multiprocessing/fork deprecation warnings.
 
+`llm_inspector_ui` now exposes bounded, read-only replay of one shared
+run-artifact JSON file. The UI validates bytes through `llm_harness_core` and
+reuses Inspector's supported-body dispatch; a committed Flash-Next campaign
+reconstructs its supported summary while the command-isolation profile remains
+honestly envelope-only. Invalid and oversized uploads fail closed without
+echoing uploaded content. This is inspection replay, not model/tool execution,
+session import, or bundle-directory replay. See
+`docs/projects/llm_inspector_ui/ARTIFACT-REPLAY-2026-08-31.md`.
+The subsequent repository gate passed with 1,267 tests, 304 skips, and the same
+three multiprocessing/fork deprecation warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key
