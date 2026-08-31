@@ -21,7 +21,9 @@ class LiveConsoleMonitor:
 
     def print_event(self, event: ExchangeEvent) -> None:
         target = f" -> {event.target}" if event.target else ""
-        print(f"[{event.event_id:03d}] {event.created_at:%H:%M:%S} {event.actor}{target} {event.event_type}: {event.summary}")
+        print(
+            f"[{event.event_id:03d}] {event.created_at:%H:%M:%S} {event.actor}{target} {event.event_type}: {event.summary}"
+        )
 
     def print_recent(self, *, limit: int = 10) -> None:
         print("\nRecent exchanges")
@@ -47,7 +49,9 @@ class LiveConsoleMonitor:
         print(indent(body, "  "))
 
     def command_loop(self, *, phase: str = "monitor") -> None:
-        print(f"\n{phase} monitor commands: help, status, open <id>, guidance <agent> <message>, broadcast <message>, continue")
+        print(
+            f"\n{phase} monitor commands: help, status, open <id>, guidance <agent> <message>, broadcast <message>, continue"
+        )
         while True:
             try:
                 raw = input("monitor> ").strip()
@@ -57,7 +61,9 @@ class LiveConsoleMonitor:
                 self.print_recent()
                 continue
             if raw == "help":
-                print("Commands: status/messages, open <id>, guidance <agent> <message>, broadcast <message>, continue")
+                print(
+                    "Commands: status/messages, open <id>, guidance <agent> <message>, broadcast <message>, continue"
+                )
                 continue
             if raw in {"continue", "quit"}:
                 return

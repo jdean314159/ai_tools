@@ -112,6 +112,10 @@ The work progressed through evidence rather than assuming a design:
     with explicit exception chaining, Ruff formatted 12 files, and the focused
     mail/public-API set passed 102 tests. The shared gate covers 432 files and
     the full gate remains at 1,268 passed.
+28. `examples/agent_coordination_teaching` is now classified as maintained
+    public-API teaching code and adopted. Ruff formatted 5 files, its 3 offline
+    tests passed, the shared gate covers 439 files, and the full gate remains at
+    1,268 passed.
 
 Key commits, oldest to newest:
 

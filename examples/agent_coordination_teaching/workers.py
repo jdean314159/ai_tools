@@ -65,11 +65,22 @@ class CodexExecWorkerAdapter:
         return shutil.which("codex") is not None
 
     def launch(self, *, workspace: Path, prompt: str, timeout_seconds: int) -> WorkerResult:
-        command = ["codex", "exec", "--cd", str(workspace), "--sandbox", "workspace-write", "--ask-for-approval", "on-request"]
+        command = [
+            "codex",
+            "exec",
+            "--cd",
+            str(workspace),
+            "--sandbox",
+            "workspace-write",
+            "--ask-for-approval",
+            "on-request",
+        ]
         if self.spec.model:
             command.extend(["--model", self.spec.model])
         command.append("-")
-        return _run_command(command, prompt=prompt, timeout_seconds=timeout_seconds, worker=self.spec.name)
+        return _run_command(
+            command, prompt=prompt, timeout_seconds=timeout_seconds, worker=self.spec.name
+        )
 
 
 class ClaudePrintWorkerAdapter:
@@ -97,7 +108,9 @@ class ClaudePrintWorkerAdapter:
         command = list(self.spec.command or ("claude", "--print"))
         if "--cwd" not in command and "--cd" not in command:
             command.extend(["--cwd", str(workspace)])
-        return _run_command(command, prompt=prompt, timeout_seconds=timeout_seconds, worker=self.spec.name)
+        return _run_command(
+            command, prompt=prompt, timeout_seconds=timeout_seconds, worker=self.spec.name
+        )
 
 
 class LLMEngineWorkerAdapter:
@@ -164,7 +177,9 @@ class LLMEngineWorkerAdapter:
         model = self.spec.model
         if backend in {"llamacpp", "llama_cpp"}:
             if not model:
-                raise ValueError("llm_engine worker with backend=llamacpp requires --worker-model /path/to/model.gguf")
+                raise ValueError(
+                    "llm_engine worker with backend=llamacpp requires --worker-model /path/to/model.gguf"
+                )
             from llm_engines import get_engine
 
             kwargs = {"n_gpu_layers": self.spec.n_gpu_layers or 0}
@@ -204,7 +219,9 @@ def build_worker(spec: WorkerSpec) -> WorkerAdapter:
     raise ValueError(f"Unknown worker kind: {spec.kind}")
 
 
-def _run_command(command: list[str], *, prompt: str, timeout_seconds: int, worker: str) -> WorkerResult:
+def _run_command(
+    command: list[str], *, prompt: str, timeout_seconds: int, worker: str
+) -> WorkerResult:
     """
     Run a worker subprocess. Confinement-wise this provides only a wall-clock
     timeout. Per ADR-011, that is insufficient for an autonomous worker loop

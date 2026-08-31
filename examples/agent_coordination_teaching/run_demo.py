@@ -16,36 +16,64 @@ from .workers import WorkerSpec, build_worker, detect_worker_capabilities
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Inspectable external-agent coordination teaching demo")
+    parser = argparse.ArgumentParser(
+        description="Inspectable external-agent coordination teaching demo"
+    )
     parser.add_argument("--task", default="Create a tiny README note for the teaching workspace.")
     parser.add_argument("--workers", default="mock", help="comma-separated: mock,codex,claude_code")
     parser.add_argument("--planner-backend", default="mock")
     parser.add_argument("--planner-model", default="mock-planner")
     parser.add_argument("--worker-backend", default="ollama", help="backend for llm_engine workers")
-    parser.add_argument("--worker-model", default=None, help="model tag or GGUF path for llm_engine workers")
-    parser.add_argument("--worker-base-url", default=None, help="OpenAI-compatible endpoint for llm_engine workers")
-    parser.add_argument("--worker-local", action="store_true", help="mark OpenAI-compatible llm_engine worker as local")
-    parser.add_argument("--worker-n-gpu-layers", type=int, default=None, help="llama.cpp GPU-offloaded layer count")
+    parser.add_argument(
+        "--worker-model", default=None, help="model tag or GGUF path for llm_engine workers"
+    )
+    parser.add_argument(
+        "--worker-base-url", default=None, help="OpenAI-compatible endpoint for llm_engine workers"
+    )
+    parser.add_argument(
+        "--worker-local",
+        action="store_true",
+        help="mark OpenAI-compatible llm_engine worker as local",
+    )
+    parser.add_argument(
+        "--worker-n-gpu-layers", type=int, default=None, help="llama.cpp GPU-offloaded layer count"
+    )
     parser.add_argument("--worker-n-ctx", type=int, default=None, help="llama.cpp context window")
-    parser.add_argument("--worker-n-threads", type=int, default=None, help="llama.cpp CPU thread count")
+    parser.add_argument(
+        "--worker-n-threads", type=int, default=None, help="llama.cpp CPU thread count"
+    )
     parser.add_argument("--workspace", default=None)
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--timeout-seconds", type=int, default=60)
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--monitor", action="store_true", help="open a simple monitor command loop after the run")
+    parser.add_argument(
+        "--monitor", action="store_true", help="open a simple monitor command loop after the run"
+    )
     args = parser.parse_args()
 
     worker_kinds = [item.strip() for item in args.workers.split(",") if item.strip()]
     run_id = datetime.now().strftime("run_%Y%m%d_%H%M%S")
-    workspace = Path(args.workspace) if args.workspace else Path(tempfile.mkdtemp(prefix="agent_coord_workspace_"))
-    run_dir = Path(args.run_dir) if args.run_dir else Path("examples/agent_coordination_teaching/runs") / run_id
+    workspace = (
+        Path(args.workspace)
+        if args.workspace
+        else Path(tempfile.mkdtemp(prefix="agent_coord_workspace_"))
+    )
+    run_dir = (
+        Path(args.run_dir)
+        if args.run_dir
+        else Path("examples/agent_coordination_teaching/runs") / run_id
+    )
     workspace.mkdir(parents=True, exist_ok=True)
     run_dir.mkdir(parents=True, exist_ok=True)
-    (workspace / "README.md").write_text("# Agent Coordination Teaching Workspace\n", encoding="utf-8")
+    (workspace / "README.md").write_text(
+        "# Agent Coordination Teaching Workspace\n", encoding="utf-8"
+    )
 
     recorder = ExchangeRecorder(run_dir, run_id=run_id, thread_id=run_id)
     coordinator = ExternalSessionCoordinator()
-    coordinator.mailbox.register(ExternalAgentSession(agent_id="planner", role="planner", workspace=str(workspace)))
+    coordinator.mailbox.register(
+        ExternalAgentSession(agent_id="planner", role="planner", workspace=str(workspace))
+    )
 
     capabilities = detect_worker_capabilities()
     recorder.record(
@@ -63,7 +91,9 @@ def main() -> None:
         recipients=[spec.name for spec in worker_specs],
     )
     for spec in worker_specs:
-        coordinator.mailbox.register(ExternalAgentSession(agent_id=spec.name, role=spec.kind, workspace=str(workspace)))
+        coordinator.mailbox.register(
+            ExternalAgentSession(agent_id=spec.name, role=spec.kind, workspace=str(workspace))
+        )
 
     planner = Planner(backend=args.planner_backend, model=args.planner_model)
     assignments = planner.plan(task=args.task, workers=[spec.name for spec in worker_specs])
@@ -117,7 +147,9 @@ def main() -> None:
         "run_dir": str(run_dir),
         "dry_run": args.dry_run,
     }
-    (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    (run_dir / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
+    )
 
     if args.dry_run:
         monitor.print_recent(limit=20)
@@ -139,8 +171,12 @@ def main() -> None:
             continue
         inbox = coordinator.inbox(spec.name, thread_id=run_id)
         prompt = "\n\n".join(message.body for message in inbox)
-        recorder.record("worker_launch_started", actor=spec.name, summary=f"Launching {spec.kind} worker.")
-        result = adapter.launch(workspace=workspace, prompt=prompt, timeout_seconds=args.timeout_seconds)
+        recorder.record(
+            "worker_launch_started", actor=spec.name, summary=f"Launching {spec.kind} worker."
+        )
+        result = adapter.launch(
+            workspace=workspace, prompt=prompt, timeout_seconds=args.timeout_seconds
+        )
         recorder.record(
             "worker_completed" if result.success else "worker_failed_warning",
             actor=spec.name,
@@ -155,7 +191,9 @@ def main() -> None:
         monitor.command_loop(phase="post-run")
 
 
-def _record_message(recorder: ExchangeRecorder, message: CoordinationMessage, *, event_type: str) -> None:
+def _record_message(
+    recorder: ExchangeRecorder, message: CoordinationMessage, *, event_type: str
+) -> None:
     recorder.record(
         event_type,
         actor=message.sender,

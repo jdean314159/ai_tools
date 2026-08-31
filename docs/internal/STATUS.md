@@ -325,6 +325,13 @@ formatted 12 files, bringing the shared gate to 432 files. The focused mail and
 public-API set passed 102 tests, and the full repository gate remains 1,268
 passed, 304 skipped, with the same three warnings.
 
+The twelfth Python-quality checkpoint adopts
+`examples/agent_coordination_teaching` after classifying it as maintained,
+public-API-facing teaching code rather than generated run evidence. It was
+already lint-clean; Ruff mechanically formatted 5 files, bringing the shared
+gate to 439 files. Its 3 offline tests and the full repository gate passed; the
+latter remains 1,268 passed, 304 skipped, with the same three warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

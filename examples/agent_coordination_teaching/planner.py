@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 @dataclass(frozen=True)
 class Assignment:
     """Concrete assignment a planner hands to a worker."""
+
     worker: str
     title: str
     instructions: str
@@ -16,6 +17,7 @@ class Assignment:
 
 class _AssignmentModel(BaseModel):
     """Pydantic schema used to parse planner output via StructuredOutputHandler."""
+
     worker: str = ""
     title: str = "Worker assignment"
     instructions: str = ""
@@ -24,6 +26,7 @@ class _AssignmentModel(BaseModel):
 
 class _PlanModel(BaseModel):
     """Top-level structured output: a list of assignments."""
+
     assignments: list[_AssignmentModel] = Field(default_factory=list)
 
 
