@@ -47,6 +47,9 @@ The work progressed through evidence rather than assuming a design:
 10. A deterministic `agent_lib` policy/observability profile exposed and then
     corrected `tool_not_granted` block classification; the corrected profile
     passed enforcement and signal parity in 6/6 cases.
+11. The Spark replacement model reported as `Qwen3.8-Flash-Next-UD-IQ4_XS`
+    passed the unchanged five-run engine characterization profile in 5/5 runs
+    for exact chat, structured output, tool calls, and token log probabilities.
 
 Key commits, oldest to newest:
 
@@ -80,11 +83,13 @@ Do not extend the policy from this bounded matrix. Choose one next validation:
 2. Return to the broader `ai_tools` capability inventory and select the next
    unvalidated package capability one at a time.
 
-The Engram prompt-budget choice and the first bounded `agent_lib` policy/trace
-characterization are complete. Do not generalize the latter to OS/container
-isolation. The next assignment should either run the deferred thinking-on paired
-security profile unchanged or select another unvalidated non-Engram surface,
-with `agent_lib` command isolation or Inspector/UI replay as bounded candidates.
+The Engram prompt-budget choice, first bounded `agent_lib` policy/trace
+characterization, and Flash-Next core engine characterization are complete. Do
+not generalize the agent result to OS/container isolation or the model result to
+tool-selection quality. The leading model-specific next gate is the unchanged
+four-case tool-decision campaign, thinking off first; thinking on should follow
+only as a separately disclosed paired condition. Other bounded candidates are
+`agent_lib` command isolation or Inspector/UI replay.
 
 ## Verification posture
 

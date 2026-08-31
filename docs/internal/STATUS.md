@@ -169,6 +169,16 @@ See `docs/projects/agent_lib/AGENT-POLICY-OBSERVABILITY-2026-08-30.md`.
 The subsequent repository gate passed with 1,255 tests, 304 skips, and the same
 three multiprocessing/fork deprecation warnings.
 
+The replacement Spark model, reported by the endpoint as
+`Qwen3.8-Flash-Next-UD-IQ4_XS`, passed the unchanged five-run version-2
+`llm_engines` characterization campaign: exact chat, strict structured output,
+typed tool calling, and token log probabilities each passed 5/5 with stable
+status. Exact-chat latency was 337.2–434.179 ms with a 361.603 ms median. The
+comparison with the earlier 27B campaign is descriptive because load and order
+were not controlled. Tool-selection, thinking-on, and long-context behavior
+remain separate gates. See
+`docs/projects/llm_engines/SPARK-QWEN38-FLASH-NEXT-CHARACTERIZATION-2026-08-30.md`.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

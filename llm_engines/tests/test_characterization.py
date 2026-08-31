@@ -214,6 +214,8 @@ def test_committed_spark_artifacts_match_documented_bytes_and_privacy_boundary()
     expected = {
         "2026-08-29-spark-qwen-characterization-v2.json":
             "c75cdade1a7ddac6e4e41f2fce299947a469672235255bacc435e956aaf8d591",
+        "2026-08-30-spark-qwen38-flash-next-characterization-v2.json":
+            "8f25d1143cfd6aa115f3a557033ae7957bacf81610792df1a36b2b3a2bb58c11",
         "2026-08-29-spark-qwen-tool-decisions-thinking-off-v2.json":
             "74d2c9695bc93b98129891bc224a15aff64328458dd65b3ce1ed2686445ceb73",
         "2026-08-29-spark-qwen-tool-decisions-thinking-on-v2.json":
