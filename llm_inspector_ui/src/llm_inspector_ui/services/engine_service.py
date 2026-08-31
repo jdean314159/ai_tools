@@ -42,6 +42,7 @@ class EngineHealth:
     message: str = ""
     details: dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class EngineRunReadiness:
     engine_id: str
@@ -49,6 +50,7 @@ class EngineRunReadiness:
     severity: str  # "ok" | "warning" | "error"
     message: str
     details: dict[str, Any] = field(default_factory=dict)
+
 
 class EchoEngine:
     def invoke(
@@ -143,19 +145,23 @@ class EngineService:
                 metadata=metadata,
             )
 
-    def list_engine_capabilities(self, configs: Optional[dict[str, dict[str, Any]]] = None) -> list[CapabilityDescriptor]:
+    def list_engine_capabilities(
+        self, configs: Optional[dict[str, dict[str, Any]]] = None
+    ) -> list[CapabilityDescriptor]:
         configs = configs or {}
         return [
-            self.describe_engine_capability(engine.engine_id, config=configs.get(engine.engine_id, {}))
+            self.describe_engine_capability(
+                engine.engine_id, config=configs.get(engine.engine_id, {})
+            )
             for engine in self.list_engines()
         ]
 
     def get_run_readiness(
-            self,
-            engine_id: str,
-            *,
-            config: Optional[dict[str, Any]] = None,
-            model_id: Optional[str] = None,
+        self,
+        engine_id: str,
+        *,
+        config: Optional[dict[str, Any]] = None,
+        model_id: Optional[str] = None,
     ) -> EngineRunReadiness:
         if engine_id == "echo":
             return EngineRunReadiness(
@@ -297,7 +303,10 @@ class EngineService:
         except Exception:
             return []
 
-        return [self._coerce_model_descriptor(item, default_source=source or "search") for item in results]
+        return [
+            self._coerce_model_descriptor(item, default_source=source or "search")
+            for item in results
+        ]
 
     def provision_model(
         self,
@@ -370,7 +379,9 @@ class EngineService:
             "Wire a llm_engines registry into EngineService to enable real engines."
         )
 
-    def get_engine_health(self, engine_id: str, config: Optional[dict[str, Any]] = None) -> EngineHealth:
+    def get_engine_health(
+        self, engine_id: str, config: Optional[dict[str, Any]] = None
+    ) -> EngineHealth:
         if engine_id == "echo":
             return EngineHealth(
                 engine_id="echo",
@@ -398,7 +409,9 @@ class EngineService:
                 details={},
             )
 
-        reachable, reach_message, reach_details = self._probe_engine_reachability(engine_id, config or {})
+        reachable, reach_message, reach_details = self._probe_engine_reachability(
+            engine_id, config or {}
+        )
         models, models_error = self._list_models_with_error(engine_id, config=config or {})
         model_count = len(models) if models is not None else None
         models_available = (model_count > 0) if model_count is not None else None
@@ -437,7 +450,9 @@ class EngineService:
             details=reach_details,
         )
 
-    def list_engine_health(self, configs: Optional[dict[str, dict[str, Any]]] = None) -> list[EngineHealth]:
+    def list_engine_health(
+        self, configs: Optional[dict[str, dict[str, Any]]] = None
+    ) -> list[EngineHealth]:
         configs = configs or {}
         return [
             self.get_engine_health(engine.engine_id, config=configs.get(engine.engine_id, {}))
@@ -457,7 +472,9 @@ class EngineService:
 
         return "echo"
 
-    def engine_health_summary(self, configs: Optional[dict[str, dict[str, Any]]] = None) -> list[dict[str, Any]]:
+    def engine_health_summary(
+        self, configs: Optional[dict[str, dict[str, Any]]] = None
+    ) -> list[dict[str, Any]]:
         return [
             {
                 "engine_id": row.engine_id,
@@ -479,7 +496,9 @@ class EngineService:
         config: Optional[dict[str, Any]] = None,
     ) -> tuple[list[ModelDescriptor], Optional[str]]:
         if engine_id == "echo":
-            return [ModelDescriptor(model_id="echo", label="echo", source="builtin", installed=True)], None
+            return [
+                ModelDescriptor(model_id="echo", label="echo", source="builtin", installed=True)
+            ], None
 
         if self.registry is None:
             return [], "No llm_engines registry is configured."
@@ -537,22 +556,18 @@ class EngineService:
             if reachable is None and "ok" in value:
                 reachable = bool(value.get("ok"))
             message = str(value.get("message", "") or "")
-            details = {
-                k: v for k, v in value.items()
-                if k not in {"reachable", "ok", "message"}
-            }
+            details = {k: v for k, v in value.items() if k not in {"reachable", "ok", "message"}}
             return reachable, message, details
 
         if hasattr(value, "__dict__") or hasattr(value, "__dataclass_fields__"):
-            payload = asdict(value) if hasattr(value, "__dataclass_fields__") else dict(value.__dict__)
+            payload = (
+                asdict(value) if hasattr(value, "__dataclass_fields__") else dict(value.__dict__)
+            )
             reachable = payload.get("reachable")
             if reachable is None and "ok" in payload:
                 reachable = bool(payload.get("ok"))
             message = str(payload.get("message", "") or "")
-            details = {
-                k: v for k, v in payload.items()
-                if k not in {"reachable", "ok", "message"}
-            }
+            details = {k: v for k, v in payload.items() if k not in {"reachable", "ok", "message"}}
             return reachable, message, details
 
         return None, "", {}
@@ -581,7 +596,11 @@ class EngineService:
                 )
                 continue
 
-            payload = asdict(item) if hasattr(item, "__dataclass_fields__") else getattr(item, "__dict__", {})
+            payload = (
+                asdict(item)
+                if hasattr(item, "__dataclass_fields__")
+                else getattr(item, "__dict__", {})
+            )
             if payload:
                 fields.append(
                     EngineConfigField(
@@ -669,17 +688,23 @@ class EngineService:
                 label=value.get("label", value.get("name", value.get("engine_id", "unknown"))),
                 local=bool(value.get("local", True)),
                 metadata={
-                    k: v for k, v in value.items()
+                    k: v
+                    for k, v in value.items()
                     if k not in {"engine_id", "id", "label", "name", "local"}
                 },
             )
 
-        payload = asdict(value) if hasattr(value, "__dataclass_fields__") else getattr(value, "__dict__", {})
+        payload = (
+            asdict(value)
+            if hasattr(value, "__dataclass_fields__")
+            else getattr(value, "__dict__", {})
+        )
         engine_id = payload.get("engine_id", payload.get("id", str(value)))
         label = payload.get("label", payload.get("name", engine_id))
         local = bool(payload.get("local", True))
         metadata = {
-            k: v for k, v in payload.items()
+            k: v
+            for k, v in payload.items()
             if k not in {"engine_id", "id", "label", "name", "local"}
         }
         return EngineDescriptor(engine_id=engine_id, label=label, local=local, metadata=metadata)
@@ -695,18 +720,24 @@ class EngineService:
                 source=value.get("source", default_source),
                 installed=bool(value.get("installed", False)),
                 metadata={
-                    k: v for k, v in value.items()
+                    k: v
+                    for k, v in value.items()
                     if k not in {"model_id", "id", "label", "name", "source", "installed"}
                 },
             )
 
-        payload = asdict(value) if hasattr(value, "__dataclass_fields__") else getattr(value, "__dict__", {})
+        payload = (
+            asdict(value)
+            if hasattr(value, "__dataclass_fields__")
+            else getattr(value, "__dict__", {})
+        )
         model_id = payload.get("model_id", payload.get("id", str(value)))
         label = payload.get("label", payload.get("name", model_id))
         source = payload.get("source", default_source)
         installed = bool(payload.get("installed", False))
         metadata = {
-            k: v for k, v in payload.items()
+            k: v
+            for k, v in payload.items()
             if k not in {"model_id", "id", "label", "name", "source", "installed"}
         }
         return ModelDescriptor(

@@ -30,7 +30,14 @@ class FakeRegistry:
         self.last_models_config = config
         if engine_id == "ollama":
             if config and config.get("base_url") == "http://good-host:11434":
-                return [{"model_id": "qwen3:8b", "label": "Qwen3 8B", "source": "ollama", "installed": True}]
+                return [
+                    {
+                        "model_id": "qwen3:8b",
+                        "label": "Qwen3 8B",
+                        "source": "ollama",
+                        "installed": True,
+                    }
+                ]
             return []
         if engine_id == "vllm":
             return []
@@ -76,6 +83,7 @@ def test_engine_run_readiness_blocks_missing_or_unavailable_model():
     )
     assert ready.can_run is True
     assert ready.severity == "ok"
+
 
 def test_engine_health_distinguishes_ready_states_and_uses_config():
     registry = FakeRegistry()
@@ -131,10 +139,13 @@ def test_engine_service_heuristic_schema():
     vllm_schema = svc.get_engine_config_schema("vllm")
     assert [field.name for field in vllm_schema] == ["base_url", "timeout_s"]
 
+
 def test_engine_service_describes_engine_capability():
     registry = FakeRegistry()
     svc = EngineService(registry=registry)
 
-    descriptor = svc.describe_engine_capability("ollama", config={"base_url": "http://good-host:11434"})
+    descriptor = svc.describe_engine_capability(
+        "ollama", config={"base_url": "http://good-host:11434"}
+    )
     assert descriptor.provider in {"llm_engines", "llm_inspector_ui"}
     assert descriptor.metadata["engine_id"] == "ollama"

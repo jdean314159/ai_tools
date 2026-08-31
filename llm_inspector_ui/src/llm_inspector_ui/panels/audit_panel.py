@@ -25,9 +25,11 @@ from typing import Any, Optional
 # Helpers shared with synthesis_panel
 # ---------------------------------------------------------------------------
 
+
 def _get_pm(base_dir: Path, project_id: str, project_type: str = "programming_assistant"):
     try:
         from engram.project_memory import ProjectMemory
+
         try:
             from engram import ProjectType
         except Exception:
@@ -43,11 +45,7 @@ def _get_pm(base_dir: Path, project_id: str, project_type: str = "programming_as
 
 
 def _has_audit(pm) -> bool:
-    return (
-        pm is not None
-        and hasattr(pm, "audit_memory")
-        and hasattr(pm, "audit_remediate")
-    )
+    return pm is not None and hasattr(pm, "audit_memory") and hasattr(pm, "audit_remediate")
 
 
 def _fmt_ts(ts: Optional[float]) -> str:
@@ -62,21 +60,21 @@ def _fmt_ts(ts: Optional[float]) -> str:
 # Severity badge colours for st.markdown badges
 _SEVERITY_COLORS = {
     "error": "#dc3545",
-    "warn":  "#fd7e14",
-    "info":  "#0dcaf0",
+    "warn": "#fd7e14",
+    "info": "#0dcaf0",
 }
 _SEVERITY_LABELS = {
     "error": "🔴 ERROR",
-    "warn":  "🟠 WARN",
-    "info":  "🔵 INFO",
+    "warn": "🟠 WARN",
+    "info": "🔵 INFO",
 }
 
 _CHECK_DESCRIPTIONS = {
-    "orphan_synthesis":     "Rules whose supporting episodes have been deleted.",
-    "contradicting_facts":  "Fact pairs with conflicting claims about the same subject.",
-    "stale_facts":          "Facts that haven't been re-validated within the stale window.",
+    "orphan_synthesis": "Rules whose supporting episodes have been deleted.",
+    "contradicting_facts": "Fact pairs with conflicting claims about the same subject.",
+    "stale_facts": "Facts that haven't been re-validated within the stale window.",
     "low_confidence_rules": "Synthesis rules below the confidence threshold.",
-    "dangling_relations":   "Graph edges whose subject or object no longer exists.",
+    "dangling_relations": "Graph edges whose subject or object no longer exists.",
     "near_duplicate_rules": "Near-identical synthesis rules that should be merged.",
 }
 
@@ -84,6 +82,7 @@ _CHECK_DESCRIPTIONS = {
 # ---------------------------------------------------------------------------
 # Main panel renderer
 # ---------------------------------------------------------------------------
+
 
 def render_audit_panel(
     augmenter_service: Any,
@@ -111,10 +110,7 @@ def render_audit_panel(
         return
 
     if not _has_audit(pm):
-        st.info(
-            "Audit is not available for this augmenter. "
-            "Switch to the **engram** augmenter."
-        )
+        st.info("Audit is not available for this augmenter. Switch to the **engram** augmenter.")
         pm.close()
         return
 
@@ -149,6 +145,7 @@ def render_audit_panel(
 # Tab renderers
 # ---------------------------------------------------------------------------
 
+
 def _render_run_tab(pm, project_id: str, beginner_mode: bool) -> None:
     import streamlit as st
 
@@ -172,26 +169,38 @@ def _render_run_tab(pm, project_id: str, beginner_mode: bool) -> None:
     with col1:
         stale_days = st.number_input(
             "Stale fact threshold (days)",
-            min_value=30, max_value=730, value=180, step=30,
+            min_value=30,
+            max_value=730,
+            value=180,
+            step=30,
             help="Facts older than this with no re-validation are flagged.",
             key="audit_stale_days",
         )
         confidence_threshold = st.slider(
             "Low-confidence rule threshold",
-            min_value=0.0, max_value=1.0, value=0.65, step=0.05,
+            min_value=0.0,
+            max_value=1.0,
+            value=0.65,
+            step=0.05,
             help="Rules below this confidence are flagged.",
             key="audit_confidence_threshold",
         )
     with col2:
         contradiction_overlap = st.slider(
             "Contradiction overlap threshold",
-            min_value=0.5, max_value=1.0, value=0.70, step=0.05,
+            min_value=0.5,
+            max_value=1.0,
+            value=0.70,
+            step=0.05,
             help="Jaccard similarity floor for contradiction detection.",
             key="audit_contradiction_overlap",
         )
         duplicate_overlap = st.slider(
             "Near-duplicate overlap threshold",
-            min_value=0.5, max_value=1.0, value=0.85, step=0.05,
+            min_value=0.5,
+            max_value=1.0,
+            value=0.85,
+            step=0.05,
             help="Jaccard similarity floor for near-duplicate rule detection.",
             key="audit_duplicate_overlap",
         )
@@ -216,14 +225,16 @@ def _render_run_tab(pm, project_id: str, beginner_mode: bool) -> None:
 
         st.session_state.audit_report = report
         # Append summary to history
-        st.session_state.audit_history.append({
-            "timestamp": _fmt_ts(report.audit_timestamp),
-            "checks": ", ".join(report.checks_run),
-            "error": report.summary().get("error", 0),
-            "warn":  report.summary().get("warn", 0),
-            "info":  report.summary().get("info", 0),
-            "elapsed": f"{report.elapsed_seconds:.2f}s",
-        })
+        st.session_state.audit_history.append(
+            {
+                "timestamp": _fmt_ts(report.audit_timestamp),
+                "checks": ", ".join(report.checks_run),
+                "error": report.summary().get("error", 0),
+                "warn": report.summary().get("warn", 0),
+                "info": report.summary().get("info", 0),
+                "elapsed": f"{report.elapsed_seconds:.2f}s",
+            }
+        )
 
         # Summary metrics
         s = report.summary()
@@ -279,7 +290,8 @@ def _render_findings_tab(pm, project_id: str) -> None:
         )
 
     visible = [
-        f for f in report.sorted_findings()
+        f
+        for f in report.sorted_findings()
         if f.severity in severity_filter and f.check_name in check_filter
     ]
 
@@ -301,8 +313,11 @@ def _render_findings_tab(pm, project_id: str) -> None:
             type="primary",
             key="audit_bulk_apply",
         ):
-            actions = [(f.record_id, f.suggested_action.split()[0].lower())
-                       for f in visible if f.suggested_action]
+            actions = [
+                (f.record_id, f.suggested_action.split()[0].lower())
+                for f in visible
+                if f.suggested_action
+            ]
             try:
                 result = pm.audit_remediate(report, actions=actions, dry_run=False)
                 applied = len(result.get("applied", []))
@@ -332,7 +347,7 @@ def _render_findings_tab(pm, project_id: str) -> None:
                 )
             with col_info:
                 st.markdown(
-                    f"**[{finding.check_name.replace('_',' ').title()}]** "
+                    f"**[{finding.check_name.replace('_', ' ').title()}]** "
                     f"`{finding.record_type}` · `{finding.record_id[:20]}…`  \n"
                     f"{finding.details}"
                 )
@@ -359,7 +374,7 @@ def _render_findings_tab(pm, project_id: str) -> None:
                             else:
                                 skipped = result.get("skipped", [])
                                 st.warning(
-                                    f"Skipped: {skipped[0].get('reason','unknown') if skipped else 'no result'}"
+                                    f"Skipped: {skipped[0].get('reason', 'unknown') if skipped else 'no result'}"
                                 )
                         except Exception as exc:
                             st.error(f"Failed: {exc}")
@@ -375,6 +390,7 @@ def _render_history_tab() -> None:
         return
 
     import pandas as pd
+
     df = pd.DataFrame(history)
     st.dataframe(df, use_container_width=True, hide_index=True)
     st.caption(f"{len(history)} audit run(s) this session.")

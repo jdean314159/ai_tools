@@ -94,9 +94,13 @@ def describe_run_for_teaching(run: RunArtifact) -> str:
 
     parts = [f"This {label} shows what changed when `{run.augmenter_id}` was active."]
     if evidence_count:
-        parts.append(f"It surfaced {evidence_count} evidence item{'s' if evidence_count != 1 else ''} for inspection.")
+        parts.append(
+            f"It surfaced {evidence_count} evidence item{'s' if evidence_count != 1 else ''} for inspection."
+        )
     if retrieval_count:
-        parts.append(f"The retrieval stage selected {retrieval_count} document{'s' if retrieval_count != 1 else ''}.")
+        parts.append(
+            f"The retrieval stage selected {retrieval_count} document{'s' if retrieval_count != 1 else ''}."
+        )
     if token_total is not None:
         parts.append(f"The assembled prompt used {token_total} total tokens.")
     return " ".join(parts)
@@ -110,7 +114,9 @@ def describe_run_for_beginners(run: RunArtifact) -> str:
     }.get(run.augmenter_id, f"{run.augmenter_id} branch")
 
     if run.status == "skipped":
-        return f"This {branch_name} did not run, so compare the branches that produced actual results."
+        return (
+            f"This {branch_name} did not run, so compare the branches that produced actual results."
+        )
     if run.error:
         return f"This {branch_name} hit an error. For a beginner, that means you should not compare its answer quality until the infrastructure problem is fixed."
 
@@ -125,15 +131,23 @@ def describe_run_for_beginners(run: RunArtifact) -> str:
     elif run.augmenter_id == "rag":
         opening = "This retrieval branch tries to improve the answer by pulling in outside documents or records before the model responds."
     else:
-        opening = f"This {branch_name} shows how the system behaved with `{run.augmenter_id}` enabled."
+        opening = (
+            f"This {branch_name} shows how the system behaved with `{run.augmenter_id}` enabled."
+        )
 
     parts = [opening]
     if evidence_count:
-        parts.append(f"You can inspect {evidence_count} evidence item{'s' if evidence_count != 1 else ''} to see what support the branch exposed.")
+        parts.append(
+            f"You can inspect {evidence_count} evidence item{'s' if evidence_count != 1 else ''} to see what support the branch exposed."
+        )
     if retrieval_count:
-        parts.append(f"It selected {retrieval_count} document{'s' if retrieval_count != 1 else ''} during retrieval.")
+        parts.append(
+            f"It selected {retrieval_count} document{'s' if retrieval_count != 1 else ''} during retrieval."
+        )
     if token_total is not None:
-        parts.append(f"The final prompt used {token_total} tokens, which gives you a rough cost signal.")
+        parts.append(
+            f"The final prompt used {token_total} tokens, which gives you a rough cost signal."
+        )
     return " ".join(parts)
 
 
@@ -145,16 +159,22 @@ def explain_prompt_tab(trace: Any) -> str:
     truncated = bool(accounting.get("truncated"))
 
     if sections:
-        message = "Read this tab as the actual context sent to the model, not just a debug artifact."
+        message = (
+            "Read this tab as the actual context sent to the model, not just a debug artifact."
+        )
     else:
         message = "Use this tab to verify what text actually reached the model."
 
     if total is not None:
         message += f" The current assembled prompt is {total} tokens."
     if compressed:
-        message += " Compression was applied, so some context may have been shortened before inference."
+        message += (
+            " Compression was applied, so some context may have been shortened before inference."
+        )
     if truncated:
-        message += " Truncation occurred, so some candidate context did not fit into the final window."
+        message += (
+            " Truncation occurred, so some candidate context did not fit into the final window."
+        )
     return message
 
 
@@ -228,7 +248,9 @@ def explain_retrieval_tab_for_beginners(trace: Any) -> str:
 
     message = "This tab shows how the system chose outside material before answering."
     if selected is not None:
-        message += f" It kept {selected} document{'s' if selected != 1 else ''} in the final context."
+        message += (
+            f" It kept {selected} document{'s' if selected != 1 else ''} in the final context."
+        )
     if events:
         message += f" You can also inspect {len(events)} retrieval event{'s' if len(events) != 1 else ''} to see where filtering or reranking happened."
     message += " When a retrieval branch improves the answer, this tab helps you explain why."
@@ -267,7 +289,9 @@ def explain_agent_tab_for_beginners(trace: Any) -> str:
 
     message = "Use this tab to separate 'the agent got something done' from 'the agent behaved safely and predictably.'"
     if approvals:
-        message += f" {approvals} step{'s' if approvals != 1 else ''} required approval before continuing."
+        message += (
+            f" {approvals} step{'s' if approvals != 1 else ''} required approval before continuing."
+        )
     if blocked:
         message += f" {blocked} step{'s' if blocked != 1 else ''} {'was' if blocked == 1 else 'were'} blocked."
     if degraded:
@@ -276,7 +300,9 @@ def explain_agent_tab_for_beginners(trace: Any) -> str:
     return message
 
 
-def explain_readiness_for_teaching(*, status: str, exists: bool, reachable: bool | None, models_available: bool | None) -> str:
+def explain_readiness_for_teaching(
+    *, status: str, exists: bool, reachable: bool | None, models_available: bool | None
+) -> str:
     if not exists:
         return "The engine is not registered, so the workbench cannot yet demonstrate model behavior through the shared engine layer."
     if reachable is False:
@@ -288,7 +314,9 @@ def explain_readiness_for_teaching(*, status: str, exists: bool, reachable: bool
     return "The engine is partially configured. Use the health details and visible models to identify whether the problem is registration, connectivity, or missing model inventory."
 
 
-def explain_readiness_for_beginners(*, status: str, exists: bool, reachable: bool | None, models_available: bool | None) -> str:
+def explain_readiness_for_beginners(
+    *, status: str, exists: bool, reachable: bool | None, models_available: bool | None
+) -> str:
     if not exists:
         return "The UI does not know about this engine yet. Before you study memory or retrieval, register the engine so the workbench can send model calls through the shared interface."
     if reachable is False:
@@ -300,7 +328,9 @@ def explain_readiness_for_beginners(*, status: str, exists: bool, reachable: boo
     return "The engine is only partly ready. Use the health details to decide whether the missing piece is registration, reachability, or model availability."
 
 
-def describe_readiness_steps_for_beginners(*, status: str, exists: bool, reachable: bool | None, models_available: bool | None) -> list[str]:
+def describe_readiness_steps_for_beginners(
+    *, status: str, exists: bool, reachable: bool | None, models_available: bool | None
+) -> list[str]:
     if not exists:
         return [
             "Pick a registered engine or connect the UI to the llm_engines registry.",

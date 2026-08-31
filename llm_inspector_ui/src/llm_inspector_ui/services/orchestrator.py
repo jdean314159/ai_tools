@@ -104,9 +104,7 @@ class WorkbenchOrchestrator:
                 for turn in prior_turns:
                     augmenter.add_turn(turn.role, turn.text, plan.session_id)
 
-                augment_result = augmenter.augment(
-                    request=self._make_augment_request(plan)
-                )
+                augment_result = augmenter.augment(request=self._make_augment_request(plan))
                 normalized_trace = self.inspector_service.inspect(
                     augmenter_id=augmenter_id,
                     augment_result=augment_result,

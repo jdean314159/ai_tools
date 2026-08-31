@@ -79,9 +79,7 @@ class BaselineAugmenter(PromptAugmenter):
                 "target_tokens": request.max_prompt_tokens,
                 "total_tokens": len(prompt.split()),
                 "per_origin_budget": {},
-                "per_origin_used": {
-                    s["origin"]: len(s["text"].split()) for s in sections
-                },
+                "per_origin_used": {s["origin"]: len(s["text"].split()) for s in sections},
                 "truncated": False,
                 "compressed": False,
                 "notes": [],
@@ -207,6 +205,7 @@ class RagAugmenter(PromptAugmenter):
         if self._pipeline is not None:
             return self._pipeline
         from rag_lib import RAGPipeline
+
         self._pipeline = RAGPipeline(config=self.config)
         return self._pipeline
 
@@ -218,16 +217,20 @@ class RagAugmenter(PromptAugmenter):
 
     def describe_component(self) -> CapabilityDescriptor:
         pipeline = self._ensure_pipeline()
-        descriptor = pipeline.describe_component() if hasattr(pipeline, "describe_component") else CapabilityDescriptor(
-            kind=CapabilityKind.RAG_PIPELINE,
-            provider="rag_lib",
-            component="RagAugmenter",
-            version="0.1.0",
-            summary="RAG-backed prompt augmentation.",
-            features=("hybrid_retrieval", "retrieval_trace_events", "prompt_assembly"),
-            input_types=("augment_request",),
-            output_types=("prompt", "trace_event[]", "operation_result"),
-            metadata={},
+        descriptor = (
+            pipeline.describe_component()
+            if hasattr(pipeline, "describe_component")
+            else CapabilityDescriptor(
+                kind=CapabilityKind.RAG_PIPELINE,
+                provider="rag_lib",
+                component="RagAugmenter",
+                version="0.1.0",
+                summary="RAG-backed prompt augmentation.",
+                features=("hybrid_retrieval", "retrieval_trace_events", "prompt_assembly"),
+                input_types=("augment_request",),
+                output_types=("prompt", "trace_event[]", "operation_result"),
+                metadata={},
+            )
         )
         return CapabilityDescriptor(
             kind=descriptor.kind,
@@ -238,7 +241,11 @@ class RagAugmenter(PromptAugmenter):
             features=tuple(sorted(set(descriptor.features + ("augment_request",)))),
             input_types=descriptor.input_types,
             output_types=descriptor.output_types,
-            metadata={**dict(descriptor.metadata), "augmenter_id": self.augmenter_id, "collection": self.collection},
+            metadata={
+                **dict(descriptor.metadata),
+                "augmenter_id": self.augmenter_id,
+                "collection": self.collection,
+            },
         )
 
     def augment(self, request: AugmentRequest) -> AugmentResult:
@@ -254,12 +261,16 @@ class RagAugmenter(PromptAugmenter):
             sections.append({"title": "System", "origin": "system", "text": self.system_prompt})
         sections.append({"title": "User", "origin": "user", "text": request.user_text})
         if trace.selected_results:
-            sections.append({
-                "title": "RAG retrieved context",
-                "origin": "rag",
-                "text": "\n\n".join(doc.text for doc in trace.selected_results),
-            })
-        sections.append({"title": "Final prompt", "origin": "prompt", "text": trace.assembled_prompt})
+            sections.append(
+                {
+                    "title": "RAG retrieved context",
+                    "origin": "rag",
+                    "text": "\n\n".join(doc.text for doc in trace.selected_results),
+                }
+            )
+        sections.append(
+            {"title": "Final prompt", "origin": "prompt", "text": trace.assembled_prompt}
+        )
         evidence = [
             {
                 "text": doc.text,
@@ -345,11 +356,13 @@ class AugmenterService:
         augmenters = ["baseline"]
         try:
             import engram  # noqa: F401
+
             augmenters.append("engram")
         except Exception:
             pass
         try:
             import rag_lib  # noqa: F401
+
             augmenters.append("rag")
         except Exception:
             pass
@@ -363,7 +376,9 @@ class AugmenterService:
     ) -> CapabilityDescriptor:
         options = options or {}
         if augmenter_id == "baseline":
-            return BaselineAugmenter(system_prompt=options.get("system_prompt", "")).describe_component()
+            return BaselineAugmenter(
+                system_prompt=options.get("system_prompt", "")
+            ).describe_component()
 
         if augmenter_id == "engram":
             return EngramAugmenter(
@@ -459,6 +474,7 @@ class AugmenterService:
         if augmenter_id == "rag":
             try:
                 import rag_lib  # noqa: F401
+
                 config = options.get("config")
                 collection = str(options.get("collection", "default"))
                 return AugmenterReadiness(
@@ -485,7 +501,9 @@ class AugmenterService:
             details={},
         )
 
-    def create(self, augmenter_id: str, *, session_id: str, options: Optional[dict[str, Any]] = None):
+    def create(
+        self, augmenter_id: str, *, session_id: str, options: Optional[dict[str, Any]] = None
+    ):
         options = options or {}
 
         if augmenter_id == "baseline":

@@ -17,13 +17,23 @@ class FakeRegistry:
     def list_models(self, engine_id: str):
         if engine_id == "ollama":
             return [
-                {"model_id": "qwen3:8b", "label": "Qwen3 8B", "source": "ollama", "installed": True},
+                {
+                    "model_id": "qwen3:8b",
+                    "label": "Qwen3 8B",
+                    "source": "ollama",
+                    "installed": True,
+                },
             ]
         return []
 
     def search_models(self, query: str, source=None):
         return [
-            {"model_id": "Qwen/Qwen3-8B", "label": "Qwen3 8B", "source": source or "huggingface", "installed": False},
+            {
+                "model_id": "Qwen/Qwen3-8B",
+                "label": "Qwen3 8B",
+                "source": source or "huggingface",
+                "installed": False,
+            },
         ]
 
     def provision_model(self, request):
@@ -38,6 +48,7 @@ class FakeRegistry:
         class Engine:
             def invoke(self, *, prompt: str, model_id=None, settings=None, session_id=None):
                 return {"text": "ok", "metrics": {"engine_id": engine_id, "model_id": model_id}}
+
         return Engine()
 
 

@@ -143,7 +143,11 @@ def render_compare_panel(
         with col:
             st.markdown(f"### {run.augmenter_id}")
             st.caption(f"status={run.status}")
-            st.info(describe_run_for_beginners(run) if local_beginner_mode else describe_run_for_teaching(run))
+            st.info(
+                describe_run_for_beginners(run)
+                if local_beginner_mode
+                else describe_run_for_teaching(run)
+            )
 
             if run.status == "skipped":
                 st.warning(run.error or "Branch was skipped.")
@@ -153,15 +157,23 @@ def render_compare_panel(
                 st.error(run.error)
                 continue
 
-            tabs = st.tabs(["Response", "Prompt", "Token accounting", "Evidence", "Retrieval", "Agent"])
+            tabs = st.tabs(
+                ["Response", "Prompt", "Token accounting", "Evidence", "Retrieval", "Agent"]
+            )
 
             with tabs[0]:
                 if local_beginner_mode:
-                    st.caption("Start here. Decide whether this answer is actually better before you inspect the internal details.")
+                    st.caption(
+                        "Start here. Decide whether this answer is actually better before you inspect the internal details."
+                    )
                 st.write(run.response_text)
 
             with tabs[1]:
-                st.caption(explain_prompt_tab_for_beginners(run.trace) if local_beginner_mode else explain_prompt_tab(run.trace))
+                st.caption(
+                    explain_prompt_tab_for_beginners(run.trace)
+                    if local_beginner_mode
+                    else explain_prompt_tab(run.trace)
+                )
                 st.code(get_final_prompt(run.trace, fallback=run.prompt or ""), language="markdown")
 
             with tabs[2]:
@@ -173,7 +185,11 @@ def render_compare_panel(
                 st.json(get_token_accounting(run.trace))
 
             with tabs[3]:
-                st.caption(explain_evidence_tab_for_beginners(run.trace) if local_beginner_mode else explain_evidence_tab(run.trace))
+                st.caption(
+                    explain_evidence_tab_for_beginners(run.trace)
+                    if local_beginner_mode
+                    else explain_evidence_tab(run.trace)
+                )
                 evidence = get_evidence(run.trace)
                 if not evidence:
                     st.caption("No evidence.")
@@ -186,7 +202,11 @@ def render_compare_panel(
                             st.caption(f"score={item.get('score')}")
 
             with tabs[4]:
-                st.caption(explain_retrieval_tab_for_beginners(run.trace) if local_beginner_mode else explain_retrieval_tab(run.trace))
+                st.caption(
+                    explain_retrieval_tab_for_beginners(run.trace)
+                    if local_beginner_mode
+                    else explain_retrieval_tab(run.trace)
+                )
                 summary = get_retrieval_summary(run.trace)
                 events = get_retrieval_events(run.trace)
                 if summary:
@@ -197,7 +217,11 @@ def render_compare_panel(
                     st.caption("No retrieval diagnostics.")
 
             with tabs[5]:
-                st.caption(explain_agent_tab_for_beginners(run.trace) if local_beginner_mode else explain_agent_tab(run.trace))
+                st.caption(
+                    explain_agent_tab_for_beginners(run.trace)
+                    if local_beginner_mode
+                    else explain_agent_tab(run.trace)
+                )
                 summary = get_agent_summary(run.trace)
                 exec_summary = get_agent_execution_summary(run.trace)
                 rows = get_agent_execution_rows(run.trace)
@@ -237,8 +261,7 @@ def render_compare_panel(
             st.json(flags)
 
         changed_sections = [
-            row for row in diff.get("section_deltas", [])
-            if row.get("change") != "unchanged"
+            row for row in diff.get("section_deltas", []) if row.get("change") != "unchanged"
         ]
         if changed_sections:
             st.markdown("**Section deltas**")

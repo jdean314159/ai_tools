@@ -127,7 +127,8 @@ def get_final_prompt(trace: Any, *, fallback: str = "") -> str:
 def get_retrieval_events(trace: Any) -> list[dict[str, Any]]:
     events = get_events(trace)
     return [
-        event for event in events
+        event
+        for event in events
         if (
             "rag" in event.get("tags", ())
             or "retrieval" in event.get("tags", ())
@@ -149,11 +150,11 @@ def get_retrieval_summary(trace: Any) -> dict[str, Any]:
     return summary if isinstance(summary, dict) else {}
 
 
-
 def get_agent_events(trace: Any) -> list[dict[str, Any]]:
     events = get_events(trace)
     return [
-        event for event in events
+        event
+        for event in events
         if (
             "agent" in event.get("tags", ())
             or str(event.get("event_type", "")).startswith("agent_")
@@ -196,7 +197,17 @@ def get_agent_execution_summary(trace: Any) -> dict[str, Any]:
             "policy_reason": meta.get("policy_reason"),
             "returncode": meta.get("returncode"),
         }
-        blocked_errors = {"policy_violation", "invalid_arguments", "invalid_path", "path_escape", "write_denied", "ownership_denied", "command_denied", "sandbox_unavailable", "invalid_sandbox_backend"}
+        blocked_errors = {
+            "policy_violation",
+            "invalid_arguments",
+            "invalid_path",
+            "path_escape",
+            "write_denied",
+            "ownership_denied",
+            "command_denied",
+            "sandbox_unavailable",
+            "invalid_sandbox_backend",
+        }
         row["blocked"] = str(meta.get("error") or "") in blocked_errors
         row["degraded"] = bool(meta.get("sandbox_fallback_used"))
         derived_modes.append(row)

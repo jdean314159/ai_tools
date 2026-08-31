@@ -174,7 +174,7 @@ smoke-openai:
 # ---------------------------------------------------------------------------
 
 .PHONY: format-python format-check-python lint-python quality-python lint
-PYTHON_QUALITY_SCOPE ?= llm_harness_core/src llm_harness_core/tests action_trajectory_loop_guard reasoning_loop_guard mail_lib
+PYTHON_QUALITY_SCOPE ?= llm_harness_core/src llm_harness_core/tests action_trajectory_loop_guard reasoning_loop_guard mail_lib llm_inspector_ui
 
 format-python:
 	$(VENV_PYTHON) -m ruff format $(PYTHON_QUALITY_SCOPE)

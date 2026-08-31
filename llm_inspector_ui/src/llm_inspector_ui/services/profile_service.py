@@ -91,7 +91,9 @@ class ProfileService:
         self.session_store.save_profile(updated)
         return updated
 
-    def duplicate_profile(self, profile_id: str, *, new_name: str | None = None) -> WorkbenchProfile:
+    def duplicate_profile(
+        self, profile_id: str, *, new_name: str | None = None
+    ) -> WorkbenchProfile:
         profile = self.session_store.get_profile(profile_id)
         if profile is None:
             raise KeyError(f"Profile not found: {profile_id}")

@@ -245,6 +245,13 @@ loop-guard, mail, personal-rule, and public-API set passed 84 tests, and the ful
 repository gate remained at 1,267 passed, 304 skipped, with the same three
 warnings. `llm_inspector_ui` is the next staged package.
 
+The third Python-quality checkpoint adopts all of `llm_inspector_ui`. Four
+pre-existing lint findings were resolved by removing one unused local and one
+unused import and moving two test imports to module scope; Ruff mechanically
+formatted 29 files. The shared gate now covers 71 files. All 44 UI tests and the
+full repository gate passed at 1,267 passed, 304 skipped, with the same three
+warnings. `agent_lib` is the next staged package.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

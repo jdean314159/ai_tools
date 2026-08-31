@@ -22,7 +22,9 @@ def render_artifact_replay_panel(
             "It does not rerun the model, tools, or original experiment."
         )
     uploaded = st.file_uploader(
-        "Run artifact JSON", type=["json"], accept_multiple_files=False,
+        "Run artifact JSON",
+        type=["json"],
+        accept_multiple_files=False,
         key="shared_artifact_replay_upload",
     )
     if uploaded is None:
@@ -35,20 +37,24 @@ def render_artifact_replay_panel(
 
     common = dict(inspection.get("common") or {})
     st.success("Artifact parsed and validated.")
-    st.json({
-        "record_id": common.get("record_id"),
-        "kind": common.get("kind"),
-        "profile": common.get("profile"),
-        "lifecycle": common.get("lifecycle"),
-        "body_support": inspection.get("body_support"),
-    })
+    st.json(
+        {
+            "record_id": common.get("record_id"),
+            "kind": common.get("kind"),
+            "profile": common.get("profile"),
+            "lifecycle": common.get("lifecycle"),
+            "body_support": inspection.get("body_support"),
+        }
+    )
     notices = list(inspection.get("notices") or [])
     for notice in notices:
         st.warning(str(notice))
     st.markdown("**Body summary**")
     body_summary = inspection.get("body_summary")
     if body_summary is None:
-        st.caption("This body/profile version is unsupported; only common envelope facts are shown.")
+        st.caption(
+            "This body/profile version is unsupported; only common envelope facts are shown."
+        )
     else:
         st.json(body_summary)
     with st.expander("Common artifact facts", expanded=False):

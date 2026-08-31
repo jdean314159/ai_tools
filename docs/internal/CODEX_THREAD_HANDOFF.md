@@ -74,6 +74,9 @@ The work progressed through evidence rather than assuming a design:
 18. Both loop-guard packages and `mail_lib` are now formatted and included in
     that gate. Their combined focused test set passed 84 tests without behavior
     changes; `llm_inspector_ui` is the next adoption package.
+19. `llm_inspector_ui` is now lint-clean, formatted, and included in the shared
+    gate. Its 44 package tests and the full repository gate passed;
+    `agent_lib` is the next adoption package.
 
 Key commits, oldest to newest:
 
@@ -116,7 +119,7 @@ arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
 complete. The active maintenance sequence is Python-quality adoption, next
-through `llm_inspector_ui`. A deeper
+through `agent_lib`. A deeper
 command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.

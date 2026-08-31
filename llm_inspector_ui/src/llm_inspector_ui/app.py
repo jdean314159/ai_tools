@@ -195,9 +195,16 @@ def sidebar_controls():
     selected_profile_label = st.sidebar.selectbox(
         "Saved profiles",
         options=profile_labels,
-        index=0 if st.session_state.selected_profile_id is None else (
-            1 + next(
-                (idx for idx, p in enumerate(profiles) if p.profile_id == st.session_state.selected_profile_id),
+        index=0
+        if st.session_state.selected_profile_id is None
+        else (
+            1
+            + next(
+                (
+                    idx
+                    for idx, p in enumerate(profiles)
+                    if p.profile_id == st.session_state.selected_profile_id
+                ),
                 -1,
             )
             if any(p.profile_id == st.session_state.selected_profile_id for p in profiles)
@@ -214,7 +221,9 @@ def sidebar_controls():
 
     profile_name = st.sidebar.text_input(
         "Profile name",
-        value=selected_profile_label if selected_profile_label != "(unsaved current settings)" else "",
+        value=selected_profile_label
+        if selected_profile_label != "(unsaved current settings)"
+        else "",
         key="profile_name_input",
     )
 
@@ -288,8 +297,12 @@ def sidebar_controls():
     engine_labels = {e.label: e.engine_id for e in engines}
 
     preferred_engine_id = current.get("engine_id") if isinstance(current, dict) else None
-    selected_engine_id = preferred_engine_id if preferred_engine_id in engine_by_id else engines[0].engine_id
-    selected_engine_label = next(label for label, engine_id in engine_labels.items() if engine_id == selected_engine_id)
+    selected_engine_id = (
+        preferred_engine_id if preferred_engine_id in engine_by_id else engines[0].engine_id
+    )
+    selected_engine_label = next(
+        label for label, engine_id in engine_labels.items() if engine_id == selected_engine_id
+    )
 
     selected_engine_label = st.sidebar.selectbox(
         "Engine",
@@ -304,14 +317,20 @@ def sidebar_controls():
 
     selected_engine_health = engine_service.get_engine_health(engine_id, config=engine_config)
     if selected_engine_health.status == "error":
-        st.sidebar.error(f"{selected_engine_health.label}: {selected_engine_health.message or 'Not ready'}")
+        st.sidebar.error(
+            f"{selected_engine_health.label}: {selected_engine_health.message or 'Not ready'}"
+        )
     elif selected_engine_health.status == "warning":
-        st.sidebar.warning(f"{selected_engine_health.label}: {selected_engine_health.message or 'Partially ready'}")
+        st.sidebar.warning(
+            f"{selected_engine_health.label}: {selected_engine_health.message or 'Partially ready'}"
+        )
     else:
         st.sidebar.success(f"{selected_engine_health.label}: ready")
 
     models = engine_service.list_models(engine_id, config=engine_config)
-    selected_model_id = _normalize_model_choice(models, current.get("model_id") if isinstance(current, dict) else None)
+    selected_model_id = _normalize_model_choice(
+        models, current.get("model_id") if isinstance(current, dict) else None
+    )
 
     engine_temperature = st.sidebar.number_input(
         "Temperature",
@@ -344,7 +363,9 @@ def sidebar_controls():
         st.sidebar.caption("No models listed for this engine.")
 
     available_augmenters = augmenter_service.list_augmenters()
-    current_augmenters = current.get("augmenter_ids", ["baseline"]) if isinstance(current, dict) else ["baseline"]
+    current_augmenters = (
+        current.get("augmenter_ids", ["baseline"]) if isinstance(current, dict) else ["baseline"]
+    )
 
     compare_mode = st.sidebar.checkbox(
         "Compare mode",
@@ -353,7 +374,9 @@ def sidebar_controls():
     )
 
     if compare_mode:
-        default_compare = [a for a in current_augmenters if a in available_augmenters] or ["baseline"]
+        default_compare = [a for a in current_augmenters if a in available_augmenters] or [
+            "baseline"
+        ]
         augmenter_ids = st.sidebar.multiselect(
             "Augmenters",
             options=available_augmenters,
@@ -363,7 +386,11 @@ def sidebar_controls():
         if not augmenter_ids:
             augmenter_ids = ["baseline"]
     else:
-        default_single = current_augmenters[0] if current_augmenters and current_augmenters[0] in available_augmenters else available_augmenters[0]
+        default_single = (
+            current_augmenters[0]
+            if current_augmenters and current_augmenters[0] in available_augmenters
+            else available_augmenters[0]
+        )
         augmenter_ids = [
             st.sidebar.selectbox(
                 "Augmenter",
@@ -373,8 +400,12 @@ def sidebar_controls():
             )
         ]
 
-    max_prompt_tokens_value = current.get("max_prompt_tokens") if isinstance(current, dict) else None
-    reserve_output_tokens_value = current.get("reserve_output_tokens", 512) if isinstance(current, dict) else 512
+    max_prompt_tokens_value = (
+        current.get("max_prompt_tokens") if isinstance(current, dict) else None
+    )
+    reserve_output_tokens_value = (
+        current.get("reserve_output_tokens", 512) if isinstance(current, dict) else 512
+    )
 
     max_prompt_tokens = st.sidebar.number_input(
         "Max prompt tokens",
@@ -390,9 +421,17 @@ def sidebar_controls():
         key="reserve_output_tokens_input",
     )
 
-    baseline_options = current.get("augmenter_options", {}).get("baseline", {}) if isinstance(current, dict) else {}
-    engram_options = current.get("augmenter_options", {}).get("engram", {}) if isinstance(current, dict) else {}
-    rag_options = current.get("augmenter_options", {}).get("rag", {}) if isinstance(current, dict) else {}
+    baseline_options = (
+        current.get("augmenter_options", {}).get("baseline", {})
+        if isinstance(current, dict)
+        else {}
+    )
+    engram_options = (
+        current.get("augmenter_options", {}).get("engram", {}) if isinstance(current, dict) else {}
+    )
+    rag_options = (
+        current.get("augmenter_options", {}).get("rag", {}) if isinstance(current, dict) else {}
+    )
 
     system_prompt = st.sidebar.text_area(
         "Baseline system prompt",
@@ -437,7 +476,9 @@ def sidebar_controls():
         "engine_config": engine_config,
         "engine_settings": {
             "temperature": float(engine_temperature),
-            "max_output_tokens": None if int(engine_max_output_tokens) <= 0 else int(engine_max_output_tokens),
+            "max_output_tokens": None
+            if int(engine_max_output_tokens) <= 0
+            else int(engine_max_output_tokens),
         },
         "augmenter_ids": augmenter_ids,
         "max_prompt_tokens": None if int(max_prompt_tokens) <= 0 else int(max_prompt_tokens),
@@ -474,6 +515,7 @@ def sidebar_controls():
     st.session_state.current_controls = controls
     return controls
 
+
 def render_run_readiness_banner(readiness) -> None:
     if readiness.can_run:
         st.caption(f"Run readiness: {readiness.message}")
@@ -486,6 +528,7 @@ def render_run_readiness_banner(readiness) -> None:
 
     with st.expander("Run readiness details", expanded=False):
         st.json(readiness.details or {})
+
 
 def render_transcript():
     store: SessionStore = st.session_state.session_store
@@ -505,8 +548,6 @@ def render_transcript():
                     st.json(meta)
 
 
-
-
 def _render_agent_execution_status(trace, *, include_json: bool = False) -> None:
     import streamlit as st
 
@@ -524,6 +565,7 @@ def _render_agent_execution_status(trace, *, include_json: bool = False) -> None
         with st.expander("Execution status JSON", expanded=False):
             st.json(exec_summary)
 
+
 def render_single_run_panel(runs):
     st.subheader("Inspector")
     if not runs:
@@ -534,12 +576,26 @@ def render_single_run_panel(runs):
         f"{run.created_at.isoformat(timespec='seconds')} | {run.augmenter_id} | {run.engine_id}"
         for run in runs
     ]
-    selected_label = st.selectbox("Select run", options=run_labels, index=0, key="single_run_select")
+    selected_label = st.selectbox(
+        "Select run", options=run_labels, index=0, key="single_run_select"
+    )
     selected_run = runs[run_labels.index(selected_label)]
     st.caption(f"status={selected_run.status}")
 
     tabs = st.tabs(
-        ["Response", "Prompt", "Sections", "Token accounting", "Evidence", "Retrieval", "Agent", "Signals", "Metrics", "Events", "Raw JSON"]
+        [
+            "Response",
+            "Prompt",
+            "Sections",
+            "Token accounting",
+            "Evidence",
+            "Retrieval",
+            "Agent",
+            "Signals",
+            "Metrics",
+            "Events",
+            "Raw JSON",
+        ]
     )
 
     with tabs[0]:
@@ -551,7 +607,10 @@ def render_single_run_panel(runs):
             st.write(selected_run.response_text)
 
     with tabs[1]:
-        st.code(get_final_prompt(selected_run.trace, fallback=selected_run.prompt or ""), language="markdown")
+        st.code(
+            get_final_prompt(selected_run.trace, fallback=selected_run.prompt or ""),
+            language="markdown",
+        )
 
     with tabs[2]:
         sections = get_sections(selected_run.trace)
@@ -591,7 +650,6 @@ def render_single_run_panel(runs):
 
     with tabs[6]:
         summary = get_agent_summary(selected_run.trace)
-        exec_summary = get_agent_execution_summary(selected_run.trace)
         rows = get_agent_execution_rows(selected_run.trace)
         events = get_agent_events(selected_run.trace)
         if summary:
@@ -620,7 +678,10 @@ def render_single_run_panel(runs):
 
     with tabs[10]:
         _render_agent_execution_status(selected_run.trace, include_json=True)
-        st.code(json.dumps(_safe_jsonable(selected_run.trace), indent=2, ensure_ascii=False), language="json")
+        st.code(
+            json.dumps(_safe_jsonable(selected_run.trace), indent=2, ensure_ascii=False),
+            language="json",
+        )
 
 
 def render_inspector_area():
@@ -628,8 +689,10 @@ def render_inspector_area():
     runs = store.list_runs(st.session_state.current_session_id)
     controls = st.session_state.current_controls
 
-    single_tab, compare_tab, replay_tab, models_tab, synthesis_tab, audit_tab, startup_tab = st.tabs(
-        ["Single run", "Compare", "Artifact replay", "Models", "Synthesis", "Audit", "Startup"]
+    single_tab, compare_tab, replay_tab, models_tab, synthesis_tab, audit_tab, startup_tab = (
+        st.tabs(
+            ["Single run", "Compare", "Artifact replay", "Models", "Synthesis", "Audit", "Startup"]
+        )
     )
     with single_tab:
         render_single_run_panel(runs)
@@ -668,7 +731,10 @@ def render_inspector_area():
             beginner_mode=bool(st.session_state.get("ui_beginner_mode", True)),
         )
 
-def render_engine_config_controls(engine_service, engine_id: str, existing_config: dict[str, object] | None) -> dict[str, object]:
+
+def render_engine_config_controls(
+    engine_service, engine_id: str, existing_config: dict[str, object] | None
+) -> dict[str, object]:
     schema = engine_service.get_engine_config_schema(engine_id)
     if not schema:
         return {}
@@ -728,6 +794,7 @@ def render_engine_config_controls(engine_service, engine_id: str, existing_confi
 
     return config
 
+
 def _safe_jsonable(value):
     try:
         json.dumps(value)
@@ -735,7 +802,10 @@ def _safe_jsonable(value):
     except Exception:
         return str(value)
 
-def compute_submission_readiness(controls: dict[str, object], engine_service, augmenter_service) -> dict[str, object]:
+
+def compute_submission_readiness(
+    controls: dict[str, object], engine_service, augmenter_service
+) -> dict[str, object]:
     engine_readiness = controls["run_readiness"]
     augmenter_ids = list(controls["augmenter_ids"])
     augmenter_options = dict(controls.get("augmenter_options", {}))

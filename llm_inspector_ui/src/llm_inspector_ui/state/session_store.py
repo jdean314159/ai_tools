@@ -80,7 +80,9 @@ class SessionStore:
                 """
             )
 
-            run_columns = {row["name"] for row in conn.execute("PRAGMA table_info(runs)").fetchall()}
+            run_columns = {
+                row["name"] for row in conn.execute("PRAGMA table_info(runs)").fetchall()
+            }
             if "status" not in run_columns:
                 conn.execute("ALTER TABLE runs ADD COLUMN status TEXT NOT NULL DEFAULT 'ok'")
 
@@ -106,7 +108,9 @@ class SessionStore:
         except Exception:
             return fallback
 
-    def create_session(self, title: Optional[str] = None, *, meta: Optional[dict[str, Any]] = None) -> ChatSession:
+    def create_session(
+        self, title: Optional[str] = None, *, meta: Optional[dict[str, Any]] = None
+    ) -> ChatSession:
         now = datetime.now(timezone.utc)
         session = ChatSession(
             session_id=str(uuid4()),

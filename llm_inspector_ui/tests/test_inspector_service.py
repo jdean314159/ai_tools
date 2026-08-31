@@ -134,7 +134,9 @@ def test_inspector_service_diff_and_bundle():
     diff = svc.diff(left, right, name_a="baseline", name_b="engram")
     assert diff["name_a"] == "baseline"
     assert diff["name_b"] == "engram"
-    assert any(row["origin"] == "working" and row["change"] == "added" for row in diff["section_deltas"])
+    assert any(
+        row["origin"] == "working" and row["change"] == "added" for row in diff["section_deltas"]
+    )
 
     bundle = svc.bundle([("baseline", left), ("engram", right)], query="hello")
     assert bundle["report"]["query"] == "hello"

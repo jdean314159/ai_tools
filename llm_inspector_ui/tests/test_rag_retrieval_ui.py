@@ -89,12 +89,18 @@ def test_trace_access_returns_retrieval_summary_and_events():
 def test_rag_augmenter_embeds_retrieval_diagnostics_in_trace(monkeypatch):
     augmenter = RagAugmenter(config=None, collection="default", system_prompt="Be precise.")
     monkeypatch.setattr(augmenter, "_ensure_pipeline", lambda: _FakePipeline())
-    result = augmenter.augment(type("Req", (), {
-        "session_id": "sess-1",
-        "user_text": "hello",
-        "query": None,
-        "max_prompt_tokens": 256,
-    })())
+    result = augmenter.augment(
+        type(
+            "Req",
+            (),
+            {
+                "session_id": "sess-1",
+                "user_text": "hello",
+                "query": None,
+                "max_prompt_tokens": 256,
+            },
+        )()
+    )
     assert result.metadata["source"] == "rag"
     assert result.trace["context"]["signals"]["retrieval_summary"]["selected_count"] == 1
     assert result.trace["events"][0]["event_type"] == "retrieval_stage1_completed"
@@ -110,10 +116,14 @@ def test_augmenter_service_lists_engram_when_installed(tmp_path):
 
     assert "engram" in service.list_augmenters()
 
-    readiness = service.get_augmenter_readiness("engram", options={"base_dir": str(tmp_path), "project_id": "test"})
+    readiness = service.get_augmenter_readiness(
+        "engram", options={"base_dir": str(tmp_path), "project_id": "test"}
+    )
     assert readiness.can_run is True
     assert readiness.severity == "ok"
 
-    descriptor = service.describe_augmenter("engram", options={"base_dir": str(tmp_path), "project_id": "test"})
+    descriptor = service.describe_augmenter(
+        "engram", options={"base_dir": str(tmp_path), "project_id": "test"}
+    )
     assert descriptor.provider == "engram"
     assert descriptor.metadata["augmenter_id"] == "engram"

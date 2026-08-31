@@ -266,7 +266,8 @@ class InspectorService:
                 payload=dict(item.get("payload", item.get("fields", {})) or {}),
                 severity=item.get("severity", "info"),
                 message=item.get("message"),
-                event_id=item.get("event_id") or TraceEvent(
+                event_id=item.get("event_id")
+                or TraceEvent(
                     event_type="placeholder",
                     source_package="llm_inspector_ui",
                     source_component="InspectorService",

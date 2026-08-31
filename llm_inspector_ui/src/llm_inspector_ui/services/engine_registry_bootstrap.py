@@ -16,15 +16,16 @@ Two components:
 3. bootstrap_llm_engines_registry() — builds the real registry if llm_engines
    is importable, otherwise returns NullRegistry so the UI degrades gracefully.
 """
+
 from __future__ import annotations
 
-from importlib import import_module
 from typing import Any, Optional
 
 
 # ---------------------------------------------------------------------------
 # NullRegistry — graceful degradation when llm_engines is not importable
 # ---------------------------------------------------------------------------
+
 
 class NullRegistry:
     def list_engines(self):
@@ -46,6 +47,7 @@ class NullRegistry:
 # ---------------------------------------------------------------------------
 # ChatModelAdapter — bridges ChatModel.generate() → invoke() contract
 # ---------------------------------------------------------------------------
+
 
 class ChatModelAdapter:
     """Wraps a llm_engines ChatModel to match the EngineHandle.invoke() signature.
@@ -119,6 +121,7 @@ class ChatModelAdapter:
 # LlmEnginesRegistry — EngineRegistry protocol backed by llm_engines config
 # ---------------------------------------------------------------------------
 
+
 class LlmEnginesRegistry:
     """Implements the EngineRegistry protocol using llm_engines config_loader.
 
@@ -146,12 +149,14 @@ class LlmEnginesRegistry:
                 # llm_engines.contracts.EngineDescriptor fields:
                 # engine_id, label, local, supports_chat, supports_streaming,
                 # supports_tools, supports_vision, metadata
-                result.append(self._EngineDescriptor(
-                    engine_id=name,
-                    label=label,
-                    local=is_local,
-                    metadata={"backend": backend},
-                ))
+                result.append(
+                    self._EngineDescriptor(
+                        engine_id=name,
+                        label=label,
+                        local=is_local,
+                        metadata={"backend": backend},
+                    )
+                )
             except Exception:
                 pass
         return result
@@ -165,6 +170,7 @@ class LlmEnginesRegistry:
         if backend == "ollama":
             try:
                 from llm_engines.discovery import check_ollama_running
+
                 base_url = cfg.get("base_url", "http://localhost:11434")
                 running = check_ollama_running(base_url)
                 return {
@@ -180,6 +186,7 @@ class LlmEnginesRegistry:
 
         if backend in ("anthropic", "openai"):
             import os
+
             key_var = "ANTHROPIC_API_KEY" if backend == "anthropic" else "OPENAI_API_KEY"
             has_key = bool(os.environ.get(key_var))
             return {
@@ -198,12 +205,10 @@ class LlmEnginesRegistry:
         if backend == "ollama":
             try:
                 from llm_engines.discovery import list_ollama_models
+
                 base_url = cfg.get("base_url", "http://localhost:11434")
                 models = list_ollama_models(base_url)
-                return [
-                    self._coerce_model_descriptor(m.name, engine_id)
-                    for m in models
-                ]
+                return [self._coerce_model_descriptor(m.name, engine_id) for m in models]
             except Exception:
                 pass
 
@@ -252,6 +257,7 @@ class LlmEnginesRegistry:
         try:
             from llm_engines.discovery import pull_ollama_model
             from llm_engines.contracts import ProvisionResult
+
             engine_id = getattr(request, "engine_id", "")
             model_id = getattr(request, "model_id", "")
             engines_cfg = self._config.get("engines") or {}
@@ -267,6 +273,7 @@ class LlmEnginesRegistry:
         except Exception as exc:
             try:
                 from llm_engines.contracts import ProvisionResult
+
                 return ProvisionResult(
                     engine_id="",
                     model_id="",
@@ -296,6 +303,7 @@ class LlmEnginesRegistry:
 # bootstrap_llm_engines_registry — called once at app startup
 # ---------------------------------------------------------------------------
 
+
 def bootstrap_llm_engines_registry() -> Any:
     """Build and return the real registry, or NullRegistry on failure.
 
@@ -312,6 +320,7 @@ def bootstrap_llm_engines_registry() -> Any:
         return NullRegistry()
     except Exception as exc:
         import logging
+
         logging.getLogger(__name__).warning(
             "Failed to build LlmEnginesRegistry: %s. Falling back to NullRegistry.", exc
         )

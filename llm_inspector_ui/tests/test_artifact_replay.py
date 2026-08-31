@@ -12,7 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_replay_supported_committed_artifact_without_execution():
-    path = ROOT / "docs/projects/llm_engines/runs/2026-08-30-spark-qwen38-flash-next-characterization-v2.json"
+    path = (
+        ROOT
+        / "docs/projects/llm_engines/runs/2026-08-30-spark-qwen38-flash-next-characterization-v2.json"
+    )
     result = InspectorService().replay_artifact_json(path.read_bytes())
     assert result["body_support"] == "supported"
     assert result["common"]["kind"] == "experiment"

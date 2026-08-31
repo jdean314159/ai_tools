@@ -18,7 +18,12 @@ def _agent_execution_capability_rows(descriptors: list[object]) -> list[dict[str
         if not isinstance(metadata, dict):
             metadata = {}
         supports = any(
-            key in metadata for key in ("blocked_execution_reporting", "degraded_execution_reporting", "approval_gates")
+            key in metadata
+            for key in (
+                "blocked_execution_reporting",
+                "degraded_execution_reporting",
+                "approval_gates",
+            )
         ) or any(
             feature in features
             for feature in (
@@ -29,14 +34,24 @@ def _agent_execution_capability_rows(descriptors: list[object]) -> list[dict[str
         )
         if not supports:
             continue
-        rows.append({
-            "provider": payload.get("provider", ""),
-            "component": payload.get("component", ""),
-            "blocked_execution_reporting": bool(metadata.get("blocked_execution_reporting", False) or ("blocked_execution_reporting" in features)),
-            "degraded_execution_reporting": bool(metadata.get("degraded_execution_reporting", False) or ("degraded_execution_reporting" in features)),
-            "approval_gates": bool(metadata.get("approval_gates", False) or ("approval_gates" in features)),
-            "summary": payload.get("summary", ""),
-        })
+        rows.append(
+            {
+                "provider": payload.get("provider", ""),
+                "component": payload.get("component", ""),
+                "blocked_execution_reporting": bool(
+                    metadata.get("blocked_execution_reporting", False)
+                    or ("blocked_execution_reporting" in features)
+                ),
+                "degraded_execution_reporting": bool(
+                    metadata.get("degraded_execution_reporting", False)
+                    or ("degraded_execution_reporting" in features)
+                ),
+                "approval_gates": bool(
+                    metadata.get("approval_gates", False) or ("approval_gates" in features)
+                ),
+                "summary": payload.get("summary", ""),
+            }
+        )
     return rows
 
 
@@ -50,7 +65,7 @@ def render_startup_panel(
     selected_augmenter_ids: list[str] | None = None,
     augmenter_options: dict | None = None,
     beginner_mode: bool = False,
- ) -> None:
+) -> None:
     import streamlit as st
 
     st.subheader("Startup")
@@ -198,11 +213,17 @@ def render_startup_panel(
             st.write(f"- {step}")
 
     if not selected.exists:
-        st.write("The engine is not registered. Choose another engine or wire the llm_engines registry into the UI.")
+        st.write(
+            "The engine is not registered. Choose another engine or wire the llm_engines registry into the UI."
+        )
     elif selected.reachable is False:
-        st.write("The engine is registered but not reachable. Start the backend service or fix its connection settings, then refresh.")
+        st.write(
+            "The engine is registered but not reachable. Start the backend service or fix its connection settings, then refresh."
+        )
     elif selected.models_available is False:
-        st.write("The engine is reachable but has no available models. Use the Models tab to provision or register one.")
+        st.write(
+            "The engine is reachable but has no available models. Use the Models tab to provision or register one."
+        )
     elif selected.status == "ok":
         st.write("The engine is ready for chat and comparison runs.")
     else:

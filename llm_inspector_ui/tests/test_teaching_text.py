@@ -23,7 +23,9 @@ from llm_inspector_ui.utils.teaching_text import (
 )
 
 
-def _run(*, augmenter_id: str, trace: dict, status: str = "ok", error: str | None = None) -> RunArtifact:
+def _run(
+    *, augmenter_id: str, trace: dict, status: str = "ok", error: str | None = None
+) -> RunArtifact:
     return RunArtifact(
         run_id=f"run-{augmenter_id}",
         session_id="session-1",
@@ -117,9 +119,13 @@ def test_prompt_explainers_distinguish_teaching_and_beginner_language():
 
 def test_evidence_explainers_distinguish_missing_vs_present_support():
     missing = explain_evidence_tab({"context": {"evidence": []}})
-    present = explain_evidence_tab({"context": {"evidence": [{"source": "doc.txt", "text": "fact"}]}})
+    present = explain_evidence_tab(
+        {"context": {"evidence": [{"source": "doc.txt", "text": "fact"}]}}
+    )
     beginner_missing = explain_evidence_tab_for_beginners({"context": {"evidence": []}})
-    beginner_present = explain_evidence_tab_for_beginners({"context": {"evidence": [{"source": "doc.txt", "text": "fact"}]}})
+    beginner_present = explain_evidence_tab_for_beginners(
+        {"context": {"evidence": [{"source": "doc.txt", "text": "fact"}]}}
+    )
     assert "No explicit evidence" in missing
     assert "1 evidence item" in present
     assert "warning sign" in beginner_missing
@@ -173,15 +179,27 @@ def test_agent_explainers_mention_blocked_degraded_and_approval():
 
 
 def test_readiness_explainers_distinguish_engine_failure_modes():
-    assert "not registered" in explain_readiness_for_teaching(status="error", exists=False, reachable=None, models_available=None)
-    assert "unreachable" in explain_readiness_for_teaching(status="error", exists=True, reachable=False, models_available=None)
-    assert "no models are visible" in explain_readiness_for_teaching(status="warning", exists=True, reachable=True, models_available=False)
-    assert "ready" in explain_readiness_for_teaching(status="ok", exists=True, reachable=True, models_available=True)
+    assert "not registered" in explain_readiness_for_teaching(
+        status="error", exists=False, reachable=None, models_available=None
+    )
+    assert "unreachable" in explain_readiness_for_teaching(
+        status="error", exists=True, reachable=False, models_available=None
+    )
+    assert "no models are visible" in explain_readiness_for_teaching(
+        status="warning", exists=True, reachable=True, models_available=False
+    )
+    assert "ready" in explain_readiness_for_teaching(
+        status="ok", exists=True, reachable=True, models_available=True
+    )
 
 
 def test_beginner_readiness_explanations_and_steps_are_actionable():
-    text = explain_readiness_for_beginners(status="warning", exists=True, reachable=True, models_available=False)
-    steps = describe_readiness_steps_for_beginners(status="warning", exists=True, reachable=True, models_available=False)
+    text = explain_readiness_for_beginners(
+        status="warning", exists=True, reachable=True, models_available=False
+    )
+    steps = describe_readiness_steps_for_beginners(
+        status="warning", exists=True, reachable=True, models_available=False
+    )
     assert "no models are available" in text
     assert any("register at least one model" in step for step in steps)
     assert any("baseline call" in step for step in steps)

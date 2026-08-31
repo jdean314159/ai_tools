@@ -64,6 +64,7 @@ class FakeAugmenterService:
                 self.severity = "ok" if self.can_run else "error"
                 self.message = "ready" if self.can_run else "augmenter unavailable"
                 self.details = {}
+
         return Readiness(augmenter_id)
 
     def create(self, augmenter_id: str, *, session_id: str, options=None):
@@ -208,6 +209,7 @@ def test_orchestrator_records_errors(tmp_path):
                     self.severity = "ok"
                     self.message = "ready"
                     self.details = {}
+
             return Readiness(augmenter_id)
 
         def create(self, augmenter_id: str, *, session_id: str, options=None):

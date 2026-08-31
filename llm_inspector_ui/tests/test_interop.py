@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 def test_describe_ui_returns_shared_capability_descriptor():
     descriptor = describe_ui()
     assert descriptor.provider == "llm_inspector_ui"
-    assert descriptor.kind == "ui" or str(descriptor.kind).endswith('UI')
+    assert descriptor.kind == "ui" or str(descriptor.kind).endswith("UI")
 
     row = capability_to_row(descriptor)
     assert row["component"] == "LLMInspectorUI"
