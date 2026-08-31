@@ -1,4 +1,5 @@
 """Read-only diagnosis for local-snapshot versus Gmail IMAP identity drift."""
+
 from __future__ import annotations
 
 import argparse
@@ -43,9 +44,7 @@ def _validated_subject(value: str) -> str:
 def _all_snapshot_messages(database: Path):
     uri = f"file:{database}?mode=ro&immutable=1"
     with sqlite3.connect(uri, uri=True) as connection:
-        row = connection.execute(
-            "SELECT payload FROM mail_snapshot_cache LIMIT 1"
-        ).fetchone()
+        row = connection.execute("SELECT payload FROM mail_snapshot_cache LIMIT 1").fetchone()
     if row is None:
         raise RuntimeError("Mail-assistant snapshot cache is empty")
     return tuple(_decode_snapshot(row[0]))
@@ -53,9 +52,7 @@ def _all_snapshot_messages(database: Path):
 
 def _snapshot_messages(database: Path, subject: str):
     return tuple(
-        message
-        for message in _all_snapshot_messages(database)
-        if message.subject == subject
+        message for message in _all_snapshot_messages(database) if message.subject == subject
     )
 
 
@@ -63,9 +60,7 @@ def _print_subject_hints(database: Path, needle: str | None = None) -> None:
     messages = _all_snapshot_messages(database)
     if needle:
         lowered = needle.lower()
-        messages = tuple(
-            message for message in messages if lowered in message.subject.lower()
-        )
+        messages = tuple(message for message in messages if lowered in message.subject.lower())
     subjects = sorted({message.subject for message in messages})
     if not subjects:
         print("No cached subjects matched the supplied text.")
@@ -97,18 +92,14 @@ def _header_search(connection: imaplib.IMAP4_SSL, value: str) -> list[bytes]:
 
 
 def _header_fields(connection: imaplib.IMAP4_SSL, uid: bytes) -> tuple[str, str]:
-    status, data = connection.uid(
-        "FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID SUBJECT)])"
-    )
+    status, data = connection.uid("FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID SUBJECT)])")
     if status != "OK":
         raise RuntimeError(f"Header FETCH failed for UID {uid!r}: {status}")
     payload = next(
         (
             item[1]
             for item in data or ()
-            if isinstance(item, tuple)
-            and len(item) > 1
-            and isinstance(item[1], bytes)
+            if isinstance(item, tuple) and len(item) > 1 and isinstance(item[1], bytes)
         ),
         None,
     )
@@ -146,9 +137,7 @@ def _probe_account(
             token.upper()
             for item in (data or ())
             for token in (
-                item.decode("ascii", errors="ignore")
-                if isinstance(item, bytes)
-                else str(item)
+                item.decode("ascii", errors="ignore") if isinstance(item, bytes) else str(item)
             ).split()
         }
         if status != "OK" or "X-GM-EXT-1" not in capabilities:
@@ -242,9 +231,7 @@ def main() -> int:
         print("No cached snapshot message has that exact subject.")
         _print_subject_hints(args.database, args.contains or subject)
         return 2
-    message_ids = {
-        _validated_message_id(message_id) for message_id in args.message_id
-    }
+    message_ids = {_validated_message_id(message_id) for message_id in args.message_id}
     message_ids.update(message.header_message_id for message in messages)
     if messages:
         print(f"SNAPSHOT exact_subject_matches={len(messages)}")
@@ -252,9 +239,7 @@ def main() -> int:
         folder_uri = message.metadata.folder_uri if message.metadata else None
         try:
             account, folder = account_for_message(message, accounts)
-            resolution = (
-                f"host={account.host!r} username={account.username!r} folder={folder!r}"
-            )
+            resolution = f"host={account.host!r} username={account.username!r} folder={folder!r}"
         except ValueError as exc:
             resolution = f"UNRESOLVED: {exc}"
         print(

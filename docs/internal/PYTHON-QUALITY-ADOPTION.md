@@ -46,7 +46,7 @@ configuration.
 | `engram` | 0 | 0 (adopted) |
 | `examples/language_tutor` | 0 | 0 (adopted) |
 | `examples/language_tutor_reference_app` | 5 | 34 |
-| `examples/mail_assistant` | 1 | 13 |
+| `examples/mail_assistant` | 0 | 0 (adopted) |
 | `scripts` | 5 | 26 |
 | root `tests` | 3 | 37 |
 
@@ -66,7 +66,8 @@ may need an explicit exclusion rather than automatic rewriting.
 8. `engram` — adopted and enforced in CI.
 9. `examples/diagnostics_agent` — adopted and enforced in CI.
 10. `examples/language_tutor` — adopted and enforced in CI.
-11. Remaining examples, scripts, and root integration tests — classify generated
+11. `examples/mail_assistant` — adopted and enforced in CI.
+12. Remaining examples, scripts, and root integration tests — classify generated
     and historical files before adoption.
 
 Each adoption commit must run that package's tests plus the repository gate.

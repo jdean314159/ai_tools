@@ -96,7 +96,9 @@ def test_store_is_app_owned_and_idempotent(tmp_path: Path) -> None:
     store = AssistantStore(path)
     AssistantStore(path)
     store.mark_read("one", read_at=1.0)
-    store.record_seen_propagation("one", status="failed", detail="network unavailable", updated_at=1.5)
+    store.record_seen_propagation(
+        "one", status="failed", detail="network unavailable", updated_at=1.5
+    )
     store.record_server_missing("missing", detail="not on server", updated_at=1.75)
     store.put_summary("key", "model", "v1", "summary", created_at=2.0)
 
@@ -133,9 +135,10 @@ def test_unread_state_merges_thunderbird_and_local_ledger(tmp_path: Path) -> Non
     unread = service.visible((), view="unread")
     all_messages = service.visible((), view="all")
 
-    assert [
-        item.message.header_message_id for values in unread.values() for item in values
-    ] == ["one", "five"]
+    assert [item.message.header_message_id for values in unread.values() for item in values] == [
+        "one",
+        "five",
+    ]
     assert sum(map(len, all_messages.values())) == 5
     with pytest.raises(KeyError):
         service.mark_read("unknown")
@@ -164,9 +167,10 @@ def test_msf_read_state_takes_precedence_over_gloda_and_cache(tmp_path: Path) ->
 
     unread = reloaded.visible((), view="unread")
 
-    assert [
-        item.message.header_message_id for values in unread.values() for item in values
-    ] == ["one", "two"]
+    assert [item.message.header_message_id for values in unread.values() for item in values] == [
+        "one",
+        "two",
+    ]
 
 
 def test_failed_refresh_preserves_previous_snapshot(tmp_path: Path) -> None:
@@ -211,9 +215,7 @@ def test_refresh_passes_time_window_to_reader(tmp_path: Path) -> None:
 
 def test_snapshot_cache_round_trips_messages_and_metadata(tmp_path: Path) -> None:
     store = AssistantStore(tmp_path / "a.db")
-    original = _message(
-        "cached", date="2026-07-05T12:00:00+00:00", local_read=True
-    )
+    original = _message("cached", date="2026-07-05T12:00:00+00:00", local_read=True)
     writer = MailAssistantService(tmp_path, store, reader=lambda _path: [original])
     writer.refresh()
     reader = MailAssistantService(tmp_path, store, reader=lambda _path: [])
@@ -257,9 +259,9 @@ def test_refresh_stores_body_preview_and_hydrates_full_message(
     monkeypatch.setattr(
         services_module,
         "load_message_body",
-        lambda path, message_id: full_body
-        if path == mbox_path and message_id == "full@example.test"
-        else "",
+        lambda path, message_id: (
+            full_body if path == mbox_path and message_id == "full@example.test" else ""
+        ),
     )
 
     refreshed = service.refresh()
@@ -384,7 +386,9 @@ def test_sender_and_domain_volume_stats_share_window_and_unread_state(tmp_path: 
     messages = (
         _message("a1", sender="A@example.test", date=(now - timedelta(days=1)).isoformat()),
         _message("a2", sender="a@example.test", date=(now - timedelta(days=2)).isoformat()),
-        _message("b1", sender="b@example.test", date=(now - timedelta(days=3)).isoformat(), read=True),
+        _message(
+            "b1", sender="b@example.test", date=(now - timedelta(days=3)).isoformat(), read=True
+        ),
         _message("old", sender="a@example.test", date=(now - timedelta(days=20)).isoformat()),
         _message("undated", sender="c@other.test"),
     )
@@ -401,10 +405,10 @@ def test_sender_and_domain_volume_stats_share_window_and_unread_state(tmp_path: 
     ]
     assert senders[0].share == pytest.approx(2 / 3)
     assert senders[0].most_recent == now - timedelta(days=1)
-    assert [(row.value, row.count, row.unread_count) for row in domains] == [
-        ("example.test", 3, 1)
-    ]
-    empty_senders, empty_domains = service.volume_stats(max_age_days=1, now=now + timedelta(days=30))
+    assert [(row.value, row.count, row.unread_count) for row in domains] == [("example.test", 3, 1)]
+    empty_senders, empty_domains = service.volume_stats(
+        max_age_days=1, now=now + timedelta(days=30)
+    )
     assert empty_senders == () and empty_domains == ()
 
 
@@ -463,15 +467,19 @@ def test_summarize_hydrates_full_body_before_model_call(
     full_body = "x" * SNAPSHOT_BODY_PREVIEW_CHARS + "FULL_TAIL"
     mbox_path = tmp_path / "INBOX"
     message = replace(
-        _message("summary-full@example.test", body=full_body, date=datetime.now(timezone.utc).isoformat()),
+        _message(
+            "summary-full@example.test", body=full_body, date=datetime.now(timezone.utc).isoformat()
+        ),
         mbox_path=mbox_path,
     )
     monkeypatch.setattr(
         services_module,
         "load_message_bodies",
-        lambda path, message_ids: {"summary-full@example.test": full_body}
-        if path == mbox_path and tuple(message_ids) == ("summary-full@example.test",)
-        else {},
+        lambda path, message_ids: (
+            {"summary-full@example.test": full_body}
+            if path == mbox_path and tuple(message_ids) == ("summary-full@example.test",)
+            else {}
+        ),
     )
     app = _web_app(tmp_path)
     app.state.mail._reader = lambda _path, **_kwargs: [message]
@@ -518,7 +526,9 @@ def test_mail_route_state_builds_return_urls_and_template_values() -> None:
 
 
 def test_summarizer_rejects_one_oversized_message(tmp_path: Path) -> None:
-    summarizer = SectionSummarizer(FakeEngine(), AssistantStore(tmp_path / "a.db"), model="m", input_budget=1)
+    summarizer = SectionSummarizer(
+        FakeEngine(), AssistantStore(tmp_path / "a.db"), model="m", input_budget=1
+    )
     with pytest.raises(ValueError, match="headers exceed"):
         summarizer.summarize([classify_message(_message(body="too long"), ())])
 
@@ -548,7 +558,9 @@ def test_summarizer_allocates_budget_across_every_message(tmp_path: Path) -> Non
     assert all(f"message-{index}" in prompt for index in range(3))
     assert prompt.count('"body_truncated": true') == 3
     assert "Summarize all 3 messages" in prompt
-    assert "Sender: ...\nSubject: ...\nKey point: ...\nRequested action: ...\nDeadline: ..." in prompt
+    assert (
+        "Sender: ...\nSubject: ...\nKey point: ...\nRequested action: ...\nDeadline: ..." in prompt
+    )
     assert engine.requests[0].max_tokens == 360
 
 
@@ -617,12 +629,7 @@ def test_rule_commit_preserves_existing_comments_and_formatting(tmp_path: Path) 
 
 def test_rule_append_separates_file_without_trailing_newline(tmp_path: Path) -> None:
     rules_path = tmp_path / "personal_rules.toml"
-    original = (
-        b"[[rule]]\n"
-        b"sender = 'existing@example.test'\n"
-        b"priority = 'low'\n"
-        b"action = 'none'"
-    )
+    original = b"[[rule]]\nsender = 'existing@example.test'\npriority = 'low'\naction = 'none'"
     rules_path.write_bytes(original)
     service = RuleTransactionService(rules_path)
 
@@ -636,9 +643,7 @@ def test_rule_append_separates_file_without_trailing_newline(tmp_path: Path) -> 
 
 def test_rule_upsert_adds_missing_action_without_appending_duplicate(tmp_path: Path) -> None:
     rules_path = tmp_path / "personal_rules.toml"
-    rules_path.write_bytes(
-        b"[[rule]]\nsender = 'sender@example.test'\npriority = 'urgent'"
-    )
+    rules_path.write_bytes(b"[[rule]]\nsender = 'sender@example.test'\npriority = 'urgent'")
     service = RuleTransactionService(rules_path)
 
     proposal = service.propose(
@@ -674,7 +679,9 @@ def test_rule_commit_rejects_external_change_and_symlink(tmp_path: Path) -> None
         )
 
 
-def test_atomic_replace_failure_preserves_original(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_atomic_replace_failure_preserves_original(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     rules_path = tmp_path / "personal_rules.toml"
     original = b"# original\n"
     rules_path.write_bytes(original)
@@ -682,7 +689,10 @@ def test_atomic_replace_failure_preserves_original(tmp_path: Path, monkeypatch: 
     proposal = service.propose(
         _message(), field="sender", priority=Priority.LOW, action=RuleAction.NONE
     )
-    monkeypatch.setattr("examples.mail_assistant.rules.os.replace", lambda *_args: (_ for _ in ()).throw(OSError("replace failed")))
+    monkeypatch.setattr(
+        "examples.mail_assistant.rules.os.replace",
+        lambda *_args: (_ for _ in ()).throw(OSError("replace failed")),
+    )
 
     with pytest.raises(OSError, match="replace failed"):
         service.commit(proposal.token)
@@ -746,24 +756,26 @@ def test_web_security_headers_host_and_csrf_token(tmp_path: Path) -> None:
             assert (await client.get("/", headers={"host": "attacker.test"})).status_code == 400
 
             form = {"message_id": "one@example.test", "csrf_token": "wrong", "view": "unread"}
-            assert (await client.post("/read", data=form, headers={"origin": "http://testserver"})).status_code == 403
+            assert (
+                await client.post("/read", data=form, headers={"origin": "http://testserver"})
+            ).status_code == 403
             form["csrf_token"] = app.state.csrf_token
             assert (await client.post("/read", data=form)).status_code == 200
-            assert (await client.post(
-                "/read", data=form, headers={"origin": "http://testserver"}
-            )).status_code == 200
-            assert (await client.post(
-                "/read", data=form, headers={"origin": "http://attacker.test"}
-            )).status_code == 403
-            assert (await client.post(
-                "/read", data=form, headers={"origin": "null"}
-            )).status_code == 200
-            assert (await client.post(
-                "/read", data=form, headers={"sec-fetch-site": "same-origin"}
-            )).status_code == 200
-            assert (await client.post(
-                "/read", data=form, headers={"sec-fetch-site": "cross-site"}
-            )).status_code == 200
+            assert (
+                await client.post("/read", data=form, headers={"origin": "http://testserver"})
+            ).status_code == 200
+            assert (
+                await client.post("/read", data=form, headers={"origin": "http://attacker.test"})
+            ).status_code == 403
+            assert (
+                await client.post("/read", data=form, headers={"origin": "null"})
+            ).status_code == 200
+            assert (
+                await client.post("/read", data=form, headers={"sec-fetch-site": "same-origin"})
+            ).status_code == 200
+            assert (
+                await client.post("/read", data=form, headers={"sec-fetch-site": "cross-site"})
+            ).status_code == 200
 
     asyncio.run(exercise())
 
@@ -1186,9 +1198,7 @@ def test_trash_requires_preview_then_removes_only_after_move(
                 },
             )
             assert replay.status_code == 400
-            monkeypatch.setattr(
-                "examples.mail_assistant.trash_workflow.time.time", lambda: 1_000.0
-            )
+            monkeypatch.setattr("examples.mail_assistant.trash_workflow.time.time", lambda: 1_000.0)
             expiring = await client.post(
                 "/trash/propose",
                 data={
@@ -1196,13 +1206,9 @@ def test_trash_requires_preview_then_removes_only_after_move(
                     "csrf_token": app.state.csrf_token,
                 },
             )
-            expiring_token = re.search(
-                r'name="trash_token" value="([^"]+)"', expiring.text
-            )
+            expiring_token = re.search(r'name="trash_token" value="([^"]+)"', expiring.text)
             assert expiring_token is not None
-            monkeypatch.setattr(
-                "examples.mail_assistant.trash_workflow.time.time", lambda: 2_000.0
-            )
+            monkeypatch.setattr("examples.mail_assistant.trash_workflow.time.time", lambda: 2_000.0)
             expired = await client.post(
                 "/trash/commit",
                 data={
@@ -1242,9 +1248,7 @@ def test_account_filter_limits_message_list_and_trash_form_scope(tmp_path: Path)
 
     async def exercise() -> None:
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(
-            transport=transport, base_url="http://testserver"
-        ) as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             page = await client.get("/?view=all&account=dabak6812@gmail.com")
             assert page.status_code == 200
             assert "Dabak account message" in page.text
@@ -1294,9 +1298,9 @@ def test_configured_trash_messages_are_excluded_from_refresh_and_cache(
 
     cached_app = _web_app(tmp_path, inbox, imap_accounts_path=config_path)
     cached_app.state.mail.load_cached()
-    assert [
-        item.header_message_id for item in cached_app.state.mail.state.messages
-    ] == [inbox.header_message_id]
+    assert [item.header_message_id for item in cached_app.state.mail.state.messages] == [
+        inbox.header_message_id
+    ]
 
 
 def test_batch_trash_proposal_rejects_any_unsafe_or_unmapped_message(
@@ -1382,9 +1386,7 @@ def test_batch_trash_proposal_rejects_message_missing_from_imap_server(
 
     async def exercise() -> None:
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(
-            transport=transport, base_url="http://testserver"
-        ) as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             response = await client.post(
                 "/trash/propose",
                 data={
@@ -1427,9 +1429,7 @@ def test_diagnose_imap_lookup_accepts_direct_message_id(
     monkeypatch.setattr(
         diagnose_imap_lookup,
         "_probe_account",
-        lambda account, subject, message_ids: probed.append(
-            (account, subject, message_ids)
-        ),
+        lambda account, subject, message_ids: probed.append((account, subject, message_ids)),
     )
 
     assert diagnose_imap_lookup.main() == 0
@@ -1462,10 +1462,7 @@ def test_batch_trash_proposal_skips_missing_message_and_confirms_available_subse
     app.state.mail.refresh()
 
     def preflight(messages, _accounts, *, prefs_cache=None):
-        if any(
-            message.header_message_id == stale.header_message_id
-            for message in messages
-        ):
+        if any(message.header_message_id == stale.header_message_id for message in messages):
             raise ImapMessageNotFound("Message was not found on the IMAP server")
 
     moved = []
@@ -1476,18 +1473,14 @@ def test_batch_trash_proposal_skips_missing_message_and_confirms_available_subse
     monkeypatch.setattr(
         "examples.mail_assistant.trash_workflow.move_messages_to_trash",
         lambda messages, _accounts, *, prefs_cache=None: {
-            message.header_message_id: (
-                moved.append(message.header_message_id) and None
-            )
+            message.header_message_id: (moved.append(message.header_message_id) and None)
             for message in messages
         },
     )
 
     async def exercise() -> None:
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(
-            transport=transport, base_url="http://testserver"
-        ) as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             preview = await client.post(
                 "/trash/propose",
                 data={
@@ -1546,9 +1539,7 @@ def test_batch_trash_commit_skips_message_that_left_snapshot(
     monkeypatch.setattr(
         "examples.mail_assistant.trash_workflow.move_messages_to_trash",
         lambda messages, _accounts, *, prefs_cache=None: {
-            message.header_message_id: (
-                moved.append(message.header_message_id) and None
-            )
+            message.header_message_id: (moved.append(message.header_message_id) and None)
             for message in messages
         },
     )

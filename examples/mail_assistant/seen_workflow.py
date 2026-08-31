@@ -4,6 +4,7 @@ The local read ledger remains the source of truth for the UI. This workflow
 only records whether the explicit user-authorized mark-read action also reached
 the configured IMAP server.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

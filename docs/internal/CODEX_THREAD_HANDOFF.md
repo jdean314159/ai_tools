@@ -108,6 +108,10 @@ The work progressed through evidence rather than assuming a design:
     requires delayed sibling-package imports, now documented with narrow `E402`
     annotations. Its 3 dedicated tests passed, the shared gate covers 417 files,
     and the full gate remains at 1,268 passed.
+27. `examples/mail_assistant` is now adopted. Its one lint finding was resolved
+    with explicit exception chaining, Ruff formatted 12 files, and the focused
+    mail/public-API set passed 102 tests. The shared gate covers 432 files and
+    the full gate remains at 1,268 passed.
 
 Key commits, oldest to newest:
 

@@ -1,4 +1,5 @@
 """Explicit IMAP \\Seen propagation for locally marked-read messages."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -77,8 +78,7 @@ class _ImapSeenSession:
         password = os.getenv(self.account.password_env)
         if not password:
             raise RuntimeError(
-                "Required password environment variable is unset: "
-                f"{self.account.password_env}"
+                f"Required password environment variable is unset: {self.account.password_env}"
             )
         connection = self.connector(
             self.account.host,
@@ -133,9 +133,7 @@ def mark_messages_seen(
     prefs_cache: _PrefsCache | None = None,
 ) -> dict[str, str | None]:
     """Propagate \\Seen with one IMAP login per account; return per-message errors."""
-    outcomes: dict[str, str | None] = {
-        message.header_message_id: None for message in messages
-    }
+    outcomes: dict[str, str | None] = {message.header_message_id: None for message in messages}
     grouped: dict[ImapAccount, list[_SeenCandidate]] = {}
     for message in messages:
         try:

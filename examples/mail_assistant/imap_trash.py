@@ -1,4 +1,5 @@
 """Explicit, confirmed IMAP move-to-trash support."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,9 +15,7 @@ from typing import Callable
 from mail_lib.thunderbird import MailMessage, parse_folder_uri
 
 
-_MESSAGE_ID_RE = re.compile(
-    r"^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]+@[A-Za-z0-9.-]+$"
-)
+_MESSAGE_ID_RE = re.compile(r"^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]+@[A-Za-z0-9.-]+$")
 _SERVER_PREF_RE = re.compile(
     r'^user_pref\("mail\.server\.(server\d+)\.(directory|directory-rel|hostname|realhostname|userName)",\s*(.+)\);$'
 )
@@ -102,9 +101,7 @@ def _server_directory_from_pref(profile: Path, value: str) -> Path:
     return Path(normalized)
 
 
-def _server_prefs(
-    profile: Path, cache: _PrefsCache | None = None
-) -> _PrefsServerMap | None:
+def _server_prefs(profile: Path, cache: _PrefsCache | None = None) -> _PrefsServerMap | None:
     prefs_path = profile / "prefs.js"
     if cache is not None and prefs_path in cache:
         return cache[prefs_path]
@@ -241,9 +238,7 @@ def account_for_message(
             if identity:
                 host, username = identity
                 detail += f" mapped by prefs.js to {username}@{host}"
-        raise ValueError(
-            f"No unique configured IMAP account matches this message{detail}"
-        )
+        raise ValueError(f"No unique configured IMAP account matches this message{detail}")
     if not folder:
         raise ValueError("Message has no source IMAP folder")
     return matches[0], folder
@@ -325,9 +320,7 @@ def _post_login_capabilities(connection: imaplib.IMAP4_SSL) -> set[str]:
         capability.upper()
         for item in (data or ())
         for capability in (
-            item.decode("ascii", errors="ignore")
-            if isinstance(item, bytes)
-            else str(item)
+            item.decode("ascii", errors="ignore") if isinstance(item, bytes) else str(item)
         ).split()
     }
 
@@ -352,9 +345,7 @@ def _all_mailbox(connection: imaplib.IMAP4_SSL) -> str:
         if r"\ALL" in flags:
             matches.append(match.group("mailbox"))
     if len(matches) != 1:
-        raise RuntimeError(
-            f"Expected one SPECIAL-USE All Mail mailbox, found {len(matches)}"
-        )
+        raise RuntimeError(f"Expected one SPECIAL-USE All Mail mailbox, found {len(matches)}")
     return matches[0]
 
 
@@ -420,8 +411,7 @@ class _ImapTrashSession:
         password = os.getenv(self.account.password_env)
         if not password:
             raise RuntimeError(
-                "Required password environment variable is unset: "
-                f"{self.account.password_env}"
+                f"Required password environment variable is unset: {self.account.password_env}"
             )
         connection = self.connector(
             self.account.host,
@@ -516,9 +506,7 @@ def move_messages_to_trash(
     prefs_cache: _PrefsCache | None = None,
 ) -> dict[str, str | None]:
     """Move a batch with one IMAP login per account; return per-message errors."""
-    outcomes: dict[str, str | None] = {
-        message.header_message_id: None for message in messages
-    }
+    outcomes: dict[str, str | None] = {message.header_message_id: None for message in messages}
     grouped: dict[ImapAccount, list[_MoveCandidate]] = {}
     for message in messages:
         try:

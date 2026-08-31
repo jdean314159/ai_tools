@@ -1,4 +1,5 @@
 """Batch IMAP Trash proposal and commit orchestration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -94,9 +95,7 @@ class TrashWorkflow:
             rows, skipped = self._filter_available_rows(tuple(rows))
         token = secrets.token_urlsafe(32)
         now = time.time()
-        for expired_token in [
-            key for key, value in self._pending.items() if value[1] < now
-        ]:
+        for expired_token in [key for key, value in self._pending.items() if value[1] < now]:
             self._pending.pop(expired_token, None)
         self._pending[token] = (
             tuple(row.message.header_message_id for row in rows),

@@ -317,6 +317,14 @@ shared gate to 417 files. Its 3 dedicated tests and the full repository gate
 passed; the latter remains 1,268 passed, 304 skipped, with the same three
 warnings.
 
+The eleventh Python-quality checkpoint adopts `examples/mail_assistant`, a
+packaged and CI-tested example whose templates and static assets remain
+untouched by the Python gate. Its single lint finding became explicit exception
+chaining when converting a missing message into an HTTP 404. Ruff mechanically
+formatted 12 files, bringing the shared gate to 432 files. The focused mail and
+public-API set passed 102 tests, and the full repository gate remains 1,268
+passed, 304 skipped, with the same three warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

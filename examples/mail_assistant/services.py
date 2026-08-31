@@ -1,4 +1,5 @@
 """Snapshot, classification, and view assembly for the mail assistant."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
@@ -153,11 +154,7 @@ class MailAssistantService:
         if payload is None:
             return self.state
         cached = _decode_snapshot_state(payload)
-        loaded = tuple(
-            message
-            for message in cached.messages
-            if self._include_message(message)
-        )
+        loaded = tuple(message for message in cached.messages if self._include_message(message))
         latest_message_at = cached.latest_message_at or _latest_message_datetime(loaded)
         with self._lock:
             self._state = SnapshotState(
@@ -270,7 +267,9 @@ class MailAssistantService:
             grouped[classified.triage.priority].append(classified)
         for messages in grouped.values():
             messages.sort(
-                key=lambda item: message_datetime(item.message) or datetime.min.replace(tzinfo=timezone.utc),
+                key=lambda item: (
+                    message_datetime(item.message) or datetime.min.replace(tzinfo=timezone.utc)
+                ),
                 reverse=True,
             )
         return {priority: tuple(grouped[priority]) for priority in PRIORITY_ORDER}
@@ -293,9 +292,7 @@ class MailAssistantService:
                 continue
             sender = (message.sender or "").strip().lower() or "(unknown)"
             domain = sender.rsplit("@", 1)[1] if "@" in sender else "(no domain)"
-            unread = not (
-                thunderbird_read(message) or message.header_message_id in app_read
-            )
+            unread = not (thunderbird_read(message) or message.header_message_id in app_read)
             rows.append((sender, domain, unread, date))
         total = len(rows)
 
@@ -389,7 +386,9 @@ def _encode_snapshot(
                 "read_state_source": message.read_state_source,
                 "body_complete": message.body_complete,
                 "body_is_bare_link": message.body_is_bare_link,
-                "metadata": None if metadata is None else {
+                "metadata": None
+                if metadata is None
+                else {
                     "header_message_id": metadata.header_message_id,
                     "message_key": metadata.message_key,
                     "folder_id": metadata.folder_id,
@@ -397,7 +396,9 @@ def _encode_snapshot(
                     "date": metadata.date,
                     "sender_id": metadata.sender_id,
                     "recipient_ids": metadata.recipient_ids,
-                    "sender": None if metadata.sender is None else {
+                    "sender": None
+                    if metadata.sender is None
+                    else {
                         "contact_id": metadata.sender.contact_id,
                         "name": metadata.sender.name,
                         "address": metadata.sender.address,
@@ -487,22 +488,24 @@ def _decode_snapshot_state(payload: str) -> DecodedSnapshot:
                 folder_uri=raw_metadata["folder_uri"],
                 folder_name=raw_metadata["folder_name"],
             )
-        messages.append(MailMessage(
-            header_message_id=raw["header_message_id"],
-            subject=raw["subject"],
-            body=raw["body"],
-            sender=raw["sender"],
-            recipients=tuple(raw["recipients"]),
-            date=raw["date"],
-            source_folder=raw["source_folder"],
-            signal_folders=tuple(raw["signal_folders"]),
-            metadata=metadata,
-            mbox_path=Path(raw["mbox_path"]) if raw["mbox_path"] else None,
-            local_read=bool(raw.get("local_read", False)),
-            read_state_source=str(raw.get("read_state_source", "mbox")),
-            body_complete=bool(raw.get("body_complete", True)),
-            body_is_bare_link=raw.get("body_is_bare_link"),
-        ))
+        messages.append(
+            MailMessage(
+                header_message_id=raw["header_message_id"],
+                subject=raw["subject"],
+                body=raw["body"],
+                sender=raw["sender"],
+                recipients=tuple(raw["recipients"]),
+                date=raw["date"],
+                source_folder=raw["source_folder"],
+                signal_folders=tuple(raw["signal_folders"]),
+                metadata=metadata,
+                mbox_path=Path(raw["mbox_path"]) if raw["mbox_path"] else None,
+                local_read=bool(raw.get("local_read", False)),
+                read_state_source=str(raw.get("read_state_source", "mbox")),
+                body_complete=bool(raw.get("body_complete", True)),
+                body_is_bare_link=raw.get("body_is_bare_link"),
+            )
+        )
     return DecodedSnapshot(
         messages=tuple(messages),
         max_age_days=max_age_days,

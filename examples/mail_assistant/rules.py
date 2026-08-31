@@ -1,4 +1,5 @@
 """Reviewed, validated, conflict-detecting personal-rule writes."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -80,7 +81,7 @@ def _replace_assignment(block: str, key: str, value: str) -> tuple[str, bool]:
     if suffix:
         replacement += " " + suffix.lstrip()
     replacement += match.group(3)
-    return block[:match.start()] + replacement + block[match.end():], True
+    return block[: match.start()] + replacement + block[match.end() :], True
 
 
 def _update_rule(current: bytes, rule_index: int, *, priority: str, action: str) -> bytes:
@@ -155,12 +156,19 @@ class RuleTransactionService:
             current_validation = self._validate_bytes(current)
             if not current_validation.ok:
                 raise ValueError("Existing personal rules are invalid; refusing to rewrite them")
-        matching = [] if current_validation is None else [
-            rule
-            for rule in current_validation.rules
-            if getattr(rule, field) == value
-            and all(getattr(rule, other) is None for other in {"sender", "domain", "subject"} - {field})
-        ]
+        matching = (
+            []
+            if current_validation is None
+            else [
+                rule
+                for rule in current_validation.rules
+                if getattr(rule, field) == value
+                and all(
+                    getattr(rule, other) is None
+                    for other in {"sender", "domain", "subject"} - {field}
+                )
+            ]
+        )
         if matching:
             candidate = _update_rule(
                 current,
@@ -197,9 +205,7 @@ class RuleTransactionService:
         with self._lock:
             now = time.time()
             self._pending = {
-                key: value
-                for key, value in self._pending.items()
-                if value.public.expires_at >= now
+                key: value for key, value in self._pending.items() if value.public.expires_at >= now
             }
             self._pending[token] = _PendingProposal(public, candidate)
         return public
@@ -224,7 +230,9 @@ class RuleTransactionService:
 
     def _validate_bytes(self, content: bytes) -> RuleLoadResult:
         self.rules_path.parent.mkdir(parents=True, exist_ok=True)
-        descriptor, name = tempfile.mkstemp(prefix=".mail-rules-validate-", dir=self.rules_path.parent)
+        descriptor, name = tempfile.mkstemp(
+            prefix=".mail-rules-validate-", dir=self.rules_path.parent
+        )
         try:
             with os.fdopen(descriptor, "wb") as handle:
                 handle.write(content)

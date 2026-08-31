@@ -1,4 +1,5 @@
 """App-owned persistence for the local mail assistant."""
+
 from __future__ import annotations
 
 from contextlib import closing
@@ -140,9 +141,7 @@ class AssistantStore:
 
     def server_missing_ids(self) -> set[str]:
         with closing(self._connect()) as connection:
-            rows = connection.execute(
-                "SELECT header_message_id FROM server_missing"
-            ).fetchall()
+            rows = connection.execute("SELECT header_message_id FROM server_missing").fetchall()
         return {str(row["header_message_id"]) for row in rows}
 
     def get_summary(self, section_key: str, model: str, prompt_version: str) -> str | None:

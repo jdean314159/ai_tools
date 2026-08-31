@@ -254,8 +254,7 @@ def test_gmail_uses_raw_message_id_search(monkeypatch) -> None:
         ("X-GM-RAW", '"rfc822msgid:one@example.test"'),
     ) in connections[0].calls
     assert not any(
-        call[:2] == ("uid", "SEARCH") and "HEADER" in call[2]
-        for call in connections[0].calls
+        call[:2] == ("uid", "SEARCH") and "HEADER" in call[2] for call in connections[0].calls
     )
 
 
@@ -344,9 +343,7 @@ def test_gmail_retries_raw_search_with_rfc_angle_brackets(monkeypatch) -> None:
 
     move_message_to_trash(_message(), (account,), connector=connect)
 
-    searches = [
-        call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")
-    ]
+    searches = [call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")]
     assert searches == [
         (
             "uid",
@@ -370,10 +367,7 @@ def test_gmail_falls_back_to_header_search_for_raw_message_id_miss(monkeypatch) 
         trash_folder="Trash",
     )
     monkeypatch.setenv("MAIL_TEST_PASSWORD", "secret")
-    message_id = (
-        "jdean314159/ai_tools/check-suites/"
-        "CS_kwDOSKnSks8AAAASRkhmkg/1783598783@github.com"
-    )
+    message_id = "jdean314159/ai_tools/check-suites/CS_kwDOSKnSks8AAAASRkhmkg/1783598783@github.com"
     connections = []
 
     class GmailHeaderFallbackImap(FakeImap):
@@ -400,9 +394,7 @@ def test_gmail_falls_back_to_header_search_for_raw_message_id_miss(monkeypatch) 
         connector=connect,
     )
 
-    searches = [
-        call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")
-    ]
+    searches = [call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")]
     assert searches == [
         (
             "uid",
@@ -482,9 +474,7 @@ def test_header_search_retries_with_bare_message_id(monkeypatch) -> None:
 
     move_message_to_trash(_message(), (account,), connector=connect)
 
-    searches = [
-        call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")
-    ]
+    searches = [call for call in connections[0].calls if call[:2] == ("uid", "SEARCH")]
     assert searches == [
         (
             "uid",
@@ -716,9 +706,7 @@ def test_hostile_message_id_is_rejected_before_socket_use(
 
 
 @pytest.mark.parametrize("trash_folder", ["Trash\rEXPUNGE", "Trash\nEXPUNGE"])
-def test_hostile_mailbox_is_rejected_before_socket_use(
-    monkeypatch, trash_folder: str
-) -> None:
+def test_hostile_mailbox_is_rejected_before_socket_use(monkeypatch, trash_folder: str) -> None:
     account = ImapAccount(
         host="imap.example.test",
         username="user@example.test",

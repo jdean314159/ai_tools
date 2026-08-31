@@ -1,4 +1,5 @@
 """Secured localhost FastAPI surface for the mail assistant."""
+
 # ruff: noqa: E402 -- repository bootstrap must run before sibling-package imports
 from __future__ import annotations
 
@@ -26,7 +27,12 @@ install_repo_source_paths()
 
 from llm_engines import get_engine
 
-from mail_lib.personal_rules import RuleAction, RuleLoadResult, empty_rule_result, load_personal_rules
+from mail_lib.personal_rules import (
+    RuleAction,
+    RuleLoadResult,
+    empty_rule_result,
+    load_personal_rules,
+)
 from mail_lib.thunderbird import MailMessage
 from mail_lib.triage import Priority
 
@@ -163,9 +169,7 @@ def _default_config() -> AppConfig:
     configured_profile = os.getenv("MAIL_ASSISTANT_PROFILE")
     return AppConfig(
         profile=(
-            Path(configured_profile)
-            if configured_profile
-            else _discover_thunderbird_profile()
+            Path(configured_profile) if configured_profile else _discover_thunderbird_profile()
         ),
         rules_path=Path(
             os.getenv("MAIL_ASSISTANT_RULES", config_home / "mail_lib" / "personal_rules.toml")
@@ -186,7 +190,9 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
     templates = Jinja2Templates(directory=APP_DIR / "templates")
     csrf_token = secrets.token_urlsafe(32)
     store = AssistantStore(config.database_path)
-    imap_accounts = load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
+    imap_accounts = (
+        load_imap_accounts(config.imap_accounts_path) if config.imap_accounts_path else ()
+    )
     prefs_cache = {}
     trash_workflow = TrashWorkflow(imap_accounts, prefs_cache=prefs_cache)
     seen_workflow = SeenWorkflow(store, imap_accounts, prefs_cache=prefs_cache)
@@ -207,8 +213,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             return True
         observed_folders = (folder, *message.signal_folders)
         return all(
-            observed.casefold().strip("/")
-            != account.trash_folder.casefold().strip("/")
+            observed.casefold().strip("/") != account.trash_folder.casefold().strip("/")
             for observed in observed_folders
         )
 
@@ -225,9 +230,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
             return None
         return account.username
 
-    account_filter_options = tuple(
-        dict.fromkeys(account.username for account in imap_accounts)
-    )
+    account_filter_options = tuple(dict.fromkeys(account.username for account in imap_accounts))
 
     mail = MailAssistantService(
         config.profile,
@@ -443,9 +446,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 priority: tuple(
                     item
                     for item in messages
-                    if (
-                        message_account_username(item.message) or ""
-                    ).casefold()
+                    if (message_account_username(item.message) or "").casefold()
                     == normalized_account_filter
                 )
                 for priority, messages in groups.items()
@@ -577,7 +578,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         try:
             message = mail.full_message(message_id)
         except KeyError as exc:
-            raise HTTPException(status_code=404, detail="Unknown message ID")
+            raise HTTPException(status_code=404, detail="Unknown message ID") from exc
         return templates.TemplateResponse(
             request,
             "message_detail.html",
@@ -649,6 +650,7 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
         selected_messages = tuple(by_id[message_id] for message_id in selected_ids)
         error_message = selected_messages[0]
         try:
+
             def propose_selected_messages():
                 return trash_workflow.propose(selected_messages)
 
@@ -807,12 +809,11 @@ def create_app(config: AppConfig, *, engine: Any | None = None) -> FastAPI:
                 priority: tuple(
                     item
                     for item in messages
-                    if (message_account_username(item.message) or "").casefold()
-                    == wanted_account
+                    if (message_account_username(item.message) or "").casefold() == wanted_account
                 )
                 for priority, messages in visible_groups.items()
             }
-        messages = visible_groups[section][:display_limit(summary_limit)]
+        messages = visible_groups[section][: display_limit(summary_limit)]
         if not messages:
             raise HTTPException(status_code=404, detail="Section is empty")
         full_messages = mail.full_messages(item.message.header_message_id for item in messages)
@@ -947,7 +948,9 @@ def main() -> None:
     if host not in {"127.0.0.1", "localhost"}:
         raise SystemExit("MAIL_ASSISTANT_HOST must be loopback")
     port = int(os.getenv("MAIL_ASSISTANT_PORT", "8091"))
-    uvicorn.run(lambda: create_app(_default_config()), host=host, port=port, factory=True, reload=False)
+    uvicorn.run(
+        lambda: create_app(_default_config()), host=host, port=port, factory=True, reload=False
+    )
 
 
 if __name__ == "__main__":
