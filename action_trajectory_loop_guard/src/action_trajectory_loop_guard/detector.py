@@ -76,7 +76,9 @@ class _Assessment:
         return self.duplicate and self.novelty <= _NOVELTY_THRESHOLD
 
 
-def detect_and_redirect(action_trajectory: Sequence[object] | Iterable[object]) -> Intervention | None:
+def detect_and_redirect(
+    action_trajectory: Sequence[object] | Iterable[object],
+) -> Intervention | None:
     """Return redirect advice for a confirmed low-novelty action loop."""
 
     return assess_trajectory(action_trajectory).intervention
@@ -215,7 +217,10 @@ def _serialize_action(action: _Action) -> dict[str, Any]:
                 "meta": {
                     "category": action.outcome_category,
                     "evidence": [
-                        {"path": item["path"], "lines": [] if item["line"] is None else [item["line"]]}
+                        {
+                            "path": item["path"],
+                            "lines": [] if item["line"] is None else [item["line"]],
+                        }
                         for item in evidence
                     ],
                 },
@@ -271,13 +276,19 @@ def _near_duplicate(current: _Action, prior: _Action) -> bool:
     if current.tool != prior.tool:
         return False
     if current.tool == "read_file":
-        if _canonical_path(current.arguments.get("path")) != _canonical_path(prior.arguments.get("path")):
+        if _canonical_path(current.arguments.get("path")) != _canonical_path(
+            prior.arguments.get("path")
+        ):
             return False
         current_range = _read_range(current.arguments)
         prior_range = _read_range(prior.arguments)
         if current_range is None or prior_range is None:
-            return _normalized_arguments(current.arguments) == _normalized_arguments(prior.arguments)
-        overlap = max(0, min(current_range[1], prior_range[1]) - max(current_range[0], prior_range[0]) + 1)
+            return _normalized_arguments(current.arguments) == _normalized_arguments(
+                prior.arguments
+            )
+        overlap = max(
+            0, min(current_range[1], prior_range[1]) - max(current_range[0], prior_range[0]) + 1
+        )
         smaller = min(current_range[1] - current_range[0] + 1, prior_range[1] - prior_range[0] + 1)
         return overlap / smaller >= _READ_OVERLAP_THRESHOLD
     return _normalized_arguments(current.arguments) == _normalized_arguments(prior.arguments)

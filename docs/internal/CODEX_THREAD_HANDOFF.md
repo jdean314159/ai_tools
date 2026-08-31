@@ -71,6 +71,9 @@ The work progressed through evidence rather than assuming a design:
     gate. `llm_harness_core` is the first adopted package; the remaining lint
     and formatting inventory is frozen in
     `docs/internal/PYTHON-QUALITY-ADOPTION.md` for reviewable package passes.
+18. Both loop-guard packages and `mail_lib` are now formatted and included in
+    that gate. Their combined focused test set passed 84 tests without behavior
+    changes; `llm_inspector_ui` is the next adoption package.
 
 Key commits, oldest to newest:
 
@@ -113,7 +116,7 @@ arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
 complete. The active maintenance sequence is Python-quality adoption, next
-through the small zero-lint loop-guard and `mail_lib` packages. A deeper
+through `llm_inspector_ui`. A deeper
 command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.

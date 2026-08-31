@@ -18,7 +18,9 @@ def _read(index: int, start: int, *, path: str = "module.py", success: bool = Tr
     )
     return AgentStep(
         index=index,
-        action=AgentAction.tool("read_file", {"path": path, "start_line": start, "line_count": 100}),
+        action=AgentAction.tool(
+            "read_file", {"path": path, "start_line": start, "line_count": 100}
+        ),
         observation=AgentObservation(kind="tool_result", text="result", tool_result=result),
     )
 
@@ -44,7 +46,11 @@ def test_progressive_overlapping_reads_do_not_fire() -> None:
 
 
 def test_early_failed_retries_can_recover_without_false_positive() -> None:
-    trajectory = [_read(1, 1, success=False), _read(2, 1, success=False), _read(3, 1, success=False)]
+    trajectory = [
+        _read(1, 1, success=False),
+        _read(2, 1, success=False),
+        _read(3, 1, success=False),
+    ]
     trajectory.extend(_read(index, 1 + (index - 4) * 100) for index in range(4, 12))
 
     assert detect_and_redirect(trajectory) is None
@@ -66,12 +72,26 @@ def test_accepts_serialized_agent_steps() -> None:
         trajectory.append(
             {
                 "index": index,
-                "action": {"kind": "tool", "tool_call": {"name": "grep", "arguments": {"path": ".", "pattern": f"unique_{index}"}}},
-                "observation": {"tool_result": {"success": True, "meta": {"evidence": [{"path": "module.py", "lines": [index]}]}}},
+                "action": {
+                    "kind": "tool",
+                    "tool_call": {
+                        "name": "grep",
+                        "arguments": {"path": ".", "pattern": f"unique_{index}"},
+                    },
+                },
+                "observation": {
+                    "tool_result": {
+                        "success": True,
+                        "meta": {"evidence": [{"path": "module.py", "lines": [index]}]},
+                    }
+                },
             }
         )
     repeated = {
-        "action": {"kind": "tool", "tool_call": {"name": "grep", "arguments": {"path": ".", "pattern": "same"}}},
+        "action": {
+            "kind": "tool",
+            "tool_call": {"name": "grep", "arguments": {"path": ".", "pattern": "same"}},
+        },
         "observation": {"tool_result": {"success": True, "meta": {"evidence": []}}},
     }
     trajectory.extend(({"index": 9, **repeated}, {"index": 10, **repeated}))

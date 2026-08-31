@@ -4,6 +4,7 @@ The v0 reader is fixture-first and read-only. It iterates mbox messages as the
 source of truth, then enriches by matching bracket-stripped Message-ID headers to
 Gloda ``messages.headerMessageID`` rows. It never seeks by ``messageKey``.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -194,7 +195,9 @@ def load_gloda_metadata(
             attrs = _parse_json_attributes(row["jsonAttributes"])
             sender_ids = _as_id_tuple(attrs.get(ATTRIBUTE_FROM))
             sender_id = sender_ids[0] if sender_ids else None
-            recipient_ids = _as_id_tuple(attrs.get(ATTRIBUTE_TO)) + _as_id_tuple(attrs.get(ATTRIBUTE_RECIPIENTS))
+            recipient_ids = _as_id_tuple(attrs.get(ATTRIBUTE_TO)) + _as_id_tuple(
+                attrs.get(ATTRIBUTE_RECIPIENTS)
+            )
             recipient_ids = tuple(dict.fromkeys(recipient_ids))
             folder_id = int(row["folderID"]) if row["folderID"] is not None else None
             folder_uri, folder_name = folders.get(folder_id or -1, ("", ""))
@@ -214,7 +217,9 @@ def load_gloda_metadata(
                 header_message_id=header_id,
                 message_key=int(row["messageKey"]) if row["messageKey"] is not None else None,
                 folder_id=folder_id,
-                conversation_id=int(row["conversationID"]) if row["conversationID"] is not None else None,
+                conversation_id=int(row["conversationID"])
+                if row["conversationID"] is not None
+                else None,
                 date=int(row["date"]) if row["date"] is not None else None,
                 sender_id=sender_id,
                 recipient_ids=recipient_ids,
@@ -424,8 +429,7 @@ def load_msf_read_states(msf_path: str | Path) -> dict[str, bool]:
         return {}
     text = path.read_text(errors="replace").replace("\\\n", "")
     aliases = {
-        key.upper(): _decode_mork_value(value)
-        for key, value in _MORK_ALIAS_RE.findall(text)
+        key.upper(): _decode_mork_value(value) for key, value in _MORK_ALIAS_RE.findall(text)
     }
     read_by_id: dict[str, bool] = {}
     for row in _MORK_ROW_RE.finditer(text):
@@ -475,8 +479,16 @@ def _message_from_mbox(
     header_id = normalize_message_id(message.get("Message-ID"))
     if not header_id:
         return None
-    sender = metadata.sender.address if metadata and metadata.sender else (_addresses(message.get("From")) or ("",))[0]
-    recipients = tuple(item.address for item in metadata.recipients) if metadata and metadata.recipients else _addresses(message.get("To"))
+    sender = (
+        metadata.sender.address
+        if metadata and metadata.sender
+        else (_addresses(message.get("From")) or ("",))[0]
+    )
+    recipients = (
+        tuple(item.address for item in metadata.recipients)
+        if metadata and metadata.recipients
+        else _addresses(message.get("To"))
+    )
     local_read = _mozilla_read(message) if msf_read is None else msf_read
     return MailMessage(
         header_message_id=header_id,

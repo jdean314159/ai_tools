@@ -32,9 +32,7 @@ def _action_text(step: dict[str, Any]) -> str:
     )
 
 
-def _first_fire(
-    fragments: list[str], calls: list[dict[str, Any]]
-) -> dict[str, Any] | None:
+def _first_fire(fragments: list[str], calls: list[dict[str, Any]]) -> dict[str, Any] | None:
     text = ""
     cumulative_tokens = 0
     for call_index, (fragment, call) in enumerate(zip(fragments, calls), start=1):
@@ -82,9 +80,7 @@ def replay(path: Path) -> dict[str, Any]:
         "decoded_response_first_fire": _first_fire(
             [str(call["response_text"]) for call in calls], calls
         ),
-        "parsed_action_first_fire": _first_fire(
-            [_action_text(step) for step in steps], calls
-        ),
+        "parsed_action_first_fire": _first_fire([_action_text(step) for step in steps], calls),
     }
 
 

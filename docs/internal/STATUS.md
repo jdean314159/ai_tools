@@ -238,6 +238,13 @@ are deliberately not hidden behind broad ignores or mixed into one mass-format
 commit. The package test gate passed 28 tests, and the repository gate remained
 at 1,267 passed, 304 skipped, with the same three warnings.
 
+The second Python-quality checkpoint adopts both loop-guard packages and
+`mail_lib` into the same root Ruff format/lint gate. Eleven files received
+mechanical formatting only; all 32 currently gated files pass. The focused
+loop-guard, mail, personal-rule, and public-API set passed 84 tests, and the full
+repository gate remained at 1,267 passed, 304 skipped, with the same three
+warnings. `llm_inspector_ui` is the next staged package.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

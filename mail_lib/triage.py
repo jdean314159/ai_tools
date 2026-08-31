@@ -1,4 +1,5 @@
 """Deterministic rules-layer triage for MAIL-00 v0."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

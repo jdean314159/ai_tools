@@ -17,8 +17,12 @@ def replay(path: Path) -> dict[str, Any]:
     detector_trace = guard_meta.get("detector_trace", {})
     captured_actions = detector_trace.get("actions")
     run_steps = record["run"]["steps"]
-    steps = captured_actions if isinstance(captured_actions, list) and captured_actions else run_steps
-    replay_source = "captured_detector_input" if steps is captured_actions else "reconstructed_run_steps"
+    steps = (
+        captured_actions if isinstance(captured_actions, list) and captured_actions else run_steps
+    )
+    replay_source = (
+        "captured_detector_input" if steps is captured_actions else "reconstructed_run_steps"
+    )
     calls = record["planner_usage"]["calls"]
     first_fire = None
     for step_count in range(1, len(steps) + 1):
@@ -28,8 +32,7 @@ def replay(path: Path) -> dict[str, Any]:
         first_fire = {
             "step": step_count,
             "cumulative_actual_tokens": sum(
-                int(call["actual_total_tokens"])
-                for call in calls[: min(step_count, len(calls))]
+                int(call["actual_total_tokens"]) for call in calls[: min(step_count, len(calls))]
             ),
             "truncation_point": intervention.truncation_point,
             "loop_start_action": intervention.loop_start_action,
@@ -50,8 +53,12 @@ def replay(path: Path) -> dict[str, Any]:
     }
 
 
-def _compare_captured_decisions(steps: list[object], detector_trace: object) -> dict[str, Any] | None:
-    if not isinstance(detector_trace, dict) or not isinstance(detector_trace.get("decisions"), list):
+def _compare_captured_decisions(
+    steps: list[object], detector_trace: object
+) -> dict[str, Any] | None:
+    if not isinstance(detector_trace, dict) or not isinstance(
+        detector_trace.get("decisions"), list
+    ):
         return None
     recorded = detector_trace["decisions"]
     mismatches = []
@@ -60,7 +67,10 @@ def _compare_captured_decisions(steps: list[object], detector_trace: object) -> 
         replayed_decision = replayed.action_assessments[-1] if replayed.action_assessments else None
         replayed_intervention = replayed.as_dict()["intervention"]
         recorded_intervention = item.get("intervention") if isinstance(item, dict) else None
-        if replayed_decision != item.get("decision") or replayed_intervention != recorded_intervention:
+        if (
+            replayed_decision != item.get("decision")
+            or replayed_intervention != recorded_intervention
+        ):
             mismatches.append(step_count)
     return {"checks": len(recorded), "matching": not mismatches, "mismatch_checks": mismatches}
 

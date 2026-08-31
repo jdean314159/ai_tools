@@ -1,4 +1,5 @@
 """File-backed deterministic personal rules for MAIL-01."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -143,7 +144,8 @@ def load_personal_rules(path: Path) -> RuleLoadResult:
         assert priority is not None
         assert action is not None
         predicate_names = tuple(
-            key for key, value in (("sender", sender), ("domain", domain), ("subject", subject))
+            key
+            for key, value in (("sender", sender), ("domain", domain), ("subject", subject))
             if value is not None
         )
         specificity = (
@@ -177,7 +179,7 @@ def _predicate_values(rule: PersonalRule) -> tuple[str | None, str | None, str |
 def _collision_warnings(rules: Sequence[PersonalRule]) -> tuple[str, ...]:
     warnings: list[str] = []
     for position, left in enumerate(rules):
-        for right in rules[position + 1:]:
+        for right in rules[position + 1 :]:
             if _predicate_values(left) == _predicate_values(right):
                 warnings.append(
                     f"Rules #{left.index} and #{right.index} have identical predicates; "

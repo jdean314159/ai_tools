@@ -73,8 +73,7 @@ def detect_and_redirect(reasoning_stream: ReasoningStream) -> Intervention | Non
 
     text = _join_text(reasoning_stream)
     tokens = [
-        _Token(match.group(0).casefold(), match.start())
-        for match in _TOKEN_RE.finditer(text)
+        _Token(match.group(0).casefold(), match.start()) for match in _TOKEN_RE.finditer(text)
     ]
     minimum = _WINDOW_TOKENS + (_CONFIRMATION_WINDOWS - 1) * _WINDOW_STRIDE
     if len(tokens) < minimum:
@@ -114,9 +113,7 @@ def _join_text(stream: ReasoningStream) -> str:
         else:
             value = getattr(event, "text", None)
         if not isinstance(value, str):
-            raise TypeError(
-                f"reasoning event {index} must be a string or expose string text"
-            )
+            raise TypeError(f"reasoning event {index} must be a string or expose string text")
         parts.append(value)
     return "".join(parts)
 
@@ -132,9 +129,7 @@ def _windows(tokens: list[_Token]) -> Iterable[_Window]:
         repeated: list[int] = []
         last_start = end - _NGRAM_ORDER
         for position in range(start, last_start + 1):
-            ngram = tuple(
-                token.normalized for token in tokens[position : position + _NGRAM_ORDER]
-            )
+            ngram = tuple(token.normalized for token in tokens[position : position + _NGRAM_ORDER])
             if ngram in ngrams:
                 repeated.append(position)
             else:
@@ -170,9 +165,7 @@ def _loop_boundary(tokens: list[_Token], window: _Window) -> int:
     # its period, making the modal occurrence distance a stable estimate.
     positions_by_ngram: dict[tuple[str, ...], list[int]] = {}
     for position in range(window.start, window.end - _NGRAM_ORDER + 1):
-        ngram = tuple(
-            token.normalized for token in tokens[position : position + _NGRAM_ORDER]
-        )
+        ngram = tuple(token.normalized for token in tokens[position : position + _NGRAM_ORDER])
         positions_by_ngram.setdefault(ngram, []).append(position)
     distances = Counter(
         current - previous

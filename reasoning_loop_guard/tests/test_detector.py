@@ -40,7 +40,9 @@ def test_accepts_chunked_typed_events_without_inserting_separators() -> None:
     result = detect_and_redirect(stream)
 
     assert result is not None
-    combined = "".join(event.text if isinstance(event, Event) else event["text"] for event in stream)
+    combined = "".join(
+        event.text if isinstance(event, Event) else event["text"] for event in stream
+    )
     assert combined[: result.truncation_point].startswith(prefix)
 
 

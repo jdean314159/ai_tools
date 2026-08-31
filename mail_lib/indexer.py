@@ -1,4 +1,5 @@
 """Small local SQLite index for processed MAIL-00 messages."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

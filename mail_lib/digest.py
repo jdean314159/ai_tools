@@ -1,4 +1,5 @@
 """Render a deterministic CLI digest for MAIL-00 v0."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -67,8 +68,10 @@ def render_digest(messages: Iterable[MailMessage], results: Iterable[TriageResul
     lines.append("")
     lines.append("## Open loops")
     open_loop_items = [
-        item for item in items
-        if item.message.metadata and not item.message.metadata.flags.get("replied")
+        item
+        for item in items
+        if item.message.metadata
+        and not item.message.metadata.flags.get("replied")
         and item.triage.priority in {Priority.URGENT, Priority.NORMAL}
     ]
     if not open_loop_items:
