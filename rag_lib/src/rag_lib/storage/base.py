@@ -4,6 +4,7 @@ rag_lib.storage.base
 VectorStore Protocol and StoredChunk dataclass.
 All storage backends implement VectorStore.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -27,6 +28,7 @@ class StoredChunk:
     doc_type:     Strategy selector (policy, spec, paper, thesis, etc.)
     metadata:     Strategy, page, section title, table flag, etc.
     """
+
     chunk_id: str
     text: str
     context_text: str
@@ -81,7 +83,7 @@ class VectorStore(Protocol):
 
     def add(
         self,
-        chunks: list["TextChunk"],          # noqa: F821
+        chunks: list["TextChunk"],  # noqa: F821
         embeddings: list[list[float]],
         collection: str = "default",
     ) -> None:

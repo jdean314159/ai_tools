@@ -1,7 +1,7 @@
 """Tests for rag_lib.ingestion.tables."""
+
 from __future__ import annotations
 
-import pytest
 from rag_lib.ingestion.tables import TableProcessor
 
 

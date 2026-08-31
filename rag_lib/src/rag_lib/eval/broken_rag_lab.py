@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
 
 from llm_engines.contracts.rag import Chunk, RAGPipeline, RAGResult
 from llm_harness_core import EvaluatorRequest, RetrievedDocument, SubstringMatchEvaluator
@@ -97,7 +96,15 @@ class BrokenMercuryPipeline(RAGPipeline):
         selected = tuple(self._selected_docs(query))
         assembled = self.assemble_prompt(
             query,
-            [Chunk(content=doc.text, source_id=doc.source, score=float(doc.score or 0.0), metadata=dict(doc.metadata)) for doc in selected],
+            [
+                Chunk(
+                    content=doc.text,
+                    source_id=doc.source,
+                    score=float(doc.score or 0.0),
+                    metadata=dict(doc.metadata),
+                )
+                for doc in selected
+            ],
         )
         return RetrievalTrace(
             query=query,
@@ -113,7 +120,12 @@ class BrokenMercuryPipeline(RAGPipeline):
 
     def retrieve(self, query: str) -> list[Chunk]:
         return [
-            Chunk(content=doc.text, source_id=doc.source, score=float(doc.score or 0.0), metadata=dict(doc.metadata))
+            Chunk(
+                content=doc.text,
+                source_id=doc.source,
+                score=float(doc.score or 0.0),
+                metadata=dict(doc.metadata),
+            )
             for doc in self._selected_docs(query)
         ]
 
@@ -164,7 +176,9 @@ def render_comparison(query: str) -> str:
     return buf.getvalue()
 
 
-def evaluate_repair(query: str = "What region does Project Mercury deploy the nightly evaluation job to?") -> dict[str, object]:
+def evaluate_repair(
+    query: str = "What region does Project Mercury deploy the nightly evaluation job to?",
+) -> dict[str, object]:
     evaluator = SubstringMatchEvaluator()
     request = EvaluatorRequest(
         candidate="",

@@ -15,10 +15,10 @@ Run with integration tests:
 Run everything:
     PYTHONPATH=src python -m pytest tests/ -v --run-integration
 """
+
 from __future__ import annotations
 
 import socket
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +67,7 @@ def pytest_collection_modifyitems(config: Any, items: list) -> None:
 # ------------------------------------------------------------------
 # Shared fixtures
 # ------------------------------------------------------------------
+
 
 @pytest.fixture
 def tmp_dir(tmp_path: Path) -> Path:
@@ -136,6 +137,7 @@ def mock_embedder(mocker: Any) -> Any:
     def fake_embed(texts, validate_tokens=True):
         # Return a different vector per text based on hash
         import hashlib
+
         result = []
         for text in texts:
             h = int(hashlib.md5(text.encode()).hexdigest(), 16)
@@ -145,6 +147,7 @@ def mock_embedder(mocker: Any) -> Any:
 
     def fake_embed_query(text):
         import hashlib
+
         h = int(hashlib.md5(text.encode()).hexdigest(), 16)
         vec = [(h >> i & 0xFF) / 255.0 for i in range(0, 768 * 8, 8)]
         return vec[:768]
@@ -161,7 +164,7 @@ def mock_embedder(mocker: Any) -> Any:
 @pytest.fixture
 def in_memory_store(sample_config: dict, mock_embedder: Any) -> Any:
     """ChromaStorage backed by in-memory ChromaDB for fast unit tests."""
-    pytest.importorskip('chromadb')
+    pytest.importorskip("chromadb")
     from rag_lib.storage.chroma import ChromaStorage
 
     store = ChromaStorage(
@@ -176,6 +179,7 @@ def in_memory_store(sample_config: dict, mock_embedder: Any) -> Any:
 class _MiniMocker:
     def __init__(self) -> None:
         import unittest.mock as mock
+
         self._mock = mock
         self._patches: list[Any] = []
         self.MagicMock = mock.MagicMock
@@ -193,7 +197,6 @@ class _MiniMocker:
 
 
 @pytest.fixture
-
 def mocker() -> Any:
     mm = _MiniMocker()
     try:

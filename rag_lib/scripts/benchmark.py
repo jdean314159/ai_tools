@@ -29,6 +29,7 @@ Exit codes:
     1   One or more metrics failed thresholds
     2   Evaluation error (RAGAS, network, or config failure)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -63,7 +64,11 @@ def make_judge(judge_spec: str) -> Any:
         sys.exit(2)
 
     # Claude models
-    if "claude" in judge_spec.lower() or "haiku" in judge_spec.lower() or "sonnet" in judge_spec.lower():
+    if (
+        "claude" in judge_spec.lower()
+        or "haiku" in judge_spec.lower()
+        or "sonnet" in judge_spec.lower()
+    ):
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             print("ERROR: ANTHROPIC_API_KEY not set. Export it before running.")
@@ -104,9 +109,8 @@ def make_generator(generator_spec: str | None) -> Any:
         try:
             from langchain_anthropic import ChatAnthropic
             from ragas.llms import LangchainLLMWrapper
-            return LangchainLLMWrapper(ChatAnthropic(
-                model=generator_spec, temperature=0.1
-            ))
+
+            return LangchainLLMWrapper(ChatAnthropic(model=generator_spec, temperature=0.1))
         except ImportError:
             logger.warning("langchain-anthropic not installed; skipping answer generation")
             return None
@@ -114,6 +118,7 @@ def make_generator(generator_spec: str | None) -> Any:
         try:
             from langchain_community.chat_models import ChatOllama
             from ragas.llms import LangchainLLMWrapper
+
             logger.info("Using local Ollama generator: %s", generator_spec)
             return LangchainLLMWrapper(ChatOllama(model=generator_spec, temperature=0.1))
         except ImportError:
@@ -128,42 +133,39 @@ def main() -> int:
         epilog=__doc__,
     )
     parser.add_argument(
-        "--judge", required=True,
-        help="Judge model: claude-haiku | claude-sonnet | qwen3:32b | qwen3:8b"
+        "--judge",
+        required=True,
+        help="Judge model: claude-haiku | claude-sonnet | qwen3:32b | qwen3:8b",
     )
     parser.add_argument(
-        "--ground-truth", default="eval/ground_truth.jsonl",
-        help="Path to ground truth JSONL file (default: eval/ground_truth.jsonl)"
+        "--ground-truth",
+        default="eval/ground_truth.jsonl",
+        help="Path to ground truth JSONL file (default: eval/ground_truth.jsonl)",
     )
     parser.add_argument(
-        "--collection", default="default",
-        help="ChromaDB collection name (default: default)"
+        "--collection", default="default", help="ChromaDB collection name (default: default)"
     )
     parser.add_argument(
-        "--generator", default=None,
+        "--generator",
+        default=None,
         help="Generation model for faithfulness/relevancy (e.g. qwen3:8b). "
-             "If not set, only context_recall and context_precision are measured."
+        "If not set, only context_recall and context_precision are measured.",
     )
     parser.add_argument(
-        "--n-runs", type=int, default=3,
-        help="Number of evaluation runs; median is reported (default: 3)"
+        "--n-runs",
+        type=int,
+        default=3,
+        help="Number of evaluation runs; median is reported (default: 3)",
     )
+    parser.add_argument("--config", default=None, help="Path to rag_lib.yaml config file")
     parser.add_argument(
-        "--config", default=None,
-        help="Path to rag_lib.yaml config file"
+        "--max-context-tokens",
+        type=int,
+        default=None,
+        help="Token budget for prompt assembly (uses config default if not set)",
     )
-    parser.add_argument(
-        "--max-context-tokens", type=int, default=None,
-        help="Token budget for prompt assembly (uses config default if not set)"
-    )
-    parser.add_argument(
-        "--output", default=None,
-        help="Write JSON report to this file path"
-    )
-    parser.add_argument(
-        "--verbose", action="store_true",
-        help="Enable debug logging"
-    )
+    parser.add_argument("--output", default=None, help="Write JSON report to this file path")
+    parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
     args = parser.parse_args()
 
     if args.verbose:
@@ -172,9 +174,7 @@ def main() -> int:
     # Import rag_lib
     try:
         from rag_lib import RAGPipeline
-        from rag_lib.eval.ragas_runner import (
-            run_eval, load_ground_truth, print_report
-        )
+        from rag_lib.eval.ragas_runner import run_eval, load_ground_truth, print_report
     except ImportError as exc:
         print(f"ERROR: Cannot import rag_lib: {exc}")
         print("Ensure you're running from ~/ai_tools/ with rag_lib installed.")
@@ -197,7 +197,7 @@ def main() -> int:
         print(f"ERROR loading ground truth from {gt_path}: {exc}")
         return 2
 
-    print(f"\nBenchmark configuration:")
+    print("\nBenchmark configuration:")
     print(f"  Judge:        {args.judge}")
     print(f"  Generator:    {args.generator or '(none — retrieval metrics only)'}")
     print(f"  Collection:   {args.collection}")

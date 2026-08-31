@@ -1,8 +1,9 @@
 """Tests for rag_lib.ingestion.enricher."""
+
 from __future__ import annotations
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from rag_lib.ingestion.enricher import ContextualEnricher
 from rag_lib.ingestion.chunker import TextChunk
 
@@ -60,6 +61,7 @@ class TestContextualEnricher:
     def test_cloud_provider_requires_api_key(self):
         """Cloud providers raise if API key env var is not set."""
         import os
+
         env_key = "TEST_MISSING_KEY_XYZ"
         if env_key in os.environ:
             del os.environ[env_key]
@@ -76,11 +78,14 @@ class TestContextualEnricher:
         enricher._generate = MagicMock(return_value="This is a test description")
 
         chunks = [_make_chunk("NetFlow data was collected over five weeks.")]
-        enricher.enrich(chunks, doc_title="dissertation.pdf",
-                        doc_type="thesis", doc_intro="Abstract text here")
+        enricher.enrich(
+            chunks, doc_title="dissertation.pdf", doc_type="thesis", doc_intro="Abstract text here"
+        )
 
-        assert chunks[0].embed_text == \
-            "This is a test description. NetFlow data was collected over five weeks."
+        assert (
+            chunks[0].embed_text
+            == "This is a test description. NetFlow data was collected over five weeks."
+        )
         assert chunks[0].text == "NetFlow data was collected over five weeks."
 
     def test_enrich_falls_back_on_failure(self):
@@ -148,9 +153,7 @@ class TestContextualEnricher:
 
     def test_build_embed_text(self):
         enricher = ContextualEnricher(provider="ollama")
-        result = enricher._build_embed_text(
-            "This is about NetFlow.", "Raw chunk content here."
-        )
+        result = enricher._build_embed_text("This is about NetFlow.", "Raw chunk content here.")
         assert result == "This is about NetFlow. Raw chunk content here."
 
     def test_ollama_connection_error_returns_empty(self):

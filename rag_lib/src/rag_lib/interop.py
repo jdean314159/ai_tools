@@ -109,7 +109,9 @@ class RetrievalTrace:
             "events": [_event_to_dict(event) for event in self.events],
         }
         diagnostics = dict(self.diagnostics)
-        diagnostics.setdefault("evidence_flows", [_doc_to_evidence_flow(doc) for doc in self.selected_results])
+        diagnostics.setdefault(
+            "evidence_flows", [_doc_to_evidence_flow(doc) for doc in self.selected_results]
+        )
         diagnostics.setdefault("selected_count", len(self.selected_results))
         return OperationResult.success(value, diagnostics=diagnostics)
 
@@ -140,7 +142,9 @@ def describe_rag_pipeline(pipeline: Any) -> CapabilityDescriptor:
             "retrieval_trace_events",
             "retrieved_documents",
             "prompt_assembly",
-        ) + (("reranker",) if reranker is not None else ()) + (("query_expansion",) if expander is not None else ()),
+        )
+        + (("reranker",) if reranker is not None else ())
+        + (("query_expansion",) if expander is not None else ()),
         input_types=("query", "collection", "augment_request"),
         output_types=("retrieved_document[]", "trace_event[]", "operation_result", "prompt"),
         metadata=metadata,

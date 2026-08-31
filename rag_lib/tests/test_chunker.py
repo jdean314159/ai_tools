@@ -1,18 +1,22 @@
 """Tests for rag_lib.ingestion.chunker."""
+
 from __future__ import annotations
 
 import pytest
 from rag_lib.ingestion.chunker import (
-    Chunker, TextChunk,
-    _sentences, _sentence_window, _fixed_size, _hierarchical, _semantic,
+    Chunker,
+    _sentences,
+    _sentence_window,
+    _fixed_size,
+    _hierarchical,
+    _semantic,
 )
 from rag_lib.ingestion.loader import LoadedDocument
 from rag_lib.errors import ChunkerError
 
 
 PROSE = (
-    "The sky is blue. Water is wet. Fire is hot. "
-    "Ice is cold. Wind blows. Snow falls. Rain drops."
+    "The sky is blue. Water is wet. Fire is hot. Ice is cold. Wind blows. Snow falls. Rain drops."
 )
 
 LONG_TEXT = " ".join(f"Word{i}" for i in range(300))
@@ -21,6 +25,7 @@ LONG_TEXT = " ".join(f"Word{i}" for i in range(300))
 # ------------------------------------------------------------------
 # Sentence splitter
 # ------------------------------------------------------------------
+
 
 class TestSentenceSplitter:
     def test_basic_split(self):
@@ -49,6 +54,7 @@ class TestSentenceSplitter:
 # ------------------------------------------------------------------
 # Sentence window strategy
 # ------------------------------------------------------------------
+
 
 class TestSentenceWindow:
     def test_chunk_count(self):
@@ -93,6 +99,7 @@ class TestSentenceWindow:
 # Fixed-size strategy
 # ------------------------------------------------------------------
 
+
 class TestFixedSize:
     def test_d7_text_equals_context(self):
         """For fixed-size, text == context_text."""
@@ -122,6 +129,7 @@ class TestFixedSize:
 # ------------------------------------------------------------------
 # Hierarchical strategy
 # ------------------------------------------------------------------
+
 
 class TestHierarchical:
     def test_d7_context_larger_than_text(self):
@@ -155,6 +163,7 @@ class TestHierarchical:
 # Semantic strategy
 # ------------------------------------------------------------------
 
+
 class TestSemantic:
     def test_fallback_without_embedder(self):
         """Without embedder, should fall back to sentence_window."""
@@ -172,7 +181,9 @@ class TestSemantic:
     def test_with_mock_embedder(self, mock_embedder):
         """With embedder, should produce chunks at topic boundaries."""
         chunks = _semantic(
-            PROSE, "f.txt", "mixed",
+            PROSE,
+            "f.txt",
+            "mixed",
             embedder=mock_embedder,
             breakpoint_percentile=50,
         )
@@ -182,6 +193,7 @@ class TestSemantic:
 # ------------------------------------------------------------------
 # Chunker class (routing + D7 enforcement)
 # ------------------------------------------------------------------
+
 
 class TestChunker:
     def test_routes_policy_to_sentence_window(self, sample_config):

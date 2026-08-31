@@ -1,4 +1,5 @@
 """Tests for rag_lib.retrieval.retriever."""
+
 from __future__ import annotations
 
 import json
@@ -6,7 +7,6 @@ import json
 import pytest
 from rag_lib.retrieval.retriever import HybridRetriever
 from rag_lib.storage.base import StoredChunk
-from rag_lib.errors import RagLibError
 
 
 def _make_chunk(text: str, cid: str, score: float = 0.5) -> StoredChunk:
@@ -25,10 +25,12 @@ class TestRRF:
     def test_rrf_combines_rankings(self, mock_embedder, tmp_dir):
         pytest.importorskip("rank_bm25")
         """RRF should produce scores blending BM25 and dense rankings."""
-        store = _make_mock_store(chunks=[
-            _make_chunk("NetFlow anomaly detection", "c1", 0.8),
-            _make_chunk("insider threat behavior", "c2", 0.6),
-        ])
+        store = _make_mock_store(
+            chunks=[
+                _make_chunk("NetFlow anomaly detection", "c1", 0.8),
+                _make_chunk("insider threat behavior", "c2", 0.6),
+            ]
+        )
         retriever = HybridRetriever(
             store=store,
             embedder=mock_embedder,
@@ -36,8 +38,10 @@ class TestRRF:
         )
         # Build BM25 from the mock store's chunks
         retriever.build_bm25_index(
-            [_make_chunk("NetFlow anomaly detection", "c1"),
-             _make_chunk("insider threat behavior", "c2")],
+            [
+                _make_chunk("NetFlow anomaly detection", "c1"),
+                _make_chunk("insider threat behavior", "c2"),
+            ],
             collection="default",
         )
         results = retriever.retrieve("anomaly detection", collection="default")
@@ -47,6 +51,7 @@ class TestRRF:
     def test_rrf_formula(self):
         """RRF score = sum(1/(k+rank)) across result lists."""
         from rag_lib.retrieval.retriever import _RRF_K
+
         # Rank 1 in dense only
         score = (1 - 0.4) / (_RRF_K + 1)
         assert abs(score - 0.6 / 61) < 1e-6
@@ -63,10 +68,7 @@ class TestBudgetEnforcement:
             max_context_tokens=50,
         )
         # Chunks that are each ~30 words
-        chunks = [
-            _make_chunk("word " * 30, f"c{i}", 0.9 - i * 0.1)
-            for i in range(5)
-        ]
+        chunks = [_make_chunk("word " * 30, f"c{i}", 0.9 - i * 0.1) for i in range(5)]
         prompt = retriever.assemble_prompt(
             query="test query",
             chunks=chunks,
@@ -78,6 +80,7 @@ class TestBudgetEnforcement:
     def test_no_fitting_chunks_logs_warning(self, mock_embedder, tmp_dir, caplog):
         """When no chunks fit, a WARNING is logged and query-only prompt returned."""
         import logging
+
         store = _make_mock_store()
         retriever = HybridRetriever(
             store=store,
@@ -153,9 +156,11 @@ class TestBM25Persistence:
 # Helpers
 # ------------------------------------------------------------------
 
+
 def _make_mock_store(chunks=None):
     """Minimal mock VectorStore."""
     from unittest.mock import MagicMock
+
     store = MagicMock()
     store.search.return_value = chunks or []
     store.count.return_value = len(chunks) if chunks else 0

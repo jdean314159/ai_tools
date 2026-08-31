@@ -10,6 +10,7 @@ D7: TextChunk.text (embedded) vs context_text (sent to LLM) are distinct.
 D17: NLTK punkt tokenizer for sentence splitting; regex fallback if absent.
 D18: Semantic chunking cost bounded by semantic_max_sentences.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -39,13 +40,14 @@ class TextChunk:
     Invariant: embed_text must not exceed max_embed_tokens.
     BM25 always indexes text (not embed_text) to avoid description vocabulary noise.
     """
+
     text: str
     context_text: str
-    source_id: str          # "{file_path}:{chunk_index}"
+    source_id: str  # "{file_path}:{chunk_index}"
     doc_type: str
     chunk_index: int
     metadata: dict[str, Any] = field(default_factory=dict)
-    embed_text: str = ""    # set by enricher; falls back to text if empty
+    embed_text: str = ""  # set by enricher; falls back to text if empty
 
     def __post_init__(self) -> None:
         # Default embed_text to text if not explicitly set
@@ -62,9 +64,7 @@ class TextChunk:
 # Sentence splitting (D17)
 # ---------------------------------------------------------------------------
 
-_SENTENCE_SPLIT_RE = re.compile(
-    r"(?<!\b[A-Z][a-z])(?<!\b[A-Z][a-z][a-z])(?<=[.!?])\s+"
-)
+_SENTENCE_SPLIT_RE = re.compile(r"(?<!\b[A-Z][a-z])(?<!\b[A-Z][a-z][a-z])(?<=[.!?])\s+")
 
 
 def _regex_sentences(text: str) -> list[str]:
@@ -88,6 +88,7 @@ def _sentences(text: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # Strategy implementations
 # ---------------------------------------------------------------------------
+
 
 def _sentence_window(
     text: str,
@@ -113,19 +114,21 @@ def _sentence_window(
         window = " ".join(sentences[lo:hi])
 
         idx = start_index + i
-        chunks.append(TextChunk(
-            text=sent,
-            context_text=window,
-            source_id=f"{source_path}:{idx}",
-            doc_type=doc_type,
-            chunk_index=idx,
-            metadata={
-                "strategy": "sentence_window",
-                "window_size": window_size,
-                "sentence_index": i,
-                "total_sentences": len(sentences),
-            },
-        ))
+        chunks.append(
+            TextChunk(
+                text=sent,
+                context_text=window,
+                source_id=f"{source_path}:{idx}",
+                doc_type=doc_type,
+                chunk_index=idx,
+                metadata={
+                    "strategy": "sentence_window",
+                    "window_size": window_size,
+                    "sentence_index": i,
+                    "total_sentences": len(sentences),
+                },
+            )
+        )
     return chunks
 
 
@@ -154,19 +157,21 @@ def _fixed_size(
         window_words = words[i : i + chunk_size]
         chunk_text = " ".join(window_words)
         idx = start_index + chunk_num
-        chunks.append(TextChunk(
-            text=chunk_text,
-            context_text=chunk_text,
-            source_id=f"{source_path}:{idx}",
-            doc_type=doc_type,
-            chunk_index=idx,
-            metadata={
-                "strategy": "fixed_size",
-                "chunk_size": chunk_size,
-                "chunk_overlap": chunk_overlap,
-                "word_offset": i,
-            },
-        ))
+        chunks.append(
+            TextChunk(
+                text=chunk_text,
+                context_text=chunk_text,
+                source_id=f"{source_path}:{idx}",
+                doc_type=doc_type,
+                chunk_index=idx,
+                metadata={
+                    "strategy": "fixed_size",
+                    "chunk_size": chunk_size,
+                    "chunk_overlap": chunk_overlap,
+                    "word_offset": i,
+                },
+            )
+        )
         i += step
         chunk_num += 1
 
@@ -195,7 +200,9 @@ def _hierarchical(
     if len(chunk_sizes) < 2:
         # Fall back to fixed-size if no meaningful hierarchy
         return _fixed_size(
-            text, source_path, doc_type,
+            text,
+            source_path,
+            doc_type,
             chunk_size=chunk_sizes[0] if chunk_sizes else 512,
             start_index=start_index,
         )
@@ -217,8 +224,6 @@ def _hierarchical(
     large_step = max(1, large_size)
     for large_start in range(0, len(words), large_step):
         large_words = words[large_start : large_start + large_size]
-        large_text = " ".join(large_words)
-
         # Within each large block, iterate over medium (section-level) windows
         medium_step = max(1, medium_size)
         for med_offset in range(0, len(large_words), medium_step):
@@ -234,19 +239,21 @@ def _hierarchical(
                 leaf_text = " ".join(leaf_words)
                 idx = start_index + chunk_num
 
-                chunks.append(TextChunk(
-                    text=leaf_text,
-                    context_text=medium_text,   # D7: LLM sees section, not fragment
-                    source_id=f"{source_path}:{idx}",
-                    doc_type=doc_type,
-                    chunk_index=idx,
-                    metadata={
-                        "strategy": "hierarchical",
-                        "chunk_sizes": chunk_sizes,
-                        "level": "leaf",
-                        "parent_text_preview": medium_text[:100],
-                    },
-                ))
+                chunks.append(
+                    TextChunk(
+                        text=leaf_text,
+                        context_text=medium_text,  # D7: LLM sees section, not fragment
+                        source_id=f"{source_path}:{idx}",
+                        doc_type=doc_type,
+                        chunk_index=idx,
+                        metadata={
+                            "strategy": "hierarchical",
+                            "chunk_sizes": chunk_sizes,
+                            "level": "leaf",
+                            "parent_text_preview": medium_text[:100],
+                        },
+                    )
+                )
                 chunk_num += 1
 
     return chunks
@@ -277,11 +284,11 @@ def _semantic(
             "Semantic chunking: %d sentences exceeds semantic_max_sentences=%d "
             "for '%s'. Falling back to sentence_window (window_size=3). "
             "Increase semantic_max_sentences or use a different doc_type.",
-            len(sentences), max_sentences, source_path,
+            len(sentences),
+            max_sentences,
+            source_path,
         )
-        return _sentence_window(
-            text, source_path, doc_type, window_size=3, start_index=start_index
-        )
+        return _sentence_window(text, source_path, doc_type, window_size=3, start_index=start_index)
 
     if embedder is None:
         logger.warning(
@@ -289,9 +296,7 @@ def _semantic(
             "Falling back to sentence_window.",
             source_path,
         )
-        return _sentence_window(
-            text, source_path, doc_type, window_size=3, start_index=start_index
-        )
+        return _sentence_window(text, source_path, doc_type, window_size=3, start_index=start_index)
 
     if not sentences:
         return []
@@ -301,15 +306,15 @@ def _semantic(
         vectors = embedder.embed(sentences, validate_tokens=False)
     except Exception as exc:
         logger.warning(
-            "Semantic chunker: embedding failed for '%s': %s. "
-            "Falling back to sentence_window.", source_path, exc
+            "Semantic chunker: embedding failed for '%s': %s. Falling back to sentence_window.",
+            source_path,
+            exc,
         )
-        return _sentence_window(
-            text, source_path, doc_type, window_size=3, start_index=start_index
-        )
+        return _sentence_window(text, source_path, doc_type, window_size=3, start_index=start_index)
 
     # Compute cosine distances between adjacent sentence embeddings
     import math
+
     distances: list[float] = []
     for i in range(len(vectors) - 1):
         a, b = vectors[i], vectors[i + 1]
@@ -321,14 +326,16 @@ def _semantic(
 
     if not distances:
         chunk_text = " ".join(sentences)
-        return [TextChunk(
-            text=chunk_text,
-            context_text=chunk_text,
-            source_id=f"{source_path}:{start_index}",
-            doc_type=doc_type,
-            chunk_index=start_index,
-            metadata={"strategy": "semantic"},
-        )]
+        return [
+            TextChunk(
+                text=chunk_text,
+                context_text=chunk_text,
+                source_id=f"{source_path}:{start_index}",
+                doc_type=doc_type,
+                chunk_index=start_index,
+                metadata={"strategy": "semantic"},
+            )
+        ]
 
     # Find breakpoints where distance exceeds the percentile threshold
     sorted_distances = sorted(distances)
@@ -346,7 +353,30 @@ def _semantic(
         if i in breakpoints and current_group:
             chunk_text = " ".join(current_group)
             idx = start_index + chunk_num
-            chunks.append(TextChunk(
+            chunks.append(
+                TextChunk(
+                    text=chunk_text,
+                    context_text=chunk_text,
+                    source_id=f"{source_path}:{idx}",
+                    doc_type=doc_type,
+                    chunk_index=idx,
+                    metadata={
+                        "strategy": "semantic",
+                        "breakpoint_percentile": breakpoint_percentile,
+                        "sentence_count": len(current_group),
+                    },
+                )
+            )
+            chunk_num += 1
+            current_group = []
+        current_group.append(sent)
+
+    # Final group
+    if current_group:
+        chunk_text = " ".join(current_group)
+        idx = start_index + chunk_num
+        chunks.append(
+            TextChunk(
                 text=chunk_text,
                 context_text=chunk_text,
                 source_id=f"{source_path}:{idx}",
@@ -357,27 +387,8 @@ def _semantic(
                     "breakpoint_percentile": breakpoint_percentile,
                     "sentence_count": len(current_group),
                 },
-            ))
-            chunk_num += 1
-            current_group = []
-        current_group.append(sent)
-
-    # Final group
-    if current_group:
-        chunk_text = " ".join(current_group)
-        idx = start_index + chunk_num
-        chunks.append(TextChunk(
-            text=chunk_text,
-            context_text=chunk_text,
-            source_id=f"{source_path}:{idx}",
-            doc_type=doc_type,
-            chunk_index=idx,
-            metadata={
-                "strategy": "semantic",
-                "breakpoint_percentile": breakpoint_percentile,
-                "sentence_count": len(current_group),
-            },
-        ))
+            )
+        )
 
     return chunks
 
@@ -385,6 +396,7 @@ def _semantic(
 # ---------------------------------------------------------------------------
 # Chunker — public entry point
 # ---------------------------------------------------------------------------
+
 
 class Chunker:
     """Route documents to the correct chunking strategy based on doc_type.
@@ -405,13 +417,12 @@ class Chunker:
         self._config = config or {}
         self._embedder = embedder
         self._max_embed_tokens = max_embed_tokens
-        self._semantic_max = (
-            self._config.get("chunker", {}).get("semantic_max_sentences", 500)
-        )
+        self._semantic_max = self._config.get("chunker", {}).get("semantic_max_sentences", 500)
 
     def chunk(self, doc: Any) -> list[TextChunk]:
         """Chunk a LoadedDocument. Returns list of TextChunk ready for embedding."""
         from .loader import LoadedDocument
+
         if not isinstance(doc, LoadedDocument):
             raise ChunkerError(f"Expected LoadedDocument, got {type(doc).__name__}")
 
@@ -438,24 +449,32 @@ class Chunker:
 
         if strategy == "sentence_window":
             return _sentence_window(
-                doc.text, path, doc.doc_type,
+                doc.text,
+                path,
+                doc.doc_type,
                 window_size=cfg.get("window_size", 3),
             )
         elif strategy == "hierarchical":
             return _hierarchical(
-                doc.text, path, doc.doc_type,
+                doc.text,
+                path,
+                doc.doc_type,
                 chunk_sizes=cfg.get("chunk_sizes", [2048, 512, 128]),
             )
         elif strategy == "semantic":
             return _semantic(
-                doc.text, path, doc.doc_type,
+                doc.text,
+                path,
+                doc.doc_type,
                 breakpoint_percentile=cfg.get("breakpoint_percentile", 92),
                 embedder=self._embedder,
                 max_sentences=self._semantic_max,
             )
         else:  # fixed_size (default)
             return _fixed_size(
-                doc.text, path, doc.doc_type,
+                doc.text,
+                path,
+                doc.doc_type,
                 chunk_size=cfg.get("chunk_size", 512),
                 chunk_overlap=cfg.get("chunk_overlap", 50),
             )
@@ -478,9 +497,12 @@ class Chunker:
     def _get_doc_type_config(self, doc_type: str) -> dict[str, Any]:
         chunker_cfg = self._config.get("chunker", {})
         doc_types = chunker_cfg.get("doc_types", {})
-        defaults = chunker_cfg.get("defaults", {
-            "strategy": "fixed_size",
-            "chunk_size": 512,
-            "chunk_overlap": 50,
-        })
+        defaults = chunker_cfg.get(
+            "defaults",
+            {
+                "strategy": "fixed_size",
+                "chunk_size": 512,
+                "chunk_overlap": 50,
+            },
+        )
         return {**defaults, **doc_types.get(doc_type, {})}

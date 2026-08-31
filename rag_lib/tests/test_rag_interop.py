@@ -23,9 +23,19 @@ class _FakeRetriever:
             "diagnostics": {"dense_count": 1, "bm25_count": 1, "fused_count": 1},
         }
 
-    def assemble_prompt_with_selection(self, query: str, chunks, max_context_tokens=None, system_prompt: str = ""):
+    def assemble_prompt_with_selection(
+        self, query: str, chunks, max_context_tokens=None, system_prompt: str = ""
+    ):
         prompt = f"{system_prompt}\n\nContext:\n{chunks[0].context_text}\n\nQuestion: {query}\n\nAnswer:".strip()
-        return prompt, list(chunks), {"selected_count": len(chunks), "budget": max_context_tokens, "selected_chunk_ids": [c.chunk_id for c in chunks]}
+        return (
+            prompt,
+            list(chunks),
+            {
+                "selected_count": len(chunks),
+                "budget": max_context_tokens,
+                "selected_chunk_ids": [c.chunk_id for c in chunks],
+            },
+        )
 
 
 class _FakeReranker:
@@ -68,7 +78,9 @@ def test_describe_rag_pipeline_reports_interop_features():
 
 def test_inspect_query_emits_retrieval_trace_events_and_selected_results():
     pipeline = _make_pipeline()
-    trace = pipeline.inspect_query("test query", max_context_tokens=128, system_prompt="Be precise.")
+    trace = pipeline.inspect_query(
+        "test query", max_context_tokens=128, system_prompt="Be precise."
+    )
     assert trace.query == "test query"
     assert len(trace.selected_results) == 1
     assert any(event.event_type == "retrieval_stage1_completed" for event in trace.events)
@@ -81,7 +93,9 @@ def test_inspect_query_emits_retrieval_trace_events_and_selected_results():
 
 def test_retrieval_trace_operation_result_includes_evidence_flows():
     pipeline = _make_pipeline()
-    trace = pipeline.inspect_query("test query", max_context_tokens=128, system_prompt="Be precise.")
+    trace = pipeline.inspect_query(
+        "test query", max_context_tokens=128, system_prompt="Be precise."
+    )
     result = trace.to_operation_result()
     flows = result.diagnostics.get("evidence_flows", [])
     assert flows

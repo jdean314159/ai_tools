@@ -17,6 +17,7 @@ Why cross-encoder vs bi-encoder:
     Produces a single relevance score that's significantly more accurate
     for final ranking. Runs comfortably on RTX 3090.
 """
+
 from __future__ import annotations
 
 import logging
@@ -83,9 +84,7 @@ class CrossEncoderReranker:
         try:
             scores = model.predict(pairs)
         except Exception as exc:
-            raise RerankerError(
-                f"CrossEncoder prediction failed: {exc}"
-            ) from exc
+            raise RerankerError(f"CrossEncoder prediction failed: {exc}") from exc
 
         # Pair chunks with scores, sort descending, return top k
         scored = sorted(
@@ -99,6 +98,7 @@ class CrossEncoderReranker:
             # Update score to reflect cross-encoder relevance
             # Use a new StoredChunk with updated score (dataclass is not frozen)
             from dataclasses import replace
+
             try:
                 result.append(replace(chunk, score=round(float(score), 4)))
             except TypeError:
@@ -132,7 +132,8 @@ class CrossEncoderReranker:
         try:
             logger.info(
                 "Loading CrossEncoder '%s' on %s (first use)...",
-                self._model_name, device,
+                self._model_name,
+                device,
             )
             self._model = CrossEncoder(self._model_name, device=device)
             logger.info("CrossEncoder loaded.")
@@ -156,6 +157,7 @@ class CrossEncoderReranker:
         # auto
         try:
             import torch
+
             return "cuda" if torch.cuda.is_available() else "cpu"
         except ImportError:
             return "cpu"

@@ -8,6 +8,7 @@ D3: No llm_engines dependency in rag_lib core.
 D7: validate_tokens enforces that text (not context_text) is being embedded.
 D15: keep_alive passed in every request to prevent model-switch latency.
 """
+
 from __future__ import annotations
 
 import json
@@ -139,9 +140,7 @@ class OllamaEmbedder:
         except EmbedderError:
             raise
         except Exception as exc:
-            raise EmbedderError(
-                f"Unexpected error calling Ollama embed: {exc}"
-            ) from exc
+            raise EmbedderError(f"Unexpected error calling Ollama embed: {exc}") from exc
 
         vectors = result.get("embeddings", [])
         if len(vectors) != len(texts):

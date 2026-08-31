@@ -14,12 +14,13 @@ Usage:
     chunks  = pipeline.retrieve("What is entropy-based anomaly detection?")
     prompt  = pipeline.assemble_prompt(query, chunks, max_context_tokens=3000)
 """
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .config import load_config, get
 from .errors import RagLibError, LoaderError, StorageError
@@ -31,6 +32,9 @@ from .storage.chroma import ChromaStorage
 from .retrieval.retriever import HybridRetriever
 from .interop import RetrievalTrace, describe_rag_pipeline
 from llm_harness_core import TraceEvent
+
+if TYPE_CHECKING:
+    from .eval.ragas_runner import EvalReport
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +49,7 @@ except ImportError:
 @dataclass
 class IngestResult:
     """Result of a single document ingestion."""
+
     source_path: str
     doc_type: str
     chunks_stored: int
@@ -86,13 +91,27 @@ def infer_doc_type(path: "Path", text_sample: str = "") -> str:
 
     # Parent directory name signals
     dir_signals = {
-        "anomaly": "paper", "detection": "paper", "insider": "paper",
-        "netflow": "paper", "behavior": "paper", "behaviour": "paper",
-        "intrusion": "paper", "rbac": "paper", "ai technique": "paper",
-        "survey": "paper", "research": "paper", "paper": "paper",
-        "policy": "policy", "hr": "hr", "human resource": "hr",
-        "guide": "guide", "faq": "faq", "runbook": "runbook",
-        "spec": "spec", "adr": "adr", "contract": "contract",
+        "anomaly": "paper",
+        "detection": "paper",
+        "insider": "paper",
+        "netflow": "paper",
+        "behavior": "paper",
+        "behaviour": "paper",
+        "intrusion": "paper",
+        "rbac": "paper",
+        "ai technique": "paper",
+        "survey": "paper",
+        "research": "paper",
+        "paper": "paper",
+        "policy": "policy",
+        "hr": "hr",
+        "human resource": "hr",
+        "guide": "guide",
+        "faq": "faq",
+        "runbook": "runbook",
+        "spec": "spec",
+        "adr": "adr",
+        "contract": "contract",
     }
     for parent in parents:
         for signal, dtype in dir_signals.items():
@@ -148,7 +167,9 @@ class RAGPipeline:
         query_variants = [query]
         if self._expander is not None:
             try:
-                expanded = [q for q in self._expander.expand(query) if isinstance(q, str) and q.strip()]
+                expanded = [
+                    q for q in self._expander.expand(query) if isinstance(q, str) and q.strip()
+                ]
                 if expanded:
                     query_variants = expanded
             except Exception as exc:
@@ -164,8 +185,13 @@ class RAGPipeline:
                 TraceEvent(
                     event_type="query_expanded",
                     source_package="rag_lib",
-                    source_component=self._expander.__class__.__name__ if self._expander is not None else "RAGPipeline",
-                    payload={"query_variants": list(query_variants), "variant_count": len(query_variants)},
+                    source_component=self._expander.__class__.__name__
+                    if self._expander is not None
+                    else "RAGPipeline",
+                    payload={
+                        "query_variants": list(query_variants),
+                        "variant_count": len(query_variants),
+                    },
                     severity="info",
                     message="Expanded retrieval query into variants.",
                     tags=("rag", "retrieval", "query_expansion"),
@@ -177,20 +203,32 @@ class RAGPipeline:
             dense_results = details.get("dense_results", [])
             bm25_results = details.get("bm25_results", [])
             fused_results = details.get("fused_results", [])
-            dense_docs.extend([
-                chunk.to_retrieved_document(stage="dense", rank=rank, extra_metadata={"query_variant": q_variant})
-                for rank, chunk in enumerate(dense_results, start=1)
-            ])
-            bm25_docs.extend([
-                chunk.to_retrieved_document(stage="bm25", rank=rank, extra_metadata={"query_variant": q_variant})
-                for rank, chunk in enumerate(bm25_results, start=1)
-            ])
+            dense_docs.extend(
+                [
+                    chunk.to_retrieved_document(
+                        stage="dense", rank=rank, extra_metadata={"query_variant": q_variant}
+                    )
+                    for rank, chunk in enumerate(dense_results, start=1)
+                ]
+            )
+            bm25_docs.extend(
+                [
+                    chunk.to_retrieved_document(
+                        stage="bm25", rank=rank, extra_metadata={"query_variant": q_variant}
+                    )
+                    for rank, chunk in enumerate(bm25_results, start=1)
+                ]
+            )
             events.append(
                 TraceEvent(
                     event_type="retrieval_stage1_completed",
                     source_package="rag_lib",
                     source_component="HybridRetriever",
-                    payload={"query_variant": q_variant, "variant_index": idx, **dict(details.get("diagnostics", {}))},
+                    payload={
+                        "query_variant": q_variant,
+                        "variant_index": idx,
+                        **dict(details.get("diagnostics", {})),
+                    },
                     severity="info",
                     message="Completed Stage 1 hybrid retrieval.",
                     tags=("rag", "retrieval", "stage1"),
@@ -202,7 +240,9 @@ class RAGPipeline:
                     merged_map[chunk.chunk_id] = chunk
 
         n_candidates = self._config.get("retriever", {}).get("n_candidates", 50)
-        stage1_results = sorted(merged_map.values(), key=lambda c: c.score, reverse=True)[:n_candidates]
+        stage1_results = sorted(merged_map.values(), key=lambda c: c.score, reverse=True)[
+            :n_candidates
+        ]
         reranked_results = stage1_results
         if self._reranker is not None and stage1_results:
             n_results = self._config.get("retriever", {}).get("n_results", 5)
@@ -213,7 +253,11 @@ class RAGPipeline:
                         event_type="retrieval_reranked",
                         source_package="rag_lib",
                         source_component=self._reranker.__class__.__name__,
-                        payload={"input_count": len(stage1_results), "output_count": len(reranked_results), "top_chunk_ids": [chunk.chunk_id for chunk in reranked_results]},
+                        payload={
+                            "input_count": len(stage1_results),
+                            "output_count": len(reranked_results),
+                            "top_chunk_ids": [chunk.chunk_id for chunk in reranked_results],
+                        },
                         severity="info",
                         message="Applied cross-encoder reranking.",
                         tags=("rag", "retrieval", "rerank"),
@@ -244,7 +288,10 @@ class RAGPipeline:
                 event_type="retrieval_prompt_assembled",
                 source_package="rag_lib",
                 source_component="HybridRetriever",
-                payload={"selected_chunk_ids": [chunk.chunk_id for chunk in selected_chunks], **dict(prompt_diag)},
+                payload={
+                    "selected_chunk_ids": [chunk.chunk_id for chunk in selected_chunks],
+                    **dict(prompt_diag),
+                },
                 severity="info",
                 message="Assembled prompt from retrieved context.",
                 tags=("rag", "retrieval", "prompt_assembly"),
@@ -257,9 +304,18 @@ class RAGPipeline:
             query_variants=tuple(query_variants),
             dense_results=tuple(dense_docs),
             bm25_results=tuple(bm25_docs),
-            fused_results=tuple(chunk.to_retrieved_document(stage="fusion_final", rank=rank) for rank, chunk in enumerate(stage1_results, start=1)),
-            reranked_results=tuple(chunk.to_retrieved_document(stage="reranked", rank=rank) for rank, chunk in enumerate(reranked_results, start=1)),
-            selected_results=tuple(chunk.to_retrieved_document(stage="selected", rank=rank) for rank, chunk in enumerate(selected_chunks, start=1)),
+            fused_results=tuple(
+                chunk.to_retrieved_document(stage="fusion_final", rank=rank)
+                for rank, chunk in enumerate(stage1_results, start=1)
+            ),
+            reranked_results=tuple(
+                chunk.to_retrieved_document(stage="reranked", rank=rank)
+                for rank, chunk in enumerate(reranked_results, start=1)
+            ),
+            selected_results=tuple(
+                chunk.to_retrieved_document(stage="selected", rank=rank)
+                for rank, chunk in enumerate(selected_chunks, start=1)
+            ),
             assembled_prompt=prompt,
             events=tuple(events),
             diagnostics={
@@ -334,7 +390,7 @@ class RAGPipeline:
 
         # Contextual enrichment — sets embed_text on each chunk (opt-in)
         if self._enricher is not None:
-            doc_intro = doc.text[:self._enricher._max_context_chars]
+            doc_intro = doc.text[: self._enricher._max_context_chars]
             doc_title = Path(path).name
             self._enricher.enrich(
                 all_chunks,
@@ -360,7 +416,10 @@ class RAGPipeline:
         )
         logger.info(
             "Ingested '%s': %d chunks (%d from tables), collection='%s'",
-            path.name, chunks_stored, len(table_chunks), collection,
+            path.name,
+            chunks_stored,
+            len(table_chunks),
+            collection,
         )
         return result
 
@@ -417,21 +476,23 @@ class RAGPipeline:
             try:
                 prose_chunks = self._chunker.chunk(doc)
             except RagLibError as exc:
-                results.append(IngestResult(
-                    source_path=doc.source_path,
-                    doc_type=doc.doc_type,
-                    chunks_stored=0,
-                    tables_processed=0,
-                    collection=collection,
-                    errors=[str(exc)],
-                ))
+                results.append(
+                    IngestResult(
+                        source_path=doc.source_path,
+                        doc_type=doc.doc_type,
+                        chunks_stored=0,
+                        tables_processed=0,
+                        collection=collection,
+                        errors=[str(exc)],
+                    )
+                )
                 continue
 
             all_chunks = prose_chunks + table_chunks
 
             # Contextual enrichment (opt-in)
             if self._enricher is not None:
-                doc_intro = doc.text[:self._enricher._max_context_chars]
+                doc_intro = doc.text[: self._enricher._max_context_chars]
                 self._enricher.enrich(
                     all_chunks,
                     doc_title=Path(doc.source_path).name,
@@ -441,14 +502,16 @@ class RAGPipeline:
                 )
             chunks_stored = self._embed_and_store(all_chunks, doc.file_hash, collection)
 
-            results.append(IngestResult(
-                source_path=doc.source_path,
-                doc_type=doc.doc_type,
-                chunks_stored=chunks_stored,
-                tables_processed=len(table_chunks),
-                collection=collection,
-                errors=table_errors,
-            ))
+            results.append(
+                IngestResult(
+                    source_path=doc.source_path,
+                    doc_type=doc.doc_type,
+                    chunks_stored=chunks_stored,
+                    tables_processed=len(table_chunks),
+                    collection=collection,
+                    errors=table_errors,
+                )
+            )
 
         # Rebuild BM25 once after the full directory ingest (D12)
         self._update_bm25(collection)
@@ -456,7 +519,9 @@ class RAGPipeline:
         total_chunks = sum(r.chunks_stored for r in results)
         logger.info(
             "ingest_directory: %d files, %d total chunks, collection='%s'",
-            len(results), total_chunks, collection,
+            len(results),
+            total_chunks,
+            collection,
         )
         return results
 
@@ -517,20 +582,23 @@ class RAGPipeline:
         """
         # Convert contracts.Chunk to StoredChunk if needed
         from .storage.base import StoredChunk
+
         stored_chunks: list[StoredChunk] = []
         for c in chunks:
             if isinstance(c, StoredChunk):
                 stored_chunks.append(c)
             else:
                 # contracts.Chunk or similar — adapt
-                stored_chunks.append(StoredChunk(
-                    chunk_id=c.metadata.get("chunk_id", "") if hasattr(c, "metadata") else "",
-                    text=c.content,
-                    context_text=c.content,
-                    score=c.score if hasattr(c, "score") else 0.0,
-                    source_id=c.source_id if hasattr(c, "source_id") else "",
-                    doc_type=c.metadata.get("doc_type", "") if hasattr(c, "metadata") else "",
-                ))
+                stored_chunks.append(
+                    StoredChunk(
+                        chunk_id=c.metadata.get("chunk_id", "") if hasattr(c, "metadata") else "",
+                        text=c.content,
+                        context_text=c.content,
+                        score=c.score if hasattr(c, "score") else 0.0,
+                        source_id=c.source_id if hasattr(c, "source_id") else "",
+                        doc_type=c.metadata.get("doc_type", "") if hasattr(c, "metadata") else "",
+                    )
+                )
 
         return self._retriever.assemble_prompt(
             query=query,
@@ -561,7 +629,7 @@ class RAGPipeline:
         generation_llm: Any = None,
         generate_answers: bool = True,
         n_runs: int | None = None,
-    ) -> "EvalReport":
+    ) -> EvalReport:
         """Run RAGAS evaluation against a ground-truth query set.
 
         Args:
@@ -579,13 +647,18 @@ class RAGPipeline:
         Returns:
             EvalReport with median scores across n_runs.
         """
-        from .eval.ragas_runner import run_eval, EvalReport
+        from .eval.ragas_runner import run_eval
+
         effective_n_runs = n_runs or get(self._config, "eval", "n_eval_runs", default=3)
         thresholds = {
             "context_recall": get(self._config, "eval", "context_recall_threshold", default=0.85),
-            "context_precision": get(self._config, "eval", "context_precision_threshold", default=0.80),
+            "context_precision": get(
+                self._config, "eval", "context_precision_threshold", default=0.80
+            ),
             "faithfulness": get(self._config, "eval", "faithfulness_threshold", default=0.88),
-            "answer_relevancy": get(self._config, "eval", "answer_relevancy_threshold", default=0.80),
+            "answer_relevancy": get(
+                self._config, "eval", "answer_relevancy_threshold", default=0.80
+            ),
         }
         return run_eval(
             pipeline=self,
@@ -634,9 +707,7 @@ class RAGPipeline:
         chunker_cfg = self._config.get("chunker", {})
 
         self._embed_model = embedder_cfg.get("model", "nomic-embed-text-v2-moe")
-        self._bm25_path = Path(
-            storage_cfg.get("bm25_path", "~/.rag_lib/bm25")
-        ).expanduser()
+        self._bm25_path = Path(storage_cfg.get("bm25_path", "~/.rag_lib/bm25")).expanduser()
 
         self._embedder = OllamaEmbedder(
             host=embedder_cfg.get("host", "http://localhost:11434"),
@@ -684,6 +755,7 @@ class RAGPipeline:
         self._reranker = None
         if reranker_cfg.get("enabled", False):
             from .retrieval.reranker import CrossEncoderReranker
+
             self._reranker = CrossEncoderReranker(
                 model=reranker_cfg.get("model", "cross-encoder/ms-marco-MiniLM-L-6-v2"),
                 device=reranker_cfg.get("device", "auto"),
@@ -695,6 +767,7 @@ class RAGPipeline:
         self._expander = None
         if expander_cfg.get("enabled", False):
             from .retrieval.expander import QueryExpander
+
             self._expander = QueryExpander(
                 host=embedder_cfg.get("host", "http://localhost:11434"),
                 model=expander_cfg.get("model", "qwen3:8b"),
@@ -707,6 +780,7 @@ class RAGPipeline:
         self._enricher = None
         if enricher_cfg.get("enabled", False):
             from .ingestion.enricher import ContextualEnricher
+
             self._enricher = ContextualEnricher(
                 provider=enricher_cfg.get("provider", "ollama"),
                 model=enricher_cfg.get("model", "qwen3:8b"),
@@ -735,6 +809,7 @@ class RAGPipeline:
     ) -> tuple[list[Any], list[str]]:
         """Convert table data to TextChunks via NL sentence reconstruction."""
         from .ingestion.chunker import TextChunk
+
         chunks: list[TextChunk] = []
         errors: list[str] = []
 
@@ -745,19 +820,21 @@ class RAGPipeline:
                     continue
                 table_text = " ".join(sentences)
                 idx = f"table_{i}"
-                chunks.append(TextChunk(
-                    text=table_text,
-                    context_text=table_text,
-                    source_id=f"{doc.source_path}:{idx}",
-                    doc_type=doc.doc_type,
-                    chunk_index=0,
-                    metadata={
-                        "strategy": "table",
-                        "is_table": True,
-                        "table_index": i,
-                        "file_hash": doc.file_hash,
-                    },
-                ))
+                chunks.append(
+                    TextChunk(
+                        text=table_text,
+                        context_text=table_text,
+                        source_id=f"{doc.source_path}:{idx}",
+                        doc_type=doc.doc_type,
+                        chunk_index=0,
+                        metadata={
+                            "strategy": "table",
+                            "is_table": True,
+                            "table_index": i,
+                            "file_hash": doc.file_hash,
+                        },
+                    )
+                )
             except Exception as exc:
                 errors.append(f"Table {i} in {Path(doc.source_path).name}: {exc}")
 

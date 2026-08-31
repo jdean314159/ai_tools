@@ -85,6 +85,11 @@ The work progressed through evidence rather than assuming a design:
     gate. Dynamic re-export lists were replaced by explicit `__all__` literals,
     and its local Ruff policy now matches the root baseline. Inspector and
     targeted integration tests passed; `rag_lib` is next.
+22. `rag_lib` is now lint-clean, formatted, and included in the shared gate.
+    Its lazy evaluation import boundary remains intact through a
+    type-checking-only return-type import. Package and targeted integration
+    tests passed 128 with one skip; the full gate remains at 1,268 passed.
+    `llm_engines` is next.
 
 Key commits, oldest to newest:
 
@@ -127,7 +132,7 @@ arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
 complete. The active maintenance sequence is Python-quality adoption, next
-through `rag_lib`. A deeper
+through `llm_engines`. A deeper
 command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.

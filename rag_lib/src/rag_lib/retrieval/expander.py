@@ -17,14 +17,13 @@ Usage (when enabled in pipeline):
     expanded = expander.expand("how does clustering work in the dissertation")
     # Returns: [original_query, variant1, variant2, variant3]
 """
+
 from __future__ import annotations
 
 import json
 import logging
 import urllib.error
 import urllib.request
-from functools import lru_cache
-from typing import Any
 
 logger = logging.getLogger(__name__)
 

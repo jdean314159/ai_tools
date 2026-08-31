@@ -10,6 +10,7 @@ D6: Row reconstruction to NL sentences is the baseline.
 The separator " | " is used between header:value pairs — safe for values
 that contain commas (e.g. "Region: EMEA, Middle East, Africa").
 """
+
 from __future__ import annotations
 
 import json
@@ -51,8 +52,7 @@ class TableProcessor:
             return []
 
         # Normalize cells
-        norm = [[str(c).strip() if c is not None else "" for c in row]
-                for row in table]
+        norm = [[str(c).strip() if c is not None else "" for c in row] for row in table]
 
         headers = [h for h in norm[0] if h]
         if not headers:
@@ -81,11 +81,7 @@ class TableProcessor:
         """One NL sentence per data row. Uses ' | ' separator (comma-safe)."""
         sentences: list[str] = []
         for row in table[1:]:
-            pairs = [
-                f"{h}: {row[i]}"
-                for i, h in enumerate(headers)
-                if i < len(row) and row[i]
-            ]
+            pairs = [f"{h}: {row[i]}" for i, h in enumerate(headers) if i < len(row) and row[i]]
             if pairs:
                 sentences.append(self._sep.join(pairs) + ".")
         return sentences

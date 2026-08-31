@@ -1,16 +1,18 @@
 """Tests for rag_lib.storage.chroma — D11, D13, D14, D16 invariants."""
+
 from __future__ import annotations
 
 import pytest
 
-pytest.importorskip('chromadb')
+pytest.importorskip("chromadb")
 from rag_lib.storage.chroma import ChromaStorage
-from rag_lib.storage.base import StoredChunk
 from rag_lib.errors import StorageError
 from rag_lib.ingestion.chunker import TextChunk
 
 
-def _make_chunk(text: str, source: str = "test.txt", idx: int = 0, doc_type: str = "paper") -> TextChunk:
+def _make_chunk(
+    text: str, source: str = "test.txt", idx: int = 0, doc_type: str = "paper"
+) -> TextChunk:
     return TextChunk(
         text=text,
         context_text=text + " [context]",
@@ -24,6 +26,7 @@ def _make_chunk(text: str, source: str = "test.txt", idx: int = 0, doc_type: str
 def _fake_embedding(text: str, dims: int = 768) -> list[float]:
     """Deterministic fake embedding based on text hash."""
     import hashlib
+
     h = int(hashlib.md5(text.encode()).hexdigest(), 16)
     return [(h >> i & 0xFF) / 255.0 for i in range(dims)]
 

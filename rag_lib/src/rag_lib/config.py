@@ -7,6 +7,7 @@ YAML configuration loader. Mirrors the llm_engines config_loader pattern:
   3. ~/.rag_lib/rag_lib.yaml  (auto-created from packaged default)
   4. Packaged default (data/rag_lib.yaml)
 """
+
 from __future__ import annotations
 
 import os
@@ -92,9 +93,12 @@ def get_doc_type_config(
     """Return the chunker config for a specific doc_type, falling back to defaults."""
     chunker = config.get("chunker", {})
     doc_types = chunker.get("doc_types", {})
-    defaults = chunker.get("defaults", {
-        "strategy": "fixed_size",
-        "chunk_size": 512,
-        "chunk_overlap": 50,
-    })
+    defaults = chunker.get(
+        "defaults",
+        {
+            "strategy": "fixed_size",
+            "chunk_size": 512,
+            "chunk_overlap": 50,
+        },
+    )
     return {**defaults, **doc_types.get(doc_type, {})}

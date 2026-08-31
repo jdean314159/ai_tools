@@ -36,6 +36,7 @@ Config (rag_lib.yaml):
       batch_size: 1                    # Ollama: 1; cloud APIs: 8+
       cache: true
 """
+
 from __future__ import annotations
 
 import json
@@ -108,8 +109,7 @@ class ContextualEnricher:
         # Validate provider
         if self._provider not in ("ollama", "anthropic", "openai"):
             raise ValueError(
-                f"Unknown enricher provider '{provider}'. "
-                "Use: ollama | anthropic | openai"
+                f"Unknown enricher provider '{provider}'. Use: ollama | anthropic | openai"
             )
 
         # Validate cloud API key availability
@@ -126,7 +126,7 @@ class ContextualEnricher:
 
     def enrich(
         self,
-        chunks: list[Any],          # list[TextChunk]
+        chunks: list[Any],  # list[TextChunk]
         doc_title: str = "",
         doc_type: str = "unknown",
         doc_intro: str = "",
@@ -148,7 +148,7 @@ class ContextualEnricher:
             return chunks
 
         total = len(chunks)
-        intro = doc_intro[:self._max_context_chars]
+        intro = doc_intro[: self._max_context_chars]
         skipped = 0
         enriched = 0
         errors = 0
@@ -199,7 +199,10 @@ class ContextualEnricher:
 
         logger.info(
             "Enrichment complete: %d enriched, %d cache hits, %d errors (total %d)",
-            enriched, skipped, errors, total,
+            enriched,
+            skipped,
+            errors,
+            total,
         )
         return chunks
 
@@ -235,7 +238,7 @@ class ContextualEnricher:
             "keep_alive": self._keep_alive,
             "options": {
                 "temperature": 0.1,
-                "num_predict": 80,      # description is 20-40 words; cap tokens
+                "num_predict": 80,  # description is 20-40 words; cap tokens
                 "stop": ["\n\n", "Passage:", "Document:"],
             },
         }
@@ -320,7 +323,7 @@ class ContextualEnricher:
         # Remove common leading labels models add
         for prefix in ("Description:", "Context:", "Summary:", "Answer:"):
             if text.startswith(prefix):
-                text = text[len(prefix):].strip()
+                text = text[len(prefix) :].strip()
         # Take first sentence only if model over-generates
         # (stop tokens should prevent this but be safe)
         if "\n" in text:

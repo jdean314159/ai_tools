@@ -1,11 +1,10 @@
 """Tests for rag_lib.ingestion.loader."""
+
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
 
 import pytest
-from rag_lib.ingestion.loader import DocumentLoader, _DEFAULT_EXCLUDES
+from rag_lib.ingestion.loader import DocumentLoader
 from rag_lib.errors import LoaderError
 
 
@@ -41,8 +40,8 @@ class TestReadabilityCheck:
         bin_file = tmp_path / "binary_content.txt"
         # Mix non-printable bytes with spaces to pass word-count check
         # but fail the printable ratio check (26% printable < 85% threshold)
-        bad_content = (bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x7f, 0x80]) + b" ") * 600
-        bad_content += b"word " * 20   # enough words to skip word-count check
+        bad_content = (bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x7F, 0x80]) + b" ") * 600
+        bad_content += b"word " * 20  # enough words to skip word-count check
         bin_file.write_bytes(bad_content)
         with pytest.raises(LoaderError):
             loader.load(bin_file)
@@ -114,7 +113,8 @@ class TestDocTypeInference:
         pdf.touch()
 
         doc_type = loader._infer_doc_type(
-            pdf, root,
+            pdf,
+            root,
             {"Anomaly Detection": "paper"},
             "unknown",
         )
@@ -125,7 +125,8 @@ class TestDocTypeInference:
         root = tmp_path
         pdf = root / "thesis_2017.pdf"
         doc_type = loader._infer_doc_type(
-            pdf, root,
+            pdf,
+            root,
             {"thesis*.pdf": "thesis"},
             "unknown",
         )

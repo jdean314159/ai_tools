@@ -12,6 +12,7 @@ Extracts:
 Image captioning via LLaVA is flagged but not executed inline — the flag
 is stored in metadata so callers can decide whether to caption.
 """
+
 from __future__ import annotations
 
 import logging
@@ -46,7 +47,6 @@ def extract_slide_text(
     """
     try:
         from pptx import Presentation
-        from pptx.util import Pt
     except ImportError as exc:
         raise ImportError(
             "python-pptx required for slide extraction: pip install rag-lib[slides]"
@@ -66,14 +66,16 @@ def extract_slide_text(
             all_text_parts.append(slide_info["text"])
 
         all_tables.extend(slide_info["tables"])
-        slide_metadata.append({
-            "slide": slide_num,
-            "title": slide_info["title"],
-            "word_count": slide_info["word_count"],
-            "has_images": slide_info["has_images"],
-            "flagged_for_captioning": slide_info["flagged_for_captioning"],
-            "has_notes": bool(slide_info["notes"]),
-        })
+        slide_metadata.append(
+            {
+                "slide": slide_num,
+                "title": slide_info["title"],
+                "word_count": slide_info["word_count"],
+                "has_images": slide_info["has_images"],
+                "flagged_for_captioning": slide_info["flagged_for_captioning"],
+                "has_notes": bool(slide_info["notes"]),
+            }
+        )
 
     return "\n\n".join(all_text_parts), all_tables, slide_metadata
 
@@ -104,6 +106,7 @@ def _extract_single_slide(
         # Images
         try:
             from pptx.enum.shapes import MSO_SHAPE_TYPE
+
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 has_images = True
                 image_count += 1
@@ -153,7 +156,9 @@ def _extract_single_slide(
         logger.debug(
             "Slide %d has %d image(s) and only %d words of text. "
             "Enable caption_images=True to add LLaVA descriptions.",
-            slide_num, image_count, word_count,
+            slide_num,
+            image_count,
+            word_count,
         )
 
     return {
@@ -188,13 +193,13 @@ def _caption_slide_images(
     llava_model: str,
 ) -> str:
     """Attempt LLaVA caption for the first image on a slide."""
-    import io
     import json
     import base64
     import urllib.request
 
     try:
         from pptx.enum.shapes import MSO_SHAPE_TYPE
+
         for shape in slide.shapes:
             if shape.shape_type != MSO_SHAPE_TYPE.PICTURE:
                 continue

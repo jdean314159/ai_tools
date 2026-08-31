@@ -9,6 +9,7 @@ D13: All collections created with hnsw:space=cosine.
 D14: Content-addressed chunk IDs prevent duplicate ingestion.
 D16: threading.Lock serializes all writes.
 """
+
 from __future__ import annotations
 
 import logging
@@ -17,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .base import StoredChunk, VectorStore
+from .base import StoredChunk
 from ..errors import StorageError
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ class ChromaStorage:
 
     def add(
         self,
-        chunks: list[Any],          # list[TextChunk]
+        chunks: list[Any],  # list[TextChunk]
         embeddings: list[list[float]],
         collection: str = "default",
     ) -> None:
@@ -137,16 +138,21 @@ class ChromaStorage:
         for doc, meta, dist, cid in zip(docs, metas, distances, ids):
             # ChromaDB cosine distance ∈ [0, 2]; convert to similarity [0, 1]
             score = max(0.0, 1.0 - float(dist) / 2.0)
-            chunks.append(StoredChunk(
-                chunk_id=cid,
-                text=doc,
-                context_text=meta.get("context_text", doc),
-                score=round(score, 4),
-                source_id=meta.get("source_id", ""),
-                doc_type=meta.get("doc_type", "unknown"),
-                metadata={k: v for k, v in meta.items()
-                           if k not in ("source_id", "doc_type", "context_text")},
-            ))
+            chunks.append(
+                StoredChunk(
+                    chunk_id=cid,
+                    text=doc,
+                    context_text=meta.get("context_text", doc),
+                    score=round(score, 4),
+                    source_id=meta.get("source_id", ""),
+                    doc_type=meta.get("doc_type", "unknown"),
+                    metadata={
+                        k: v
+                        for k, v in meta.items()
+                        if k not in ("source_id", "doc_type", "context_text")
+                    },
+                )
+            )
 
         return chunks
 
@@ -167,7 +173,8 @@ class ChromaStorage:
             try:
                 results = coll.get(include=["metadatas"])
                 ids_to_delete = [
-                    cid for cid, meta in zip(
+                    cid
+                    for cid, meta in zip(
                         results.get("ids", []),
                         results.get("metadatas", []),
                     )
@@ -190,7 +197,7 @@ class ChromaStorage:
         """Return collection names without the prefix."""
         prefix = self._prefix
         return [
-            c.name[len(prefix):] if c.name.startswith(prefix) else c.name
+            c.name[len(prefix) :] if c.name.startswith(prefix) else c.name
             for c in self._client.list_collections()
         ]
 
@@ -236,6 +243,7 @@ class ChromaStorage:
     def prune(self, collection: str = "default", keep_versions: int = 3) -> int:
         """Remove old chunk versions per source file. Returns count deleted."""
         from collections import defaultdict
+
         try:
             coll = self._get_or_create_collection(collection)
             results = coll.get(include=["metadatas"])
@@ -269,7 +277,7 @@ class ChromaStorage:
             with self._lock:
                 for i in range(0, len(ids_to_delete), 5000):
                     try:
-                        coll.delete(ids=ids_to_delete[i:i+5000])
+                        coll.delete(ids=ids_to_delete[i : i + 5000])
                     except Exception as exc:
                         logger.warning("prune batch failed: %s", exc)
             logger.info("prune: deleted %d chunks from '%s'", len(ids_to_delete), collection)
@@ -283,11 +291,10 @@ class ChromaStorage:
     def _make_client(self) -> Any:
         try:
             import chromadb
+
             return chromadb.PersistentClient(path=str(self._path))
         except ImportError as exc:
-            raise StorageError(
-                "chromadb required: pip install chromadb"
-            ) from exc
+            raise StorageError("chromadb required: pip install chromadb") from exc
         except Exception as exc:
             raise StorageError(f"Cannot initialise ChromaDB at {self._path}: {exc}") from exc
 
@@ -296,7 +303,6 @@ class ChromaStorage:
         if name in self._collections:
             return self._collections[name]
 
-        import chromadb
         full_name = f"{self._prefix}{name}"
         existing_names = [c.name for c in self._client.list_collections()]
 
@@ -329,7 +335,8 @@ class ChromaStorage:
             )
             logger.info(
                 "Created collection '%s' (model=%s, cosine distance)",
-                name, self._embed_model,
+                name,
+                self._embed_model,
             )
 
         self._collections[name] = coll

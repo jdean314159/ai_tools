@@ -6,6 +6,7 @@ exceptions (urllib, sqlite3, chromadb, sentence_transformers) and
 re-raise as the appropriate subclass so callers never see library
 internals.
 """
+
 from __future__ import annotations
 
 

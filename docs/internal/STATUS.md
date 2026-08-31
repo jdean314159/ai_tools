@@ -270,6 +270,15 @@ root baseline, and Ruff mechanically formatted 31 files. The shared gate covers
 the full repository gate remains 1,268 passed, 304 skipped, with the same three
 warnings. `rag_lib` is the next staged package.
 
+The sixth Python-quality checkpoint adopts all of `rag_lib`. Its 28 lint
+findings were dead imports and assignments, unnecessary f-string prefixes, and
+one evaluation return annotation that now uses a type-checking-only import while
+preserving the runtime's lazy optional-dependency boundary. Ruff mechanically
+formatted 30 files, and the shared gate now covers 236 files. The package plus
+targeted cross-package integration tests passed 128 tests with one skip; the
+full repository gate remains 1,268 passed, 304 skipped, with the same three
+warnings. `llm_engines` is the next staged package.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

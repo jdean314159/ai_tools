@@ -9,6 +9,7 @@ D5: BM25 + dense + RRF in Stage 1.
 D8: assemble_prompt() fills chunks by score until max_context_tokens is spent.
 D12: BM25 index persisted to disk; rebuilt only when ChromaDB is newer.
 """
+
 from __future__ import annotations
 
 import json
@@ -130,7 +131,7 @@ class HybridRetriever:
         bm25_scores = self._bm25_search(query, bm25_index, corpus_ids, collection)
         bm25_results = self._bm25_results_to_chunks(bm25_scores, dense_results)
         fused = self._reciprocal_rank_fusion(dense_results, bm25_scores)
-        final = fused[:self._n_candidates]
+        final = fused[: self._n_candidates]
 
         dense_ids = {chunk.chunk_id for chunk in dense_results}
         bm25_ids = {cid for cid, _ in bm25_scores}
@@ -145,7 +146,9 @@ class HybridRetriever:
                 "dense_count": len(dense_results),
                 "bm25_count": len(bm25_scores),
                 "fused_count": len(final),
-                "dense_only_candidates": sum(1 for chunk in final if chunk.chunk_id not in bm25_ids),
+                "dense_only_candidates": sum(
+                    1 for chunk in final if chunk.chunk_id not in bm25_ids
+                ),
                 "bm25_only_candidates": sum(1 for cid in bm25_ids if cid not in dense_ids),
             },
         }
@@ -189,7 +192,8 @@ class HybridRetriever:
             logger.warning(
                 "No chunks fit within token budget (budget=%d, overhead=%d, "
                 "first chunk size=%d). Returning prompt with query only.",
-                budget, overhead,
+                budget,
+                overhead,
                 len(chunks[0].context_text.split()) if chunks else 0,
             )
 
@@ -198,7 +202,7 @@ class HybridRetriever:
             parts.append(system_prompt.strip())
 
         if selected:
-            context_items = [f"[{i+1}] {c.context_text}" for i, c in enumerate(selected)]
+            context_items = [f"[{i + 1}] {c.context_text}" for i, c in enumerate(selected)]
             parts.append("Context:\n" + "\n\n".join(context_items))
 
         parts.append(f"Question: {query}\n\nAnswer:")
@@ -327,7 +331,7 @@ class HybridRetriever:
                 key=lambda x: x[1],
                 reverse=True,
             )
-            return ranked[:self._n_candidates]
+            return ranked[: self._n_candidates]
         except Exception as exc:
             logger.debug("BM25 search failed: %s", exc)
             return []
@@ -365,7 +369,8 @@ class HybridRetriever:
             if cid in dense_map:
                 chunk = dense_map[cid]
                 # Update score to reflect RRF fusion score
-                object.__setattr__(chunk, "score", round(rrf_scores[cid], 6)) \
-                    if hasattr(chunk, "__dataclass_fields__") else None
+                object.__setattr__(chunk, "score", round(rrf_scores[cid], 6)) if hasattr(
+                    chunk, "__dataclass_fields__"
+                ) else None
                 result.append(chunk)
         return result

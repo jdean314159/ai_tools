@@ -10,7 +10,9 @@ def test_broken_rag_lab_shows_failed_then_repaired_result():
 
 
 def test_broken_rag_lab_render_includes_evidence_flow():
-    text = render_comparison("What region does Project Mercury deploy the nightly evaluation job to?")
+    text = render_comparison(
+        "What region does Project Mercury deploy the nightly evaluation job to?"
+    )
     assert "Evidence flow:" in text
     assert "broken-rag" in text
     assert "repaired-rag" in text

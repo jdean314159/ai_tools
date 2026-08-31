@@ -27,6 +27,7 @@ Usage:
     report = run_eval(pipeline, queries, judge_llm=judge, collection="default")
     print_report(report)
 """
+
 from __future__ import annotations
 
 import json
@@ -46,9 +47,11 @@ logger = logging.getLogger(__name__)
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MetricScores:
     """Per-metric scores across n_runs (median is the reported value)."""
+
     context_recall: float
     context_precision: float
     faithfulness: float
@@ -67,6 +70,7 @@ class MetricScores:
 @dataclass
 class EvalReport:
     """Full evaluation report."""
+
     collection: str
     n_queries: int
     n_runs: int
@@ -84,6 +88,7 @@ class EvalReport:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def load_ground_truth(path: str | Path) -> list[dict[str, Any]]:
     """Load ground truth queries from a JSONL file.
@@ -121,7 +126,9 @@ def load_ground_truth(path: str | Path) -> list[dict[str, Any]]:
 
     logger.info(
         "Loaded %d annotated queries + %d absent/negative queries from %s",
-        len(queries), len(absent), path
+        len(queries),
+        len(absent),
+        path,
     )
     return queries
 
@@ -211,12 +218,10 @@ def run_eval(
             faithfulness,
             answer_relevancy,
         )
-        from ragas.embeddings import LangchainEmbeddingsWrapper
         from datasets import Dataset
     except ImportError as exc:
         raise EvalError(
-            "RAGAS not installed. Install with: pip install rag-lib[eval]\n"
-            f"Missing: {exc}"
+            f"RAGAS not installed. Install with: pip install rag-lib[eval]\nMissing: {exc}"
         ) from exc
 
     _default_thresholds = {
@@ -239,7 +244,9 @@ def run_eval(
 
     logger.info(
         "Starting RAGAS eval: %d queries, %d runs, collection='%s'",
-        len(test_queries), n_runs, collection
+        len(test_queries),
+        n_runs,
+        collection,
     )
 
     for run_num in range(1, n_runs + 1):
@@ -259,7 +266,8 @@ def run_eval(
                 answer = ""
                 if generate_answers:
                     prompt = pipeline.assemble_prompt(
-                        question, chunks,
+                        question,
+                        chunks,
                         max_context_tokens=max_context_tokens,
                     )
                     if generation_llm is not None:
@@ -267,30 +275,36 @@ def run_eval(
                             resp = generation_llm.invoke(prompt)
                             answer = resp.content if hasattr(resp, "content") else str(resp)
                         except Exception as exc:
-                            logger.warning("Generation failed for query '%s': %s", question[:60], exc)
+                            logger.warning(
+                                "Generation failed for query '%s': %s", question[:60], exc
+                            )
                             answer = ""
                     else:
                         answer = pipeline.generate(prompt)
 
-                rows.append({
-                    "question": question,
-                    "answer": answer or "[no answer generated]",
-                    "contexts": contexts,
-                    "ground_truth": ground_truths[0] if ground_truths else "",
-                    "ground_truths": ground_truths,
-                })
+                rows.append(
+                    {
+                        "question": question,
+                        "answer": answer or "[no answer generated]",
+                        "contexts": contexts,
+                        "ground_truth": ground_truths[0] if ground_truths else "",
+                        "ground_truths": ground_truths,
+                    }
+                )
 
             except Exception as exc:
                 logger.warning("Query failed: '%s': %s", question[:60], exc)
                 errors.append(f"Run {run_num}, query '{question[:60]}': {exc}")
                 # Add a placeholder row so dataset size is consistent
-                rows.append({
-                    "question": question,
-                    "answer": "",
-                    "contexts": [],
-                    "ground_truth": ground_truths[0] if ground_truths else "",
-                    "ground_truths": ground_truths,
-                })
+                rows.append(
+                    {
+                        "question": question,
+                        "answer": "",
+                        "contexts": [],
+                        "ground_truth": ground_truths[0] if ground_truths else "",
+                        "ground_truths": ground_truths,
+                    }
+                )
 
         # Build RAGAS Dataset and evaluate
         try:
@@ -354,16 +368,16 @@ def run_eval(
 def print_report(report: EvalReport) -> None:
     """Print a human-readable evaluation report."""
     width = 60
-    print(f"\n{'='*width}")
-    print(f"  RAG EVALUATION REPORT")
-    print(f"{'='*width}")
+    print(f"\n{'=' * width}")
+    print("  RAG EVALUATION REPORT")
+    print(f"{'=' * width}")
     print(f"  Collection:   {report.collection}")
     print(f"  Queries:      {report.n_queries}")
     print(f"  Runs:         {report.n_runs} (median reported)")
     print(f"  Duration:     {report.duration_seconds:.1f}s")
     print(f"  Status:       {'PASSED ✓' if report.passed else 'FAILED ✗'}")
     print(f"\n  METRIC SCORES (median of {report.n_runs} runs)")
-    print(f"  {'-'*40}")
+    print(f"  {'-' * 40}")
 
     metrics = [
         ("Context Recall", "context_recall", "retrieval quality"),
@@ -379,22 +393,24 @@ def print_report(report: EvalReport) -> None:
         print(f"  {status} {label:<22} {score:.4f}  (threshold {threshold:.2f}, {category})")
 
     if report.scores.raw_runs:
-        print(f"\n  PER-RUN SCORES")
-        print(f"  {'-'*40}")
+        print("\n  PER-RUN SCORES")
+        print(f"  {'-' * 40}")
         for i, run in enumerate(report.scores.raw_runs, 1):
             cr = run.get("context_recall", 0)
             cp = run.get("context_precision", 0)
             fa = run.get("faithfulness", 0)
             ar = run.get("answer_relevancy", 0)
-            print(f"  Run {i}: recall={cr:.3f}  precision={cp:.3f}  "
-                  f"faithful={fa:.3f}  relevancy={ar:.3f}")
+            print(
+                f"  Run {i}: recall={cr:.3f}  precision={cp:.3f}  "
+                f"faithful={fa:.3f}  relevancy={ar:.3f}"
+            )
 
     if report.errors:
         print(f"\n  ERRORS ({len(report.errors)})")
-        print(f"  {'-'*40}")
+        print(f"  {'-' * 40}")
         for err in report.errors[:5]:
             print(f"  • {err[:70]}")
         if len(report.errors) > 5:
             print(f"  ... and {len(report.errors) - 5} more")
 
-    print(f"\n{'='*width}\n")
+    print(f"\n{'=' * width}\n")

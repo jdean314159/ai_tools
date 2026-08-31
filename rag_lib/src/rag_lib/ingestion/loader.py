@@ -8,6 +8,7 @@ D2: PyMuPDF for PDF layout-aware extraction; pdfplumber for tables.
 D11: Readability check catches DRM, corruption, binary content.
 D16: ingest_directory() applies exclude_patterns before any loading.
 """
+
 from __future__ import annotations
 
 import collections
@@ -15,7 +16,6 @@ import fnmatch
 import hashlib
 import logging
 import math
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -26,12 +26,20 @@ logger = logging.getLogger(__name__)
 
 # Supported extensions → loader method
 _SUPPORTED = {
-    ".pdf", ".txt", ".md", ".rst",
-    ".mobi", ".epub",
+    ".pdf",
+    ".txt",
+    ".md",
+    ".rst",
+    ".mobi",
+    ".epub",
 }
 # Optional format support (requires extras)
 _OPTIONAL = {
-    ".docx", ".doc", ".html", ".htm", ".pptx",
+    ".docx",
+    ".doc",
+    ".html",
+    ".htm",
+    ".pptx",
 }
 
 # Default exclude patterns (can be extended via config)
@@ -60,6 +68,7 @@ class LoadedDocument:
                  content-addressed chunk IDs (D14).
     metadata:    Page count, OCR flag, format, etc.
     """
+
     text: str
     tables: list[list[list[str]]]
     source_path: str
@@ -138,10 +147,14 @@ class DocumentLoader:
                 doc = self._load_html(path, doc_type, file_hash)
             elif suffix == ".pptx":
                 from .slides import extract_slide_text
+
                 text, tables = extract_slide_text(path)
                 doc = LoadedDocument(
-                    text=text, tables=tables, source_path=str(path),
-                    doc_type=doc_type, file_hash=file_hash,
+                    text=text,
+                    tables=tables,
+                    source_path=str(path),
+                    doc_type=doc_type,
+                    file_hash=file_hash,
                     metadata={"format": "pptx"},
                 )
             else:
@@ -210,7 +223,9 @@ class DocumentLoader:
 
         logger.info(
             "load_directory: loaded %d documents, skipped %d from %s",
-            len(docs), skipped, directory,
+            len(docs),
+            skipped,
+            directory,
         )
         return docs
 
@@ -228,9 +243,7 @@ class DocumentLoader:
         try:
             import fitz  # PyMuPDF
         except ImportError as exc:
-            raise LoaderError(
-                "PyMuPDF required for PDF loading: pip install PyMuPDF"
-            ) from exc
+            raise LoaderError("PyMuPDF required for PDF loading: pip install PyMuPDF") from exc
 
         doc = fitz.open(str(path))
         page_count = doc.page_count
@@ -241,11 +254,10 @@ class DocumentLoader:
         for page in doc:
             # Layout-aware block extraction: sort top-to-bottom, left-to-right
             blocks = page.get_text("blocks")
-            blocks.sort(
-                key=lambda b: (round(b[1] / max(page.rect.height, 1) * 20), b[0])
-            )
+            blocks.sort(key=lambda b: (round(b[1] / max(page.rect.height, 1) * 20), b[0]))
             page_text = " ".join(
-                b[4].strip() for b in blocks
+                b[4].strip()
+                for b in blocks
                 if b[6] == 0 and b[4].strip()  # type 0 = text block
             )
             word_count = len(page_text.split())
@@ -286,6 +298,7 @@ class DocumentLoader:
         tables: list[list[list[str]]] = []
         try:
             import pdfplumber
+
             with pdfplumber.open(str(path)) as pdf:
                 for page in pdf.pages:
                     for table in page.extract_tables() or []:
@@ -306,6 +319,7 @@ class DocumentLoader:
             import pytesseract
             from PIL import Image
             import io
+
             pix = page.get_pixmap(dpi=200)
             img = Image.open(io.BytesIO(pix.tobytes("png")))
             return pytesseract.image_to_string(img)
@@ -376,17 +390,17 @@ class DocumentLoader:
         """DOCX extraction via docx2txt for prose and python-docx for tables."""
         try:
             import docx2txt
+
             text = docx2txt.process(str(path))
         except ImportError as exc:
-            raise LoaderError(
-                "docx2txt required: pip install rag-lib[docx]"
-            ) from exc
+            raise LoaderError("docx2txt required: pip install rag-lib[docx]") from exc
         except Exception as exc:
             raise LoaderError(f"Cannot parse {path.name}: {exc}") from exc
 
         tables: list[list[list[str]]] = []
         try:
             import docx
+
             doc = docx.Document(str(path))
             for table in doc.tables:
                 rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
@@ -414,9 +428,7 @@ class DocumentLoader:
         try:
             from bs4 import BeautifulSoup
         except ImportError as exc:
-            raise LoaderError(
-                "beautifulsoup4 required: pip install rag-lib[html]"
-            ) from exc
+            raise LoaderError("beautifulsoup4 required: pip install rag-lib[html]") from exc
 
         try:
             html = path.read_text(encoding="utf-8", errors="replace")
@@ -487,9 +499,7 @@ class DocumentLoader:
             freq = collections.Counter(sample)
             total_chars = sum(freq.values())
             entropy = -sum(
-                (c / total_chars) * math.log2(c / total_chars)
-                for c in freq.values()
-                if c > 0
+                (c / total_chars) * math.log2(c / total_chars) for c in freq.values() if c > 0
             )
             # English prose: ~3.5-4.5 bits. Encrypted/binary: >6.5 bits.
             if entropy > 6.0:
