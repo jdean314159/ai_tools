@@ -8,6 +8,7 @@ ProposeThenVerifyEngine:
     Quality-oriented, not speed-oriented.
     For true token-level speedup, use vLLM's --speculative-model flag instead.
 """
+
 from llm_engines.strategies.propose_then_verify import ProposeThenVerifyEngine
 
 __all__ = ["ProposeThenVerifyEngine"]

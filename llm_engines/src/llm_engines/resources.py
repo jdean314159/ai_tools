@@ -10,6 +10,7 @@ The estimates in this module are intentionally heuristic. They should provide a
 useful, explainable preflight rather than pretend to know the exact runtime
 footprint for every backend and model family.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -89,9 +90,16 @@ def estimate_engine_fit(
         note = None
 
     gpu = _select_gpu(hardware, gpu_id=gpu_id)
-    free_vram_mb = int((gpu.free_vram_mb if gpu and gpu.free_vram_mb is not None else (gpu.vram_mb if gpu else 0)) or 0)
+    free_vram_mb = int(
+        (gpu.free_vram_mb if gpu and gpu.free_vram_mb is not None else (gpu.vram_mb if gpu else 0))
+        or 0
+    )
     total_vram_mb = int((gpu.vram_mb if gpu else hardware.vram_total_mb) or 0)
-    usable_vram_mb = int(free_vram_mb * float(request.gpu_memory_utilization or 0.90)) if free_vram_mb else int(total_vram_mb * float(request.gpu_memory_utilization or 0.90))
+    usable_vram_mb = (
+        int(free_vram_mb * float(request.gpu_memory_utilization or 0.90))
+        if free_vram_mb
+        else int(total_vram_mb * float(request.gpu_memory_utilization or 0.90))
+    )
 
     sizing = _resolve_model_sizing(request, registry)
     draft_mb, draft_notes = _estimate_draft_model_mb(request.optimizations, registry)
@@ -112,7 +120,9 @@ def estimate_engine_fit(
     if hardware.warnings:
         notes.extend(hardware.warnings)
 
-    confidence = _merge_confidence(sizing.confidence, "high" if gpu and gpu.free_vram_mb is not None else "medium")
+    confidence = _merge_confidence(
+        sizing.confidence, "high" if gpu and gpu.free_vram_mb is not None else "medium"
+    )
     if draft_mb and request.optimizations and request.optimizations.draft_model:
         confidence = _merge_confidence(confidence, "medium")
 
@@ -218,7 +228,10 @@ def recommend_role_placement(
     for request in requests:
         backend = request.backend.lower().strip()
         recs = recommend_engine_launch(request, hardware=hardware, registry=registry)
-        chosen = next((rec for rec in recs if rec.profile in {"safe", "remote"} and rec.estimate.fits), recs[0])
+        chosen = next(
+            (rec for rec in recs if rec.profile in {"safe", "remote"} and rec.estimate.fits),
+            recs[0],
+        )
         if backend in _REMOTE_BACKENDS:
             recommendations.append(chosen)
             continue
@@ -236,7 +249,9 @@ def recommend_role_placement(
         recommendations.append(chosen.model_copy(update={"assigned_gpu_id": assigned_gpu}))
 
     if not hardware.gpus:
-        notes.append("No local CUDA GPUs detected. Role placement can only advise remote/API roles.")
+        notes.append(
+            "No local CUDA GPUs detected. Role placement can only advise remote/API roles."
+        )
         fits = fits and all(rec.profile == "remote" for rec in recommendations)
 
     return RolePlacementPlan(fits=fits, recommendations=recommendations, notes=notes)
@@ -260,7 +275,9 @@ def _resolve_model_sizing(request: EngineFitRequest, registry: ModelRegistry) ->
         return _ModelSizing(
             weights_mb=int(request.requested_vram_mb),
             confidence="medium",
-            notes=["Using caller-supplied requested_vram_mb because the model size was not resolved from the catalog."],
+            notes=[
+                "Using caller-supplied requested_vram_mb because the model size was not resolved from the catalog."
+            ],
         )
 
     try:
@@ -289,12 +306,18 @@ def _estimate_draft_model_mb(
         return 0, []
     draft_model = (optimizations.draft_model or "").strip()
     if not draft_model:
-        return 1024, ["Speculative decoding enabled without a known draft model; reserving 1 GB for the draft path."]
+        return 1024, [
+            "Speculative decoding enabled without a known draft model; reserving 1 GB for the draft path."
+        ]
     try:
         info = registry.get_model_info(draft_model, backend="ollama")
-        return int(info.min_vram_mb or info.recommended_vram_mb), [f"Draft model '{draft_model}' contributes additional VRAM pressure."]
+        return int(info.min_vram_mb or info.recommended_vram_mb), [
+            f"Draft model '{draft_model}' contributes additional VRAM pressure."
+        ]
     except ModelNotFoundError:
-        return 1024, [f"Draft model '{draft_model}' is not in the catalog; reserving 1 GB heuristically."]
+        return 1024, [
+            f"Draft model '{draft_model}' is not in the catalog; reserving 1 GB heuristically."
+        ]
 
 
 def _estimate_kv_cache_mb(
@@ -321,12 +344,12 @@ def _estimate_kv_cache_mb(
         assumptions["kv_cache_compression_mode"] = mode
         assumptions["kv_cache_compression_bits"] = bits
         assumptions["kv_cache_compression_factor"] = factor
-        notes.append(
-            f"Applying heuristic KV-cache reduction for {mode} compression ({bits}-bit)."
-        )
+        notes.append(f"Applying heuristic KV-cache reduction for {mode} compression ({bits}-bit).")
 
     if usable_vram_mb and effective_kv_mb > int(usable_vram_mb * 0.40):
-        notes.append("Estimated KV-cache budget is consuming more than 40% of usable VRAM; consider lowering concurrency.")
+        notes.append(
+            "Estimated KV-cache budget is consuming more than 40% of usable VRAM; consider lowering concurrency."
+        )
     return effective_kv_mb, assumptions, notes
 
 
@@ -335,47 +358,65 @@ def _profile_request(
     *,
     profile: LaunchProfile,
 ) -> tuple[LaunchProfile, EngineFitRequest, list[str]]:
-    base_opts = request.optimizations.model_copy(deep=True) if request.optimizations is not None else None
+    base_opts = (
+        request.optimizations.model_copy(deep=True) if request.optimizations is not None else None
+    )
     rationale: list[str] = []
     if profile == "safe":
         if base_opts is not None and base_opts.speculative_decoding:
             base_opts.speculative_decoding = False
             base_opts.draft_model = None
-            rationale.append("Safe profile disables speculative decoding to preserve VRAM headroom.")
+            rationale.append(
+                "Safe profile disables speculative decoding to preserve VRAM headroom."
+            )
         if base_opts is None:
-            base_opts = InferenceOptimizationRequest(kv_cache_compression="turboquant", kv_cache_bits=4)
-            rationale.append("Safe profile enables 4-bit KV-cache compression to maximize fit margin.")
+            base_opts = InferenceOptimizationRequest(
+                kv_cache_compression="turboquant", kv_cache_bits=4
+            )
+            rationale.append(
+                "Safe profile enables 4-bit KV-cache compression to maximize fit margin."
+            )
         elif not base_opts.kv_cache_compression:
             base_opts.kv_cache_compression = "turboquant"
             base_opts.kv_cache_bits = base_opts.kv_cache_bits or 4
             rationale.append("Safe profile adds KV-cache compression to maximize fit margin.")
         return (
             profile,
-            request.model_copy(update={
-                "gpu_memory_utilization": min(float(request.gpu_memory_utilization), 0.80),
-                "max_num_seqs": max(1, request.max_num_seqs // 2),
-                "max_num_batched_tokens": max(1024, request.max_num_batched_tokens // 2),
-                "optimizations": base_opts,
-            }),
+            request.model_copy(
+                update={
+                    "gpu_memory_utilization": min(float(request.gpu_memory_utilization), 0.80),
+                    "max_num_seqs": max(1, request.max_num_seqs // 2),
+                    "max_num_batched_tokens": max(1024, request.max_num_batched_tokens // 2),
+                    "optimizations": base_opts,
+                }
+            ),
             rationale,
         )
     if profile == "balanced":
         return (
             profile,
-            request.model_copy(update={
-                "gpu_memory_utilization": min(float(request.gpu_memory_utilization), 0.88),
-                "optimizations": base_opts,
-            }),
-            ["Balanced profile keeps requested concurrency while capping GPU utilization at a moderate level."],
+            request.model_copy(
+                update={
+                    "gpu_memory_utilization": min(float(request.gpu_memory_utilization), 0.88),
+                    "optimizations": base_opts,
+                }
+            ),
+            [
+                "Balanced profile keeps requested concurrency while capping GPU utilization at a moderate level."
+            ],
         )
     return (
         profile,
-        request.model_copy(update={
-            "gpu_memory_utilization": max(float(request.gpu_memory_utilization), 0.94),
-            "max_num_seqs": max(request.max_num_seqs, int(request.max_num_seqs * 1.5)),
-            "max_num_batched_tokens": max(request.max_num_batched_tokens, int(request.max_num_batched_tokens * 1.5)),
-            "optimizations": base_opts,
-        }),
+        request.model_copy(
+            update={
+                "gpu_memory_utilization": max(float(request.gpu_memory_utilization), 0.94),
+                "max_num_seqs": max(request.max_num_seqs, int(request.max_num_seqs * 1.5)),
+                "max_num_batched_tokens": max(
+                    request.max_num_batched_tokens, int(request.max_num_batched_tokens * 1.5)
+                ),
+                "optimizations": base_opts,
+            }
+        ),
         ["Aggressive profile trades launch headroom for higher utilization and concurrency."],
     )
 
@@ -392,7 +433,9 @@ def _fit_rationale(estimate: EngineFitEstimate) -> list[str]:
     ]
 
 
-def _assign_gpu(recommendation: EngineLaunchRecommendation, gpu_budgets: dict[int, int]) -> int | None:
+def _assign_gpu(
+    recommendation: EngineLaunchRecommendation, gpu_budgets: dict[int, int]
+) -> int | None:
     if not gpu_budgets:
         return None
     needed = max(recommendation.estimate.estimated_total_mb, 0)

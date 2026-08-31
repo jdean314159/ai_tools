@@ -13,6 +13,7 @@ Note: vLLMEngine (vllm.py) is a separate backend specialised for local vLLM serv
 This engine is for the OpenAI cloud API and third-party OpenAI-compatible APIs
 (Together AI, Groq, etc.) where you have an API key.
 """
+
 from __future__ import annotations
 
 import json
@@ -22,12 +23,9 @@ import time
 from typing import Any, AsyncIterator
 
 from llm_engines.contracts import (
-    AsyncStreamingModel,
     BackendUnavailableError,
     ChatMessage,
-    ChatModel,
     ContextLengthExceededError,
-    EmbeddingModel,
     EmbeddingRequest,
     EmbeddingResponse,
     EngineCapabilities,
@@ -40,7 +38,6 @@ from llm_engines.contracts import (
     RateLimitError,
     ToolCall,
     ToolCallEvent,
-    ToolCallingModel,
     ToolSpec,
     TokenLogprob,
     StreamFinishedEvent,
@@ -52,8 +49,7 @@ try:
     import openai as _openai
 except ImportError as _e:
     raise ImportError(
-        "OpenAIEngine requires the 'openai' package. "
-        "Install with: pip install llm-engines[openai]"
+        "OpenAIEngine requires the 'openai' package. Install with: pip install llm-engines[openai]"
     ) from _e
 
 logger = logging.getLogger(__name__)
@@ -61,10 +57,10 @@ logger = logging.getLogger(__name__)
 BACKEND = "openai"
 
 _FINISH_MAP = {
-    "stop":          "stop",
-    "length":        "length",
-    "tool_calls":    "tool_call",
-    "content_filter":"content_filter",
+    "stop": "stop",
+    "length": "length",
+    "tool_calls": "tool_call",
+    "content_filter": "content_filter",
 }
 
 
@@ -78,11 +74,13 @@ def _to_openai_messages(request: GenerationRequest) -> list[dict[str, Any]]:
     msgs: list[dict[str, Any]] = []
     for m in request.messages:
         if m.role == "tool":
-            msgs.append({
-                "role": "tool",
-                "tool_call_id": m.tool_call_id or "",
-                "content": m.content or "",
-            })
+            msgs.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": m.tool_call_id or "",
+                    "content": m.content or "",
+                }
+            )
         elif m.role == "assistant" and m.tool_calls:
             tool_calls_payload = [
                 {
@@ -99,11 +97,13 @@ def _to_openai_messages(request: GenerationRequest) -> list[dict[str, Any]]:
                 }
                 for tc in m.tool_calls
             ]
-            msgs.append({
-                "role": "assistant",
-                "content": m.content,
-                "tool_calls": tool_calls_payload,
-            })
+            msgs.append(
+                {
+                    "role": "assistant",
+                    "content": m.content,
+                    "tool_calls": tool_calls_payload,
+                }
+            )
         else:
             msgs.append({"role": m.role, "content": m.content or ""})
     return msgs
@@ -117,11 +117,13 @@ def _extract_tool_calls(choice: Any) -> list[ToolCall]:
             args = json.loads(tc.function.arguments)
         except Exception:
             args = {"raw": tc.function.arguments}
-        calls.append(ToolCall(
-            call_id=tc.id,
-            name=tc.function.name,
-            arguments=args,
-        ))
+        calls.append(
+            ToolCall(
+                call_id=tc.id,
+                name=tc.function.name,
+                arguments=args,
+            )
+        )
     return calls
 
 
@@ -129,9 +131,7 @@ def _apply_local_thinking_preference(
     kwargs: dict[str, Any], request: GenerationRequest, *, is_cloud: bool
 ) -> None:
     if not is_cloud and request.thinking is not None:
-        kwargs["extra_body"] = {
-            "chat_template_kwargs": {"enable_thinking": request.thinking}
-        }
+        kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": request.thinking}}
 
 
 def _apply_seed_preference(kwargs: dict[str, Any], request: GenerationRequest) -> None:
@@ -139,9 +139,7 @@ def _apply_seed_preference(kwargs: dict[str, Any], request: GenerationRequest) -
         kwargs["seed"] = request.seed
 
 
-def _apply_json_schema(
-    kwargs: dict[str, Any], request: GenerationRequest
-) -> None:
+def _apply_json_schema(kwargs: dict[str, Any], request: GenerationRequest) -> None:
     """Forward the canonical request schema to OpenAI-compatible servers."""
     if request.json_schema is not None:
         kwargs["response_format"] = {
@@ -223,7 +221,7 @@ class OpenAIEngine:
             streaming_tool_calls=True,
             tool_calling=True,
             embeddings=self._supports_embeddings,
-            structured_output=True,   # via strict response_format.json_schema
+            structured_output=True,  # via strict response_format.json_schema
             batch_generation=False,
             vision=False,
             usage_reporting=True,
@@ -291,9 +289,7 @@ class OpenAIEngine:
             usage=usage,
             model_name=getattr(raw, "model", self.model),
             backend=BACKEND,
-            raw_provider_payload=(
-                {"id": raw.id, "model": raw.model} if self.debug else None
-            ),
+            raw_provider_payload=({"id": raw.id, "model": raw.model} if self.debug else None),
             seed_status="accepted" if request.seed is not None else "not_requested",
         )
 
@@ -333,9 +329,7 @@ class OpenAIEngine:
         except Exception as e:
             raise GenerationError(f"OpenAI tool generation failed: {e}") from e
 
-        return self._build_response(
-            raw, (time.perf_counter() - t0) * 1000, request=request
-        )
+        return self._build_response(raw, (time.perf_counter() - t0) * 1000, request=request)
 
     # ------------------------------------------------------------------
     # EmbeddingModel Protocol
@@ -408,11 +402,13 @@ class OpenAIEngine:
         token_logprobs: list[TokenLogprob] = []
         choice_logprobs = getattr(choice, "logprobs", None)
         for item in getattr(choice_logprobs, "content", None) or []:
-            token_logprobs.append(TokenLogprob(
-                token=item.token,
-                logprob=item.logprob,
-                bytes=getattr(item, "bytes", None),
-            ))
+            token_logprobs.append(
+                TokenLogprob(
+                    token=item.token,
+                    logprob=item.logprob,
+                    bytes=getattr(item, "bytes", None),
+                )
+            )
         return LogprobResult(
             text=choice.message.content or "",
             token_logprobs=token_logprobs,
@@ -501,14 +497,17 @@ class OpenAIEngine:
                     ) from exc
                 if not isinstance(arguments, dict):
                     raise GenerationError(
-                        f"Invalid streamed tool arguments at index {index}: "
-                        "expected a JSON object"
+                        f"Invalid streamed tool arguments at index {index}: expected a JSON object"
                     )
-                events.append(ToolCallEvent(tool_call=ToolCall(
-                    call_id=call_id,
-                    name=name,
-                    arguments=arguments,
-                )))
+                events.append(
+                    ToolCallEvent(
+                        tool_call=ToolCall(
+                            call_id=call_id,
+                            name=name,
+                            arguments=arguments,
+                        )
+                    )
+                )
                 emitted.add(index)
             return events
 
@@ -525,11 +524,14 @@ class OpenAIEngine:
 
                 for raw_call in getattr(delta, "tool_calls", None) or []:
                     index = int(getattr(raw_call, "index", 0) or 0)
-                    item = buffers.setdefault(index, {
-                        "call_id": "",
-                        "name": "",
-                        "arguments": "",
-                    })
+                    item = buffers.setdefault(
+                        index,
+                        {
+                            "call_id": "",
+                            "name": "",
+                            "arguments": "",
+                        },
+                    )
                     call_id = getattr(raw_call, "id", None)
                     if call_id:
                         item["call_id"] += str(call_id)

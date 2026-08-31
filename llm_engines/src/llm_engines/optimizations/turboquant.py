@@ -23,6 +23,7 @@ Reference:
   Zandieh et al., "TurboQuant: Online Vector Quantization with Near-optimal
   Distortion Rate", ICLR 2026, arXiv:2504.19874
 """
+
 from __future__ import annotations
 
 import logging
@@ -37,7 +38,6 @@ from llm_engines.contracts import (
     GenerationError,
     GenerationRequest,
     GenerationResponse,
-    StreamingModel,
     UsageStats,
 )
 
@@ -47,11 +47,11 @@ logger = logging.getLogger(__name__)
 def _require(package: str, extra: str) -> Any:
     try:
         import importlib
+
         return importlib.import_module(package)
     except ImportError as e:
         raise ImportError(
-            f"TurboQuantEngine requires '{package}'. "
-            f"Install with: pip install llm-engines[{extra}]"
+            f"TurboQuantEngine requires '{package}'. Install with: pip install llm-engines[{extra}]"
         ) from e
 
 
@@ -114,9 +114,7 @@ class TurboQuantEngine:
                 device_map=device,
             )
         except Exception as e:
-            raise EngineConfigError(
-                f"Failed to load model '{model_name}': {e}"
-            ) from e
+            raise EngineConfigError(f"Failed to load model '{model_name}': {e}") from e
 
         # Apply TurboQuant KV cache compression
         # The turboquant package API: TurboQuantCache wraps past_key_values
@@ -125,7 +123,8 @@ class TurboQuantEngine:
             self._bits = bits
             logger.info(
                 "TurboQuantCache applied: %d-bit KV compression (~%.1fx reduction)",
-                bits, 16 / bits,
+                bits,
+                16 / bits,
             )
         except AttributeError as e:
             raise EngineConfigError(
@@ -217,6 +216,7 @@ class TurboQuantEngine:
             raise GenerationError("messages list cannot be empty")
 
         import threading
+
         transformers = self._transformers
 
         input_ids, attention_mask = self._encode(request)
@@ -237,9 +237,7 @@ class TurboQuantEngine:
             streamer=streamer,
         )
 
-        thread = threading.Thread(
-            target=lambda: self._model.generate(**gen_kwargs), daemon=True
-        )
+        thread = threading.Thread(target=lambda: self._model.generate(**gen_kwargs), daemon=True)
         thread.start()
 
         try:
@@ -266,9 +264,7 @@ class TurboQuantEngine:
             )
         except Exception:
             # Fallback: concatenate manually if no chat template
-            text = "\n".join(
-                f"{m['role']}: {m['content']}" for m in messages
-            ) + "\nassistant:"
+            text = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
 
         device = next(self._model.parameters()).device
         encoded = self._tokenizer(text, return_tensors="pt").to(device)

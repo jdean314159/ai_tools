@@ -18,6 +18,7 @@ Usage:
     pytest tests/contract_tests/ --backend ollama --model qwen3:8b \
         --embed-model nomic-embed-text
 """
+
 from __future__ import annotations
 
 import pytest
@@ -44,8 +45,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store",
         default=None,
         help="Embedding model name (e.g. nomic-embed-text). "
-             "Required for embedding conformance tests against Ollama. "
-             "Omit to skip embedding tests.",
+        "Required for embedding conformance tests against Ollama. "
+        "Omit to skip embedding tests.",
     )
 
 
@@ -55,14 +56,17 @@ def _build_engine(backend: str, model: str | None) -> ChatModel:
 
     if backend == "ollama":
         from llm_engines.backends.ollama import OllamaEngine
+
         return OllamaEngine(model=model or "qwen2.5:8b")
 
     if backend == "anthropic":
         from llm_engines.backends.anthropic import AnthropicEngine
+
         return AnthropicEngine(model=model or "claude-sonnet-4-6")
 
     if backend == "openai":
         from llm_engines.backends.openai import OpenAIEngine
+
         return OpenAIEngine(model=model or "gpt-4o-mini")
 
     raise ValueError(f"Unknown backend: {backend}")
@@ -79,10 +83,12 @@ def _build_embed_engine(backend: str, embed_model: str | None) -> EmbeddingModel
 
     if backend == "ollama":
         from llm_engines.backends.ollama import OllamaEngine
+
         return OllamaEngine(model=embed_model)
 
     if backend == "openai":
         from llm_engines.backends.openai import OpenAIEngine
+
         return OpenAIEngine(model="gpt-4o-mini")
 
     return None
@@ -112,7 +118,6 @@ def embed_engine(request: pytest.FixtureRequest) -> EmbeddingModel:
     engine = _build_embed_engine(backend, embed_model)
     if engine is None:
         pytest.skip(
-            "Embedding tests require --embed-model <model>. "
-            "Example: --embed-model nomic-embed-text"
+            "Embedding tests require --embed-model <model>. Example: --embed-model nomic-embed-text"
         )
     return engine

@@ -120,9 +120,7 @@ def _safe_model_label(label: str) -> str:
     return Path(label).name if Path(label).is_absolute() else label
 
 
-def _probe_chat(
-    engine: Any, *, thinking: bool | None
-) -> tuple[ProbeResult, str, str]:
+def _probe_chat(engine: Any, *, thinking: bool | None) -> tuple[ProbeResult, str, str]:
     expected = "CHARACTERIZATION_OK"
     response = engine.generate(
         GenerationRequest(
@@ -185,9 +183,7 @@ def _probe_tools(engine: Any, *, thinking: bool | None) -> ProbeResult:
     spec = ToolSpec(
         name="lookup_characterization_code",
         description="Return the supplied synthetic characterization code.",
-        parameters={
-            "code": ToolParameterSchema(type="string", description="Synthetic code")
-        },
+        parameters={"code": ToolParameterSchema(type="string", description="Synthetic code")},
         required_params=["code"],
     )
     response = engine.generate_with_tools(
@@ -209,9 +205,7 @@ def _probe_tools(engine: Any, *, thinking: bool | None) -> ProbeResult:
     )
     calls = response.message.tool_calls
     valid = (
-        len(calls) == 1
-        and calls[0].name == spec.name
-        and calls[0].arguments == {"code": "CHAR-7"}
+        len(calls) == 1 and calls[0].name == spec.name and calls[0].arguments == {"code": "CHAR-7"}
     )
     return ProbeResult(
         probe_id="tool_call",
@@ -245,9 +239,7 @@ def _probe_logprobs(engine: Any, *, thinking: bool | None) -> ProbeResult:
     )
 
 
-def characterize_engine(
-    engine: Any, *, thinking: bool | None = None
-) -> CharacterizationReport:
+def characterize_engine(engine: Any, *, thinking: bool | None = None) -> CharacterizationReport:
     """Run fixed synthetic probes and return a summary without raw content."""
 
     started = _now()
@@ -313,18 +305,11 @@ def characterize_engine_repeated(
     if repetitions < 2:
         raise ValueError("repetitions must be at least 2 for a campaign")
     started = _now()
-    runs = tuple(
-        characterize_engine(engine, thinking=thinking) for _ in range(repetitions)
-    )
+    runs = tuple(characterize_engine(engine, thinking=thinking) for _ in range(repetitions))
     probe_ids = sorted({probe.probe_id for run in runs for probe in run.probes})
     aggregates: dict[str, dict[str, Any]] = {}
     for probe_id in probe_ids:
-        results = [
-            probe
-            for run in runs
-            for probe in run.probes
-            if probe.probe_id == probe_id
-        ]
+        results = [probe for run in runs for probe in run.probes if probe.probe_id == probe_id]
         statuses = [probe.status for probe in results]
         counts = {status: statuses.count(status) for status in sorted(set(statuses))}
         aggregate: dict[str, Any] = {
@@ -503,9 +488,7 @@ def main(argv: list[str] | None = None) -> int:
     report = (
         characterize_engine(engine, thinking=thinking)
         if args.runs == 1
-        else characterize_engine_repeated(
-            engine, repetitions=args.runs, thinking=thinking
-        )
+        else characterize_engine_repeated(engine, repetitions=args.runs, thinking=thinking)
     )
     if isinstance(report, CharacterizationCampaignReport):
         sys.stdout.write(report.summary_json())

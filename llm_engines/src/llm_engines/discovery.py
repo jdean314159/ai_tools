@@ -8,6 +8,7 @@ Design: all Ollama communication uses raw urllib — no ollama package required.
 This matches Engram's proven approach and works in environments where the
 ollama package is not installed.
 """
+
 from __future__ import annotations
 
 import json
@@ -46,6 +47,7 @@ class OllamaModelResolutionError(ValueError):
 # ---------------------------------------------------------------------------
 # Hardware detection
 # ---------------------------------------------------------------------------
+
 
 def detect_hardware() -> HardwareProfile:
     """
@@ -91,6 +93,7 @@ def detect_hardware() -> HardwareProfile:
 def _detect_gpus_pynvml() -> list[GPU]:
     try:
         import pynvml
+
         pynvml.nvmlInit()
         gpus = []
         for i in range(pynvml.nvmlDeviceGetCount()):
@@ -108,16 +111,18 @@ def _detect_gpus_pynvml() -> list[GPU]:
                 compute = [cc[0], cc[1]]
             except Exception:
                 compute = [0, 0]
-            gpus.append(GPU(
-                id=i,
-                name=name,
-                vram_mb=mem.total // (1024 * 1024),
-                free_vram_mb=mem.free // (1024 * 1024),
-                used_vram_mb=mem.used // (1024 * 1024),
-                utilization_pct=util,
-                source="pynvml",
-                compute_capability=compute,
-            ))
+            gpus.append(
+                GPU(
+                    id=i,
+                    name=name,
+                    vram_mb=mem.total // (1024 * 1024),
+                    free_vram_mb=mem.free // (1024 * 1024),
+                    used_vram_mb=mem.used // (1024 * 1024),
+                    utilization_pct=util,
+                    source="pynvml",
+                    compute_capability=compute,
+                )
+            )
         pynvml.nvmlShutdown()
         return gpus
     except Exception:
@@ -127,6 +132,7 @@ def _detect_gpus_pynvml() -> list[GPU]:
 def _detect_gpus_torch(*, warnings: list[str] | None = None) -> list[GPU]:
     try:
         import torch
+
         if not torch.cuda.is_available():
             return []
         gpus: list[GPU] = []
@@ -142,50 +148,58 @@ def _detect_gpus_torch(*, warnings: list[str] | None = None) -> list[GPU]:
             except Exception as exc:
                 if warnings is not None:
                     warnings.append(f"torch.cuda detected GPU {i}, but mem_get_info failed: {exc}")
-            gpus.append(GPU(
-                id=i,
-                name=props.name,
-                vram_mb=props.total_memory // (1024 * 1024),
-                free_vram_mb=free_vram_mb,
-                used_vram_mb=used_vram_mb,
-                source="torch.cuda",
-                compute_capability=[props.major, props.minor],
-            ))
+            gpus.append(
+                GPU(
+                    id=i,
+                    name=props.name,
+                    vram_mb=props.total_memory // (1024 * 1024),
+                    free_vram_mb=free_vram_mb,
+                    used_vram_mb=used_vram_mb,
+                    source="torch.cuda",
+                    compute_capability=[props.major, props.minor],
+                )
+            )
         return gpus
     except Exception as exc:
         if warnings is not None and shutil.which("nvidia-smi"):
             warnings.append(
-                "CUDA GPUs may exist, but torch.cuda could not initialize in this process: "
-                f"{exc}"
+                f"CUDA GPUs may exist, but torch.cuda could not initialize in this process: {exc}"
             )
         return []
 
 
 def _detect_gpus_nvidiasmi() -> list[GPU]:
     try:
-        lines = subprocess.check_output(
-            [
-                "nvidia-smi",
-                "--query-gpu=name,memory.total,memory.free,memory.used,utilization.gpu",
-                "--format=csv,noheader,nounits",
-            ],
-            timeout=5, text=True,
-        ).strip().splitlines()
+        lines = (
+            subprocess.check_output(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=name,memory.total,memory.free,memory.used,utilization.gpu",
+                    "--format=csv,noheader,nounits",
+                ],
+                timeout=5,
+                text=True,
+            )
+            .strip()
+            .splitlines()
+        )
         gpus = []
         for i, line in enumerate(lines):
             parts = [p.strip() for p in line.split(",")]
             if len(parts) < 5:
                 continue
-            gpus.append(GPU(
-                id=i,
-                name=parts[0],
-                vram_mb=int(parts[1]),
-                free_vram_mb=int(parts[2]),
-                used_vram_mb=int(parts[3]),
-                utilization_pct=float(parts[4]) if parts[4] else None,
-                source="nvidia-smi",
-                compute_capability=[0, 0],
-            ))
+            gpus.append(
+                GPU(
+                    id=i,
+                    name=parts[0],
+                    vram_mb=int(parts[1]),
+                    free_vram_mb=int(parts[2]),
+                    used_vram_mb=int(parts[3]),
+                    utilization_pct=float(parts[4]) if parts[4] else None,
+                    source="nvidia-smi",
+                    compute_capability=[0, 0],
+                )
+            )
         return gpus
     except Exception:
         return []
@@ -194,6 +208,7 @@ def _detect_gpus_nvidiasmi() -> list[GPU]:
 def _detect_system_ram_mb() -> int:
     try:
         import psutil
+
         return int(psutil.virtual_memory().total // (1024 * 1024))
     except Exception:
         pass
@@ -211,6 +226,7 @@ def _detect_system_ram_mb() -> int:
 # Ollama utilities (urllib-based, no ollama package)
 # ---------------------------------------------------------------------------
 
+
 def check_ollama_running(base_url: str = _OLLAMA_BASE) -> bool:
     """Return True if the Ollama server is reachable."""
     try:
@@ -223,6 +239,7 @@ def check_ollama_running(base_url: str = _OLLAMA_BASE) -> bool:
 @dataclass
 class OllamaModelInfo:
     """A model currently present in the local Ollama store."""
+
     name: str
     size_gb: float
     model_id: str = ""
@@ -236,7 +253,7 @@ def list_ollama_models(base_url: str = _OLLAMA_BASE) -> list[OllamaModelInfo]:
         models = [
             OllamaModelInfo(
                 name=m.get("name", ""),
-                size_gb=round(m.get("size", 0) / (1024 ** 3), 1),
+                size_gb=round(m.get("size", 0) / (1024**3), 1),
                 model_id=(m.get("digest") or "")[:12],
             )
             for m in data.get("models", [])
@@ -261,7 +278,9 @@ def resolve_ollama_gguf_path(
     root = _ollama_models_dir(models_dir)
     manifests_root = root / "manifests"
     if not manifests_root.exists():
-        searched = ", ".join(str(path / "manifests") for path in _ollama_models_dir_candidates(models_dir))
+        searched = ", ".join(
+            str(path / "manifests") for path in _ollama_models_dir_candidates(models_dir)
+        )
         raise OllamaModelResolutionError(
             f"Ollama manifests directory not found: {manifests_root}. Searched: {searched}"
         )
@@ -366,8 +385,10 @@ def pull_ollama_model(
     """
     payload = json.dumps({"name": model_name, "stream": True}).encode()
     req = urllib.request.Request(
-        f"{base_url}/api/pull", data=payload,
-        headers={"Content-Type": "application/json"}, method="POST",
+        f"{base_url}/api/pull",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
     try:
         with urllib.request.urlopen(req, timeout=3600) as resp:
@@ -387,8 +408,8 @@ def pull_ollama_model(
                     if total > 0:
                         progress_callback(
                             completed / total * 100,
-                            completed / (1024 ** 3),
-                            total / (1024 ** 3),
+                            completed / (1024**3),
+                            total / (1024**3),
                         )
                 if event.get("status") == "success":
                     return True
@@ -431,7 +452,8 @@ def start_ollama(base_url: str = _OLLAMA_BASE) -> bool:
     try:
         subprocess.Popen(
             ["ollama", "serve"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
     except FileNotFoundError:
         return False
@@ -470,9 +492,12 @@ def check_ollama_logprobs_support(base_url: str = _OLLAMA_BASE) -> bool:
 def check_api_key(engine_type: str) -> bool:
     """Return True if the required API key env var is set (or not needed)."""
     _KEY_MAP = {
-        "gemini": "GOOGLE_API_KEY", "google": "GOOGLE_API_KEY",
-        "anthropic": "ANTHROPIC_API_KEY", "claude": "ANTHROPIC_API_KEY",
-        "openai": "OPENAI_API_KEY", "chatgpt": "OPENAI_API_KEY",
+        "gemini": "GOOGLE_API_KEY",
+        "google": "GOOGLE_API_KEY",
+        "anthropic": "ANTHROPIC_API_KEY",
+        "claude": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "chatgpt": "OPENAI_API_KEY",
     }
     env_var = _KEY_MAP.get(engine_type.lower())
     return True if env_var is None else bool(os.getenv(env_var))
@@ -481,6 +506,7 @@ def check_api_key(engine_type: str) -> bool:
 @dataclass
 class EngineAvailability:
     """Snapshot of what backends are available right now."""
+
     ollama_running: bool
     ollama_models: list[OllamaModelInfo] = field(default_factory=list)
     has_google_key: bool = False
@@ -491,8 +517,7 @@ class EngineAvailability:
     def has_model(self, name: str) -> bool:
         """True if name is pulled in Ollama (exact or prefix match)."""
         return any(
-            m.name == name or m.name.startswith(name.split(":")[0])
-            for m in self.ollama_models
+            m.name == name or m.name.startswith(name.split(":")[0]) for m in self.ollama_models
         )
 
 
@@ -514,6 +539,7 @@ def available_engines(base_url: str = _OLLAMA_BASE) -> EngineAvailability:
 # ---------------------------------------------------------------------------
 # Model catalog
 # ---------------------------------------------------------------------------
+
 
 def _load_catalog() -> list[dict[str, Any]]:
     catalog_path = Path(__file__).parent / "data" / "model_catalog.yaml"
@@ -543,6 +569,7 @@ def _to_model_info(entry: dict[str, Any]) -> ModelInfo:
 # ModelRegistry
 # ---------------------------------------------------------------------------
 
+
 class ModelRegistry:
     """
     Enumerate and recommend models.
@@ -553,20 +580,14 @@ class ModelRegistry:
 
     def __init__(self, ollama_host: str = _OLLAMA_BASE) -> None:
         self.ollama_host = ollama_host
-        self._catalog: dict[str, dict[str, Any]] = {
-            e["name"]: e for e in _load_catalog()
-        }
+        self._catalog: dict[str, dict[str, Any]] = {e["name"]: e for e in _load_catalog()}
 
     def list_available_models(self, backend: str = "ollama") -> list[str]:
         if backend == "ollama":
             if not check_ollama_running(self.ollama_host):
-                raise BackendUnavailableError(
-                    f"Ollama not reachable at {self.ollama_host}."
-                )
+                raise BackendUnavailableError(f"Ollama not reachable at {self.ollama_host}.")
             return sorted(m.name for m in list_ollama_models(self.ollama_host))
-        return sorted(
-            n for n, e in self._catalog.items() if e.get("backend") == backend
-        )
+        return sorted(n for n, e in self._catalog.items() if e.get("backend") == backend)
 
     def get_model_info(self, model: str, backend: str = "ollama") -> ModelInfo:
         # 1. Exact match
@@ -582,16 +603,17 @@ class ModelRegistry:
         if ":" not in model:
             base = model
             entry = next(
-                (e for n, e in self._catalog.items()
-                 if e.get("backend") == backend and n.startswith(base + ":")),
+                (
+                    e
+                    for n, e in self._catalog.items()
+                    if e.get("backend") == backend and n.startswith(base + ":")
+                ),
                 None,
             )
             if entry:
                 return _to_model_info(entry)
 
-        raise ModelNotFoundError(
-            f"Model '{model}' not found for backend='{backend}'."
-        )
+        raise ModelNotFoundError(f"Model '{model}' not found for backend='{backend}'.")
 
     def recommend_model(
         self,

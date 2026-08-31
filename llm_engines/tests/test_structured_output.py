@@ -18,7 +18,7 @@ class TestStructuredOutputParsing:
         assert result.age == 30
 
     def test_parse_markdown_json_block(self) -> None:
-        raw = "Here you go:\n```json\n{\"name\": \"Bob\", \"age\": 25}\n```"
+        raw = 'Here you go:\n```json\n{"name": "Bob", "age": 25}\n```'
         result = StructuredOutputHandler.parse(raw, Person)
         assert result.name == "Bob"
         assert result.age == 25
@@ -54,7 +54,9 @@ class TestStructuredOutputParsing:
         assert details.error == "No JSON found in response"
 
     def test_strict_mode_reports_failure(self) -> None:
-        details = StructuredOutputHandler.parse_with_details('{"name": "Alice", "age": "bad"}', Person, strict=True)
+        details = StructuredOutputHandler.parse_with_details(
+            '{"name": "Alice", "age": "bad"}', Person, strict=True
+        )
         assert details.success is False
         assert details.repair_attempted is False
         assert details.error is not None

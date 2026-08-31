@@ -38,6 +38,7 @@ Reference:
   Speculative decoding: arXiv:2211.17192 (Leviathan et al., 2023)
   HuggingFace speculative: https://huggingface.co/docs/transformers/generation_strategies
 """
+
 from __future__ import annotations
 
 import logging
@@ -52,7 +53,6 @@ from llm_engines.contracts import (
     GenerationError,
     GenerationRequest,
     GenerationResponse,
-    StreamingModel,
     UsageStats,
 )
 
@@ -64,11 +64,11 @@ BACKEND = "combo_tq_speculative"
 def _require(package: str, extra: str) -> Any:
     try:
         import importlib
+
         return importlib.import_module(package)
     except ImportError as e:
         raise ImportError(
-            f"ComboEngine requires '{package}'. "
-            f"Install with: pip install llm-engines[{extra}]"
+            f"ComboEngine requires '{package}'. Install with: pip install llm-engines[{extra}]"
         ) from e
 
 
@@ -118,7 +118,7 @@ class ComboEngine:
         max_new_tokens: int = 512,
     ) -> None:
         if turboquant_bits not in (2, 3, 4):
-            raise EngineConfigError(f"turboquant_bits must be 2, 3, or 4.")
+            raise EngineConfigError("turboquant_bits must be 2, 3, or 4.")
         if num_speculative_tokens < 1:
             raise EngineConfigError("num_speculative_tokens must be >= 1.")
 
@@ -185,7 +185,10 @@ class ComboEngine:
 
         logger.info(
             "ComboEngine ready: main=%s, draft=%s, bits=%d, n_spec=%d",
-            main_model, draft_model, turboquant_bits, num_speculative_tokens,
+            main_model,
+            draft_model,
+            turboquant_bits,
+            num_speculative_tokens,
         )
         self._log_vram_estimate()
 
@@ -198,7 +201,8 @@ class ComboEngine:
                     "Tokenizer vocab size mismatch: main=%d, draft=%d. "
                     "Speculative decoding requires identical vocabularies. "
                     "This combination may produce incorrect results.",
-                    len(self._tokenizer), len(draft_tok),
+                    len(self._tokenizer),
+                    len(draft_tok),
                 )
         except Exception:
             pass  # Non-fatal
@@ -206,14 +210,17 @@ class ComboEngine:
     def _log_vram_estimate(self) -> None:
         try:
             import torch
+
             if not torch.cuda.is_available():
                 return
-            allocated = torch.cuda.memory_allocated() / (1024 ** 3)
-            reserved = torch.cuda.memory_reserved() / (1024 ** 3)
-            total = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
+            allocated = torch.cuda.memory_allocated() / (1024**3)
+            reserved = torch.cuda.memory_reserved() / (1024**3)
+            total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
             logger.info(
                 "VRAM: %.1fGB allocated, %.1fGB reserved, %.1fGB total",
-                allocated, reserved, total,
+                allocated,
+                reserved,
+                total,
             )
         except Exception:
             pass
@@ -303,9 +310,7 @@ class ComboEngine:
                 latency_ms=round(latency_ms, 3),
             ),
             model_name=(
-                f"{self.main_model_name}+"
-                f"spec({self.draft_model_name})+"
-                f"tq{self.turboquant_bits}bit"
+                f"{self.main_model_name}+spec({self.draft_model_name})+tq{self.turboquant_bits}bit"
             ),
             backend=BACKEND,
             active_optimizations=[
@@ -313,7 +318,10 @@ class ComboEngine:
                     kind="speculative_decoding",
                     backend=BACKEND,
                     model=self.draft_model_name,
-                    parameters={"draft_model": self.draft_model_name, "speculative_tokens": self.num_speculative_tokens},
+                    parameters={
+                        "draft_model": self.draft_model_name,
+                        "speculative_tokens": self.num_speculative_tokens,
+                    },
                 ),
                 ActiveInferenceOptimization(
                     kind="kv_cache_compression",
@@ -340,6 +348,7 @@ class ComboEngine:
             raise GenerationError("messages list cannot be empty")
 
         import threading
+
         transformers = self._transformers
 
         input_ids, attention_mask = self._encode(request)
@@ -361,9 +370,7 @@ class ComboEngine:
             streamer=streamer,
         )
 
-        thread = threading.Thread(
-            target=lambda: self._main.generate(**gen_kwargs), daemon=True
-        )
+        thread = threading.Thread(target=lambda: self._main.generate(**gen_kwargs), daemon=True)
         thread.start()
 
         try:

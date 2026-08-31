@@ -26,6 +26,7 @@ Key differences from OpenAIEngine:
   - Batch generation supported via multiple parallel async calls
   - is_cloud = False → FailoverEngine does not strip memory context
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -35,21 +36,14 @@ import time
 from typing import Any, AsyncIterator
 
 from llm_engines.contracts import (
-    AsyncStreamingModel,
     BackendUnavailableError,
-    BatchChatModel,
     ChatMessage,
-    ChatModel,
     ContextLengthExceededError,
-    EmbeddingModel,
-    EmbeddingRequest,
-    EmbeddingResponse,
     EngineCapabilities,
     EngineConfigError,
     GenerationError,
     GenerationRequest,
     GenerationResponse,
-    LogprobModel,
     LogprobResult,
     TokenLogprob,
     ToolCall,
@@ -70,8 +64,8 @@ logger = logging.getLogger(__name__)
 BACKEND = "vllm"
 
 _FINISH_MAP = {
-    "stop":       "stop",
-    "length":     "length",
+    "stop": "stop",
+    "length": "length",
     "tool_calls": "tool_call",
 }
 
@@ -86,27 +80,31 @@ def _to_openai_messages(request: GenerationRequest) -> list[dict[str, Any]]:
     messages: list[dict[str, Any]] = []
     for message in request.messages:
         if message.role == "tool":
-            messages.append({
-                "role": "tool",
-                "tool_call_id": message.tool_call_id or "",
-                "content": message.content or "",
-            })
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": message.tool_call_id or "",
+                    "content": message.content or "",
+                }
+            )
         elif message.role == "assistant" and message.tool_calls:
-            messages.append({
-                "role": "assistant",
-                "content": message.content,
-                "tool_calls": [
-                    {
-                        "id": call.call_id,
-                        "type": "function",
-                        "function": {
-                            "name": call.name,
-                            "arguments": json.dumps(call.arguments),
-                        },
-                    }
-                    for call in message.tool_calls
-                ],
-            })
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": message.content,
+                    "tool_calls": [
+                        {
+                            "id": call.call_id,
+                            "type": "function",
+                            "function": {
+                                "name": call.name,
+                                "arguments": json.dumps(call.arguments),
+                            },
+                        }
+                        for call in message.tool_calls
+                    ],
+                }
+            )
         else:
             messages.append({"role": message.role, "content": message.content or ""})
     return messages
@@ -119,21 +117,19 @@ def _extract_tool_calls(choice: Any) -> list[ToolCall]:
             arguments = json.loads(raw_call.function.arguments)
         except (TypeError, ValueError):
             arguments = {"raw": raw_call.function.arguments}
-        calls.append(ToolCall(
-            call_id=raw_call.id,
-            name=raw_call.function.name,
-            arguments=arguments,
-        ))
+        calls.append(
+            ToolCall(
+                call_id=raw_call.id,
+                name=raw_call.function.name,
+                arguments=arguments,
+            )
+        )
     return calls
 
 
-def _apply_thinking_preference(
-    kwargs: dict[str, Any], request: GenerationRequest
-) -> None:
+def _apply_thinking_preference(kwargs: dict[str, Any], request: GenerationRequest) -> None:
     if request.thinking is not None:
-        kwargs["extra_body"] = {
-            "chat_template_kwargs": {"enable_thinking": request.thinking}
-        }
+        kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": request.thinking}}
 
 
 def _apply_seed_preference(kwargs: dict[str, Any], request: GenerationRequest) -> None:
@@ -210,7 +206,9 @@ class vLLMEngine:
             # Fallback: use first available
             logger.warning(
                 "vLLM: requested model '%s' not found. Using '%s'. Available: %s",
-                self.model, ids[0], ids,
+                self.model,
+                ids[0],
+                ids,
             )
             return ids[0]
         except Exception as e:
@@ -227,7 +225,7 @@ class vLLMEngine:
             streaming=False,
             async_streaming=True,
             tool_calling=True,
-            embeddings=False,      # vLLM can serve embedding models separately
+            embeddings=False,  # vLLM can serve embedding models separately
             structured_output=False,
             batch_generation=True,
             vision=False,
@@ -290,9 +288,7 @@ class vLLMEngine:
             usage=usage,
             model_name=getattr(raw, "model", self._resolved_model),
             backend=BACKEND,
-            raw_provider_payload=(
-                {"id": raw.id, "model": raw.model} if self.debug else None
-            ),
+            raw_provider_payload=({"id": raw.id, "model": raw.model} if self.debug else None),
             seed_status="accepted" if request.seed is not None else "not_requested",
         )
 
@@ -336,9 +332,7 @@ class vLLMEngine:
         except Exception as exc:
             raise GenerationError(f"vLLM tool generation failed: {exc}") from exc
 
-        return self._build_response(
-            raw, (time.perf_counter() - started) * 1000, request=request
-        )
+        return self._build_response(raw, (time.perf_counter() - started) * 1000, request=request)
 
     # ------------------------------------------------------------------
     # LogprobModel Protocol
@@ -380,11 +374,13 @@ class vLLMEngine:
 
         if choice.logprobs and choice.logprobs.content:
             for tlp in choice.logprobs.content:
-                token_logprobs.append(TokenLogprob(
-                    token=tlp.token,
-                    logprob=tlp.logprob,
-                    bytes=getattr(tlp, "bytes", None),
-                ))
+                token_logprobs.append(
+                    TokenLogprob(
+                        token=tlp.token,
+                        logprob=tlp.logprob,
+                        bytes=getattr(tlp, "bytes", None),
+                    )
+                )
 
         return LogprobResult(text=text, token_logprobs=token_logprobs)
 
@@ -432,6 +428,7 @@ class vLLMEngine:
         vLLM handles concurrent requests efficiently through continuous batching.
         This method fans out all requests simultaneously rather than serially.
         """
+
         async def _run_all() -> list[GenerationResponse]:
             tasks = [self._generate_async(req) for req in requests]
             return await asyncio.gather(*tasks)
@@ -444,6 +441,7 @@ class vLLMEngine:
             if loop.is_running():
                 # Already in an async context — use nest_asyncio or thread pool
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     future = pool.submit(asyncio.run, _run_all())
                     return future.result()
@@ -466,6 +464,4 @@ class vLLMEngine:
             raw = await self._async_client.chat.completions.create(**kwargs)
         except Exception as e:
             raise GenerationError(f"vLLM async generation failed: {e}") from e
-        return self._build_response(
-            raw, (time.perf_counter() - t0) * 1000, request=request
-        )
+        return self._build_response(raw, (time.perf_counter() - t0) * 1000, request=request)

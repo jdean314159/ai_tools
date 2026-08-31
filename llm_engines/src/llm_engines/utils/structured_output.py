@@ -5,6 +5,7 @@ standalone helper for the ``llm_engines`` package. It does not change the
 engine contracts; it simply makes it easier for callers to recover typed data
 from model text output.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -66,28 +67,34 @@ class StructuredOutputError(Exception):
         ]
 
         if len(raw_output) > 500:
-            details.extend([
-                "Raw Output (first 500 chars):",
-                raw_output[:500] + "...",
-                "",
-            ])
+            details.extend(
+                [
+                    "Raw Output (first 500 chars):",
+                    raw_output[:500] + "...",
+                    "",
+                ]
+            )
         else:
             details.extend(["Raw Output:", raw_output, ""])
 
         if extracted_json:
             if len(extracted_json) > 500:
-                details.extend([
-                    "Extracted JSON (first 500 chars):",
-                    extracted_json[:500] + "...",
-                    "",
-                ])
+                details.extend(
+                    [
+                        "Extracted JSON (first 500 chars):",
+                        extracted_json[:500] + "...",
+                        "",
+                    ]
+                )
             else:
                 details.extend(["Extracted JSON:", extracted_json, ""])
 
-        details.extend([
-            "Expected Schema:",
-            json.dumps(model_class.model_json_schema(), indent=2),
-        ])
+        details.extend(
+            [
+                "Expected Schema:",
+                json.dumps(model_class.model_json_schema(), indent=2),
+            ]
+        )
         super().__init__("\n".join(details))
 
 
@@ -206,7 +213,9 @@ class StructuredOutputHandler:
 
         raw_output = _strip_think_blocks(raw_output)
 
-        json_block = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw_output, re.DOTALL | re.IGNORECASE)
+        json_block = re.search(
+            r"```(?:json)?\s*\n?(.*?)\n?```", raw_output, re.DOTALL | re.IGNORECASE
+        )
         if json_block:
             return json_block.group(1).strip()
 
@@ -247,13 +256,15 @@ class StructuredOutputHandler:
         if include_examples and "properties" in schema:
             example = StructuredOutputHandler._generate_example(model_class)
             if example:
-                prompt_parts.extend([
-                    "",
-                    "Example format:",
-                    "```json",
-                    json.dumps(example, indent=2),
-                    "```",
-                ])
+                prompt_parts.extend(
+                    [
+                        "",
+                        "Example format:",
+                        "```json",
+                        json.dumps(example, indent=2),
+                        "```",
+                    ]
+                )
         return "\n".join(prompt_parts)
 
     @staticmethod

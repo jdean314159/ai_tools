@@ -7,10 +7,10 @@ All LLM engine implementations must conform to these Protocols.
 ADR: ADR-001 (Engine Capability Model), ADR-002 (Engine Response Schema)
 Status: Pending ADR acceptance
 """
+
 from __future__ import annotations
 
 import math
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, AsyncIterator, Iterator, Literal, Protocol, runtime_checkable
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Exception hierarchy
 # ---------------------------------------------------------------------------
+
 
 class LLMEngineError(Exception):
     """Base class for all engine errors."""
@@ -59,21 +60,25 @@ class EngineConfigError(LLMEngineError):
 # Prompt compression strategy
 # ---------------------------------------------------------------------------
 
+
 class CompressionStrategy(Enum):
     """How an engine handles prompts that exceed the context window."""
-    TRUNCATE_START = "truncate_start"   # Drop oldest content
-    TRUNCATE_END   = "truncate_end"     # Drop newest content
-    COMPRESS       = "compress"          # Summarise via model (recursive call)
-    ERROR          = "error"             # Raise ContextLengthExceededError
+
+    TRUNCATE_START = "truncate_start"  # Drop oldest content
+    TRUNCATE_END = "truncate_end"  # Drop newest content
+    COMPRESS = "compress"  # Summarise via model (recursive call)
+    ERROR = "error"  # Raise ContextLengthExceededError
 
 
 # ---------------------------------------------------------------------------
 # Logprob types (needed by Engram surprise filter / RTRL neural layer)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TokenLogprob:
     """Log probability for a single generated token."""
+
     token: str
     logprob: float
     bytes: list[int] | None = None
@@ -82,6 +87,7 @@ class TokenLogprob:
 @dataclass
 class LogprobResult:
     """Full logprob data for a generation — primary input to the surprise filter."""
+
     text: str
     token_logprobs: list[TokenLogprob] = field(default_factory=list)
 
@@ -108,8 +114,10 @@ class LogprobResult:
 # Capability model
 # ---------------------------------------------------------------------------
 
+
 class EngineCapabilities(BaseModel):
     """What this engine can do. Engines report capabilities; callers check before using."""
+
     chat: bool = True
     streaming: bool = False
     async_streaming: bool = False
@@ -156,21 +164,23 @@ class ActiveInferenceOptimization(BaseModel):
 # ---------------------------------------------------------------------------
 
 FinishReason = Literal[
-    "stop",            # Natural completion
-    "length",          # Hit max_tokens limit
-    "tool_call",       # Model wants to call a tool
+    "stop",  # Natural completion
+    "length",  # Hit max_tokens limit
+    "tool_call",  # Model wants to call a tool
     "content_filter",  # Blocked by safety filter
-    "error",           # Error occurred during generation
-    "unknown",         # Reason not reported by backend
+    "error",  # Error occurred during generation
+    "unknown",  # Reason not reported by backend
 ]
 
 
 class UsageStats(BaseModel):
     """Token usage and timing for a single generation."""
+
     input_tokens: int | None = None
     output_tokens: int | None = None
     total_tokens: int | None = None
     latency_ms: float | None = None  # float: sub-ms precision for fast local inference
+
 
 class CacheStats(BaseModel):
     """KV-cache statistics for a single generation.
@@ -182,9 +192,9 @@ class CacheStats(BaseModel):
     and diagnosing repeated context overhead in agent workflows.
     """
 
-    prompt_cache_hit_tokens: int = 0   # tokens served from existing KV cache
+    prompt_cache_hit_tokens: int = 0  # tokens served from existing KV cache
     prompt_cache_miss_tokens: int = 0  # tokens requiring fresh attention computation
-    cache_key: str | None = None       # key used for this cache entry (if backend reports it)
+    cache_key: str | None = None  # key used for this cache entry (if backend reports it)
 
     @property
     def hit_ratio(self) -> float:
@@ -197,11 +207,11 @@ class CacheStats(BaseModel):
         return self.prompt_cache_hit_tokens + self.prompt_cache_miss_tokens
 
 
-
 class ToolCall(BaseModel):
     """Structured tool invocation returned by the model."""
-    call_id: str               # Unique ID for this call
-    name: str                  # Tool name
+
+    call_id: str  # Unique ID for this call
+    name: str  # Tool name
     arguments: dict[str, Any]  # Parsed tool arguments
 
     def to_interop(self) -> ToolInvocation:
@@ -222,18 +232,21 @@ class ToolCall(BaseModel):
 
 class TextDeltaEvent(BaseModel):
     """A text fragment emitted during generation."""
+
     kind: Literal["text_delta"] = "text_delta"
     text: str
 
 
 class ToolCallEvent(BaseModel):
     """A complete, JSON-validated tool call emitted by a stream."""
+
     kind: Literal["tool_call"] = "tool_call"
     tool_call: ToolCall
 
 
 class StreamFinishedEvent(BaseModel):
     """The terminal event for a generation stream."""
+
     kind: Literal["finish"] = "finish"
     finish_reason: FinishReason
 
@@ -243,10 +256,11 @@ GenerationStreamEvent = TextDeltaEvent | ToolCallEvent | StreamFinishedEvent
 
 class ChatMessage(BaseModel):
     """Single message in a conversation."""
+
     role: Literal["system", "user", "assistant", "tool"]
     content: str | None = None
-    name: str | None = None            # Identifier for tool messages
-    tool_call_id: str | None = None    # Links tool result to its originating call
+    name: str | None = None  # Identifier for tool messages
+    tool_call_id: str | None = None  # Links tool result to its originating call
     tool_calls: list[ToolCall] = Field(default_factory=list)
 
     def to_interop(self) -> InteropMessage:
@@ -271,6 +285,7 @@ class ChatMessage(BaseModel):
 
 class GenerationRequest(BaseModel):
     """Request to generate text from a conversation."""
+
     messages: list[ChatMessage]
     max_tokens: int = 512
     temperature: float = 0.7
@@ -296,6 +311,7 @@ class GenerationRequest(BaseModel):
 
 class GenerationResponse(BaseModel):
     """Response from a single generation call. Always returned; never plain str."""
+
     message: ChatMessage
     finish_reason: FinishReason = "unknown"
     usage: UsageStats = Field(default_factory=UsageStats)
@@ -338,7 +354,9 @@ class GenerationResponse(BaseModel):
             "model_name": self.model_name,
             "finish_reason": self.finish_reason,
             "usage": self.usage.model_dump(exclude_none=True),
-            "active_optimizations": [opt.model_dump(exclude_none=True) for opt in self.active_optimizations],
+            "active_optimizations": [
+                opt.model_dump(exclude_none=True) for opt in self.active_optimizations
+            ],
         }
         if self.raw_provider_payload is not None:
             diagnostics["raw_provider_payload"] = self.raw_provider_payload
@@ -354,14 +372,17 @@ class GenerationResponse(BaseModel):
 # Embedding schema
 # ---------------------------------------------------------------------------
 
+
 class EmbeddingRequest(BaseModel):
     """Request to generate embedding vectors."""
+
     texts: list[str]
     model: str | None = None  # Use backend default if not specified
 
 
 class EmbeddingResponse(BaseModel):
     """Embedding vectors from a single embed call."""
+
     vectors: list[list[float]]
     dimensions: int
     model_name: str
@@ -374,6 +395,7 @@ class EmbeddingResponse(BaseModel):
 # Engines implement only the Protocols matching their actual capabilities.
 # The type checker enforces this; no "universal engine" assumption.
 # ---------------------------------------------------------------------------
+
 
 @runtime_checkable
 class ChatModel(Protocol):
@@ -451,7 +473,7 @@ class LogprobModel(Protocol):
         top_logprobs: int = 0,
     ) -> LogprobResult:
         """Generate text and return token-level log probabilities.
-        
+
         top_logprobs=0: only the chosen token's logprob (cheapest).
         top_logprobs=N: N most-likely alternatives per position.
         Not available on AnthropicEngine (API does not expose logprobs).
@@ -478,31 +500,45 @@ class BatchChatModel(Protocol):
 # They contain no logic here; implementations live in llm_engines/backends/.
 # ---------------------------------------------------------------------------
 
+
 class OllamaEngine(ChatModel, ToolCallingModel, EmbeddingModel, StreamingModel, Protocol):
     """Ollama: chat, tool calling, embeddings, sync streaming."""
+
     pass
 
 
 class AnthropicEngine(ChatModel, ToolCallingModel, AsyncStreamingModel, Protocol):
     """Anthropic: chat, tool calling, async streaming. No native embeddings."""
+
     pass
 
 
-class OpenAIEngine(ChatModel, ToolCallingModel, EmbeddingModel, AsyncStreamingModel, AsyncToolStreamingModel, Protocol):
+class OpenAIEngine(
+    ChatModel,
+    ToolCallingModel,
+    EmbeddingModel,
+    AsyncStreamingModel,
+    AsyncToolStreamingModel,
+    Protocol,
+):
     """OpenAI: chat, tool calling, embeddings, async streaming."""
+
     pass
 
 
 class vLLMEngine(ChatModel, EmbeddingModel, AsyncStreamingModel, BatchChatModel, Protocol):
     """vLLM: chat, embeddings, async streaming, batch."""
+
     pass
 
 
 class LlamaCppEngine(ChatModel, EmbeddingModel, StreamingModel, Protocol):
     """llama.cpp: chat, embeddings, sync streaming. No tool calling."""
+
     pass
 
 
 class MockEngine(ChatModel, Protocol):
     """Mock engine for testing. Supports basic chat only."""
+
     pass

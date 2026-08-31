@@ -90,6 +90,11 @@ The work progressed through evidence rather than assuming a design:
     type-checking-only return-type import. Package and targeted integration
     tests passed 128 with one skip; the full gate remains at 1,268 passed.
     `llm_engines` is next.
+23. `llm_engines` is now lint-clean, formatted, and included in the shared
+    gate. Structural-protocol imports were removed while explicit public-import
+    smoke checks were retained with narrow annotations. Engine and targeted
+    cross-package tests passed 320 with 14 skips; the full gate remains at
+    1,268 passed. `engram` is next.
 
 Key commits, oldest to newest:
 
@@ -132,7 +137,7 @@ arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
 complete. The active maintenance sequence is Python-quality adoption, next
-through `llm_engines`. A deeper
+through `engram`. A deeper
 command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.

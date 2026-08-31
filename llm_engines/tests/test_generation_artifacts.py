@@ -96,7 +96,9 @@ def test_tool_call_is_preserved_in_generation_body() -> None:
         update={
             "message": ChatMessage(
                 role="assistant",
-                tool_calls=[ToolCall(call_id="call-1", name="lookup", arguments={"key": "fixture"})],
+                tool_calls=[
+                    ToolCall(call_id="call-1", name="lookup", arguments={"key": "fixture"})
+                ],
             ),
             "finish_reason": "tool_call",
         }
@@ -121,9 +123,13 @@ def test_partial_telemetry_is_omitted_not_zero() -> None:
 def test_reported_cache_and_optimization_metadata_are_preserved() -> None:
     response = _response().model_copy(
         update={
-            "cache_stats": CacheStats(prompt_cache_hit_tokens=7, prompt_cache_miss_tokens=3, cache_key="fixture"),
+            "cache_stats": CacheStats(
+                prompt_cache_hit_tokens=7, prompt_cache_miss_tokens=3, cache_key="fixture"
+            ),
             "active_optimizations": [
-                ActiveInferenceOptimization(kind="other", backend="mock", parameters={"fixture": True})
+                ActiveInferenceOptimization(
+                    kind="other", backend="mock", parameters={"fixture": True}
+                )
             ],
         }
     )
@@ -131,7 +137,9 @@ def test_reported_cache_and_optimization_metadata_are_preserved() -> None:
 
     assert artifact.body["response"]["cache_stats"]["prompt_cache_hit_tokens"] == 7
     assert artifact.body["response"]["active_optimizations"][0]["kind"] == "other"
-    assert "/body/response/cache_stats" not in {item.field_path for item in artifact.envelope.omissions}
+    assert "/body/response/cache_stats" not in {
+        item.field_path for item in artifact.envelope.omissions
+    }
 
 
 def test_raw_payload_is_default_off_and_explicitly_includable() -> None:
@@ -157,7 +165,9 @@ def test_raw_payload_is_default_off_and_explicitly_includable() -> None:
 def test_record_generation_executes_engine_once_and_preserves_lineage() -> None:
     engine = MockEngine(model="mock-fixture")
     times = iter((START, END))
-    relationship = Relationship(relation_type="part_of", target_kind="agent_run", target_id="rr_agent")
+    relationship = Relationship(
+        relation_type="part_of", target_kind="agent_run", target_id="rr_agent"
+    )
 
     recorded = record_generation(
         engine,

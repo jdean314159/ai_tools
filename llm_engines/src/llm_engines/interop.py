@@ -24,7 +24,11 @@ def describe_engine(engine: Any) -> CapabilityDescriptor:
     else:
         capabilities = EngineCapabilities()
 
-    backend = getattr(engine, "BACKEND", None) or getattr(engine, "backend", None) or engine.__class__.__name__.lower()
+    backend = (
+        getattr(engine, "BACKEND", None)
+        or getattr(engine, "backend", None)
+        or engine.__class__.__name__.lower()
+    )
     model = getattr(engine, "model", None)
     metadata = {"backend": backend}
     if model is not None:

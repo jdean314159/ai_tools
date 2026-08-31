@@ -16,15 +16,15 @@ Design:
   One short retry on transient errors before moving to next engine
   Cloud engines sanitise prompt if cloud_policy != "full_context"
 """
+
 from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Iterator, Sequence
 
 from llm_engines.contracts import (
-    BackendUnavailableError,
     ChatMessage,
     ChatModel,
     EmbeddingModel,
@@ -34,9 +34,7 @@ from llm_engines.contracts import (
     GenerationError,
     GenerationRequest,
     GenerationResponse,
-    ModelNotFoundError,
     StreamingModel,
-    UsageStats,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,6 +43,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Policy
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class FailoverPolicy:
@@ -80,6 +79,7 @@ class FailoverPolicy:
 # Per-engine health tracker (circuit breaker state)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _EngineHealth:
     failures: int = 0
@@ -93,8 +93,9 @@ class _EngineHealth:
         if self.failures >= policy.circuit_breaker_failures:
             self.cooldown_until = time.monotonic() + policy.circuit_breaker_cooldown_s
             self.failures = 0
-            logger.warning("Engine circuit breaker tripped — cooldown %.0fs",
-                           policy.circuit_breaker_cooldown_s)
+            logger.warning(
+                "Engine circuit breaker tripped — cooldown %.0fs", policy.circuit_breaker_cooldown_s
+            )
 
     def record_success(self) -> None:
         self.failures = 0
@@ -105,14 +106,14 @@ class _EngineHealth:
 # Error classification
 # ---------------------------------------------------------------------------
 
+
 def _classify(e: Exception) -> str:
     msg = str(e).lower()
     if "context length" in msg or "maximum context" in msg or "too many tokens" in msg:
         return "context"
     if "out of memory" in msg or "cuda out of memory" in msg or "oom" in msg:
         return "oom"
-    if ("timed out" in msg or "timeout" in msg
-            or "connection" in msg or "unreachable" in msg):
+    if "timed out" in msg or "timeout" in msg or "connection" in msg or "unreachable" in msg:
         return "transient"
     if "not found" in msg or "no such" in msg:
         return "not_found"
@@ -148,10 +149,12 @@ def _sanitise_for_cloud(request: GenerationRequest, policy: str) -> GenerationRe
         if is_memory_block and policy in ("query_only", "query_plus_summary"):
             if policy == "query_plus_summary":
                 # Replace with a short notice
-                filtered_messages.append(ChatMessage(
-                    role=msg.role,
-                    content="[Retrieved memory context omitted for cloud privacy]"
-                ))
+                filtered_messages.append(
+                    ChatMessage(
+                        role=msg.role,
+                        content="[Retrieved memory context omitted for cloud privacy]",
+                    )
+                )
             # query_only: drop entirely
         else:
             filtered_messages.append(msg)
@@ -162,6 +165,7 @@ def _sanitise_for_cloud(request: GenerationRequest, policy: str) -> GenerationRe
 # ---------------------------------------------------------------------------
 # FailoverEngine
 # ---------------------------------------------------------------------------
+
 
 class FailoverEngine:
     """
@@ -189,9 +193,7 @@ class FailoverEngine:
         self.engines = list(engines)
         self.policy = policy or FailoverPolicy()
         self.name = name
-        self._health: dict[int, _EngineHealth] = {
-            i: _EngineHealth() for i in range(len(engines))
-        }
+        self._health: dict[int, _EngineHealth] = {i: _EngineHealth() for i in range(len(engines))}
 
     # ------------------------------------------------------------------
     # Helpers
@@ -277,9 +279,9 @@ class FailoverEngine:
                     response = engine.generate(effective_request)
                     self._health[idx].record_success()
                     if len(self.engines) > 1:
-                        response = response.model_copy(update={
-                            "backend": f"{response.backend}[failover:{self.name}]"
-                        })
+                        response = response.model_copy(
+                            update={"backend": f"{response.backend}[failover:{self.name}]"}
+                        )
                     return response
 
                 except Exception as e:
@@ -288,8 +290,7 @@ class FailoverEngine:
                     last_error = e
 
                     if error_class == "transient" and self.policy.transient_retry:
-                        logger.warning("Transient error on %s, retrying once: %s",
-                                       model_label, e)
+                        logger.warning("Transient error on %s, retrying once: %s", model_label, e)
                         time.sleep(self.policy.transient_retry_backoff_s)
                         # One inline retry — if it fails, fall through to next engine
                         try:
@@ -309,24 +310,27 @@ class FailoverEngine:
                             current_max_tokens // 2,
                         )
                         if reduced < current_max_tokens:
-                            logger.warning("OOM on %s — reducing max_tokens %d→%d",
-                                           model_label, current_max_tokens, reduced)
+                            logger.warning(
+                                "OOM on %s — reducing max_tokens %d→%d",
+                                model_label,
+                                current_max_tokens,
+                                reduced,
+                            )
                             current_max_tokens = reduced
                             continue  # retry same engine with reduced tokens
                         # Already at minimum — give up on this engine
-                        logger.warning("OOM on %s at minimum max_tokens, moving on",
-                                       model_label)
+                        logger.warning("OOM on %s at minimum max_tokens, moving on", model_label)
                         break
 
                     # All other errors: trip circuit breaker and try next engine
                     self._health[idx].record_failure(self.policy)
-                    logger.warning("Engine %s failed (%s), trying next: %s",
-                                   model_label, error_class, e)
+                    logger.warning(
+                        "Engine %s failed (%s), trying next: %s", model_label, error_class, e
+                    )
                     break  # exit inner while, advance to next engine
 
         raise GenerationError(
-            f"All engines failed after {attempts} attempts. "
-            f"Last error: {last_error}"
+            f"All engines failed after {attempts} attempts. Last error: {last_error}"
         ) from last_error
 
     # ------------------------------------------------------------------
@@ -369,8 +373,9 @@ class FailoverEngine:
                 return
             except Exception as e:
                 self._health[idx].record_failure(self.policy)
-                logger.warning("Streaming failed on engine %d, falling back to generate(): %s",
-                               idx, e)
+                logger.warning(
+                    "Streaming failed on engine %d, falling back to generate(): %s", idx, e
+                )
                 break
         # Fallback: use generate() and yield the full content at once
         response = self.generate(request)

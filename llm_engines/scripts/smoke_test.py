@@ -16,23 +16,36 @@ Usage:
     # Also test cloud backends:
     python scripts/smoke_test.py --anthropic --openai
 """
+
 from __future__ import annotations
 
 import argparse
 import sys
 import time
-import traceback
 
 # ---------------------------------------------------------------------------
 # Colour output helpers (no dependencies)
 # ---------------------------------------------------------------------------
 
-def _green(s: str) -> str: return f"\033[32m{s}\033[0m"
-def _red(s: str) -> str:   return f"\033[31m{s}\033[0m"
-def _yellow(s: str) -> str: return f"\033[33m{s}\033[0m"
-def _bold(s: str) -> str:  return f"\033[1m{s}\033[0m"
+
+def _green(s: str) -> str:
+    return f"\033[32m{s}\033[0m"
+
+
+def _red(s: str) -> str:
+    return f"\033[31m{s}\033[0m"
+
+
+def _yellow(s: str) -> str:
+    return f"\033[33m{s}\033[0m"
+
+
+def _bold(s: str) -> str:
+    return f"\033[1m{s}\033[0m"
+
 
 _results: list[tuple[str, bool, str]] = []
+
 
 def _check(name: str, fn):
     """Run a check function, record pass/fail."""
@@ -57,25 +70,34 @@ def _section(title: str) -> None:
 # Checks
 # ---------------------------------------------------------------------------
 
+
 def check_imports() -> None:
     _section("1. Import checks")
 
     def _contracts():
-        from llm_engines.contracts import (
-            ChatMessage, GenerationRequest, GenerationResponse,
-            EmbeddingRequest, EmbeddingResponse,
-            ChatModel, EmbeddingModel, StreamingModel,
+        from llm_engines.contracts import (  # noqa: F401
+            ChatMessage,
+            ChatModel,
+            EmbeddingModel,
+            EmbeddingRequest,
+            EmbeddingResponse,
+            GenerationRequest,
+            GenerationResponse,
             LogprobModel,
+            StreamingModel,
         )
-        from llm_engines.router import FailoverEngine  # not in contracts
+        from llm_engines.router import FailoverEngine  # noqa: F401
+
         return "contracts OK"
 
     def _llm_engines():
         import llm_engines
+
         return f"v{llm_engines.__version__}"
 
     def _pydantic():
         import pydantic
+
         v = pydantic.VERSION
         if not v.startswith("2."):
             raise RuntimeError(f"Pydantic v2 required, got {v}")
@@ -83,6 +105,7 @@ def check_imports() -> None:
 
     def _yaml():
         import yaml  # noqa: F401
+
         return "pyyaml OK"
 
     def _structured_output():
@@ -99,13 +122,12 @@ def check_imports() -> None:
     def _mock_engine():
         from llm_engines.backends.mock import MockEngine
         from llm_engines.contracts import ChatMessage, GenerationRequest
+
         engine = MockEngine()
-        resp = engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="hi")]
-        ))
+        resp = engine.generate(GenerationRequest(messages=[ChatMessage(role="user", content="hi")]))
         assert resp.message.content
         assert resp.backend == "mock"
-        return f"MockEngine generate OK"
+        return "MockEngine generate OK"
 
     _check("contracts imports", _contracts)
     _check("llm_engines imports", _llm_engines)
@@ -120,6 +142,7 @@ def check_hardware() -> None:
 
     def _detect():
         from llm_engines.discovery import detect_hardware
+
         hw = detect_hardware()
         parts = [f"CPU cores={hw.cpu_cores}", f"RAM={hw.memory_total_mb}MB"]
         if hw.has_cuda:
@@ -139,12 +162,14 @@ def check_ollama(args) -> None:
 
     def _running():
         from llm_engines.discovery import check_ollama_running
+
         if not check_ollama_running():
             raise RuntimeError("Ollama not reachable at localhost:11434. Run: ollama serve")
         return "reachable"
 
     def _models():
         from llm_engines.discovery import list_ollama_models
+
         models = list_ollama_models()
         if not models:
             raise RuntimeError("No models pulled. Run: ollama pull qwen3:8b")
@@ -153,6 +178,7 @@ def check_ollama(args) -> None:
 
     def _logprobs_version():
         from llm_engines.discovery import check_ollama_logprobs_support
+
         supported = check_ollama_logprobs_support()
         if not supported:
             return "WARN: Ollama < 0.12.11 — logprobs unavailable (surprise filter limited)"
@@ -160,9 +186,10 @@ def check_ollama(args) -> None:
 
     def _registry():
         from llm_engines.discovery import ModelRegistry, detect_hardware
+
         registry = ModelRegistry()
         hw = detect_hardware()
-        models = registry.list_available_models("ollama")
+        registry.list_available_models("ollama")
         rec = registry.recommend_model("chat", hw, "ollama")
         return f"recommend_model → {rec}"
 
@@ -176,6 +203,7 @@ def check_ollama(args) -> None:
 
     # Pick a small model that's likely available
     from llm_engines.discovery import list_ollama_models
+
     available = [m.name for m in list_ollama_models()]
     test_model = next(
         (m for m in available if any(x in m for x in ["8b", "3b", "7b", "9b"])),
@@ -190,13 +218,16 @@ def check_ollama(args) -> None:
     def _generate():
         from llm_engines.backends.ollama import OllamaEngine
         from llm_engines.contracts import ChatMessage, GenerationRequest
+
         engine = OllamaEngine(model=test_model, keep_alive=0)
         t0 = time.perf_counter()
-        resp = engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Reply with exactly the word: OK")],
-            max_tokens=10,
-            temperature=0.0,
-        ))
+        resp = engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Reply with exactly the word: OK")],
+                max_tokens=10,
+                temperature=0.0,
+            )
+        )
         elapsed = time.perf_counter() - t0
         assert resp.message.content, "Empty response"
         assert resp.backend == "ollama"
@@ -207,28 +238,32 @@ def check_ollama(args) -> None:
         """Verify think=False is being honoured (no <think> in output)."""
         from llm_engines.backends.ollama import OllamaEngine
         from llm_engines.contracts import ChatMessage, GenerationRequest
+
         engine = OllamaEngine(model=test_model, keep_alive=0, think=False)
-        resp = engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="What is 2+2?")],
-            max_tokens=50,
-            temperature=0.0,
-        ))
+        resp = engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="What is 2+2?")],
+                max_tokens=50,
+                temperature=0.0,
+            )
+        )
         content = resp.message.content or ""
         if "<think>" in content.lower():
             raise RuntimeError("think=False not working — <think> block in response")
         return "no <think> block"
 
     def _failover():
-        from llm_engines import EngineFactory, FailoverEngine
-        from llm_engines.contracts import ChatMessage, GenerationRequest
+        from llm_engines import EngineFactory
+
         # Use the first available profile rather than hardcoding 'test'
         from llm_engines.config_loader import load_config
+
         cfg = load_config()
         profiles = list((cfg.get("profiles") or {}).keys())
         if not profiles:
             return "no profiles configured — skipping"
         profile_name = profiles[0]
-        engine = EngineFactory.from_profile(profile_name)
+        EngineFactory.from_profile(profile_name)
         return f"FailoverEngine via profile '{profile_name}' OK"
 
     _check(f"OllamaEngine.generate() [{test_model}]", _generate)
@@ -241,25 +276,29 @@ def check_ollama(args) -> None:
         None,
     )
     if embed_model:
+
         def _embed():
             from llm_engines.backends.ollama import OllamaEngine
             from llm_engines.contracts import EmbeddingRequest
+
             engine = OllamaEngine(model=embed_model, keep_alive=0)
             resp = engine.embed(EmbeddingRequest(texts=["Hello world", "Test sentence"]))
             assert len(resp.vectors) == 2
             assert resp.dimensions > 0
             return f"{embed_model} dim={resp.dimensions}"
+
         _check(f"OllamaEngine.embed() [{embed_model}]", _embed)
     else:
         print(f"  {_yellow('SKIP')} embed test — no embedding model pulled")
-        print(f"         Run: ollama pull nomic-embed-text")
+        print("         Run: ollama pull nomic-embed-text")
 
 
 def check_engram_adapter() -> None:
     _section("4. Engram semantic extraction")
 
     def _import():
-        from engram.semantic.extractor import SemanticExtractor
+        from engram.semantic.extractor import SemanticExtractor  # noqa: F401
+
         return "import OK"
 
     def _extract_entities():
@@ -267,9 +306,9 @@ def check_engram_adapter() -> None:
         from llm_engines.backends.mock import MockEngine
         import json
 
-        payload = json.dumps([
-            {"type": "preference", "subject": "auth", "value": "Alice", "confidence": 0.8}
-        ])
+        payload = json.dumps(
+            [{"type": "preference", "subject": "auth", "value": "Alice", "confidence": 0.8}]
+        )
         engine = MockEngine(response_fn=lambda r: payload)
         extractor = SemanticExtractor(llm_engine=engine, enable_llm_extraction=True)
         result = extractor.extract("Alice works on auth")
@@ -287,7 +326,8 @@ def check_rag_inspector() -> None:
     _section("5. RAGInspector")
 
     def _import():
-        from llm_inspector import RAGInspector, EngramRAGAdapter
+        from llm_inspector import EngramRAGAdapter, RAGInspector  # noqa: F401
+
         return "import OK"
 
     def _compare():
@@ -295,9 +335,14 @@ def check_rag_inspector() -> None:
         from llm_engines.contracts import Chunk
 
         class FakePipeline:
-            def retrieve(self, q): return [Chunk(content="Some fact.", source_id="1", score=0.9)]
-            def assemble_prompt(self, q, chunks): return f"Q: {q}"
-            def generate(self, p): return "Answer"
+            def retrieve(self, q):
+                return [Chunk(content="Some fact.", source_id="1", score=0.9)]
+
+            def assemble_prompt(self, q, chunks):
+                return f"Q: {q}"
+
+            def generate(self, p):
+                return "Answer"
 
         inspector = RAGInspector()
         inspector.add_pipeline("test", FakePipeline())
@@ -317,6 +362,7 @@ def check_anthropic(args) -> None:
     _section("6. AnthropicEngine (cloud)")
 
     import os
+
     key = os.getenv("ANTHROPIC_API_KEY")
     if not key:
         print(f"  {_yellow('SKIP')} ANTHROPIC_API_KEY not set")
@@ -325,12 +371,15 @@ def check_anthropic(args) -> None:
     def _generate():
         from llm_engines.backends.anthropic import AnthropicEngine
         from llm_engines.contracts import ChatMessage, GenerationRequest
+
         engine = AnthropicEngine(model="claude-haiku-4-5")
-        resp = engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Reply with exactly: OK")],
-            max_tokens=10,
-            temperature=0.0,
-        ))
+        resp = engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Reply with exactly: OK")],
+                max_tokens=10,
+                temperature=0.0,
+            )
+        )
         assert resp.message.content
         assert resp.backend == "anthropic"
         return f"content='{resp.message.content.strip()}' tokens={resp.usage.total_tokens}"
@@ -342,6 +391,7 @@ def check_openai(args) -> None:
     _section("7. OpenAIEngine (cloud)")
 
     import os
+
     key = os.getenv("OPENAI_API_KEY")
     if not key:
         print(f"  {_yellow('SKIP')} OPENAI_API_KEY not set")
@@ -350,12 +400,15 @@ def check_openai(args) -> None:
     def _generate():
         from llm_engines.backends.openai import OpenAIEngine
         from llm_engines.contracts import ChatMessage, GenerationRequest
+
         engine = OpenAIEngine(model="gpt-4o-mini")
-        resp = engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Reply with exactly: OK")],
-            max_tokens=10,
-            temperature=0.0,
-        ))
+        resp = engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Reply with exactly: OK")],
+                max_tokens=10,
+                temperature=0.0,
+            )
+        )
         assert resp.message.content
         return f"content='{resp.message.content.strip()}' tokens={resp.usage.total_tokens}"
 
@@ -366,14 +419,16 @@ def check_openai(args) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="llm_engines smoke test")
-    parser.add_argument("--offline", action="store_true",
-                        help="Skip all live service checks")
-    parser.add_argument("--anthropic", action="store_true",
-                        help="Test Anthropic API (requires ANTHROPIC_API_KEY)")
-    parser.add_argument("--openai", action="store_true",
-                        help="Test OpenAI API (requires OPENAI_API_KEY)")
+    parser.add_argument("--offline", action="store_true", help="Skip all live service checks")
+    parser.add_argument(
+        "--anthropic", action="store_true", help="Test Anthropic API (requires ANTHROPIC_API_KEY)"
+    )
+    parser.add_argument(
+        "--openai", action="store_true", help="Test OpenAI API (requires OPENAI_API_KEY)"
+    )
     args = parser.parse_args()
 
     print(_bold("\n=== llm_engines smoke test ==="))
@@ -398,7 +453,7 @@ def main() -> None:
     failed = sum(1 for _, ok, _ in _results if not ok)
     total = len(_results)
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(_bold(f"Results: {passed}/{total} passed"))
     if failed:
         print(_red(f"         {failed} failed:"))

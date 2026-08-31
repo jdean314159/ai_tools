@@ -31,6 +31,7 @@ Design:
     - Errors in tool execution are returned as tool results (not raised),
       so the model can handle them gracefully.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -48,7 +49,6 @@ from llm_engines.contracts import (
     UsageStats,
 )
 from llm_engines.contracts import (
-    ToolInvocation,
     ToolParameterSchema,
     ToolResult,
     ToolSpec,
@@ -58,12 +58,12 @@ logger = logging.getLogger(__name__)
 
 # Python type → JSON Schema type
 _PY_TO_JSON: dict[str, str] = {
-    "str":   "string",
-    "int":   "integer",
+    "str": "string",
+    "int": "integer",
     "float": "number",
-    "bool":  "boolean",
-    "list":  "array",
-    "dict":  "object",
+    "bool": "boolean",
+    "list": "array",
+    "dict": "object",
 }
 
 
@@ -174,6 +174,7 @@ class ToolExecutor:
 
             executor.register(my_function, name="custom_name")
         """
+
         def _register(f: Callable[..., Any]) -> Callable[..., Any]:
             spec = _infer_tool_spec(f, name=name)
             if description:
@@ -220,9 +221,7 @@ class ToolExecutor:
         Returns the final GenerationResponse (finish_reason="stop").
         """
         if not self._tools:
-            raise RuntimeError(
-                "No tools registered. Use @executor.register before calling run()."
-            )
+            raise RuntimeError("No tools registered. Use @executor.register before calling run().")
 
         # Build message history, prepending system prompt if set
         history: list[ChatMessage] = []
@@ -260,20 +259,18 @@ class ToolExecutor:
             # Append tool results as tool messages
             for result in tool_results:
                 content = self._format_result(result)
-                history.append(ChatMessage(
-                    role="tool",
-                    content=content,
-                    tool_call_id=result.call_id,
-                    name=result.tool_name,
-                ))
+                history.append(
+                    ChatMessage(
+                        role="tool",
+                        content=content,
+                        tool_call_id=result.call_id,
+                        name=result.tool_name,
+                    )
+                )
 
-            logger.debug(
-                "Step %d: executed %d tools, continuing", step + 1, len(tool_results)
-            )
+            logger.debug("Step %d: executed %d tools, continuing", step + 1, len(tool_results))
 
-        logger.warning(
-            "ToolExecutor reached max_steps=%d without a final response", self.max_steps
-        )
+        logger.warning("ToolExecutor reached max_steps=%d without a final response", self.max_steps)
         # Return the last response even if it still has tool calls
         return last_response or GenerationResponse(
             message=ChatMessage(role="assistant", content="[max steps reached]"),
@@ -289,39 +286,43 @@ class ToolExecutor:
         for call in tool_calls:
             t0 = time.perf_counter()
             if call.name not in self._tools:
-                results.append(ToolResult(
-                    call_id=call.call_id,
-                    tool_name=call.name,
-                    status="error",
-                    error_message=f"Unknown tool '{call.name}'. Available: {list(self._tools)}",
-                    execution_ms=0.0,
-                ))
+                results.append(
+                    ToolResult(
+                        call_id=call.call_id,
+                        tool_name=call.name,
+                        status="error",
+                        error_message=f"Unknown tool '{call.name}'. Available: {list(self._tools)}",
+                        execution_ms=0.0,
+                    )
+                )
                 continue
 
             fn = self._tools[call.name]
             try:
                 output = fn(**call.arguments)
                 elapsed = (time.perf_counter() - t0) * 1000
-                results.append(ToolResult(
-                    call_id=call.call_id,
-                    tool_name=call.name,
-                    status="success",
-                    output=output,
-                    execution_ms=round(elapsed, 3),
-                ))
-                logger.debug(
-                    "Tool %s completed in %.1fms", call.name, elapsed
+                results.append(
+                    ToolResult(
+                        call_id=call.call_id,
+                        tool_name=call.name,
+                        status="success",
+                        output=output,
+                        execution_ms=round(elapsed, 3),
+                    )
                 )
+                logger.debug("Tool %s completed in %.1fms", call.name, elapsed)
             except Exception as e:
                 elapsed = (time.perf_counter() - t0) * 1000
                 logger.warning("Tool %s failed: %s", call.name, e)
-                results.append(ToolResult(
-                    call_id=call.call_id,
-                    tool_name=call.name,
-                    status="error",
-                    error_message=str(e),
-                    execution_ms=round(elapsed, 3),
-                ))
+                results.append(
+                    ToolResult(
+                        call_id=call.call_id,
+                        tool_name=call.name,
+                        status="error",
+                        error_message=str(e),
+                        execution_ms=round(elapsed, 3),
+                    )
+                )
         return results
 
     def _format_result(self, result: ToolResult) -> str:
@@ -339,6 +340,7 @@ class ToolExecutor:
 # ---------------------------------------------------------------------------
 # Convenience decorator (module-level, for use without an executor instance)
 # ---------------------------------------------------------------------------
+
 
 def tool(
     fn: Callable[..., Any] | None = None,
@@ -359,6 +361,7 @@ def tool(
 
         executor.register_spec(search_web._tool_spec, search_web)
     """
+
     def _wrap(f: Callable[..., Any]) -> Callable[..., Any]:
         spec = _infer_tool_spec(f, name=name)
         setattr(f, "_tool_spec", spec)

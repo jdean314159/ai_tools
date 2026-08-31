@@ -206,9 +206,7 @@ def _run_case(engine: Any, case: _Case, *, thinking: bool | None) -> ToolDecisio
         else None
     )
     passed = (
-        len(calls) == 1
-        and observed_tool == case.expected_tool
-        and arguments_match is True
+        len(calls) == 1 and observed_tool == case.expected_tool and arguments_match is True
         if case.expected_action == "call_tool"
         else not calls and direct_match is True
     )
@@ -243,9 +241,7 @@ def run_tool_decision_campaign(
     started = _now()
     cases = _cases()
     results = tuple(
-        _run_case(engine, case, thinking=thinking)
-        for _ in range(repetitions)
-        for case in cases
+        _run_case(engine, case, thinking=thinking) for _ in range(repetitions) for case in cases
     )
     aggregates: dict[str, dict[str, Any]] = {}
     for case in cases:
@@ -353,7 +349,11 @@ def build_tool_decision_artifact(report: ToolDecisionCampaignReport) -> RunArtif
                     determinism=DeterminismClaim(
                         claim="best_effort",
                         evidence_basis="exercised",
-                        conditions=("temperature=0", "fixed synthetic prompts", "tools not executed"),
+                        conditions=(
+                            "temperature=0",
+                            "fixed synthetic prompts",
+                            "tools not executed",
+                        ),
                     ),
                     implementation_version="1",
                 ),

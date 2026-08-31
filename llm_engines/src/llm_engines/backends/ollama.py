@@ -17,6 +17,7 @@ Design decisions:
   - num_gpu: pass None for Ollama default (all GPU), 0 for CPU-only,
     N for N-layer split offload. Critical for 32B+ models on 24GB VRAM.
 """
+
 from __future__ import annotations
 
 import json
@@ -121,8 +122,7 @@ class OllamaEngine:
 
         if not check_ollama_running(self.host):
             raise BackendUnavailableError(
-                f"Ollama not reachable at {self.host}. "
-                "Is 'ollama serve' running?"
+                f"Ollama not reachable at {self.host}. Is 'ollama serve' running?"
             )
 
         if auto_pull:
@@ -133,6 +133,7 @@ class OllamaEngine:
         self._supports_logprobs = check_ollama_logprobs_support(host)
         if not self._supports_logprobs:
             import logging
+
             logging.getLogger(__name__).warning(
                 "Ollama < 0.12.11: logprobs unavailable. "
                 "Surprise filter will run in conservative mode."
@@ -370,10 +371,7 @@ class OllamaEngine:
         Raises GenerationError if this Ollama instance does not support logprobs.
         """
         if not self._supports_logprobs:
-            raise GenerationError(
-                "Logprobs require Ollama >= 0.12.11. "
-                "Upgrade with: ollama update"
-            )
+            raise GenerationError("Logprobs require Ollama >= 0.12.11. Upgrade with: ollama update")
         try:
             from openai import OpenAI
         except ImportError as e:
@@ -404,9 +402,11 @@ class OllamaEngine:
         token_logprobs: list[TokenLogprob] = []
         if choice.logprobs and choice.logprobs.content:
             for tlp in choice.logprobs.content:
-                token_logprobs.append(TokenLogprob(
-                    token=tlp.token,
-                    logprob=tlp.logprob,
-                    bytes=getattr(tlp, "bytes", None),
-                ))
+                token_logprobs.append(
+                    TokenLogprob(
+                        token=tlp.token,
+                        logprob=tlp.logprob,
+                        bytes=getattr(tlp, "bytes", None),
+                    )
+                )
         return LogprobResult(text=text, token_logprobs=token_logprobs)

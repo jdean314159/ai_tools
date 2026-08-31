@@ -6,13 +6,13 @@ MockEngine: deterministic in-process engine for unit testing.
 Supports: ChatModel only.
 Does not require any external services or GPU.
 """
+
 from __future__ import annotations
 
 from typing import Callable
 
 from llm_engines.contracts import (
     ChatMessage,
-    ChatModel,
     EngineCapabilities,
     GenerationRequest,
     GenerationResponse,
@@ -73,6 +73,7 @@ class MockEngine:
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         if not request.messages:
             from llm_engines.contracts import GenerationError
+
             raise GenerationError("MockEngine: messages list cannot be empty")
 
         self._call_count += 1

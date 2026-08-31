@@ -20,8 +20,14 @@ def test_resolve_ollama_gguf_path_reads_manifest_and_blob(tmp_path) -> None:
         json.dumps(
             {
                 "layers": [
-                    {"mediaType": "application/vnd.ollama.image.params", "digest": "sha256:" + "b" * 64},
-                    {"mediaType": "application/vnd.ollama.image.model", "digest": f"sha256:{digest}"},
+                    {
+                        "mediaType": "application/vnd.ollama.image.params",
+                        "digest": "sha256:" + "b" * 64,
+                    },
+                    {
+                        "mediaType": "application/vnd.ollama.image.model",
+                        "digest": f"sha256:{digest}",
+                    },
                 ]
             }
         ),
@@ -39,7 +45,16 @@ def test_resolve_ollama_gguf_path_defaults_to_latest_tag(tmp_path) -> None:
     manifest = tmp_path / "manifests" / "registry.example" / "custom" / "model" / "latest"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(
-        json.dumps({"layers": [{"mediaType": "application/vnd.ollama.image.model", "digest": f"sha256:{digest}"}]}),
+        json.dumps(
+            {
+                "layers": [
+                    {
+                        "mediaType": "application/vnd.ollama.image.model",
+                        "digest": f"sha256:{digest}",
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -65,7 +80,16 @@ def test_resolve_ollama_gguf_path_falls_back_to_system_service_store(
     manifest = system_store / "manifests" / "registry.ollama.ai" / "library" / "qwen3" / "8b"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(
-        json.dumps({"layers": [{"mediaType": "application/vnd.ollama.image.model", "digest": f"sha256:{digest}"}]}),
+        json.dumps(
+            {
+                "layers": [
+                    {
+                        "mediaType": "application/vnd.ollama.image.model",
+                        "digest": f"sha256:{digest}",
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -93,7 +117,13 @@ def test_resolve_ollama_gguf_path_raises_when_model_layer_missing(tmp_path) -> N
     manifest = tmp_path / "manifests" / "registry.ollama.ai" / "library" / "qwen3" / "8b"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(
-        json.dumps({"layers": [{"mediaType": "application/vnd.ollama.image.params", "digest": "sha256:abc"}]}),
+        json.dumps(
+            {
+                "layers": [
+                    {"mediaType": "application/vnd.ollama.image.params", "digest": "sha256:abc"}
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -106,7 +136,16 @@ def test_resolve_ollama_gguf_path_raises_when_blob_missing(tmp_path) -> None:
     manifest = tmp_path / "manifests" / "registry.ollama.ai" / "library" / "qwen3" / "8b"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(
-        json.dumps({"layers": [{"mediaType": "application/vnd.ollama.image.model", "digest": f"sha256:{digest}"}]}),
+        json.dumps(
+            {
+                "layers": [
+                    {
+                        "mediaType": "application/vnd.ollama.image.model",
+                        "digest": f"sha256:{digest}",
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 

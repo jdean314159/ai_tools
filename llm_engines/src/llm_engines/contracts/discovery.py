@@ -10,6 +10,7 @@ Engram imports from there (not directly from contracts).
 ADR: Covered under ADR-001 (Engine Capability Model)
 Status: Pending ADR acceptance
 """
+
 from __future__ import annotations
 
 from typing import Literal
@@ -23,8 +24,10 @@ from .engine import EngineCapabilities
 # Hardware detection
 # ---------------------------------------------------------------------------
 
+
 class GPU(BaseModel):
     """Single GPU as detected by the hardware probe."""
+
     id: int
     name: str
     vram_mb: int
@@ -44,11 +47,12 @@ class GPU(BaseModel):
 
 class HardwareProfile(BaseModel):
     """Detected hardware capabilities of the current machine."""
+
     gpus: list[GPU] = Field(default_factory=list)
-    vram_total_mb: int = 0          # Sum across all GPUs; 0 = CPU-only
-    vram_free_mb: int = 0           # Sum across all GPUs; 0 = unknown/CPU-only
+    vram_total_mb: int = 0  # Sum across all GPUs; 0 = CPU-only
+    vram_free_mb: int = 0  # Sum across all GPUs; 0 = unknown/CPU-only
     cpu_cores: int = 1
-    memory_total_mb: int = 0        # System RAM
+    memory_total_mb: int = 0  # System RAM
     has_cuda: bool = False
     detection_sources: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
@@ -80,11 +84,12 @@ TaskType = Literal["chat", "embeddings", "coding", "general"]
 
 class ModelInfo(BaseModel):
     """Metadata for a single model known to the registry."""
+
     name: str
     backend: str
     size_gb: float
-    min_vram_mb: int              # Minimum to load at all (may swap heavily)
-    recommended_vram_mb: int      # Comfortable inference VRAM
+    min_vram_mb: int  # Minimum to load at all (may swap heavily)
+    recommended_vram_mb: int  # Comfortable inference VRAM
     capabilities: EngineCapabilities = Field(default_factory=EngineCapabilities)
     quantization: str | None = None  # e.g. "Q4_K_M", "fp16", "int8"
 
@@ -164,6 +169,7 @@ class ModelRegistry:
 # ---------------------------------------------------------------------------
 # detect_hardware() function signature
 # ---------------------------------------------------------------------------
+
 
 def detect_hardware() -> HardwareProfile:
     """

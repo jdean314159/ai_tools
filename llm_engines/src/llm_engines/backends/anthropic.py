@@ -13,6 +13,7 @@ API key: ANTHROPIC_API_KEY env var (or pass api_key= directly)
 Privacy note: is_cloud = True — FailoverEngine will apply cloud_policy
 (memory block sanitisation) before routing to this engine.
 """
+
 from __future__ import annotations
 
 import logging
@@ -21,10 +22,8 @@ import time
 from typing import Any, AsyncIterator
 
 from llm_engines.contracts import (
-    AsyncStreamingModel,
     BackendUnavailableError,
     ChatMessage,
-    ChatModel,
     EngineCapabilities,
     EngineConfigError,
     GenerationError,
@@ -33,7 +32,6 @@ from llm_engines.contracts import (
     RateLimitError,
     ContextLengthExceededError,
     ToolCall,
-    ToolCallingModel,
     ToolSpec,
     UsageStats,
 )
@@ -52,10 +50,10 @@ BACKEND = "anthropic"
 
 # Map Anthropic stop_reason → canonical FinishReason
 _FINISH_MAP: dict[str, str] = {
-    "end_turn":     "stop",
-    "max_tokens":   "length",
-    "tool_use":     "tool_call",
-    "stop_sequence":"stop",
+    "end_turn": "stop",
+    "max_tokens": "length",
+    "tool_use": "tool_call",
+    "stop_sequence": "stop",
 }
 
 
@@ -74,26 +72,32 @@ def _convert_messages(request: GenerationRequest) -> tuple[str | None, list[dict
             system = msg.content or ""
         elif msg.role == "tool":
             # Tool result message
-            messages.append({
-                "role": "user",
-                "content": [{
-                    "type": "tool_result",
-                    "tool_use_id": msg.tool_call_id or "",
-                    "content": msg.content or "",
-                }]
-            })
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": msg.tool_call_id or "",
+                            "content": msg.content or "",
+                        }
+                    ],
+                }
+            )
         elif msg.role == "assistant" and msg.tool_calls:
             # Assistant message with tool calls
             content: list[dict[str, Any]] = []
             if msg.content:
                 content.append({"type": "text", "text": msg.content})
             for tc in msg.tool_calls:
-                content.append({
-                    "type": "tool_use",
-                    "id": tc.call_id,
-                    "name": tc.name,
-                    "input": tc.arguments,
-                })
+                content.append(
+                    {
+                        "type": "tool_use",
+                        "id": tc.call_id,
+                        "name": tc.name,
+                        "input": tc.arguments,
+                    }
+                )
             messages.append({"role": "assistant", "content": content})
         else:
             messages.append({"role": msg.role, "content": msg.content or ""})
@@ -105,11 +109,13 @@ def _extract_tool_calls(response_content: list[Any]) -> list[ToolCall]:
     calls = []
     for block in response_content:
         if getattr(block, "type", None) == "tool_use":
-            calls.append(ToolCall(
-                call_id=block.id,
-                name=block.name,
-                arguments=block.input or {},
-            ))
+            calls.append(
+                ToolCall(
+                    call_id=block.id,
+                    name=block.name,
+                    arguments=block.input or {},
+                )
+            )
     return calls
 
 
@@ -180,7 +186,7 @@ class AnthropicEngine:
             embeddings=False,
             structured_output=False,
             batch_generation=False,
-            vision=True,         # Claude supports image input
+            vision=True,  # Claude supports image input
             usage_reporting=True,
             logprobs=False,
         )
@@ -294,15 +300,17 @@ class AnthropicEngine:
                 }
                 if getattr(param, "enum", None):
                     props[name]["enum"] = param.enum
-            tools_payload.append({
-                "name": tool.name,
-                "description": tool.description,
-                "input_schema": {
-                    "type": "object",
-                    "properties": props,
-                    "required": required,
-                },
-            })
+            tools_payload.append(
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": {
+                        "type": "object",
+                        "properties": props,
+                        "required": required,
+                    },
+                }
+            )
 
         kwargs: dict[str, Any] = {
             "model": self.model,

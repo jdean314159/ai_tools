@@ -25,12 +25,12 @@ Speedup profile:
   Worthwhile when: draft_cost × N < large_model_cost AND quality improves.
   Typical ratio: 7B draft × 3 candidates vs. 32B verifier → ~2x cheaper, better quality.
 """
+
 from __future__ import annotations
 
 import concurrent.futures
 import logging
 import time
-from typing import Any
 
 from llm_engines.contracts import (
     ChatMessage,
@@ -129,12 +129,12 @@ class ProposeThenVerifyEngine:
         total_latency = (time.perf_counter() - t0) * 1000
 
         # Aggregate usage across all draft calls + verify call
-        total_input = sum(
-            (r.usage.input_tokens or 0) for r in candidates
-        ) + (verify_usage.input_tokens or 0)
-        total_output = sum(
-            (r.usage.output_tokens or 0) for r in candidates
-        ) + (verify_usage.output_tokens or 0)
+        total_input = sum((r.usage.input_tokens or 0) for r in candidates) + (
+            verify_usage.input_tokens or 0
+        )
+        total_output = sum((r.usage.output_tokens or 0) for r in candidates) + (
+            verify_usage.output_tokens or 0
+        )
 
         return GenerationResponse(
             message=ChatMessage(role="assistant", content=selected_content),
@@ -169,8 +169,9 @@ class ProposeThenVerifyEngine:
             try:
                 resp = self.draft.generate(request)
                 results.append(resp)
-                logger.debug("Draft %d/%d: %d tokens", i + 1, self.n_drafts,
-                             resp.usage.output_tokens or 0)
+                logger.debug(
+                    "Draft %d/%d: %d tokens", i + 1, self.n_drafts, resp.usage.output_tokens or 0
+                )
             except Exception as e:
                 logger.warning("Draft %d/%d failed: %s", i + 1, self.n_drafts, e)
         return results
@@ -195,8 +196,7 @@ class ProposeThenVerifyEngine:
 
         if not results:
             raise GenerationError(
-                f"All {self.n_drafts} draft candidates failed. "
-                f"Errors: {[str(e) for e in errors]}"
+                f"All {self.n_drafts} draft candidates failed. Errors: {[str(e) for e in errors]}"
             )
         return results
 

@@ -4,6 +4,7 @@ tests/test_factory.py
 EngineFactory tests. Single-engine and profile construction.
 All tests that require live backends are marked @pytest.mark.ollama.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -17,7 +18,6 @@ from llm_engines.router import FailoverEngine
 
 
 class TestCreateSingleEngine:
-
     def test_create_mock(self) -> None:
         engine = EngineFactory.create("mock", model="test-model")
         assert isinstance(engine, MockEngine)
@@ -27,9 +27,7 @@ class TestCreateSingleEngine:
             EngineFactory.create("nonexistent_backend", model="foo")
 
     def test_register_custom_backend(self) -> None:
-        EngineFactory.register_backend(
-            "custom_mock", "llm_engines.backends.mock.MockEngine"
-        )
+        EngineFactory.register_backend("custom_mock", "llm_engines.backends.mock.MockEngine")
         engine = EngineFactory.create("custom_mock", model="custom")
         assert isinstance(engine, MockEngine)
 
@@ -103,7 +101,6 @@ class TestCreateSingleEngine:
 
 
 class TestFromConfig:
-
     def test_simple_yaml_mock(self, tmp_path: Path) -> None:
         config = tmp_path / "engine.yaml"
         config.write_text("type: mock\nmodel: test-1b\n")
@@ -122,7 +119,6 @@ class TestFromConfig:
 
 
 class TestFromProfile:
-
     def _write_profile_config(self, tmp_path: Path) -> Path:
         cfg = {
             "engines": {
@@ -137,7 +133,7 @@ class TestFromProfile:
                     "circuit_breaker_failures": 3,
                     "circuit_breaker_cooldown_s": 30,
                 }
-            }
+            },
         }
         path = tmp_path / "llm_engines.yaml"
         path.write_text(yaml.dump(cfg))

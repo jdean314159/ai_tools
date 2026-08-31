@@ -6,7 +6,7 @@ The repository root owns the shared Ruff baseline. Adoption is deliberately
 staged so formatting changes remain reviewable and are not mixed with behavioral
 refactors. `make quality-python` is the enforced gate; its default scope is
 `llm_harness_core`, both loop-guard packages, `mail_lib`, `llm_inspector_ui`,
-`agent_lib`, `llm_inspector`, and `rag_lib`.
+`agent_lib`, `llm_inspector`, `rag_lib`, and `llm_engines`.
 
 The initial policy uses Ruff's conservative `E4`, `E7`, `E9`, and `F` rules,
 100-character lines, and a Python 3.10 syntax target. Python 3.10 remains the
@@ -42,7 +42,7 @@ configuration.
 | `agent_lib` | 0 | 0 (adopted) |
 | `llm_inspector` | 0 | 0 (adopted) |
 | `rag_lib` | 0 | 0 (adopted) |
-| `llm_engines` | 53 | 58 |
+| `llm_engines` | 0 | 0 (adopted) |
 | `engram` | 55 | 51 |
 | `examples/language_tutor` | 11 | 8 |
 | `examples/language_tutor_reference_app` | 5 | 34 |
@@ -62,8 +62,9 @@ may need an explicit exclusion rather than automatic rewriting.
 4. `agent_lib` — adopted and enforced in CI.
 5. `llm_inspector` — adopted and enforced in CI.
 6. `rag_lib` — adopted and enforced in CI.
-7. `llm_engines` and `engram` — next; largest active-library cleanup sets.
-8. Examples, scripts, and root integration tests — classify generated and
+7. `llm_engines` — adopted and enforced in CI.
+8. `engram` — next; the remaining large active-library cleanup set.
+9. Examples, scripts, and root integration tests — classify generated and
    historical files before adoption.
 
 Each adoption commit must run that package's tests plus the repository gate.

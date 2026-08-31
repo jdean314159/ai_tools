@@ -87,9 +87,7 @@ def test_characterization_runs_supported_synthetic_probes_without_raw_content():
 def test_characterization_marks_features_not_declared_by_adapter():
     from llm_engines.backends.mock import MockEngine
 
-    report = characterize_engine(
-        MockEngine(response_fn=lambda request: "CHARACTERIZATION_OK")
-    )
+    report = characterize_engine(MockEngine(response_fn=lambda request: "CHARACTERIZATION_OK"))
 
     assert [probe.status for probe in report.probes] == [
         "passed",
@@ -180,9 +178,7 @@ def test_characterization_sanitizes_absolute_model_label():
     class PathModelEngine(CharacterizableEngine):
         def generate(self, request):
             response = super().generate(request)
-            return response.model_copy(
-                update={"model_name": "/home/private/models/synthetic.gguf"}
-            )
+            return response.model_copy(update={"model_name": "/home/private/models/synthetic.gguf"})
 
     report = characterize_engine(PathModelEngine())
 
@@ -199,9 +195,7 @@ def test_repeated_characterization_rejects_a_single_run():
 
 def test_repeated_characterization_artifact_round_trips():
     report = characterize_engine_repeated(CharacterizableEngine(), repetitions=2)
-    restored = artifact_from_dict(
-        artifact_to_dict(build_characterization_artifact(report))
-    )
+    restored = artifact_from_dict(artifact_to_dict(build_characterization_artifact(report)))
 
     assert restored.envelope.profile == CHARACTERIZATION_CAMPAIGN_PROFILE
     assert restored.body["repetitions"] == 2
@@ -212,18 +206,12 @@ def test_committed_spark_artifacts_match_documented_bytes_and_privacy_boundary()
     repo = Path(__file__).resolve().parents[2]
     runs = repo / "docs" / "projects" / "llm_engines" / "runs"
     expected = {
-        "2026-08-29-spark-qwen-characterization-v2.json":
-            "c75cdade1a7ddac6e4e41f2fce299947a469672235255bacc435e956aaf8d591",
-        "2026-08-30-spark-qwen38-flash-next-characterization-v2.json":
-            "8f25d1143cfd6aa115f3a557033ae7957bacf81610792df1a36b2b3a2bb58c11",
-        "2026-08-29-spark-qwen-tool-decisions-thinking-off-v2.json":
-            "74d2c9695bc93b98129891bc224a15aff64328458dd65b3ce1ed2686445ceb73",
-        "2026-08-29-spark-qwen-tool-decisions-thinking-on-v2.json":
-            "422cc712db194094ef94c10711a80d374732a1849f00446d3bc49273d41ff8ed",
-        "2026-08-31-spark-qwen38-flash-next-tool-decisions-thinking-off-v2.json":
-            "75e080cf4cddf5e49d74dd015db1642d3e58f4b0a16382e50421b4c06fd0e7ab",
-        "2026-08-31-spark-qwen38-flash-next-tool-decisions-thinking-on-v2.json":
-            "dcb1bd67e6fd5b32e3bc61690b23067af9f106859de32edcbdb185780200d3e9",
+        "2026-08-29-spark-qwen-characterization-v2.json": "c75cdade1a7ddac6e4e41f2fce299947a469672235255bacc435e956aaf8d591",
+        "2026-08-30-spark-qwen38-flash-next-characterization-v2.json": "8f25d1143cfd6aa115f3a557033ae7957bacf81610792df1a36b2b3a2bb58c11",
+        "2026-08-29-spark-qwen-tool-decisions-thinking-off-v2.json": "74d2c9695bc93b98129891bc224a15aff64328458dd65b3ce1ed2686445ceb73",
+        "2026-08-29-spark-qwen-tool-decisions-thinking-on-v2.json": "422cc712db194094ef94c10711a80d374732a1849f00446d3bc49273d41ff8ed",
+        "2026-08-31-spark-qwen38-flash-next-tool-decisions-thinking-off-v2.json": "75e080cf4cddf5e49d74dd015db1642d3e58f4b0a16382e50421b4c06fd0e7ab",
+        "2026-08-31-spark-qwen38-flash-next-tool-decisions-thinking-on-v2.json": "dcb1bd67e6fd5b32e3bc61690b23067af9f106859de32edcbdb185780200d3e9",
     }
     forbidden = (
         "192.168.50.225",

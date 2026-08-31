@@ -4,11 +4,12 @@ tests/contract_tests/test_anthropic_engine.py
 AnthropicEngine tests using a mocked client — no API key or network needed.
 Live tests: pytest -m anthropic (requires ANTHROPIC_API_KEY)
 """
+
 from __future__ import annotations
 
 import os
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -18,13 +19,13 @@ from llm_engines.contracts import (
     ChatMessage,
     GenerationRequest,
     GenerationResponse,
-    ToolCall,
 )
 
 
 # ---------------------------------------------------------------------------
 # Helpers: build a fake Anthropic response
 # ---------------------------------------------------------------------------
+
 
 def _fake_usage(input_tokens=10, output_tokens=20):
     return SimpleNamespace(input_tokens=input_tokens, output_tokens=output_tokens)
@@ -52,12 +53,15 @@ def _fake_response(content=None, stop_reason="end_turn", model="claude-sonnet-4-
 def engine():
     """AnthropicEngine with mocked client."""
     with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}):
-        with patch("anthropic.Anthropic") as MockSync, \
-             patch("anthropic.AsyncAnthropic") as MockAsync:
+        with (
+            patch("anthropic.Anthropic") as MockSync,
+            patch("anthropic.AsyncAnthropic") as MockAsync,
+        ):
             MockSync.return_value = MagicMock()
             MockAsync.return_value = MagicMock()
 
             from llm_engines.backends.anthropic import AnthropicEngine
+
             eng = AnthropicEngine(model="claude-sonnet-4-6")
             eng._client = MockSync.return_value
             eng._async_client = MockAsync.return_value
@@ -72,8 +76,8 @@ def _req(content="Hello"):
 # ChatModel contract
 # ---------------------------------------------------------------------------
 
-class TestAnthropicChatModel:
 
+class TestAnthropicChatModel:
     def test_requested_seed_is_not_forwarded_or_claimed_honored(self, engine) -> None:
         engine._client.messages.create.return_value = _fake_response()
 
@@ -123,10 +127,12 @@ class TestAnthropicChatModel:
 
     def test_system_message_passed_as_system_param(self, engine) -> None:
         engine._client.messages.create.return_value = _fake_response()
-        request = GenerationRequest(messages=[
-            ChatMessage(role="system", content="You are a tutor."),
-            ChatMessage(role="user", content="Explain recursion."),
-        ])
+        request = GenerationRequest(
+            messages=[
+                ChatMessage(role="system", content="You are a tutor."),
+                ChatMessage(role="user", content="Explain recursion."),
+            ]
+        )
         engine.generate(request)
         call_kwargs = engine._client.messages.create.call_args[1]
         assert call_kwargs["system"] == "You are a tutor."
@@ -135,6 +141,7 @@ class TestAnthropicChatModel:
 
     def test_empty_messages_raises(self, engine) -> None:
         from llm_engines.contracts import GenerationError
+
         with pytest.raises(GenerationError):
             engine.generate(GenerationRequest(messages=[]))
 
@@ -154,10 +161,11 @@ class TestAnthropicChatModel:
 # Tool calling
 # ---------------------------------------------------------------------------
 
-class TestAnthropicToolCalling:
 
+class TestAnthropicToolCalling:
     def test_tool_calls_extracted(self, engine) -> None:
         from llm_engines.contracts import ToolSpec, ToolParameterSchema
+
         engine._client.messages.create.return_value = _fake_response(
             content=[_fake_tool_block(id="call_1", name="get_weather", input={"city": "Paris"})],
             stop_reason="tool_use",
@@ -180,11 +188,12 @@ class TestAnthropicToolCalling:
 # Error mapping
 # ---------------------------------------------------------------------------
 
-class TestAnthropicErrorMapping:
 
+class TestAnthropicErrorMapping:
     def test_rate_limit_maps_to_rate_limit_error(self, engine) -> None:
         import anthropic
         from llm_engines.contracts import RateLimitError
+
         engine._client.messages.create.side_effect = anthropic.RateLimitError(
             message="rate limit", response=MagicMock(status_code=429), body={}
         )
@@ -194,6 +203,7 @@ class TestAnthropicErrorMapping:
     def test_connection_error_maps_to_backend_unavailable(self, engine) -> None:
         import anthropic
         from llm_engines.contracts import BackendUnavailableError
+
         engine._client.messages.create.side_effect = anthropic.APIConnectionError(
             request=MagicMock()
         )

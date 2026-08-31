@@ -3,17 +3,21 @@ tests/test_rag_inspector.py
 
 RAGInspector and adapter tests. No live Engram or ChromaDB required.
 """
+
 from __future__ import annotations
 
 import pytest
 from unittest.mock import MagicMock
 
-from llm_engines.contracts import Chunk, RAGResult
+from llm_engines.contracts import Chunk
 
 try:
     from llm_inspector.rag import RAGInspector, EngramRAGAdapter, ChromaDBRAGAdapter
 except ModuleNotFoundError as exc:  # pragma: no cover - environment-dependent
-    pytest.skip(f"RAG inspector tests require llm_inspector.rag to be importable: {exc}", allow_module_level=True)
+    pytest.skip(
+        f"RAG inspector tests require llm_inspector.rag to be importable: {exc}",
+        allow_module_level=True,
+    )
 
 from llm_engines.backends.mock import MockEngine
 
@@ -21,6 +25,7 @@ from llm_engines.backends.mock import MockEngine
 # ---------------------------------------------------------------------------
 # Minimal in-process RAGPipeline for testing
 # ---------------------------------------------------------------------------
+
 
 class FixedPipeline:
     """Always returns the same chunks and response."""
@@ -58,8 +63,8 @@ class FailingPipeline:
 # RAGInspector tests
 # ---------------------------------------------------------------------------
 
-class TestRAGInspector:
 
+class TestRAGInspector:
     def test_no_pipelines_raises(self) -> None:
         inspector = RAGInspector()
         with pytest.raises(ValueError, match="No pipelines"):
@@ -87,8 +92,10 @@ class TestRAGInspector:
     def test_multiple_pipelines(self) -> None:
         inspector = RAGInspector()
         c1 = [Chunk(content="Result A", source_id="a1", score=0.9)]
-        c2 = [Chunk(content="Result B", source_id="b1", score=0.8),
-               Chunk(content="Result C", source_id="b2", score=0.7)]
+        c2 = [
+            Chunk(content="Result B", source_id="b1", score=0.8),
+            Chunk(content="Result C", source_id="b2", score=0.7),
+        ]
         inspector.add_pipeline("Pipeline A", FixedPipeline("A", c1))
         inspector.add_pipeline("Pipeline B", FixedPipeline("B", c2))
         results = inspector.query_all("query")
@@ -126,11 +133,12 @@ class TestRAGInspector:
 # EngramRAGAdapter tests
 # ---------------------------------------------------------------------------
 
-class TestEngramRAGAdapter:
 
+class TestEngramRAGAdapter:
     def test_fallback_to_query_episodic(self) -> None:
         """Test the query_episodic fallback path."""
         from types import SimpleNamespace
+
         fake_ep = SimpleNamespace(id="1", text="Engram stored this fact.", importance=0.8)
         memory = MagicMock()
         del memory.retrieve  # force fallback path
@@ -174,8 +182,8 @@ class TestEngramRAGAdapter:
 # ChromaDBRAGAdapter tests
 # ---------------------------------------------------------------------------
 
-class TestChromaDBRAGAdapter:
 
+class TestChromaDBRAGAdapter:
     def _fake_collection(self):
         """Returns a mock ChromaDB collection."""
         collection = MagicMock()

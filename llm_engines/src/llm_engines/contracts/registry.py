@@ -7,6 +7,7 @@ They are used by the UI registry/service layer, not by backends directly.
 
 ADR: ADR-001 (Engine Capability Model)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -16,6 +17,7 @@ from typing import Any, Optional, Protocol, runtime_checkable
 @dataclass(frozen=True)
 class EngineDescriptor:
     """Static description of a registered engine backend."""
+
     engine_id: str
     label: str
     local: bool = True
@@ -29,6 +31,7 @@ class EngineDescriptor:
 @dataclass(frozen=True)
 class EngineParameter:
     """Schema descriptor for a single engine configuration parameter."""
+
     name: str
     label: str
     kind: str  # "str" | "int" | "float" | "bool" | "select" | "path" | "secret"
@@ -41,6 +44,7 @@ class EngineParameter:
 @dataclass(frozen=True)
 class EngineConfigSchema:
     """Full configuration schema for an engine."""
+
     engine_id: str
     parameters: list[EngineParameter] = field(default_factory=list)
 
@@ -48,6 +52,7 @@ class EngineConfigSchema:
 @dataclass(frozen=True)
 class ModelDescriptor:
     """Description of a model available on a backend."""
+
     model_id: str
     label: str
     source: str  # "huggingface" | "ollama" | "local" | "endpoint" | "builtin"
@@ -63,6 +68,7 @@ class ModelDescriptor:
 @dataclass(frozen=True)
 class ProvisionRequest:
     """Request to download or register a model on a backend."""
+
     source: str
     model_id: str
     target_engine_id: Optional[str] = None
@@ -72,6 +78,7 @@ class ProvisionRequest:
 @dataclass(frozen=True)
 class ProvisionResult:
     """Result of a provision operation."""
+
     success: bool
     model_id: str
     message: str = ""
@@ -82,6 +89,7 @@ class ProvisionResult:
 @dataclass(frozen=True)
 class EngineInvocationRequest:
     """Simple string-level invocation request (for registry/handle layer)."""
+
     prompt: str
     model_id: Optional[str] = None
     system_prompt: Optional[str] = None
@@ -92,6 +100,7 @@ class EngineInvocationRequest:
 @dataclass(frozen=True)
 class EngineInvocationResult:
     """Simple string-level invocation result (for registry/handle layer)."""
+
     text: str
     model_id: Optional[str]
     metrics: dict[str, Any] = field(default_factory=dict)
@@ -101,24 +110,21 @@ class EngineInvocationResult:
 @runtime_checkable
 class EngineHandle(Protocol):
     """Protocol for a configured, invocable engine instance."""
+
     engine_id: str
 
-    def invoke(self, request: EngineInvocationRequest) -> EngineInvocationResult:
-        ...
+    def invoke(self, request: EngineInvocationRequest) -> EngineInvocationResult: ...
 
 
 @runtime_checkable
 class EngineRegistry(Protocol):
     """Protocol for the engine registry/discovery service."""
 
-    def list_engines(self) -> list[EngineDescriptor]:
-        ...
+    def list_engines(self) -> list[EngineDescriptor]: ...
 
-    def get_engine_schema(self, engine_id: str) -> EngineConfigSchema:
-        ...
+    def get_engine_schema(self, engine_id: str) -> EngineConfigSchema: ...
 
-    def list_models(self, engine_id: str) -> list[ModelDescriptor]:
-        ...
+    def list_models(self, engine_id: str) -> list[ModelDescriptor]: ...
 
     def search_models(
         self,
@@ -126,14 +132,11 @@ class EngineRegistry(Protocol):
         *,
         source: Optional[str] = None,
         limit: int = 25,
-    ) -> list[ModelDescriptor]:
-        ...
+    ) -> list[ModelDescriptor]: ...
 
-    def provision_model(self, request: ProvisionRequest) -> ProvisionResult:
-        ...
+    def provision_model(self, request: ProvisionRequest) -> ProvisionResult: ...
 
-    def create_engine(self, engine_id: str, config: dict[str, Any]) -> EngineHandle:
-        ...
+    def create_engine(self, engine_id: str, config: dict[str, Any]) -> EngineHandle: ...
 
 
 __all__ = [

@@ -35,6 +35,7 @@ Config resolution order (matching Engram):
   2. ~/.engram/llm_engines.yaml  (user config)
   3. llm_engines/data/llm_engines.yaml  (packaged default)
 """
+
 from __future__ import annotations
 
 import importlib
@@ -59,19 +60,20 @@ _USER_CONFIG = Path("~/.engram/llm_engines.yaml").expanduser()
 
 # Lazy-import map: backend name → dotted class path
 _BACKEND_MAP: dict[str, str] = {
-    "ollama":    "llm_engines.backends.ollama.OllamaEngine",
+    "ollama": "llm_engines.backends.ollama.OllamaEngine",
     "anthropic": "llm_engines.backends.anthropic.AnthropicEngine",
-    "openai":    "llm_engines.backends.openai.OpenAIEngine",
-    "vllm":      "llm_engines.backends.vllm.vLLMEngine",
-    "llamacpp":  "llm_engines.backends.llamacpp.LlamaCppEngine",
+    "openai": "llm_engines.backends.openai.OpenAIEngine",
+    "vllm": "llm_engines.backends.vllm.vLLMEngine",
+    "llamacpp": "llm_engines.backends.llamacpp.LlamaCppEngine",
     "llama_cpp": "llm_engines.backends.llamacpp.LlamaCppEngine",
-    "mock":      "llm_engines.backends.mock.MockEngine",
+    "mock": "llm_engines.backends.mock.MockEngine",
 }
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _import_class(dotted: str) -> type:
     module_path, class_name = dotted.rsplit(".", 1)
@@ -111,6 +113,7 @@ def _ensure_user_config() -> Path:
 # Single-engine construction
 # ---------------------------------------------------------------------------
 
+
 def _engine_from_config_dict(
     engine_cfg: dict[str, Any],
     engine_name: str = "<inline>",
@@ -124,9 +127,7 @@ def _engine_from_config_dict(
     # Normalise key names
     backend = engine_cfg.get("type") or engine_cfg.get("backend")
     if not backend:
-        raise EngineConfigError(
-            f"Engine '{engine_name}' must specify 'type' (or 'backend')."
-        )
+        raise EngineConfigError(f"Engine '{engine_name}' must specify 'type' (or 'backend').")
     backend = backend.lower()
 
     if backend not in _BACKEND_MAP:
@@ -235,6 +236,7 @@ def _engine_from_config_dict(
 # EngineFactory
 # ---------------------------------------------------------------------------
 
+
 class EngineFactory:
     """
     Create engine instances from config.
@@ -257,8 +259,7 @@ class EngineFactory:
         backend = backend.lower()
         if backend not in _BACKEND_MAP:
             raise EngineConfigError(
-                f"Unknown backend '{backend}'. "
-                f"Available: {sorted(_BACKEND_MAP)}"
+                f"Unknown backend '{backend}'. Available: {sorted(_BACKEND_MAP)}"
             )
         return _import_class(_BACKEND_MAP[backend])
 
@@ -329,18 +330,14 @@ class EngineFactory:
         profiles = config.get("profiles") or {}
         if profile_name not in profiles:
             available = sorted(profiles)
-            raise EngineConfigError(
-                f"Profile '{profile_name}' not found. Available: {available}"
-            )
+            raise EngineConfigError(f"Profile '{profile_name}' not found. Available: {available}")
 
         profile = profiles[profile_name] or {}
         engines_cfg = config.get("engines") or {}
 
         engine_names: list[str] = override_engines or list(profile.get("engines") or [])
         if not engine_names:
-            raise EngineConfigError(
-                f"Profile '{profile_name}' must list at least one engine."
-            )
+            raise EngineConfigError(f"Profile '{profile_name}' must list at least one engine.")
 
         engines: list[ChatModel] = []
         for name in engine_names:
@@ -364,9 +361,7 @@ class EngineFactory:
             allow_cloud_failover=allow_cloud,
             cloud_policy=str(profile.get("cloud_policy", "query_plus_summary")),
             circuit_breaker_failures=int(profile.get("circuit_breaker_failures", 3)),
-            circuit_breaker_cooldown_s=float(
-                profile.get("circuit_breaker_cooldown_s", 30.0)
-            ),
+            circuit_breaker_cooldown_s=float(profile.get("circuit_breaker_cooldown_s", 30.0)),
         )
         return FailoverEngine(engines=engines, policy=policy, name=profile_name)
 
@@ -385,9 +380,7 @@ class EngineFactory:
         engines_cfg = config.get("engines") or {}
         if engine_name not in engines_cfg:
             available = sorted(engines_cfg)
-            raise EngineConfigError(
-                f"Engine '{engine_name}' not found. Available: {available}"
-            )
+            raise EngineConfigError(f"Engine '{engine_name}' not found. Available: {available}")
         return _engine_from_config_dict(engines_cfg[engine_name], engine_name)
 
     @classmethod

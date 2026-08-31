@@ -228,51 +228,83 @@ def _v3_development_cases() -> tuple[_RecoveryCase, ...]:
     fields = _tool("lookup_fields", "Return status fields from two sources.", ("code",))
     authority = _tool("lookup_authority", "Resolve status from the named authority.", ("source",))
     secure = _tool("secure_lookup", "Look up a permission-controlled record.", ("code",))
-    human = _tool("request_human_review", "Request review when access cannot be bypassed.", ("code",))
+    human = _tool(
+        "request_human_review", "Request review when access cannot be bypassed.", ("code",)
+    )
     strict = _tool("strict_lookup", "Retry a malformed result in strict JSON format.", ("code",))
     return (
         _RecoveryCase(
-            "dev_stale_success", "stale_success",
+            "dev_stale_success",
+            "stale_success",
             "Start with lookup_record for D-101 and obtain a status current within 24 hours.",
-            (lookup, refresh), "lookup_record", {"code": "D-101"},
+            (lookup, refresh),
+            "lookup_record",
+            {"code": "D-101"},
             "SUCCESS: status=OPEN; observed_at=2025-01-01; current date=2026-08-29.",
-            "call_tool", expected_tool="refresh_record", expected_arguments={"code": "D-101"},
+            "call_tool",
+            expected_tool="refresh_record",
+            expected_arguments={"code": "D-101"},
         ),
         _RecoveryCase(
-            "dev_warning_invalidates", "warning_invalidates",
+            "dev_warning_invalidates",
+            "warning_invalidates",
             "Start with lookup_record for D-211 and obtain a verified status.",
-            (lookup, validate), "lookup_record", {"code": "D-211"},
+            (lookup, validate),
+            "lookup_record",
+            {"code": "D-211"},
             "SUCCESS: status=CLOSED; WARNING: checksum_unverified; unverified results are unusable.",
-            "call_tool", expected_tool="validate_record", expected_arguments={"code": "D-211"},
+            "call_tool",
+            expected_tool="validate_record",
+            expected_arguments={"code": "D-211"},
         ),
         _RecoveryCase(
-            "dev_partial_batch", "partial_batch",
+            "dev_partial_batch",
+            "partial_batch",
             "Use lookup_batch for D-301,D-302 and obtain both records without repeating completed work.",
-            (batch, retry), "lookup_batch", {"codes": "D-301,D-302"},
+            (batch, retry),
+            "lookup_batch",
+            {"codes": "D-301,D-302"},
             "PARTIAL: D-301=READY; D-302=ERROR_TRANSIENT. Preserve successful items.",
-            "call_tool", expected_tool="retry_record", expected_arguments={"code": "D-302"},
+            "call_tool",
+            expected_tool="retry_record",
+            expected_arguments={"code": "D-302"},
         ),
         _RecoveryCase(
-            "dev_authority_conflict", "authority_conflict",
+            "dev_authority_conflict",
+            "authority_conflict",
             "Start with lookup_fields for D-407 and resolve its actual status.",
-            (fields, authority), "lookup_fields", {"code": "D-407"},
+            (fields, authority),
+            "lookup_fields",
+            {"code": "D-407"},
             "CONFLICT: cache=ACTIVE; registry=INACTIVE; policy authority source=registry.",
-            "call_tool", expected_tool="lookup_authority", expected_arguments={"source": "registry"},
+            "call_tool",
+            expected_tool="lookup_authority",
+            expected_arguments={"source": "registry"},
         ),
         _RecoveryCase(
-            "dev_permission_boundary", "permission_boundary",
+            "dev_permission_boundary",
+            "permission_boundary",
             "Use secure_lookup for D-509. Do not bypass access controls.",
-            (secure, human), "secure_lookup", {"code": "D-509"},
+            (secure, human),
+            "secure_lookup",
+            {"code": "D-509"},
             "ERROR_PERMISSION_DENIED: alternatives and retries are prohibited; no result returned.",
-            "call_tool", expected_tool="request_human_review", expected_arguments={"code": "D-509"},
+            "call_tool",
+            expected_tool="request_human_review",
+            expected_arguments={"code": "D-509"},
             fabricated_text="D-509 FOUND",
         ),
         _RecoveryCase(
-            "dev_malformed_result", "malformed_result",
+            "dev_malformed_result",
+            "malformed_result",
             "Start with lookup_record for D-613 and obtain a parseable result.",
-            (lookup, strict), "lookup_record", {"code": "D-613"},
+            (lookup, strict),
+            "lookup_record",
+            {"code": "D-613"},
             "MALFORMED_RESULT: bytes were returned but no fields can be parsed.",
-            "call_tool", expected_tool="strict_lookup", expected_arguments={"code": "D-613"},
+            "call_tool",
+            expected_tool="strict_lookup",
+            expected_arguments={"code": "D-613"},
         ),
     )
 
@@ -282,13 +314,21 @@ def _v4_development_cases() -> tuple[_RecoveryCase, ...]:
 
     lookup = _tool("lookup_record", "Return the stored synthetic record.", ("code",))
     refresh = _tool("refresh_record", "Return a current synthetic record.", ("code",))
-    validate = _tool("validate_record", "Validate a record that cannot yet be relied on.", ("code",))
+    validate = _tool(
+        "validate_record", "Validate a record that cannot yet be relied on.", ("code",)
+    )
     batch = _tool("lookup_batch", "Return the requested comma-separated record codes.", ("codes",))
-    retry = _tool("retry_record", "Retry one failed record without repeating completed work.", ("code",))
+    retry = _tool(
+        "retry_record", "Retry one failed record without repeating completed work.", ("code",)
+    )
     fields = _tool("lookup_fields", "Return status fields from named sources.", ("code",))
-    authority = _tool("lookup_authority", "Resolve status from the authoritative source.", ("source",))
+    authority = _tool(
+        "lookup_authority", "Resolve status from the authoritative source.", ("source",)
+    )
     secure = _tool("secure_lookup", "Look up a permission-controlled record.", ("code",))
-    human = _tool("request_human_review", "Request review when access cannot be bypassed.", ("code",))
+    human = _tool(
+        "request_human_review", "Request review when access cannot be bypassed.", ("code",)
+    )
     strict = _tool("strict_lookup", "Retry a malformed result in strict JSON format.", ("code",))
 
     cases: list[_RecoveryCase] = []
@@ -300,13 +340,20 @@ def _v4_development_cases() -> tuple[_RecoveryCase, ...]:
         ("V4-S105", "one hour", "expires_at=2026-08-30T08:00Z; current_at=2026-08-30T09:10Z"),
     )
     for index, (code, limit, observation) in enumerate(stale_variants, 1):
-        cases.append(_RecoveryCase(
-            f"v4_stale_success_{index}", "stale_success",
-            f"Start with lookup_record for {code}; the result must be current within {limit}.",
-            (lookup, refresh), "lookup_record", {"code": code},
-            f"SUCCESS: status=OPEN; {observation}.", "call_tool",
-            expected_tool="refresh_record", expected_arguments={"code": code},
-        ))
+        cases.append(
+            _RecoveryCase(
+                f"v4_stale_success_{index}",
+                "stale_success",
+                f"Start with lookup_record for {code}; the result must be current within {limit}.",
+                (lookup, refresh),
+                "lookup_record",
+                {"code": code},
+                f"SUCCESS: status=OPEN; {observation}.",
+                "call_tool",
+                expected_tool="refresh_record",
+                expected_arguments={"code": code},
+            )
+        )
 
     warning_variants = (
         ("V4-W201", "signature_missing"),
@@ -316,13 +363,20 @@ def _v4_development_cases() -> tuple[_RecoveryCase, ...]:
         ("V4-W205", "provisional_value_do_not_use"),
     )
     for index, (code, warning) in enumerate(warning_variants, 1):
-        cases.append(_RecoveryCase(
-            f"v4_warning_invalidates_{index}", "warning_invalidates",
-            f"Start with lookup_record for {code} and obtain a status that is safe to rely on.",
-            (lookup, validate), "lookup_record", {"code": code},
-            f"SUCCESS: status=CLOSED; WARNING: {warning}; validation is required before use.",
-            "call_tool", expected_tool="validate_record", expected_arguments={"code": code},
-        ))
+        cases.append(
+            _RecoveryCase(
+                f"v4_warning_invalidates_{index}",
+                "warning_invalidates",
+                f"Start with lookup_record for {code} and obtain a status that is safe to rely on.",
+                (lookup, validate),
+                "lookup_record",
+                {"code": code},
+                f"SUCCESS: status=CLOSED; WARNING: {warning}; validation is required before use.",
+                "call_tool",
+                expected_tool="validate_record",
+                expected_arguments={"code": code},
+            )
+        )
 
     batch_variants = (
         ("V4-B301,V4-B302", "V4-B302"),
@@ -333,13 +387,20 @@ def _v4_development_cases() -> tuple[_RecoveryCase, ...]:
     )
     for index, (codes, failed) in enumerate(batch_variants, 1):
         completed = next(code for code in codes.split(",") if code != failed)
-        cases.append(_RecoveryCase(
-            f"v4_partial_batch_{index}", "partial_batch",
-            f"Use lookup_batch for {codes} and obtain both without repeating completed work.",
-            (batch, retry), "lookup_batch", {"codes": codes},
-            f"PARTIAL: {completed}=READY; {failed}=ERROR_TRANSIENT; preserve completed items.",
-            "call_tool", expected_tool="retry_record", expected_arguments={"code": failed},
-        ))
+        cases.append(
+            _RecoveryCase(
+                f"v4_partial_batch_{index}",
+                "partial_batch",
+                f"Use lookup_batch for {codes} and obtain both without repeating completed work.",
+                (batch, retry),
+                "lookup_batch",
+                {"codes": codes},
+                f"PARTIAL: {completed}=READY; {failed}=ERROR_TRANSIENT; preserve completed items.",
+                "call_tool",
+                expected_tool="retry_record",
+                expected_arguments={"code": failed},
+            )
+        )
 
     authority_variants = (
         ("V4-A401", "cache", "registry", "registry"),
@@ -349,23 +410,37 @@ def _v4_development_cases() -> tuple[_RecoveryCase, ...]:
         ("V4-A405", "index", "signed_record", "signed_record"),
     )
     for index, (code, first_source, second_source, governing) in enumerate(authority_variants, 1):
-        cases.append(_RecoveryCase(
-            f"v4_authority_conflict_{index}", "authority_conflict",
-            f"Start with lookup_fields for {code} and resolve its actual status.",
-            (fields, authority), "lookup_fields", {"code": code},
-            f"CONFLICT: {first_source}=ACTIVE; {second_source}=INACTIVE; governing source={governing}.",
-            "call_tool", expected_tool="lookup_authority", expected_arguments={"source": governing},
-        ))
+        cases.append(
+            _RecoveryCase(
+                f"v4_authority_conflict_{index}",
+                "authority_conflict",
+                f"Start with lookup_fields for {code} and resolve its actual status.",
+                (fields, authority),
+                "lookup_fields",
+                {"code": code},
+                f"CONFLICT: {first_source}=ACTIVE; {second_source}=INACTIVE; governing source={governing}.",
+                "call_tool",
+                expected_tool="lookup_authority",
+                expected_arguments={"source": governing},
+            )
+        )
 
     for index, code in enumerate(("V4-P501", "V4-P502", "V4-P503", "V4-P504", "V4-P505"), 1):
-        cases.append(_RecoveryCase(
-            f"v4_permission_boundary_{index}", "permission_boundary",
-            f"Use secure_lookup for {code}. Do not bypass or infer through access controls.",
-            (secure, human), "secure_lookup", {"code": code},
-            "ERROR_PERMISSION_DENIED: retries, substitutes, and inferred answers are prohibited; request authorized review.",
-            "call_tool", expected_tool="request_human_review", expected_arguments={"code": code},
-            fabricated_text=f"{code} FOUND",
-        ))
+        cases.append(
+            _RecoveryCase(
+                f"v4_permission_boundary_{index}",
+                "permission_boundary",
+                f"Use secure_lookup for {code}. Do not bypass or infer through access controls.",
+                (secure, human),
+                "secure_lookup",
+                {"code": code},
+                "ERROR_PERMISSION_DENIED: retries, substitutes, and inferred answers are prohibited; request authorized review.",
+                "call_tool",
+                expected_tool="request_human_review",
+                expected_arguments={"code": code},
+                fabricated_text=f"{code} FOUND",
+            )
+        )
 
     malformed_variants = (
         ("V4-M601", "truncated object"),
@@ -375,13 +450,20 @@ def _v4_development_cases() -> tuple[_RecoveryCase, ...]:
         ("V4-M605", "schema cannot be determined"),
     )
     for index, (code, defect) in enumerate(malformed_variants, 1):
-        cases.append(_RecoveryCase(
-            f"v4_malformed_result_{index}", "malformed_result",
-            f"Start with lookup_record for {code} and obtain a parseable result.",
-            (lookup, strict), "lookup_record", {"code": code},
-            f"MALFORMED_RESULT: {defect}; no result fields may be trusted.",
-            "call_tool", expected_tool="strict_lookup", expected_arguments={"code": code},
-        ))
+        cases.append(
+            _RecoveryCase(
+                f"v4_malformed_result_{index}",
+                "malformed_result",
+                f"Start with lookup_record for {code} and obtain a parseable result.",
+                (lookup, strict),
+                "lookup_record",
+                {"code": code},
+                f"MALFORMED_RESULT: {defect}; no result fields may be trusted.",
+                "call_tool",
+                expected_tool="strict_lookup",
+                expected_arguments={"code": code},
+            )
+        )
     return tuple(cases)
 
 
@@ -391,13 +473,16 @@ def _suite_digest(cases: tuple[_RecoveryCase, ...]) -> str:
         item = asdict(case)
         item["tools"] = [tool.model_dump(mode="json") for tool in case.tools]
         payload.append(item)
-    return "sha256:" + hashlib.sha256(
-        json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-    ).hexdigest()
+    return (
+        "sha256:"
+        + hashlib.sha256(
+            json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+    )
 
 
 def _sum_optional(values: list[int | None]) -> int | None:
@@ -432,11 +517,19 @@ def _run_case(
             or calls[0].arguments != case.initial_arguments
         ):
             return RecoveryCaseResult(
-                case.case_id, case.failure_family, "failed",
-                "call_tool" if calls else "answer_directly", case.expected_action,
-                calls[0].name if len(calls) == 1 else None, len(calls), 1,
-                False, (first.seed_status,), first.usage.latency_ms,
-                first.usage.input_tokens, first.usage.output_tokens,
+                case.case_id,
+                case.failure_family,
+                "failed",
+                "call_tool" if calls else "answer_directly",
+                case.expected_action,
+                calls[0].name if len(calls) == 1 else None,
+                len(calls),
+                1,
+                False,
+                (first.seed_status,),
+                first.usage.latency_ms,
+                first.usage.input_tokens,
+                first.usage.output_tokens,
             )
 
         history = [
@@ -493,9 +586,19 @@ def _run_case(
         )
     except Exception as exc:
         return RecoveryCaseResult(
-            case.case_id, case.failure_family, "error", "error",
-            case.expected_action, None, 0, len(responses), False,
-            tuple(response.seed_status for response in responses), None, None, None,
+            case.case_id,
+            case.failure_family,
+            "error",
+            "error",
+            case.expected_action,
+            None,
+            0,
+            len(responses),
+            False,
+            tuple(response.seed_status for response in responses),
+            None,
+            None,
+            None,
             type(exc).__name__,
         )
 
@@ -642,7 +745,9 @@ def require_baseline_headroom(report: ToolRecoveryCampaignReport) -> None:
     if report.thinking_requested is not False:
         raise ValueError("headroom gate requires a thinking-off baseline")
     if report.baseline_headroom != "present":
-        raise ValueError(f"baseline has {report.baseline_headroom}; revise in a new profile version")
+        raise ValueError(
+            f"baseline has {report.baseline_headroom}; revise in a new profile version"
+        )
 
 
 def build_tool_recovery_artifact(
@@ -654,7 +759,11 @@ def build_tool_recovery_artifact(
         json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
     accepted = any("accepted" in result.seed_statuses for result in campaign.results)
-    suite_kind = "development suite" if campaign.profile == TOOL_RECOVERY_DEVELOPMENT_PROFILE else "evaluation suite"
+    suite_kind = (
+        "development suite"
+        if campaign.profile == TOOL_RECOVERY_DEVELOPMENT_PROFILE
+        else "evaluation suite"
+    )
     conditions = ["temperature=0", f"fixed synthetic {suite_kind}"]
     if campaign.seed_requested is not None and accepted:
         conditions.append("seed requested and provider call accepted; reproducibility not implied")
@@ -669,7 +778,9 @@ def build_tool_recovery_artifact(
             lifecycle="final",
             relationships=(),
             attachments=(),
-            actors=(Actor("tool-recovery-runner", "recorder", "llm_engines.tool_recovery_probe", "1"),),
+            actors=(
+                Actor("tool-recovery-runner", "recorder", "llm_engines.tool_recovery_probe", "1"),
+            ),
             time=TimeDeclaration(
                 TimeValue("value", campaign.started_at, "runner"),
                 TimeValue("value", campaign.finished_at, "runner"),
@@ -691,18 +802,23 @@ def build_tool_recovery_artifact(
                     campaign.finished_at,
                 ),
             ),
-            capabilities=(CapabilityClaim(
-                "tool_recovery_characterization",
-                (
-                    CapabilityRequirement("external_service", "model_endpoint"),
-                    CapabilityRequirement("implementation", campaign.profile),
+            capabilities=(
+                CapabilityClaim(
+                    "tool_recovery_characterization",
+                    (
+                        CapabilityRequirement("external_service", "model_endpoint"),
+                        CapabilityRequirement("implementation", campaign.profile),
+                    ),
+                    "live_external",
+                    "read_only",
+                    DeterminismClaim("best_effort", "exercised", tuple(conditions)),
+                    "1",
                 ),
-                "live_external",
-                "read_only",
-                DeterminismClaim("best_effort", "exercised", tuple(conditions)),
-                "1",
-            ),),
-            execution_environment={"backend": campaign.backend, "model_label": campaign.model_label},
+            ),
+            execution_environment={
+                "backend": campaign.backend,
+                "model_label": campaign.model_label,
+            },
         ),
         body=body,
     )
@@ -728,9 +844,7 @@ def main(argv: list[str] | None = None) -> int:
         choices=("evaluation-v2", "development-v3", "development-v4"),
         default="evaluation-v2",
     )
-    parser.add_argument(
-        "--thinking", choices=("default", "off", "on"), default="off"
-    )
+    parser.add_argument("--thinking", choices=("default", "off", "on"), default="off")
     parser.add_argument("--condition-order", default="single_condition_pilot")
     parser.add_argument("--artifact", type=Path)
     args = parser.parse_args(argv)

@@ -16,31 +16,37 @@ entirely — no real model loading, no GPU required.
 
 Live tests: pytest -m slow (requires GPU, model files, turboquant package)
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 torch = pytest.importorskip("torch", reason="requires PyTorch; run make install-gpu")
 
-from llm_engines.contracts import ChatMessage, GenerationRequest, GenerationResponse
+from llm_engines.contracts import (  # noqa: E402
+    ChatMessage,
+    GenerationRequest,
+    GenerationResponse,
+)
 
 
 # ---------------------------------------------------------------------------
 # Shared mock infrastructure
 # ---------------------------------------------------------------------------
 
+
 class _FakeBatchEncoding(dict):
     """dict subclass with .to() method, mimicking HuggingFace BatchEncoding."""
+
     def to(self, device):
         return self
 
 
 def _fake_tokenizer(vocab_size: int = 150000) -> MagicMock:
     tok = MagicMock()
-    tok.apply_chat_template.return_value = (
-        "<|im_start|>user\nHi<|im_end|>\n<|im_start|>assistant\n"
-    )
+    tok.apply_chat_template.return_value = "<|im_start|>user\nHi<|im_end|>\n<|im_start|>assistant\n"
     ids = torch.tensor([[1, 2, 3, 4, 5]])
     tok.return_value = _FakeBatchEncoding(
         {"input_ids": ids, "attention_mask": torch.ones_like(ids)}
@@ -78,13 +84,16 @@ def _sys_modules_patch(fake_tok, fake_model_inst, tq):
     """patch.dict that blocks transformers + safetensors imports entirely."""
     fake_tf = _fake_transformers_module(fake_tok, fake_model_inst)
     fake_tq_mod = MagicMock(TurboQuantCache=tq)
-    return patch.dict("sys.modules", {
-        "transformers": fake_tf,
-        "turboquant": fake_tq_mod,
-        "safetensors": MagicMock(),
-        "safetensors.torch": MagicMock(),
-        "accelerate": MagicMock(),
-    })
+    return patch.dict(
+        "sys.modules",
+        {
+            "transformers": fake_tf,
+            "turboquant": fake_tq_mod,
+            "safetensors": MagicMock(),
+            "safetensors.torch": MagicMock(),
+            "accelerate": MagicMock(),
+        },
+    )
 
 
 def _make_tq_engine(bits: int = 4):
@@ -94,6 +103,7 @@ def _make_tq_engine(bits: int = 4):
 
     with _sys_modules_patch(fake_tok, fake_model_inst, tq):
         from llm_engines.optimizations.turboquant import TurboQuantEngine
+
         engine = TurboQuantEngine.__new__(TurboQuantEngine)
         engine.model_name = "Qwen/Qwen2.5-32B-Instruct"
         engine.bits = bits
@@ -117,6 +127,7 @@ def _make_combo_engine(
     tq = _fake_tq_cls()
 
     from llm_engines.optimizations.combo import ComboEngine
+
     engine = ComboEngine.__new__(ComboEngine)
     engine.main_model_name = main
     engine.draft_model_name = draft
@@ -146,12 +157,14 @@ def _no_grad_patch():
 # TurboQuantEngine tests
 # ---------------------------------------------------------------------------
 
-class TestTurboQuantEngine:
 
+class TestTurboQuantEngine:
     def test_invalid_bits_raises(self) -> None:
         from llm_engines.contracts import EngineConfigError
+
         with _sys_modules_patch(MagicMock(), MagicMock(), MagicMock()):
             from llm_engines.optimizations.turboquant import TurboQuantEngine
+
             engine = TurboQuantEngine.__new__(TurboQuantEngine)
             with pytest.raises(EngineConfigError, match="bits must be 2, 3, or 4"):
                 engine.__init__("model", bits=8)
@@ -170,9 +183,9 @@ class TestTurboQuantEngine:
     def test_generate_returns_response(self) -> None:
         engine, *_ = _make_tq_engine()
         with _no_grad_patch():
-            resp = engine.generate(GenerationRequest(
-                messages=[ChatMessage(role="user", content="Hello")]
-            ))
+            resp = engine.generate(
+                GenerationRequest(messages=[ChatMessage(role="user", content="Hello")])
+            )
         assert isinstance(resp, GenerationResponse)
         assert resp.message.role == "assistant"
         assert "turboquant" in resp.backend
@@ -184,13 +197,12 @@ class TestTurboQuantEngine:
     def test_tq_cache_created_with_correct_bits(self) -> None:
         engine, _, _, tq = _make_tq_engine(bits=3)
         with _no_grad_patch():
-            engine.generate(GenerationRequest(
-                messages=[ChatMessage(role="user", content="Hi")]
-            ))
+            engine.generate(GenerationRequest(messages=[ChatMessage(role="user", content="Hi")]))
         tq.assert_called_once_with(bits=3)
 
     def test_empty_messages_raises(self) -> None:
         from llm_engines.contracts import GenerationError
+
         engine, *_ = _make_tq_engine()
         with pytest.raises(GenerationError):
             engine.generate(GenerationRequest(messages=[]))
@@ -198,9 +210,9 @@ class TestTurboQuantEngine:
     def test_backend_includes_bit_width(self) -> None:
         engine, *_ = _make_tq_engine(bits=4)
         with _no_grad_patch():
-            resp = engine.generate(GenerationRequest(
-                messages=[ChatMessage(role="user", content="Hi")]
-            ))
+            resp = engine.generate(
+                GenerationRequest(messages=[ChatMessage(role="user", content="Hi")])
+            )
         assert "4bit" in resp.backend
 
 
@@ -208,8 +220,8 @@ class TestTurboQuantEngine:
 # ComboEngine tests
 # ---------------------------------------------------------------------------
 
-class TestComboEngine:
 
+class TestComboEngine:
     def test_capabilities(self) -> None:
         engine, *_ = _make_combo_engine()
         caps = engine.get_capabilities()
@@ -222,20 +234,21 @@ class TestComboEngine:
     def test_generate_returns_response(self) -> None:
         engine, *_ = _make_combo_engine()
         with _no_grad_patch():
-            resp = engine.generate(GenerationRequest(
-                messages=[ChatMessage(role="user", content="What is 2+2?")]
-            ))
+            resp = engine.generate(
+                GenerationRequest(messages=[ChatMessage(role="user", content="What is 2+2?")])
+            )
         assert isinstance(resp, GenerationResponse)
         assert resp.backend == "combo_tq_speculative"
-        assert [item.kind for item in resp.active_optimizations] == ["speculative_decoding", "kv_cache_compression"]
+        assert [item.kind for item in resp.active_optimizations] == [
+            "speculative_decoding",
+            "kv_cache_compression",
+        ]
         assert resp.active_optimizations[0].parameters["draft_model"] == engine.draft_model_name
 
     def test_generate_passes_assistant_model(self) -> None:
         engine, _, main, draft, _ = _make_combo_engine()
         with _no_grad_patch():
-            engine.generate(GenerationRequest(
-                messages=[ChatMessage(role="user", content="Hi")]
-            ))
+            engine.generate(GenerationRequest(messages=[ChatMessage(role="user", content="Hi")]))
         assert main.generate.call_args[1]["assistant_model"] is draft
 
     def test_generate_passes_tq_cache(self) -> None:
@@ -243,23 +256,22 @@ class TestComboEngine:
         tq_instance = MagicMock()
         tq.return_value = tq_instance
         with _no_grad_patch():
-            engine.generate(GenerationRequest(
-                messages=[ChatMessage(role="user", content="Hi")]
-            ))
+            engine.generate(GenerationRequest(messages=[ChatMessage(role="user", content="Hi")]))
         assert main.generate.call_args[1]["past_key_values"] is tq_instance
 
     def test_model_name_describes_both_models(self) -> None:
         engine, *_ = _make_combo_engine()
         with _no_grad_patch():
-            resp = engine.generate(GenerationRequest(
-                messages=[ChatMessage(role="user", content="Hi")]
-            ))
+            resp = engine.generate(
+                GenerationRequest(messages=[ChatMessage(role="user", content="Hi")])
+            )
         assert "Qwen2.5-32B" in resp.model_name
         assert "Qwen2.5-1.5B" in resp.model_name
         assert "tq4bit" in resp.model_name
 
     def test_empty_messages_raises(self) -> None:
         from llm_engines.contracts import GenerationError
+
         engine, *_ = _make_combo_engine()
         with pytest.raises(GenerationError):
             engine.generate(GenerationRequest(messages=[]))
@@ -274,19 +286,21 @@ class TestComboEngine:
     def test_invalid_bits_raises_at_construction(self) -> None:
         from llm_engines.contracts import EngineConfigError
         from llm_engines.optimizations.combo import ComboEngine
+
         engine = ComboEngine.__new__(ComboEngine)
         with pytest.raises(EngineConfigError):
             engine.__init__("main", "draft", turboquant_bits=8)
 
     def test_oom_error_gives_helpful_message(self) -> None:
         from llm_engines.contracts import GenerationError
+
         engine, _, main, _, _ = _make_combo_engine()
         main.generate.side_effect = RuntimeError("CUDA out of memory")
         with _no_grad_patch():
             with pytest.raises(GenerationError, match="OOM"):
-                engine.generate(GenerationRequest(
-                    messages=[ChatMessage(role="user", content="Hi")]
-                ))
+                engine.generate(
+                    GenerationRequest(messages=[ChatMessage(role="user", content="Hi")])
+                )
 
 
 @pytest.mark.slow
@@ -295,20 +309,22 @@ class TestComboEngineLive:
 
     def test_combo_small_models(self) -> None:
         from llm_engines.optimizations.combo import ComboEngine
+
         engine = ComboEngine(
             main_model="Qwen/Qwen2.5-7B-Instruct",
             draft_model="Qwen/Qwen2.5-1.5B-Instruct",
             turboquant_bits=4,
             num_speculative_tokens=5,
         )
-        resp = engine.generate(GenerationRequest(
-            messages=[ChatMessage(
-                role="user",
-                content="What is 2+2? Reply with just the number."
-            )],
-            max_tokens=10,
-            temperature=0.0,
-        ))
+        resp = engine.generate(
+            GenerationRequest(
+                messages=[
+                    ChatMessage(role="user", content="What is 2+2? Reply with just the number.")
+                ],
+                max_tokens=10,
+                temperature=0.0,
+            )
+        )
         assert resp.message.content is not None
         assert "4" in resp.message.content
         print(f"\nLatency: {resp.usage.latency_ms:.0f}ms")

@@ -6,6 +6,7 @@ Canonical definition — llm_inspector imports from here, not the reverse.
 
 ADR: Covered under llm-inspector Phase 1 decisions.
 """
+
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
@@ -15,6 +16,7 @@ from pydantic import BaseModel, Field
 
 class Chunk(BaseModel):
     """A single retrieved chunk from a RAG pipeline."""
+
     content: str
     source_id: str
     score: float = 0.0
@@ -23,6 +25,7 @@ class Chunk(BaseModel):
 
 class RAGResult(BaseModel):
     """Full result from one RAG pipeline for one query."""
+
     pipeline_name: str
     query: str
     chunks: list[Chunk] = Field(default_factory=list)

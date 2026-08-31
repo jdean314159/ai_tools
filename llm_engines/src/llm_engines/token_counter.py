@@ -7,6 +7,7 @@ the prompt compression helper.
 Uses tiktoken (cl100k_base, GPT-4/Claude-compatible) when available,
 falls back to len//4 approximation.
 """
+
 from __future__ import annotations
 
 import logging
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 _ENCODER: Any = None
 try:
     import tiktoken as _tiktoken
+
     _ENCODER = _tiktoken.get_encoding("cl100k_base")
 
     def count_tokens(text: str) -> int:
@@ -25,6 +27,7 @@ try:
 
 except Exception as exc:
     logger.debug("tiktoken unavailable (%s) — using len//4 token approximation", exc)
+
     def count_tokens(text: str) -> int:
         """Fallback: ~4 chars per token. Rough but dependency-free."""
         return max(1, len(text) // 4)

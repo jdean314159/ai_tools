@@ -8,6 +8,7 @@ This module intentionally keeps only the v0.1-friendly pieces:
 
 It does not include failover profiles, routing, or telemetry.
 """
+
 from __future__ import annotations
 
 import os
@@ -102,20 +103,30 @@ def create_engine(
 
     backend = entry.get("backend") or entry.get("type")
     if not backend:
-        raise EngineConfigError(
-            f"Engine '{engine_name}' must define 'backend' (or legacy 'type')."
-        )
+        raise EngineConfigError(f"Engine '{engine_name}' must define 'backend' (or legacy 'type').")
 
     model = entry.get("model")
     options = dict(entry.get("options") or {})
 
     reserved = {
-        "backend", "type", "model", "options", "description",
+        "backend",
+        "type",
+        "model",
+        "options",
+        "description",
         # Framework-level keys not passed to engine constructors
-        "system_prompt", "compression_strategy", "max_retries",
-        "launch", "telemetry", "tags", "notes",
+        "system_prompt",
+        "compression_strategy",
+        "max_retries",
+        "launch",
+        "telemetry",
+        "tags",
+        "notes",
         # Generation parameters (not constructor args)
-        "max_tokens", "temperature", "context_size", "max_context",
+        "max_tokens",
+        "temperature",
+        "context_size",
+        "max_context",
     }
     passthrough = {k: v for k, v in entry.items() if k not in reserved}
 
@@ -123,6 +134,7 @@ def create_engine(
     for key in ("model_path",):
         if key in passthrough and isinstance(passthrough[key], str):
             import os
+
             passthrough[key] = os.path.expanduser(passthrough[key])
 
     kwargs: dict[str, Any] = {**options, **passthrough}
@@ -143,6 +155,4 @@ def create_engine(
             f"Install with: pip install llm-engines[{backend}]"
         ) from e
     except TypeError as e:
-        raise EngineConfigError(
-            f"Invalid arguments for backend '{backend}': {e}"
-        ) from e
+        raise EngineConfigError(f"Invalid arguments for backend '{backend}': {e}") from e

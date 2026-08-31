@@ -8,6 +8,7 @@ ModelRegistry tests require Ollama.
     pytest tests/test_discovery.py -m "not ollama"     # offline
     pytest tests/test_discovery.py                     # all
 """
+
 from __future__ import annotations
 
 import pytest
@@ -25,8 +26,8 @@ from llm_engines.discovery import ModelRegistry, detect_hardware
 # detect_hardware
 # ---------------------------------------------------------------------------
 
-class TestDetectHardware:
 
+class TestDetectHardware:
     def test_returns_hardware_profile(self) -> None:
         hw = detect_hardware()
         assert isinstance(hw, HardwareProfile)
@@ -60,8 +61,8 @@ class TestDetectHardware:
 # ModelRegistry — catalog-only tests (no Ollama required)
 # ---------------------------------------------------------------------------
 
-class TestModelRegistryCatalog:
 
+class TestModelRegistryCatalog:
     def test_get_model_info_known_model(self) -> None:
         registry = ModelRegistry()
         info = registry.get_model_info("qwen2.5:14b", backend="ollama")
@@ -133,9 +134,9 @@ class TestModelRegistryCatalog:
 # ModelRegistry — live Ollama tests (requires running Ollama)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.ollama
 class TestModelRegistryLive:
-
     def test_list_available_returns_list(self) -> None:
         registry = ModelRegistry()
         models = registry.list_available_models("ollama")

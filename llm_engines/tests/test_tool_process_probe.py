@@ -138,9 +138,7 @@ def test_tool_decision_campaign_rejects_unsupported_engine():
 
 def test_tool_decision_artifact_round_trips_with_validated_privacy():
     report = run_tool_decision_campaign(ToolDecisionEngine(), repetitions=1)
-    artifact = artifact_from_dict(
-        artifact_to_dict(build_tool_decision_artifact(report))
-    )
+    artifact = artifact_from_dict(artifact_to_dict(build_tool_decision_artifact(report)))
 
     assert artifact.envelope.profile == TOOL_PROCESS_PROFILE
     assert artifact.envelope.profile_version == 2

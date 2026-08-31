@@ -4,6 +4,7 @@ These contracts are owned by ``llm_engines`` because they describe how local
 engine runtimes fit onto available hardware. Higher-level packages should
 consume these models rather than invent their own launch heuristics.
 """
+
 from __future__ import annotations
 
 from typing import Any, Literal

@@ -24,6 +24,7 @@ Alternative (more stable) path:
     vLLM + turboquant-vllm + --speculative-model flag at server startup.
     Use vLLMEngine — no code changes, transparent to callers.
 """
+
 from llm_engines.optimizations.turboquant import TurboQuantEngine
 from llm_engines.optimizations.combo import ComboEngine
 

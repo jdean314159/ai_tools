@@ -3,6 +3,7 @@ tests/test_router.py
 
 FailoverEngine unit tests. All tests use MockEngine — no external services.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -28,16 +29,17 @@ def _always_fail(request: GenerationRequest) -> str:
 def _fail_then_succeed(n_failures: int):
     """Returns a response_fn that fails n times then succeeds."""
     calls = {"count": 0}
+
     def fn(request: GenerationRequest) -> str:
         calls["count"] += 1
         if calls["count"] <= n_failures:
             raise GenerationError(f"Deliberate failure #{calls['count']}")
         return "Success after failures"
+
     return fn
 
 
 class TestFailoverEngineBasic:
-
     def test_single_engine_success(self) -> None:
         engine = FailoverEngine([MockEngine()])
         response = engine.generate(_req())
@@ -72,7 +74,6 @@ class TestFailoverEngineBasic:
 
 
 class TestCircuitBreaker:
-
     def test_circuit_trips_after_n_failures(self) -> None:
         failing = MockEngine(response_fn=_always_fail)
         healthy = MockEngine(response_fn=lambda r: "Healthy")
@@ -116,10 +117,8 @@ class TestCircuitBreaker:
 
 
 class TestCapabilities:
-
     def test_capabilities_are_union(self) -> None:
         # One engine reports embeddings=True
-        from llm_engines.contracts import EngineCapabilities
         class EmbedMock(MockEngine):
             def get_capabilities(self):
                 caps = super().get_capabilities()
@@ -134,7 +133,6 @@ class TestCapabilities:
 
 
 class TestStreaming:
-
     def test_stream_falls_back_to_generate(self) -> None:
         """MockEngine doesn't implement StreamingModel; fallback to generate()."""
         engine = FailoverEngine([MockEngine()])
@@ -145,7 +143,6 @@ class TestStreaming:
 
 
 class TestOOMReduction:
-
     def test_oom_reduces_max_tokens(self) -> None:
         """OOM on first engine should reduce max_tokens, not trip circuit breaker."""
         call_log: list[int] = []
@@ -165,26 +162,29 @@ class TestOOMReduction:
                 max_attempts=6,
             ),
         )
-        response = engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Hi")],
-            max_tokens=1024,
-        ))
+        response = engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Hi")],
+                max_tokens=1024,
+            )
+        )
         assert response.message.content == "OK after reduction"
         # max_tokens should have been reduced at least once
         assert any(t <= 512 for t in call_log)
 
 
 class TestCloudPolicy:
-
     def test_cloud_sanitise_strips_memory_block(self) -> None:
         """Requests to cloud engines should have memory blocks stripped."""
         from llm_engines.router import _sanitise_for_cloud
 
-        request = GenerationRequest(messages=[
-            ChatMessage(role="system", content="You are a helpful assistant."),
-            ChatMessage(role="user", content="--- retrieved context ---\nsome memory\n---"),
-            ChatMessage(role="user", content="What should I do?"),
-        ])
+        request = GenerationRequest(
+            messages=[
+                ChatMessage(role="system", content="You are a helpful assistant."),
+                ChatMessage(role="user", content="--- retrieved context ---\nsome memory\n---"),
+                ChatMessage(role="user", content="What should I do?"),
+            ]
+        )
         sanitised = _sanitise_for_cloud(request, "query_only")
         # Memory block message should be gone
         contents = [m.content for m in sanitised.messages]
@@ -193,15 +193,16 @@ class TestCloudPolicy:
     def test_full_context_passes_through(self) -> None:
         from llm_engines.router import _sanitise_for_cloud
 
-        request = GenerationRequest(messages=[
-            ChatMessage(role="user", content="--- retrieved context ---\nmemory\n---"),
-        ])
+        request = GenerationRequest(
+            messages=[
+                ChatMessage(role="user", content="--- retrieved context ---\nmemory\n---"),
+            ]
+        )
         sanitised = _sanitise_for_cloud(request, "full_context")
         assert sanitised.messages == request.messages
 
 
 class TestHealthReport:
-
     def test_health_report_keys_match_engines(self) -> None:
         engines = [MockEngine(model="a"), MockEngine(model="b")]
         failover = FailoverEngine(engines)

@@ -279,6 +279,16 @@ targeted cross-package integration tests passed 128 tests with one skip; the
 full repository gate remains 1,268 passed, 304 skipped, with the same three
 warnings. `llm_engines` is the next staged package.
 
+The seventh Python-quality checkpoint adopts all of `llm_engines`. Its 53 lint
+findings were primarily unused structural-protocol imports, dead test imports,
+and redundant assignments or f-string prefixes. Import-only smoke checks remain
+explicit with narrow lint annotations, and the intentional post-`importorskip`
+test import is documented in place. Ruff mechanically formatted 54 files, and
+the shared gate now covers 300 files. Engine plus targeted cross-package
+integration tests passed 320 tests with 14 skips; the full repository gate
+remains 1,268 passed, 304 skipped, with the same three warnings. `engram` is the
+next staged package.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

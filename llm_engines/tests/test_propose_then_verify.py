@@ -3,6 +3,7 @@ tests/test_propose_then_verify.py
 
 ProposeThenVerifyEngine tests using MockEngine. No live services needed.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -20,7 +21,6 @@ def _req(content: str = "What is the capital of France?") -> GenerationRequest:
 
 
 class TestProposeThenVerify:
-
     def test_returns_generation_response(self) -> None:
         engine = ProposeThenVerifyEngine(
             draft=MockEngine(response_fn=lambda r: "Paris"),
@@ -119,9 +119,8 @@ class TestProposeThenVerify:
 
     def test_empty_messages_raises(self) -> None:
         from llm_engines.contracts import GenerationError
-        engine = ProposeThenVerifyEngine(
-            draft=MockEngine(), verifier=MockEngine(), n_drafts=2
-        )
+
+        engine = ProposeThenVerifyEngine(draft=MockEngine(), verifier=MockEngine(), n_drafts=2)
         with pytest.raises(GenerationError):
             engine.generate(GenerationRequest(messages=[]))
 
@@ -151,9 +150,11 @@ class TestProposeThenVerify:
             temperature=0.9,
             parallel=False,
         )
-        engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Hi")],
-            temperature=0.0,  # original request: deterministic
-        ))
+        engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Hi")],
+                temperature=0.0,  # original request: deterministic
+            )
+        )
         # All draft calls should use the engine's temperature (0.9), not 0.0
         assert all(t == 0.9 for t in captured)

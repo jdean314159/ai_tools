@@ -27,6 +27,7 @@ Typical split-offload for Qwen2.5-32B Q4_K_M on RTX 3090 (24GB):
         n_ctx=8192,
     )
 """
+
 from __future__ import annotations
 
 import logging
@@ -69,7 +70,8 @@ BACKEND = "llamacpp"
 _KV_CACHE_TYPES = {
     "f16": GGML_TYPE_F16,
     "q8_0": GGML_TYPE_Q8_0,
-    "q4_0": GGML_TYPE_Q4_0,}
+    "q4_0": GGML_TYPE_Q4_0,
+}
 
 
 def _strip_think_blocks(text: str) -> str:
@@ -152,11 +154,13 @@ class LlamaCppEngine:
         _validate_batch_settings(n_batch, n_ubatch)
 
         # full-precision cache types don't need FA; everything else does
-        if (cache_type_k not in {"f16", "f32", "bf16"}
-                or cache_type_v not in {"f16", "f32", "bf16"}) and not flash_attn:
+        if (
+            cache_type_k not in {"f16", "f32", "bf16"} or cache_type_v not in {"f16", "f32", "bf16"}
+        ) and not flash_attn:
             logger.warning(
                 "Enabling flash_attn: quantized KV cache (k=%s, v=%s) requires it.",
-                cache_type_k, cache_type_v,
+                cache_type_k,
+                cache_type_v,
             )
             flash_attn = True
 
@@ -186,14 +190,16 @@ class LlamaCppEngine:
         flash_attn_detail = ", flash_attn=True" if flash_attn else ""
         logger.info(
             "Loading model %s (n_gpu_layers=%d, n_ctx=%d%s%s)",
-            model_path, n_gpu_layers, n_ctx, batch_detail, flash_attn_detail,
+            model_path,
+            n_gpu_layers,
+            n_ctx,
+            batch_detail,
+            flash_attn_detail,
         )
         try:
             self._llm = Llama(**kwargs)
         except Exception as e:
-            raise EngineConfigError(
-                f"Failed to load model '{model_path}': {e}"
-            ) from e
+            raise EngineConfigError(f"Failed to load model '{model_path}': {e}") from e
 
         logger.info("LlamaCppEngine ready: %s", model_path)
 

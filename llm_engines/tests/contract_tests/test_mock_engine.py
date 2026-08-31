@@ -5,6 +5,7 @@ Directly tests MockEngine to verify it passes conformance AND its own features.
 These tests run with no external services and serve as a smoke test for the
 contract test harness itself.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -70,8 +71,6 @@ class TestMockEngineFeatures:
         assert resp.message.content == "Custom!"
 
     def test_echoes_user_message(self, engine: MockEngine) -> None:
-        req = GenerationRequest(
-            messages=[ChatMessage(role="user", content="specific query")]
-        )
+        req = GenerationRequest(messages=[ChatMessage(role="user", content="specific query")])
         resp = engine.generate(req)
         assert "specific query" in (resp.message.content or "")

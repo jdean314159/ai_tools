@@ -25,7 +25,9 @@ def test_load_packaged_config_contains_named_engines() -> None:
     assert "qwen27b" in config["engines"]
 
 
-def test_ensure_user_config_exists_copies_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_ensure_user_config_exists_copies_default(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     home = tmp_path / "home"
     monkeypatch.setenv("HOME", str(home))
     # user_config_path uses ~/.engram/llm_engines.yaml

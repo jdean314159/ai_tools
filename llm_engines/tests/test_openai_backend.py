@@ -5,6 +5,7 @@ OpenAIEngine offline unit tests. All HTTP is mocked — no API key, no network.
 
 Live tests: pytest -m openai  (requires OPENAI_API_KEY)
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -36,6 +37,7 @@ from llm_engines.contracts import (
 # ---------------------------------------------------------------------------
 # Fake OpenAI response builders
 # ---------------------------------------------------------------------------
+
 
 def _fake_usage(prompt=10, completion=20):
     return SimpleNamespace(
@@ -71,11 +73,11 @@ def _fake_embedding_response(vectors):
 @pytest.fixture()
 def engine():
     with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}):
-        with patch("openai.OpenAI") as MockSync, \
-             patch("openai.AsyncOpenAI") as MockAsync:
+        with patch("openai.OpenAI") as MockSync, patch("openai.AsyncOpenAI") as MockAsync:
             MockSync.return_value = MagicMock()
             MockAsync.return_value = MagicMock()
             from llm_engines.backends.openai import OpenAIEngine
+
             eng = OpenAIEngine(model="gpt-4o-mini")
             eng._client = MockSync.return_value
             eng._async_client = MockAsync.return_value
@@ -87,7 +89,6 @@ def _req(content="Hello"):
 
 
 class TestOpenAIGenerate:
-
     def test_seed_zero_is_forwarded_and_acceptance_is_reported(self, engine) -> None:
         engine._client.chat.completions.create.return_value = _fake_completion()
 
@@ -117,9 +118,7 @@ class TestOpenAIGenerate:
         assert resp.message.role == "assistant"
 
     def test_finish_reason_stop(self, engine) -> None:
-        engine._client.chat.completions.create.return_value = _fake_completion(
-            finish_reason="stop"
-        )
+        engine._client.chat.completions.create.return_value = _fake_completion(finish_reason="stop")
         resp = engine.generate(_req())
         assert resp.finish_reason == "stop"
 
@@ -138,9 +137,7 @@ class TestOpenAIGenerate:
         assert resp.usage.total_tokens == 30
 
     def test_model_name_from_response(self, engine) -> None:
-        engine._client.chat.completions.create.return_value = _fake_completion(
-            model="gpt-4o"
-        )
+        engine._client.chat.completions.create.return_value = _fake_completion(model="gpt-4o")
         resp = engine.generate(_req())
         assert resp.model_name == "gpt-4o"
 
@@ -151,6 +148,7 @@ class TestOpenAIGenerate:
 
     def test_empty_messages_raises(self, engine) -> None:
         from llm_engines.contracts import GenerationError
+
         with pytest.raises(GenerationError):
             engine.generate(GenerationRequest(messages=[]))
 
@@ -159,7 +157,7 @@ class TestOpenAIGenerate:
 
     def test_local_compat_does_not_require_api_key(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
-            with patch("openai.OpenAI") as MockSync, patch("openai.AsyncOpenAI") as MockAsync:
+            with patch("openai.OpenAI") as MockSync, patch("openai.AsyncOpenAI") as _mock_async:
                 from llm_engines.backends.openai import OpenAIEngine
 
                 eng = OpenAIEngine(
@@ -179,6 +177,7 @@ class TestOpenAIGenerate:
         with patch.dict(os.environ, {}, clear=True):
             with patch("openai.OpenAI") as MockSync, patch("openai.AsyncOpenAI"):
                 from llm_engines.factory import EngineFactory
+
                 eng = EngineFactory.create(
                     "openai",
                     model="local-model",
@@ -194,6 +193,7 @@ class TestOpenAIGenerate:
         with patch.dict(os.environ, {"OPENAI_API_KEY": "test"}):
             with patch("openai.OpenAI"), patch("openai.AsyncOpenAI"):
                 from llm_engines.backends.openai import OpenAIEngine
+
                 eng = OpenAIEngine(
                     model="local-model",
                     base_url="http://localhost:8000/v1",
@@ -207,6 +207,7 @@ class TestOpenAIGenerate:
         with patch.dict(os.environ, {}, clear=True):
             with patch("openai.OpenAI"), patch("openai.AsyncOpenAI"):
                 from llm_engines.backends.openai import OpenAIEngine
+
                 with pytest.raises(EngineConfigError, match="OPENAI_API_KEY"):
                     OpenAIEngine(model="gpt-4o-mini", is_cloud=True)
 
@@ -224,28 +225,28 @@ class TestOpenAIGenerate:
     def test_local_compat_passes_thinking_preference(self, engine, thinking) -> None:
         engine.is_cloud = False
         engine._client.chat.completions.create.return_value = _fake_completion()
-        engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Analyze")],
-            thinking=thinking,
-        ))
+        engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Analyze")],
+                thinking=thinking,
+            )
+        )
         kwargs = engine._client.chat.completions.create.call_args.kwargs
-        assert kwargs["extra_body"] == {
-            "chat_template_kwargs": {"enable_thinking": thinking}
-        }
+        assert kwargs["extra_body"] == {"chat_template_kwargs": {"enable_thinking": thinking}}
 
     def test_cloud_openai_does_not_receive_local_thinking_option(self, engine) -> None:
         engine._client.chat.completions.create.return_value = _fake_completion()
-        engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Analyze")],
-            thinking=True,
-        ))
+        engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Analyze")],
+                thinking=True,
+            )
+        )
         kwargs = engine._client.chat.completions.create.call_args.kwargs
         assert "extra_body" not in kwargs
 
     def test_json_schema_is_forwarded_as_strict_response_format(self, engine) -> None:
-        engine._client.chat.completions.create.return_value = _fake_completion(
-            '{"answer": 42}'
-        )
+        engine._client.chat.completions.create.return_value = _fake_completion('{"answer": 42}')
         schema = {
             "type": "object",
             "properties": {"answer": {"type": "integer"}},
@@ -253,10 +254,12 @@ class TestOpenAIGenerate:
             "additionalProperties": False,
         }
 
-        engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Return the answer")],
-            json_schema=schema,
-        ))
+        engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Return the answer")],
+                json_schema=schema,
+            )
+        )
 
         kwargs = engine._client.chat.completions.create.call_args.kwargs
         assert kwargs["response_format"] == {
@@ -291,29 +294,30 @@ class TestOpenAIGenerate:
             with patch("openai.OpenAI"), patch("openai.AsyncOpenAI"):
                 from llm_engines.backends.openai import OpenAIEngine
 
-                local = OpenAIEngine(
-                    model="local", is_cloud=False, supports_embeddings=True
-                )
+                local = OpenAIEngine(model="local", is_cloud=False, supports_embeddings=True)
 
         assert local.get_capabilities().embeddings is True
         assert isinstance(local, LogprobModel)
 
 
 class TestOpenAITools:
-
     def test_replayed_tool_arguments_are_json_not_python_repr(self, engine) -> None:
         engine._client.chat.completions.create.return_value = _fake_completion()
-        request = GenerationRequest(messages=[
-            ChatMessage(
-                role="assistant",
-                tool_calls=[ToolCall(
-                    call_id="call-1",
-                    name="add",
-                    arguments={"a": 28, "b": 37, "label": "it's valid"},
-                )],
-            ),
-            ChatMessage(role="tool", tool_call_id="call-1", content="65"),
-        ])
+        request = GenerationRequest(
+            messages=[
+                ChatMessage(
+                    role="assistant",
+                    tool_calls=[
+                        ToolCall(
+                            call_id="call-1",
+                            name="add",
+                            arguments={"a": 28, "b": 37, "label": "it's valid"},
+                        )
+                    ],
+                ),
+                ChatMessage(role="tool", tool_call_id="call-1", content="65"),
+            ]
+        )
         spec = ToolSpec(
             name="add",
             description="Add two integers",
@@ -350,11 +354,13 @@ class TestOpenAITools:
         )
 
         assert response.finish_reason == "tool_call"
-        assert response.message.tool_calls == [ToolCall(
-            call_id="call-1",
-            name="add",
-            arguments={"a": 28, "b": 37},
-        )]
+        assert response.message.tool_calls == [
+            ToolCall(
+                call_id="call-1",
+                name="add",
+                arguments={"a": 28, "b": 37},
+            )
+        ]
 
 
 class _AsyncChunks:
@@ -365,6 +371,7 @@ class _AsyncChunks:
         async def iterate():
             for chunk in self._chunks:
                 yield chunk
+
         return iterate()
 
 
@@ -383,40 +390,46 @@ def _tool_delta(index, *, call_id=None, name=None, arguments=None):
 
 
 class TestOpenAIToolStreaming:
-
     @staticmethod
     def _collect(engine, request, tools):
         async def collect():
             return [event async for event in engine.stream_with_tools_async(request, tools)]
+
         return asyncio.run(collect())
 
     def test_buffers_arguments_until_complete_json(self, engine) -> None:
-        engine._async_client.chat.completions.create = AsyncMock(return_value=_AsyncChunks([
-            _stream_chunk(tool_calls=[_tool_delta(
-                0, call_id="call-1", name="add", arguments='{"a":'
-            )]),
-            _stream_chunk(tool_calls=[_tool_delta(
-                0, arguments='28,"b":37}'
-            )]),
-            _stream_chunk(finish_reason="tool_calls"),
-        ]))
+        engine._async_client.chat.completions.create = AsyncMock(
+            return_value=_AsyncChunks(
+                [
+                    _stream_chunk(
+                        tool_calls=[_tool_delta(0, call_id="call-1", name="add", arguments='{"a":')]
+                    ),
+                    _stream_chunk(tool_calls=[_tool_delta(0, arguments='28,"b":37}')]),
+                    _stream_chunk(finish_reason="tool_calls"),
+                ]
+            )
+        )
         spec = ToolSpec(name="add", description="Add", parameters={})
 
         events = self._collect(engine, _req("Add"), [spec])
 
         assert events == [
-            ToolCallEvent(tool_call=ToolCall(
-                call_id="call-1", name="add", arguments={"a": 28, "b": 37}
-            )),
+            ToolCallEvent(
+                tool_call=ToolCall(call_id="call-1", name="add", arguments={"a": 28, "b": 37})
+            ),
             StreamFinishedEvent(finish_reason="tool_call"),
         ]
 
     def test_emits_text_deltas_and_terminal_event(self, engine) -> None:
-        engine._async_client.chat.completions.create = AsyncMock(return_value=_AsyncChunks([
-            _stream_chunk(content="Hello"),
-            _stream_chunk(content=" world"),
-            _stream_chunk(finish_reason="stop"),
-        ]))
+        engine._async_client.chat.completions.create = AsyncMock(
+            return_value=_AsyncChunks(
+                [
+                    _stream_chunk(content="Hello"),
+                    _stream_chunk(content=" world"),
+                    _stream_chunk(finish_reason="stop"),
+                ]
+            )
+        )
 
         events = self._collect(engine, _req("Hello"), [])
 
@@ -429,12 +442,16 @@ class TestOpenAIToolStreaming:
     def test_rejects_incomplete_tool_arguments(self, engine) -> None:
         from llm_engines.contracts import GenerationError
 
-        engine._async_client.chat.completions.create = AsyncMock(return_value=_AsyncChunks([
-            _stream_chunk(tool_calls=[_tool_delta(
-                0, call_id="call-1", name="add", arguments='{"a":'
-            )]),
-            _stream_chunk(finish_reason="tool_calls"),
-        ]))
+        engine._async_client.chat.completions.create = AsyncMock(
+            return_value=_AsyncChunks(
+                [
+                    _stream_chunk(
+                        tool_calls=[_tool_delta(0, call_id="call-1", name="add", arguments='{"a":')]
+                    ),
+                    _stream_chunk(finish_reason="tool_calls"),
+                ]
+            )
+        )
 
         with pytest.raises(GenerationError, match="Invalid streamed tool arguments"):
             self._collect(
@@ -445,7 +462,6 @@ class TestOpenAIToolStreaming:
 
 
 class TestOpenAIEmbedding:
-
     def test_embed_returns_vectors(self, engine) -> None:
         engine._client.embeddings.create.return_value = _fake_embedding_response(
             [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
@@ -481,7 +497,6 @@ class TestOpenAIEmbedding:
 
 
 class TestOpenAILogprobs:
-
     def test_parses_provider_token_logprobs(self, engine) -> None:
         items = [
             SimpleNamespace(token="LOG", logprob=-0.1, bytes=[76, 79, 71]),
@@ -507,10 +522,10 @@ class TestOpenAILogprobs:
 
 
 class TestOpenAIErrors:
-
     def test_rate_limit_error(self, engine) -> None:
         import openai
         from llm_engines.contracts import RateLimitError
+
         engine._client.chat.completions.create.side_effect = openai.RateLimitError(
             message="rate limit exceeded",
             response=MagicMock(status_code=429, headers={}),
@@ -522,17 +537,20 @@ class TestOpenAIErrors:
     def test_connection_error(self, engine) -> None:
         import openai
         from llm_engines.contracts import BackendUnavailableError
-        engine._client.chat.completions.create.side_effect = (
-            openai.APIConnectionError(request=MagicMock())
+
+        engine._client.chat.completions.create.side_effect = openai.APIConnectionError(
+            request=MagicMock()
         )
         with pytest.raises(BackendUnavailableError):
             engine.generate(_req())
 
     def test_no_api_key_raises(self) -> None:
         from llm_engines.contracts import EngineConfigError
+
         with patch.dict(os.environ, {}, clear=True):
             with patch("openai.OpenAI"), patch("openai.AsyncOpenAI"):
                 from llm_engines.backends.openai import OpenAIEngine
+
                 with pytest.raises(EngineConfigError, match="OPENAI_API_KEY"):
                     OpenAIEngine(model="gpt-4o-mini", is_cloud=True)
 
@@ -543,17 +561,21 @@ class TestOpenAILive:
 
     def test_generate_live(self) -> None:
         from llm_engines.backends.openai import OpenAIEngine
+
         engine = OpenAIEngine(model="gpt-4o-mini")
-        resp = engine.generate(GenerationRequest(
-            messages=[ChatMessage(role="user", content="Reply with exactly: OK")],
-            max_tokens=10,
-            temperature=0.0,
-        ))
+        resp = engine.generate(
+            GenerationRequest(
+                messages=[ChatMessage(role="user", content="Reply with exactly: OK")],
+                max_tokens=10,
+                temperature=0.0,
+            )
+        )
         assert resp.message.content is not None
         assert resp.usage.total_tokens is not None
 
     def test_embed_live(self) -> None:
         from llm_engines.backends.openai import OpenAIEngine
+
         engine = OpenAIEngine(model="gpt-4o-mini")
         resp = engine.embed(EmbeddingRequest(texts=["Hello world"]))
         assert len(resp.vectors) == 1
