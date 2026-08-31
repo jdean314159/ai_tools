@@ -379,6 +379,12 @@ cover 572 files while respecting Git-ignored generated evidence and configured
 virtualenv/build exclusions. The full repository gate remains 1,268 passed,
 304 skipped, with the same three warnings.
 
+The next maintenance phase is structural consolidation, not additional style
+normalization. The ordered candidates and their evidence boundaries are frozen
+in `docs/internal/STRUCTURAL_CLEANUP_PRIORITIES.md`. The first assignment is
+generated build/cache cleanup followed by a read-only language-tutor overlap
+assessment; no application consolidation has been selected or implemented yet.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

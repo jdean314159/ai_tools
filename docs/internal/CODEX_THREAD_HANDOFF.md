@@ -167,9 +167,21 @@ Key commits, oldest to newest:
 
 ## Recommended next assignment
 
+Repository-wide style normalization is complete. Continue with the structural
+cleanup sequence in `docs/internal/STRUCTURAL_CLEANUP_PRIORITIES.md`:
+
+1. remove only ignored build/cache artifacts and verify import provenance plus
+   the full repository gate;
+2. perform a read-only overlap assessment of the small and reference
+   language-tutor examples, producing an exact keep/move/delete proposal before
+   changing either application.
+
+Do not combine this maintenance work with command-isolation experiments or
+model characterization.
+
 Do not extend the Engram policy or model-ceiling profiles from their bounded
-matrices. Return to the broader `ai_tools` capability inventory and select one
-unvalidated package capability at a time.
+matrices. Any return to capability validation should select one unvalidated
+package capability at a time.
 
 Do not restart action-guard enforcement as a simple repeated-tool experiment.
 Deterministic enforcement is already covered, live enforcement failed its
