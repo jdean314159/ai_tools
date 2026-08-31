@@ -77,9 +77,7 @@ def test_wrong_band_is_miscalibrated() -> None:
 
 
 def test_interpretation_failure_scores_misses_and_clean_exclusions() -> None:
-    labels = _labels(
-        [("noise", "excluded", False), ("oom", "high", False)]
-    )
+    labels = _labels([("noise", "excluded", False), ("oom", "high", False)])
 
     score = score_case(None, LogTriage().triage(""), labels)
 
@@ -153,9 +151,7 @@ def test_live_fp_gate(pytestconfig: pytest.Config) -> None:
     errors = {}
     for labels_path in sorted(CORPUS.glob("*.labels.json")):
         labels = json.loads(labels_path.read_text(encoding="utf-8"))
-        log_path = labels_path.with_name(
-            labels_path.name.removesuffix(".labels.json") + ".log"
-        )
+        log_path = labels_path.with_name(labels_path.name.removesuffix(".labels.json") + ".log")
         summary = triage.triage(log_path.read_text(encoding="utf-8"))
         interpretation = None
         try:
@@ -166,18 +162,14 @@ def test_live_fp_gate(pytestconfig: pytest.Config) -> None:
 
     report = aggregate(scores)
     offenders = _offending_rows(report.case_scores)
-    detail = "\n".join(
-        [*offenders, *(f"{case}: {error}" for case, error in errors.items())]
-    )
+    detail = "\n".join([*offenders, *(f"{case}: {error}" for case, error in errors.items())])
     if report.fp_rate is not None:
         assert report.fp_rate <= FP_RATE_MAX, (
-            f"false-positive gate failed: {report.fp_rate:.3f} > "
-            f"{FP_RATE_MAX:.3f}\n{detail}"
+            f"false-positive gate failed: {report.fp_rate:.3f} > {FP_RATE_MAX:.3f}\n{detail}"
         )
     if report.recall is not None:
         assert report.recall >= RECALL_MIN, (
-            f"recall gate failed: {report.recall:.3f} < "
-            f"{RECALL_MIN:.3f}\n{detail}"
+            f"recall gate failed: {report.recall:.3f} < {RECALL_MIN:.3f}\n{detail}"
         )
 
 

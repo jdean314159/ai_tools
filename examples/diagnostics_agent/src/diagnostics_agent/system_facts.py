@@ -26,9 +26,7 @@ class SystemFacts:
         }
 
     def as_prompt_block(self) -> str:
-        lines = [
-            "Verified host facts (authoritative -- do not contradict or invent beyond these):"
-        ]
+        lines = ["Verified host facts (authoritative -- do not contradict or invent beyond these):"]
         if self.hostname:
             lines.append(f"- hostname: {self.hostname}")
         if self.os_name:

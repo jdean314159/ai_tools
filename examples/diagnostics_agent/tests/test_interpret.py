@@ -417,8 +417,7 @@ def test_security_and_operational_floors_coexist() -> None:
         [
             "2026-05-29T14:03:11-07:00 host sshd[1234]: "
             "Failed password for root from 192.0.2.10 port 53001 ssh2",
-            "2026-05-29T14:04:11-07:00 host kernel: "
-            "Out of memory: Killed process 1234 (worker)",
+            "2026-05-29T14:04:11-07:00 host kernel: Out of memory: Killed process 1234 (worker)",
         ]
     )
     payload = json.dumps(
@@ -510,7 +509,9 @@ def test_risk_coherence_maps_info_concern_to_low_axis() -> None:
 
 def test_risk_coherence_composes_after_critical_disk_floor() -> None:
     summary = LogTriage().triage(
-        ["2026-05-29T14:03:11-07:00 host kernel: kernel Oops: unable to handle kernel NULL pointer dereference"]
+        [
+            "2026-05-29T14:03:11-07:00 host kernel: kernel Oops: unable to handle kernel NULL pointer dereference"
+        ]
     )
     payload = json.dumps(
         {

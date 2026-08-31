@@ -100,6 +100,10 @@ The work progressed through evidence rather than assuming a design:
     `locals()` harvesting. The fallback runner passed 71 of 72 checks with one
     Ollama skip, and the full gate remains at 1,268 passed. All active libraries
     are adopted; examples, scripts, and root tests remain for classification.
+25. `examples/diagnostics_agent` is the first adopted maintained example. It
+    was already lint-clean; Ruff formatted 15 files, its dedicated suite passed
+    167 tests with 8 skips, and the full gate remains at 1,268 passed. Remaining
+    examples require per-project classification.
 
 Key commits, oldest to newest:
 

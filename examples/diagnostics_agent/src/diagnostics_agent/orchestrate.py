@@ -175,9 +175,7 @@ class DiagnosticsOrchestrator:
             "summary": summary.to_dict(),
             "system_facts": system_facts.to_dict() if system_facts is not None else None,
             "interpretation": (
-                interpretation.model_dump(mode="json")
-                if interpretation is not None
-                else None
+                interpretation.model_dump(mode="json") if interpretation is not None else None
             ),
             "interpretation_error": interpretation_error,
         }

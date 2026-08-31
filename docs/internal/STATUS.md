@@ -301,6 +301,14 @@ remains 1,268 passed, 304 skipped, with the same three warnings. All active
 library packages are now adopted; examples, scripts, and root integration tests
 remain for classification.
 
+The ninth Python-quality checkpoint adopts `examples/diagnostics_agent` as the
+first maintained example. It is installed and tested in CI, has dedicated Make
+targets, and contains no generated source subtree. The package was already
+lint-clean; Ruff mechanically formatted 15 files, bringing the shared gate to
+407 files. Its dedicated suite passed 167 tests with 8 skips, and the full
+repository gate remains 1,268 passed, 304 skipped, with the same three warnings.
+Remaining examples still require per-project classification before adoption.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

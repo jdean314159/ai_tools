@@ -44,10 +44,7 @@ class FollowupChat:
             messages=[
                 ChatMessage(role="system", content=_SYSTEM_PROMPT),
                 ChatMessage(role="user", content=_grounding_prompt(result)),
-                *[
-                    ChatMessage(role=turn.role, content=turn.content)
-                    for turn in recent_history
-                ],
+                *[ChatMessage(role=turn.role, content=turn.content) for turn in recent_history],
                 ChatMessage(role="user", content=question),
             ],
             temperature=self.temperature,

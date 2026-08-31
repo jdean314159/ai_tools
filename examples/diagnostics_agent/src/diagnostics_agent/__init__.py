@@ -10,12 +10,27 @@ from diagnostics_agent.errors import (
     RuntimeNotFoundError,
     SandboxError,
 )
-from diagnostics_agent.collect import CollectedLogs, Collector, CommandCollector, journalctl_collector
+from diagnostics_agent.collect import (
+    CollectedLogs,
+    Collector,
+    CommandCollector,
+    journalctl_collector,
+)
 from diagnostics_agent.followup import ChatTurn, FollowupChat
 from diagnostics_agent.interpret import ConcernAssessment, Interpretation, LogInterpreter
-from diagnostics_agent.models import LocalModel, ModelDiscoveryError, estimate_fit, list_local_models
+from diagnostics_agent.models import (
+    LocalModel,
+    ModelDiscoveryError,
+    estimate_fit,
+    list_local_models,
+)
 from diagnostics_agent.orchestrate import DiagnosticResult, DiagnosticsOrchestrator
-from diagnostics_agent.sandbox import ReadOnlySandbox, SandboxConfig, SandboxResult, make_staging_sandbox
+from diagnostics_agent.sandbox import (
+    ReadOnlySandbox,
+    SandboxConfig,
+    SandboxResult,
+    make_staging_sandbox,
+)
 from diagnostics_agent.triage import (
     EventCluster,
     Finding,

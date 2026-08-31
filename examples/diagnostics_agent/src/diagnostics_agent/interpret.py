@@ -143,9 +143,7 @@ class LogInterpreter:
         )
         count_tokens = getattr(self.engine, "count_tokens", None)
         has_tokenizer = callable(count_tokens)
-        safety_margin = (
-            _TOKENIZER_SAFETY_MARGIN if has_tokenizer else _HEURISTIC_SAFETY_MARGIN
-        )
+        safety_margin = _TOKENIZER_SAFETY_MARGIN if has_tokenizer else _HEURISTIC_SAFETY_MARGIN
         budget = self.context_limit - self.max_tokens - safety_margin
         original_tokens = _count_request_tokens(
             request,
@@ -358,9 +356,7 @@ def _count_request_tokens(
     *,
     count_tokens=None,
 ) -> int:
-    text = "\n".join(
-        f"{message.role}:{message.content or ''}" for message in request.messages
-    )
+    text = "\n".join(f"{message.role}:{message.content or ''}" for message in request.messages)
     if request.json_schema is not None:
         text += "\nresponse_schema:" + json.dumps(
             request.json_schema,

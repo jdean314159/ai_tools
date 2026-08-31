@@ -7,7 +7,9 @@ import re
 import subprocess
 
 _ALLOWED_PRIORITIES = ("emergency", "alert", "critical", "error", "warning")
-_SINCE_RE = re.compile(r"^(?:-\d+[hd]|[0-9]{4}-[0-9]{2}-[0-9]{2}(?:[ T][0-9]{2}:[0-9]{2}(?::[0-9]{2})?)?)$")
+_SINCE_RE = re.compile(
+    r"^(?:-\d+[hd]|[0-9]{4}-[0-9]{2}-[0-9]{2}(?:[ T][0-9]{2}:[0-9]{2}(?::[0-9]{2})?)?)$"
+)
 JOURNAL_OUTPUT_FIELDS = (
     "MESSAGE",
     "PRIORITY",

@@ -45,7 +45,9 @@ def main() -> None:
     if run_clicked and engine_choice is not None:
         with st.spinner("Running diagnostics..."):
             try:
-                collector = journalctl_collector(priority=priority, since=_TIME_WINDOWS[window_label])
+                collector = journalctl_collector(
+                    priority=priority, since=_TIME_WINDOWS[window_label]
+                )
                 engine = build_engine(engine_choice)
                 result = DiagnosticsOrchestrator(
                     collector=collector,
@@ -95,7 +97,11 @@ def _render_engine_choice(st, vram: int | None) -> EngineChoice | None:
         n_gpu_layers = int(st.number_input("n_gpu_layers", min_value=-1, value=0, step=1))
         st.caption("Raise n_gpu_layers to offload layers onto a small GPU; 0 is CPU only.")
         n_ctx_enabled = st.checkbox("Set n_ctx")
-        n_ctx = int(st.number_input("n_ctx", min_value=512, value=4096, step=512)) if n_ctx_enabled else None
+        n_ctx = (
+            int(st.number_input("n_ctx", min_value=512, value=4096, step=512))
+            if n_ctx_enabled
+            else None
+        )
         n_batch = st.number_input(
             "n_batch",
             min_value=1,
@@ -114,15 +120,17 @@ def _render_engine_choice(st, vram: int | None) -> EngineChoice | None:
         n_ubatch = int(n_ubatch) if n_ubatch is not None else None
         cache_type_k = st.selectbox("KV cache K type", _KV_CACHE_TYPES, index=0)
         cache_type_v = st.selectbox("KV cache V type", _KV_CACHE_TYPES, index=0)
-        flash_attn = st.checkbox(
-            "Enable flash attention (required for quantized V cache)"
-        )
+        flash_attn = st.checkbox("Enable flash attention (required for quantized V cache)")
         st.caption(
             "q8_0 K with f16 V is the conservative small-GPU setting; "
             "lower n_batch on constrained VRAM."
         )
 
-        models = _discover_ollama_models(st, "http://localhost:11434", vram) if source.startswith("Use") else []
+        models = (
+            _discover_ollama_models(st, "http://localhost:11434", vram)
+            if source.startswith("Use")
+            else []
+        )
         selected_model = None
         if source.startswith("Use"):
             selected_model = _select_ollama_model(st, models)
@@ -193,7 +201,9 @@ def _with_optional_ollama_fallback(
     fallback_model = default_model
     if models:
         labels = {f"{model.name}  ({model.fit})": model.name for model in models}
-        default_index = list(labels.values()).index(default_model) if default_model in labels.values() else 0
+        default_index = (
+            list(labels.values()).index(default_model) if default_model in labels.values() else 0
+        )
         fallback_label = st.selectbox("Fallback model", list(labels), index=default_index)
         fallback_model = labels[fallback_label]
     if not fallback_model:

@@ -37,7 +37,7 @@ configuration.
 | `action_trajectory_loop_guard` | 0 | 0 (adopted) |
 | `reasoning_loop_guard` | 0 | 0 (adopted) |
 | `mail_lib` | 0 | 0 (adopted) |
-| `examples/diagnostics_agent` | 0 | 22 |
+| `examples/diagnostics_agent` | 0 | 0 (adopted) |
 | `llm_inspector_ui` | 0 | 0 (adopted) |
 | `agent_lib` | 0 | 0 (adopted) |
 | `llm_inspector` | 0 | 0 (adopted) |
@@ -64,8 +64,9 @@ may need an explicit exclusion rather than automatic rewriting.
 6. `rag_lib` — adopted and enforced in CI.
 7. `llm_engines` — adopted and enforced in CI.
 8. `engram` — adopted and enforced in CI.
-9. Examples, scripts, and root integration tests — classify generated and
-   historical files before adoption.
+9. `examples/diagnostics_agent` — adopted and enforced in CI.
+10. Remaining examples, scripts, and root integration tests — classify generated
+    and historical files before adoption.
 
 Each adoption commit must run that package's tests plus the repository gate.
 Do not combine formatting with API renames or structural refactors.

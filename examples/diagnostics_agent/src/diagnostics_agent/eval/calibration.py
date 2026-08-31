@@ -128,9 +128,7 @@ def aggregate(case_scores: Sequence[CaseScore]) -> EvalReport:
         case_scores=tuple(case_scores),
         fp_rate=false_positives / excluded_total if excluded_total else None,
         recall=recalled / non_excluded_total if non_excluded_total else None,
-        band_accuracy=(
-            band_correct / produced_non_excluded if produced_non_excluded else None
-        ),
+        band_accuracy=(band_correct / produced_non_excluded if produced_non_excluded else None),
         counts=dict(sorted(counts.items())),
     )
 

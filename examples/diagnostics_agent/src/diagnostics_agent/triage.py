@@ -87,8 +87,7 @@ class TriageSummary:
             "findings": [_finding_to_dict(finding) for finding in self.findings],
             "top_clusters": [_cluster_to_dict(cluster) for cluster in self.top_clusters],
             "suppressed": [
-                {"severity": severity.name, "count": count}
-                for severity, count in self.suppressed
+                {"severity": severity.name, "count": count} for severity, count in self.suppressed
             ],
             "excluded_self_noise": self.excluded_self_noise,
         }
@@ -135,7 +134,9 @@ class LogTriage:
             records = [record for record in all_records if not _is_self_noise(record)]
             excluded_self_noise = len(all_records) - len(records)
         clusters = _build_clusters(records, self.config.max_examples_per_group)
-        findings, remaining_clusters = _classify_findings(clusters, self.config.resolved_rules(), self.config.resolved_suppressors())
+        findings, remaining_clusters = _classify_findings(
+            clusters, self.config.resolved_rules(), self.config.resolved_suppressors()
+        )
 
         top_candidates = [
             cluster
@@ -143,7 +144,9 @@ class LogTriage:
             if cluster.severity >= self.config.min_cluster_severity
         ]
         top_clusters = tuple(
-            sorted(top_candidates, key=lambda cluster: (-cluster.count, cluster.template))[: self.config.max_clusters]
+            sorted(top_candidates, key=lambda cluster: (-cluster.count, cluster.template))[
+                : self.config.max_clusters
+            ]
         )
         top_templates = {cluster.template for cluster in top_clusters}
 
@@ -157,16 +160,17 @@ class LogTriage:
         timestamps = [record.timestamp for record in all_records if record.timestamp is not None]
 
         return TriageSummary(
-            time_range=(min(timestamps) if timestamps else None, max(timestamps) if timestamps else None),
+            time_range=(
+                min(timestamps) if timestamps else None,
+                max(timestamps) if timestamps else None,
+            ),
             total_lines=len(all_records),
             parsed_lines=parsed_lines,
             unparsed_lines=len(all_records) - parsed_lines,
             severity_counts=dict(sorted(severity_counts.items(), key=lambda item: item[0].value)),
             findings=tuple(sorted(findings, key=_finding_sort_key)),
             top_clusters=top_clusters,
-            suppressed=tuple(
-                sorted(suppressed_counter.items(), key=lambda item: item[0].value)
-            ),
+            suppressed=tuple(sorted(suppressed_counter.items(), key=lambda item: item[0].value)),
             excluded_self_noise=excluded_self_noise,
         )
 
@@ -218,7 +222,9 @@ _SYSLOG_PRIORITY_RE = re.compile(r"^<(?P<priority>\d{1,3})>")
 _IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 _IPV6_RE = re.compile(r"\b(?:[0-9A-Fa-f]{1,4}:){2,}[0-9A-Fa-f:]*\b")
 _PORT_RE = re.compile(r":\d{2,5}\b")
-_UUID_RE = re.compile(r"\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b")
+_UUID_RE = re.compile(
+    r"\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b"
+)
 _HEX_RE = re.compile(r"\b(?:0x[0-9A-Fa-f]+|[0-9A-Fa-f]{12,})\b")
 _INT_RE = re.compile(r"\b\d+\b")
 _SELF_SANDBOX_SIGNATURE = "diag-sbx-"
@@ -341,7 +347,9 @@ def _parse_journal_timestamp(data: dict) -> datetime | None:
         if micros is not None:
             return datetime.fromtimestamp(micros / 1_000_000)
 
-    timestamp = _journal_value(data.get("__TIMESTAMP")) or _journal_value(data.get("_SOURCE_REALTIME_TIMESTAMP"))
+    timestamp = _journal_value(data.get("__TIMESTAMP")) or _journal_value(
+        data.get("_SOURCE_REALTIME_TIMESTAMP")
+    )
     if timestamp is not None:
         try:
             return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
@@ -413,8 +421,12 @@ def _build_clusters(records: list[LogRecord], max_examples: int) -> list[EventCl
     clusters = []
     for template, indexed_records in grouped.items():
         cluster_records = [record for _index, record in indexed_records]
-        timestamps = [record.timestamp for record in cluster_records if record.timestamp is not None]
-        processes = sorted({record.process for record in cluster_records if record.process is not None})
+        timestamps = [
+            record.timestamp for record in cluster_records if record.timestamp is not None
+        ]
+        processes = sorted(
+            {record.process for record in cluster_records if record.process is not None}
+        )
         clusters.append(
             EventCluster(
                 template=template,
@@ -466,9 +478,7 @@ def _is_benign(cluster: EventCluster, suppressors: tuple["BenignSuppressor", ...
     if not suppressors:
         return False
     haystacks = (cluster.template, *cluster.examples)
-    return any(
-        s.pattern.search(text) for s in suppressors for text in haystacks
-    )
+    return any(s.pattern.search(text) for s in suppressors for text in haystacks)
 
 
 def _matching_rule(cluster: EventCluster, rules: tuple["TriageRule", ...]) -> "TriageRule | None":

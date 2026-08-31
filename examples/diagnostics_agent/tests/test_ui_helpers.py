@@ -87,9 +87,7 @@ def test_journalctl_projection_covers_triage_journal_fields() -> None:
     }
 
     collector = journalctl_collector(priority="warning", since="-24h")
-    projection_args = [
-        arg for arg in collector.command if arg.startswith("--output-fields=")
-    ]
+    projection_args = [arg for arg in collector.command if arg.startswith("--output-fields=")]
 
     assert set(JOURNAL_OUTPUT_FIELDS) >= required_fields
     assert len(projection_args) == 1

@@ -107,7 +107,9 @@ class ReadOnlySandbox:
             check=False,
         )
         if image_check.returncode != 0:
-            raise ImageNotAvailableError(f"container image is not available locally: {self.config.image}")
+            raise ImageNotAvailableError(
+                f"container image is not available locally: {self.config.image}"
+            )
 
     def run(self, command: Sequence[str]) -> SandboxResult:
         self.preflight()

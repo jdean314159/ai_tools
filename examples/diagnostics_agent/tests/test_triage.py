@@ -18,7 +18,9 @@ def test_parse_iso_line_extracts_fields() -> None:
     record = LogTriage().parse_lines([line])[0]
 
     assert record.raw == line
-    assert record.timestamp == datetime(2026, 5, 29, 14, 3, 11, tzinfo=timezone(timedelta(hours=-7)))
+    assert record.timestamp == datetime(
+        2026, 5, 29, 14, 3, 11, tzinfo=timezone(timedelta(hours=-7))
+    )
     assert record.host == "host"
     assert record.process == "sshd"
     assert record.pid == 1234
@@ -236,7 +238,11 @@ def test_oom_rule_produces_memory_critical_finding() -> None:
     oom = [finding for finding in summary.findings if finding.rule_name == "oom_kill"][0]
     assert oom.category == "memory"
     assert oom.severity == Severity.CRITICAL
-    assert summary.findings[0].severity >= summary.top_clusters[0].severity if summary.top_clusters else True
+    assert (
+        summary.findings[0].severity >= summary.top_clusters[0].severity
+        if summary.top_clusters
+        else True
+    )
 
 
 def test_journal_json_fixture_preserves_warning_or_higher_priorities() -> None:
@@ -299,7 +305,9 @@ def test_triage_is_deterministic_for_same_fixture() -> None:
     second = triage.triage(source)
 
     assert first == second
-    assert json.dumps(first.to_dict(), sort_keys=True) == json.dumps(second.to_dict(), sort_keys=True)
+    assert json.dumps(first.to_dict(), sort_keys=True) == json.dumps(
+        second.to_dict(), sort_keys=True
+    )
 
 
 def test_summary_to_dict_is_json_serializable() -> None:
@@ -325,6 +333,7 @@ def _accounted_count(summary) -> int:
 # FP-rate measurement — benign eval corpus
 # ---------------------------------------------------------------------------
 
+
 def test_benign_eval_corpus_produces_zero_findings() -> None:
     """Regression gate: all lines in benign_eval_corpus.log must produce zero findings.
 
@@ -336,9 +345,8 @@ def test_benign_eval_corpus_produces_zero_findings() -> None:
 
     summary = LogTriage().triage(source)
 
-    assert summary.findings == (), (
-        "Expected zero findings from benign corpus; got: "
-        + ", ".join(f.rule_name for f in summary.findings)
+    assert summary.findings == (), "Expected zero findings from benign corpus; got: " + ", ".join(
+        f.rule_name for f in summary.findings
     )
 
 
@@ -395,10 +403,7 @@ def test_benign_suppressor_cap_does_not_affect_real_threats() -> None:
             "2026-06-01T10:00:02+00:00 host gdm-password[102]: "
             "pam_unix(gdm-password:session): session opened for user user"
         ),
-        (
-            "2026-06-01T10:00:03+00:00 host kernel[0]: "
-            "Bluetooth: hci0: command 0x0401 tx timeout"
-        ),
+        ("2026-06-01T10:00:03+00:00 host kernel[0]: Bluetooth: hci0: command 0x0401 tx timeout"),
     ],
 )
 def test_desktop_session_noise_patterns_are_suppressed(line: str) -> None:
@@ -432,18 +437,9 @@ def test_bluetooth_timeout_suppresses_masked_cluster_template() -> None:
 
 def test_desktop_noise_suppressors_do_not_swallow_real_auth() -> None:
     lines = [
-        (
-            "2026-06-01T10:02:00+00:00 host sshd[200]: "
-            "pam_unix(sshd:auth): authentication failure"
-        ),
-        (
-            "2026-06-01T10:02:01+00:00 host sudo[201]: "
-            "authentication failure; logname=user uid=1000"
-        ),
-        (
-            "2026-06-01T10:02:02+00:00 host login[202]: "
-            "pam_unix(login:auth): authentication failure"
-        ),
+        ("2026-06-01T10:02:00+00:00 host sshd[200]: pam_unix(sshd:auth): authentication failure"),
+        ("2026-06-01T10:02:01+00:00 host sudo[201]: authentication failure; logname=user uid=1000"),
+        ("2026-06-01T10:02:02+00:00 host login[202]: pam_unix(login:auth): authentication failure"),
     ]
 
     summary = LogTriage().triage(lines)
