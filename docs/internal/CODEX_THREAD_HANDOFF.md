@@ -149,10 +149,12 @@ Key commits, oldest to newest:
 - `728d766` — paired DGX trust-policy validation and citation correction
 - `aebd394` — availability/false-positive characterization
 - `b7f7cda` — audited trust-review workflow
+- `619c4fe` — repository-wide Ruff adoption complete
 
 ## Current evidence boundary
 
-- Live model: llama.cpp-hosted `Qwen3.8-27B-UD-Q4_K_M.gguf` on the DGX Spark.
+- Current live model: llama.cpp-hosted
+  `Qwen3.8-Flash-Next-UD-IQ4_XS` on the DGX Spark.
 - Security and availability probes used thinking off, temperature zero, and
   exact judge-free scoring. No oracle or LLM judge was used.
 - Results are bounded synthetic characterizations, not general security or
@@ -165,12 +167,20 @@ Key commits, oldest to newest:
 
 ## Recommended next assignment
 
-Do not extend the policy from this bounded matrix. Choose one next validation:
+Do not extend the Engram policy or model-ceiling profiles from their bounded
+matrices. Return to the broader `ai_tools` capability inventory and select one
+unvalidated package capability at a time.
 
-1. Run the deferred thinking-on version of the frozen paired security profile,
-   preserving all cases and scorers; or
-2. Return to the broader `ai_tools` capability inventory and select the next
-   unvalidated package capability one at a time.
+Do not restart action-guard enforcement as a simple repeated-tool experiment.
+Deterministic enforcement is already covered, live enforcement failed its
+quality gates, NAV-STRUCT-00 failed completeness, and the frozen paired
+NAV-VERIFIABLE-00 campaign was inconclusive. Its predeclared rule does not
+support broader shadow testing.
+
+The clearest next bounded candidate is command-isolation hardening, but it is a
+new scope and must be selected explicitly. A first profile should test one
+concrete boundary—preferably `no-new-privileges` plus dropped Linux
+capabilities—before separately considering resource limits or seccomp.
 
 The Engram prompt-budget choice, first bounded `agent_lib` policy/trace
 characterization, and Flash-Next core, tool-decision, and valid recovery
@@ -179,11 +189,9 @@ generalize the policy/trace result to OS isolation, or the bounded Docker result
 to general container security; do not generalize the recovery ceiling to
 arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
-extending these ceiling profiles. Inspector/UI single-artifact replay is now
-complete. The active maintenance sequence is Python-quality adoption, next
-through examples, scripts, and root integration tests. A deeper
-command-sandbox project would first need
-a new concrete question around the still-missing resource limits,
+extending these ceiling profiles. Inspector/UI single-artifact replay and
+repository-wide Python-quality adoption are complete. A deeper command-sandbox
+project still needs an explicitly selected question around resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.
 
 ## Verification posture
