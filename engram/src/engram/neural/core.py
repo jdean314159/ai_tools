@@ -32,6 +32,7 @@ import json
 try:
     import torch
     import torch.nn.functional as F
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -40,6 +41,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Backend abstraction: unified API over torch or numpy
 # ---------------------------------------------------------------------------
+
 
 class _Backend:
     """Thin wrapper so the RTRL class doesn't branch on every operation."""
@@ -169,6 +171,7 @@ class _Backend:
 @dataclass
 class RTRLConfig:
     """Configuration for Modern Subgrouped RTRL."""
+
     # Architecture
     num_inputs: int
     num_outputs: int
@@ -176,21 +179,21 @@ class RTRLConfig:
     time_delay: int = 2
 
     # Activations
-    hidden_activation: str = "tanh"     # tanh | sigmoid | relu | leaky_relu
+    hidden_activation: str = "tanh"  # tanh | sigmoid | relu | leaky_relu
     output_activation: str = "sigmoid"  # sigmoid | tanh | linear
 
     # Training
     epochs: int = 100
     lr: float = 0.01
     momentum: float = 0.0
-    per_step_dw_reset: bool = True      # True = thesis C behavior
+    per_step_dw_reset: bool = True  # True = thesis C behavior
 
     # Optimizer: "sgd" (thesis) or "adam"
     optimizer: str = "sgd"
     adam_beta1: float = 0.9
     adam_beta2: float = 0.999
     adam_eps: float = 1e-8
-    weight_decay: float = 0.0           # L2 regularization
+    weight_decay: float = 0.0  # L2 regularization
 
     # Gradient clipping (0 = disabled)
     grad_clip_norm: float = 0.0
@@ -200,16 +203,16 @@ class RTRLConfig:
     plateau_patience: int = 10
     plateau_factor: float = 0.5
     plateau_min_lr: float = 1e-7
-    cosine_T_max: int = 0               # 0 = use epochs
+    cosine_T_max: int = 0  # 0 = use epochs
     cosine_eta_min: float = 1e-6
 
     # Initialization
-    init: str = "xavier"                # xavier | he | thesis (uniform[-1,1])
+    init: str = "xavier"  # xavier | he | thesis (uniform[-1,1])
 
     # Architecture options
-    gated: bool = False                 # GRU-style update gate per neuron
-    layer_norm: bool = False            # Pre-activation layer normalization
-    ln_eps: float = 1e-5                # Layer norm epsilon
+    gated: bool = False  # GRU-style update gate per neuron
+    layer_norm: bool = False  # Pre-activation layer normalization
+    ln_eps: float = 1e-5  # Layer norm epsilon
 
     # RTRL parameters
     y_prime_min: float = 0.01
@@ -226,7 +229,7 @@ class RTRLConfig:
     lr_min: float = 1e-9
 
     # Runtime
-    device: str = "cpu"                 # cpu (numpy) | auto/cuda (torch when installed)
+    device: str = "cpu"  # cpu (numpy) | auto/cuda (torch when installed)
     dtype: str = "float32"
     verbose: bool = True
 
@@ -260,10 +263,10 @@ class ModernSubgroupedRTRL:
         self.B = _Backend(use_torch, config.device, config.dtype)
 
         # Dimensions (same naming as thesis C code)
-        self.m = config.num_inputs + 1          # bias + external inputs
+        self.m = config.num_inputs + 1  # bias + external inputs
         self.n = config.num_hidden + config.num_outputs
-        self.ncols = self.m + self.n            # total input width
-        self.nrows = self.n                     # total neurons
+        self.ncols = self.m + self.n  # total input width
+        self.nrows = self.n  # total neurons
         self.num_groups = config.num_outputs
         self.group_size = self.n // self.num_groups
 
@@ -287,10 +290,12 @@ class ModernSubgroupedRTRL:
                 n_params += self.B.numel(self.ln_gamma) + self.B.numel(self.ln_beta)
                 extras.append("LN")
             extra_str = f" [{'+'.join(extras)}]" if extras else ""
-            print(f"ModernSubgroupedRTRL({self.B.device_name}) "
-                  f"n={self.n} groups={self.num_groups} gsize={self.group_size} "
-                  f"params={n_params}{extra_str} "
-                  f"P={list(self.p_matrix.shape)}")
+            print(
+                f"ModernSubgroupedRTRL({self.B.device_name}) "
+                f"n={self.n} groups={self.num_groups} gsize={self.group_size} "
+                f"params={n_params}{extra_str} "
+                f"P={list(self.p_matrix.shape)}"
+            )
 
     # ------------------------------------------------------------------
     # Initialization
@@ -358,9 +363,9 @@ class ModernSubgroupedRTRL:
         B = self.B
         if self.config.optimizer == "adam":
             # Adam first and second moment estimates
-            self.adam_m = B.zeros_like(self.weights)    # first moment
-            self.adam_v = B.zeros_like(self.weights)    # second moment
-            self.adam_t = 0                              # timestep counter
+            self.adam_m = B.zeros_like(self.weights)  # first moment
+            self.adam_v = B.zeros_like(self.weights)  # second moment
+            self.adam_t = 0  # timestep counter
         # Gradient buffer (always needed — raw gradient before optimizer)
         self.grad_buffer = B.zeros_like(self.weights)
 
@@ -377,7 +382,7 @@ class ModernSubgroupedRTRL:
         self._base_lr = self.config.lr
         self._current_lr = self.config.lr
         # Plateau scheduler state
-        self._plateau_best = float('inf')
+        self._plateau_best = float("inf")
         self._plateau_wait = 0
 
     # ------------------------------------------------------------------
@@ -408,19 +413,18 @@ class ModernSubgroupedRTRL:
         those are unaffected by a bare forward() call.
         """
         state: Dict[str, Any] = {
-            'outputs':      self._clone_scalar_or_tensor(self.outputs),
-            'activations':  self._clone_scalar_or_tensor(self.activations),
-            'errors':       self._clone_scalar_or_tensor(self.errors),
-            'p_matrix':     self._clone_scalar_or_tensor(self.p_matrix),
-            'p_matrix_old': self._clone_scalar_or_tensor(self.p_matrix_old),
+            "outputs": self._clone_scalar_or_tensor(self.outputs),
+            "activations": self._clone_scalar_or_tensor(self.activations),
+            "errors": self._clone_scalar_or_tensor(self.errors),
+            "p_matrix": self._clone_scalar_or_tensor(self.p_matrix),
+            "p_matrix_old": self._clone_scalar_or_tensor(self.p_matrix_old),
         }
         if self.config.gated:
-            state['gate_values']  = self._clone_scalar_or_tensor(self.gate_values)
-            state['prev_outputs'] = self._clone_scalar_or_tensor(self.prev_outputs)
-            state['candidate']    = self._clone_scalar_or_tensor(
-                getattr(self, 'candidate', None))
+            state["gate_values"] = self._clone_scalar_or_tensor(self.gate_values)
+            state["prev_outputs"] = self._clone_scalar_or_tensor(self.prev_outputs)
+            state["candidate"] = self._clone_scalar_or_tensor(getattr(self, "candidate", None))
         if self.config.layer_norm:
-            state['ln_std'] = self._clone_scalar_or_tensor(self.ln_std)
+            state["ln_std"] = self._clone_scalar_or_tensor(self.ln_std)
         return state
 
     def _restore_recurrent_state(self, state: Dict[str, Any]) -> None:
@@ -459,8 +463,7 @@ class ModernSubgroupedRTRL:
                 d = (act > 0).astype(self.B.dtype)
         elif kind == "leaky_relu":
             if self.B.use_torch:
-                d = torch.where(act > 0, torch.ones_like(act),
-                                torch.full_like(act, 0.01))
+                d = torch.where(act > 0, torch.ones_like(act), torch.full_like(act, 0.01))
             else:
                 d = np.where(act > 0, 1.0, 0.01).astype(self.B.dtype)
         elif kind == "linear":
@@ -481,16 +484,17 @@ class ModernSubgroupedRTRL:
         B = self.B
         z = B.zeros(self.ncols)
         z[0] = 1.0
-        z[1:self.m] = inputs
+        z[1 : self.m] = inputs
 
         if teacher_outputs is not None and self.config.teacher_forcing:
             for g in range(self.num_groups):
                 gs = g * self.group_size
                 z[self.m + gs] = teacher_outputs[g]
-                z[self.m + gs + 1:self.m + gs + self.group_size] = \
-                    self.outputs[gs + 1:gs + self.group_size]
+                z[self.m + gs + 1 : self.m + gs + self.group_size] = self.outputs[
+                    gs + 1 : gs + self.group_size
+                ]
         else:
-            z[self.m:] = self.outputs
+            z[self.m :] = self.outputs
 
         # Save previous outputs for gating
         if self.config.gated:
@@ -507,8 +511,7 @@ class ModernSubgroupedRTRL:
         candidate = self._activate(self.activations, self.config.hidden_activation)
         if self.config.output_activation != self.config.hidden_activation:
             oi = self.output_indices
-            candidate[oi] = self._activate(self.activations[oi],
-                                           self.config.output_activation)
+            candidate[oi] = self._activate(self.activations[oi], self.config.output_activation)
 
         # Apply GRU-style update gate
         if self.config.gated:
@@ -516,8 +519,9 @@ class ModernSubgroupedRTRL:
             gate_act = B.mv(self.gate_weights, z) + self.gate_bias
             self.gate_values = B.sigmoid(gate_act)
             # gate≈1 → keep old output; gate≈0 → use new candidate
-            self.outputs = self.gate_values * self.prev_outputs + \
-                           (1.0 - self.gate_values) * candidate
+            self.outputs = (
+                self.gate_values * self.prev_outputs + (1.0 - self.gate_values) * candidate
+            )
         else:
             self.outputs = candidate
 
@@ -526,7 +530,6 @@ class ModernSubgroupedRTRL:
     def _layer_norm(self, s):
         """Pre-activation layer normalization. Returns (normed, std)."""
         B = self.B
-        n = self.nrows
         if B.use_torch:
             mean = s.mean()
             var = s.var(unbiased=False)
@@ -548,7 +551,7 @@ class ModernSubgroupedRTRL:
         oi = self.output_indices
         output_vals = self.outputs[oi]
         self.errors = desired - output_vals
-        return float(0.5 * self.B.sum(self.errors ** 2))
+        return float(0.5 * self.B.sum(self.errors**2))
 
     # ------------------------------------------------------------------
     # Weight update (subgrouped RTRL core)
@@ -571,14 +574,14 @@ class ModernSubgroupedRTRL:
         for g in range(self.num_groups):
             gs = g * self.group_size
             ge = gs + self.group_size
-            p_slice = self.p_matrix_old[:, :, gs]           # [S, C]
+            p_slice = self.p_matrix_old[:, :, gs]  # [S, C]
             self.grad_buffer[gs:ge] += float(self.errors[g]) * p_slice
 
         # --- 2. Gradient clipping ---
         if self.config.grad_clip_norm > 0:
             gnorm = B.norm(self.grad_buffer)
             if gnorm > self.config.grad_clip_norm:
-                self.grad_buffer *= (self.config.grad_clip_norm / (gnorm + 1e-8))
+                self.grad_buffer *= self.config.grad_clip_norm / (gnorm + 1e-8)
 
         # --- 3. Optimizer step ---
         if self.config.optimizer == "adam":
@@ -605,15 +608,15 @@ class ModernSubgroupedRTRL:
 
         # Weight decay (decoupled, AdamW style)
         if cfg.weight_decay > 0:
-            self.weights *= (1.0 - self._current_lr * cfg.weight_decay)
+            self.weights *= 1.0 - self._current_lr * cfg.weight_decay
 
         # Update biased moments
         self.adam_m = cfg.adam_beta1 * self.adam_m + (1 - cfg.adam_beta1) * self.grad_buffer
-        self.adam_v = cfg.adam_beta2 * self.adam_v + (1 - cfg.adam_beta2) * (self.grad_buffer ** 2)
+        self.adam_v = cfg.adam_beta2 * self.adam_v + (1 - cfg.adam_beta2) * (self.grad_buffer**2)
 
         # Bias correction
-        bc1 = 1.0 - cfg.adam_beta1 ** t
-        bc2 = 1.0 - cfg.adam_beta2 ** t
+        bc1 = 1.0 - cfg.adam_beta1**t
+        bc2 = 1.0 - cfg.adam_beta2**t
         m_hat = self.adam_m / bc1
         v_hat = self.adam_v / bc2
 
@@ -624,8 +627,9 @@ class ModernSubgroupedRTRL:
 
     def _sgd_step(self):
         """Apply SGD with momentum. v = μv + α∇L; θ += v."""
-        self.delta_weights = self.config.momentum * self.delta_weights + \
-            self._current_lr * self.grad_buffer
+        self.delta_weights = (
+            self.config.momentum * self.delta_weights + self._current_lr * self.grad_buffer
+        )
         self.weights += self.delta_weights
 
     def _update_gate_weights(self, z):
@@ -652,7 +656,7 @@ class ModernSubgroupedRTRL:
 
         # Compute gate gradients for all neurons
         gate_deriv = self.gate_values * (1.0 - self.gate_values)  # σ'(a) = σ(a)(1-σ(a))
-        diff = self.prev_outputs - self.candidate                 # [N]
+        diff = self.prev_outputs - self.candidate  # [N]
 
         # Error signal: broadcast group error to all neurons in group
         error_signal = B.zeros(self.nrows)
@@ -663,31 +667,31 @@ class ModernSubgroupedRTRL:
 
         # ∂E/∂g_k = -error * diff, then chain through sigmoid derivative
         # Gate grad for weights: [N] * [C] outer product → [N, C]
-        gate_grad_scalar = error_signal * diff * gate_deriv       # [N]
+        gate_grad_scalar = error_signal * diff * gate_deriv  # [N]
         # Outer product: gate_grad_W[k,j] = gate_grad_scalar[k] * z[j]
         if B.use_torch:
             gate_grad_W = gate_grad_scalar[:, None] * z[None, :]  # [N, C]
         else:
             gate_grad_W = gate_grad_scalar[:, np.newaxis] * z[np.newaxis, :]
-        gate_grad_b = gate_grad_scalar                            # [N]
+        gate_grad_b = gate_grad_scalar  # [N]
 
         # Adam update for gate weights
         b1, b2, eps = cfg.adam_beta1, cfg.adam_beta2, cfg.adam_eps
 
         # Decoupled weight decay (AdamW-style) — prevents gate saturation
         if cfg.weight_decay > 0:
-            self.gate_weights *= (1.0 - lr * cfg.weight_decay)
+            self.gate_weights *= 1.0 - lr * cfg.weight_decay
 
         self.gate_adam_m_w = b1 * self.gate_adam_m_w + (1 - b1) * gate_grad_W
-        self.gate_adam_v_w = b2 * self.gate_adam_v_w + (1 - b2) * (gate_grad_W ** 2)
-        m_hat_w = self.gate_adam_m_w / (1 - b1 ** t)
-        v_hat_w = self.gate_adam_v_w / (1 - b2 ** t)
+        self.gate_adam_v_w = b2 * self.gate_adam_v_w + (1 - b2) * (gate_grad_W**2)
+        m_hat_w = self.gate_adam_m_w / (1 - b1**t)
+        v_hat_w = self.gate_adam_v_w / (1 - b2**t)
         self.gate_weights += lr * m_hat_w / (B.sqrt(v_hat_w) + eps)
 
         self.gate_adam_m_b = b1 * self.gate_adam_m_b + (1 - b1) * gate_grad_b
-        self.gate_adam_v_b = b2 * self.gate_adam_v_b + (1 - b2) * (gate_grad_b ** 2)
-        m_hat_b = self.gate_adam_m_b / (1 - b1 ** t)
-        v_hat_b = self.gate_adam_v_b / (1 - b2 ** t)
+        self.gate_adam_v_b = b2 * self.gate_adam_v_b + (1 - b2) * (gate_grad_b**2)
+        m_hat_b = self.gate_adam_m_b / (1 - b1**t)
+        v_hat_b = self.gate_adam_v_b / (1 - b2**t)
         self.gate_bias += lr * m_hat_b / (B.sqrt(v_hat_b) + eps)
 
     def _update_p_matrix(self, z):
@@ -710,10 +714,10 @@ class ModernSubgroupedRTRL:
             f'(k) is scaled by gamma_k / (std + eps)
         """
         oi = self.output_indices
-        h_deriv = self._derivative(self.activations, self.outputs,
-                                   self.config.hidden_activation)
-        o_deriv = self._derivative(self.activations[oi], self.outputs[oi],
-                                   self.config.output_activation)
+        h_deriv = self._derivative(self.activations, self.outputs, self.config.hidden_activation)
+        o_deriv = self._derivative(
+            self.activations[oi], self.outputs[oi], self.config.output_activation
+        )
         all_deriv = self.B.clone(h_deriv)
         all_deriv[oi] = o_deriv
 
@@ -734,7 +738,7 @@ class ModernSubgroupedRTRL:
         for g in range(self.num_groups):
             gs = g * self.group_size
             ge = gs + self.group_size
-            W_rec = self.weights[gs:ge, self.m + gs:self.m + ge]
+            W_rec = self.weights[gs:ge, self.m + gs : self.m + ge]
             P_old_g = self.p_matrix_old[:, :, gs:ge]
             rec_sum = self.B.matmul(P_old_g, W_rec.T)
 
@@ -751,13 +755,14 @@ class ModernSubgroupedRTRL:
             if self.config.gated:
                 gv = self.gate_values[gs:ge]
                 if self.B.use_torch:
-                    self.p_matrix[:, :, gs:ge] = \
-                        gv[None, None, :] * P_old_g + \
-                        (1.0 - gv[None, None, :]) * new_contrib
+                    self.p_matrix[:, :, gs:ge] = (
+                        gv[None, None, :] * P_old_g + (1.0 - gv[None, None, :]) * new_contrib
+                    )
                 else:
-                    self.p_matrix[:, :, gs:ge] = \
-                        gv[np.newaxis, np.newaxis, :] * P_old_g + \
-                        (1.0 - gv[np.newaxis, np.newaxis, :]) * new_contrib
+                    self.p_matrix[:, :, gs:ge] = (
+                        gv[np.newaxis, np.newaxis, :] * P_old_g
+                        + (1.0 - gv[np.newaxis, np.newaxis, :]) * new_contrib
+                    )
             else:
                 self.p_matrix[:, :, gs:ge] = new_contrib
 
@@ -819,10 +824,10 @@ class ModernSubgroupedRTRL:
                 self.forward(data[t])
 
         return {
-            'total_error': total_error,
-            'avg_error': total_error / n,
-            'accuracy': correct / n * 100.0,
-            'skip_pct': skipped / n * 100.0,
+            "total_error": total_error,
+            "avg_error": total_error / n,
+            "accuracy": correct / n * 100.0,
+            "skip_pct": skipped / n * 100.0,
         }
 
     def train(self, data, targets) -> List[Dict[str, Any]]:
@@ -833,31 +838,32 @@ class ModernSubgroupedRTRL:
             targets = self.B.from_numpy(targets)
 
         history = []
-        min_error = float('inf')
+        min_error = float("inf")
         cfg = self.config
 
         for epoch in range(cfg.epochs):
             stats = self.train_epoch(data, targets)
-            stats['epoch'] = epoch + 1
-            stats['lr'] = self._current_lr
+            stats["epoch"] = epoch + 1
+            stats["lr"] = self._current_lr
             history.append(stats)
 
             # LR scheduling
-            te = stats['total_error']
+            te = stats["total_error"]
             self._step_scheduler(epoch, te)
             min_error = min(min_error, te)
 
-            if cfg.verbose and (epoch % max(1, cfg.epochs // 20) == 0
-                                or epoch == cfg.epochs - 1):
-                print(f"  Epoch {epoch+1:4d}/{cfg.epochs}  "
-                      f"err={stats['avg_error']:.6f}  "
-                      f"acc={stats['accuracy']:.1f}%  "
-                      f"lr={self._current_lr:.2e}")
+            if cfg.verbose and (epoch % max(1, cfg.epochs // 20) == 0 or epoch == cfg.epochs - 1):
+                print(
+                    f"  Epoch {epoch + 1:4d}/{cfg.epochs}  "
+                    f"err={stats['avg_error']:.6f}  "
+                    f"acc={stats['accuracy']:.1f}%  "
+                    f"lr={self._current_lr:.2e}"
+                )
 
             # Early stop if LR bottomed out (thesis mode)
             if cfg.lr_schedule == "thesis" and self._current_lr < cfg.lr_min:
                 if cfg.verbose:
-                    print(f"  LR below min, stopping at epoch {epoch+1}")
+                    print(f"  LR below min, stopping at epoch {epoch + 1}")
                 break
 
         self.training_history = history
@@ -873,10 +879,12 @@ class ModernSubgroupedRTRL:
         elif sched == "thesis":
             # Original aggressive decay: α *= 0.1 on error increase or stall
             cfg = self.config
-            if not hasattr(self, '_thesis_min_error'):
-                self._thesis_min_error = float('inf')
-            if total_error > self._thesis_min_error * cfg.lr_decay_threshold or \
-               abs(total_error - self._thesis_min_error) < 1e-7:
+            if not hasattr(self, "_thesis_min_error"):
+                self._thesis_min_error = float("inf")
+            if (
+                total_error > self._thesis_min_error * cfg.lr_decay_threshold
+                or abs(total_error - self._thesis_min_error) < 1e-7
+            ):
                 self._current_lr *= cfg.lr_decay_factor
                 if cfg.verbose:
                     print(f"  LR → {self._current_lr:.2e}")
@@ -891,8 +899,7 @@ class ModernSubgroupedRTRL:
             else:
                 self._plateau_wait += 1
                 if self._plateau_wait >= cfg.plateau_patience:
-                    new_lr = max(self._current_lr * cfg.plateau_factor,
-                                 cfg.plateau_min_lr)
+                    new_lr = max(self._current_lr * cfg.plateau_factor, cfg.plateau_min_lr)
                     if new_lr < self._current_lr:
                         self._current_lr = new_lr
                         if cfg.verbose:
@@ -904,8 +911,9 @@ class ModernSubgroupedRTRL:
             cfg = self.config
             T = cfg.cosine_T_max if cfg.cosine_T_max > 0 else cfg.epochs
             eta_min = cfg.cosine_eta_min
-            self._current_lr = eta_min + (self._base_lr - eta_min) * \
-                (1 + math.cos(math.pi * (epoch + 1) / T)) / 2
+            self._current_lr = (
+                eta_min + (self._base_lr - eta_min) * (1 + math.cos(math.pi * (epoch + 1) / T)) / 2
+            )
 
         else:
             raise ValueError(f"Unknown lr_schedule: {sched}")
@@ -932,51 +940,54 @@ class ModernSubgroupedRTRL:
 
     def state_dict(self) -> Dict[str, Any]:
         sd = {
-            'weights': self.B.to_numpy(self.weights).tolist(),
-            'config': self.config.__dict__,
-            'training_history': getattr(self, 'training_history', []),
+            "weights": self.B.to_numpy(self.weights).tolist(),
+            "config": self.config.__dict__,
+            "training_history": getattr(self, "training_history", []),
         }
         if self.config.gated:
-            sd['gate_weights'] = self.B.to_numpy(self.gate_weights).tolist()
-            sd['gate_bias'] = self.B.to_numpy(self.gate_bias).tolist()
+            sd["gate_weights"] = self.B.to_numpy(self.gate_weights).tolist()
+            sd["gate_bias"] = self.B.to_numpy(self.gate_bias).tolist()
         if self.config.layer_norm:
-            sd['ln_gamma'] = self.B.to_numpy(self.ln_gamma).tolist()
-            sd['ln_beta'] = self.B.to_numpy(self.ln_beta).tolist()
+            sd["ln_gamma"] = self.B.to_numpy(self.ln_gamma).tolist()
+            sd["ln_beta"] = self.B.to_numpy(self.ln_beta).tolist()
         return sd
 
     def save(self, path: str):
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(self.state_dict(), f, indent=2)
 
     @classmethod
-    def load(cls, path: str) -> 'ModernSubgroupedRTRL':
+    def load(cls, path: str) -> "ModernSubgroupedRTRL":
         with open(path) as f:
             d = json.load(f)
-        cfg = RTRLConfig(**d['config'])
+        cfg = RTRLConfig(**d["config"])
         net = cls(cfg)
-        w = np.array(d['weights'], dtype=getattr(np, cfg.dtype))
+        w = np.array(d["weights"], dtype=getattr(np, cfg.dtype))
         net.weights = net.B.from_numpy(w)
-        if cfg.gated and 'gate_weights' in d:
+        if cfg.gated and "gate_weights" in d:
             net.gate_weights = net.B.from_numpy(
-                np.array(d['gate_weights'], dtype=getattr(np, cfg.dtype)))
-            net.gate_bias = net.B.from_numpy(
-                np.array(d['gate_bias'], dtype=getattr(np, cfg.dtype)))
-        if cfg.layer_norm and 'ln_gamma' in d:
-            net.ln_gamma = net.B.from_numpy(
-                np.array(d['ln_gamma'], dtype=getattr(np, cfg.dtype)))
-            net.ln_beta = net.B.from_numpy(
-                np.array(d['ln_beta'], dtype=getattr(np, cfg.dtype)))
-        net.training_history = d.get('training_history', [])
+                np.array(d["gate_weights"], dtype=getattr(np, cfg.dtype))
+            )
+            net.gate_bias = net.B.from_numpy(np.array(d["gate_bias"], dtype=getattr(np, cfg.dtype)))
+        if cfg.layer_norm and "ln_gamma" in d:
+            net.ln_gamma = net.B.from_numpy(np.array(d["ln_gamma"], dtype=getattr(np, cfg.dtype)))
+            net.ln_beta = net.B.from_numpy(np.array(d["ln_beta"], dtype=getattr(np, cfg.dtype)))
+        net.training_history = d.get("training_history", [])
         return net
 
 
 def create_thesis_config(**kwargs) -> RTRLConfig:
     """Create config matching original thesis defaults."""
     defaults = dict(
-        hidden_activation="sigmoid", output_activation="sigmoid",
-        init="thesis", per_step_dw_reset=True,
-        optimizer="sgd", lr_schedule="thesis",
-        lr_decay_factor=0.1, lr_decay_threshold=1.01, y_prime_min=0.01,
+        hidden_activation="sigmoid",
+        output_activation="sigmoid",
+        init="thesis",
+        per_step_dw_reset=True,
+        optimizer="sgd",
+        lr_schedule="thesis",
+        lr_decay_factor=0.1,
+        lr_decay_threshold=1.01,
+        y_prime_min=0.01,
     )
     defaults.update(kwargs)
     return RTRLConfig(**defaults)
@@ -985,6 +996,7 @@ def create_thesis_config(**kwargs) -> RTRLConfig:
 # ---------------------------------------------------------------------------
 # Stage 4: TITANS-Compatible Memory Interface
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class TITANSConfig:
@@ -995,30 +1007,31 @@ class TITANSConfig:
     error) gates how aggressively the memory updates — novel information
     gets stored, predictable information is ignored.
     """
+
     # Dimensions
-    key_dim: int                        # Size of input key vectors
-    value_dim: int                      # Size of output value vectors
+    key_dim: int  # Size of input key vectors
+    value_dim: int  # Size of output value vectors
     config_version: int = 3
-    hidden_dim: int = 32                # Hidden neurons in RTRL network
+    hidden_dim: int = 32  # Hidden neurons in RTRL network
 
     # Surprise gating
-    surprise_threshold: float = 0.0     # Minimum surprise to trigger write
-    surprise_ema_alpha: float = 0.05    # EMA smoothing — lower = slower/more stable baseline
+    surprise_threshold: float = 0.0  # Minimum surprise to trigger write
+    surprise_ema_alpha: float = 0.05  # EMA smoothing — lower = slower/more stable baseline
     surprise_modulated_lr: bool = True  # Scale LR by normalized surprise
 
     # Memory dynamics
-    lr: float = 0.003                   # Base learning rate
-    weight_decay: float = 1e-5          # Continuous forgetting rate
-    momentum_window: int = 0            # Context momentum: accumulate over
-                                        # N steps before applying (0=every step)
+    lr: float = 0.003  # Base learning rate
+    weight_decay: float = 1e-5  # Continuous forgetting rate
+    momentum_window: int = 0  # Context momentum: accumulate over
+    # N steps before applying (0=every step)
 
     # RTRL backbone
     optimizer: str = "adam"
     grad_clip_norm: float = 1.0
-    gated: bool = True                  # GRU gate for hidden state retention
+    gated: bool = True  # GRU gate for hidden state retention
     layer_norm: bool = False
     hidden_activation: str = "tanh"
-    output_activation: str = "linear"   # Linear for embedding regression
+    output_activation: str = "linear"  # Linear for embedding regression
     init: str = "xavier"
 
     # Runtime
@@ -1070,7 +1083,7 @@ class TITANSMemory:
             num_inputs=config.key_dim,
             num_outputs=config.value_dim,
             num_hidden=config.hidden_dim,
-            time_delay=0,           # No delay for memory read/write
+            time_delay=0,  # No delay for memory read/write
             epochs=1,
             lr=config.lr,
             optimizer=config.optimizer,
@@ -1083,7 +1096,7 @@ class TITANSMemory:
             output_activation=config.output_activation,
             init=config.init,
             per_step_dw_reset=False,
-            continuous_epochs=True,     # Never reset state between calls
+            continuous_epochs=True,  # Never reset state between calls
             teacher_forcing=False,
             categorical_output=False,
             skip_threshold=0.0,
@@ -1096,7 +1109,7 @@ class TITANSMemory:
         self.B = self.net.B
 
         # Surprise tracking
-        self._surprise_ema = 0.0        # Exponential moving average of surprise
+        self._surprise_ema = 0.0  # Exponential moving average of surprise
         self._surprise_count = 0
         self._step_count = 0
 
@@ -1107,10 +1120,10 @@ class TITANSMemory:
 
         # Statistics
         self.stats = {
-            'total_writes': 0,
-            'total_skipped': 0,
-            'total_surprise': 0.0,
-            'max_surprise': 0.0,
+            "total_writes": 0,
+            "total_skipped": 0,
+            "total_surprise": 0.0,
+            "max_surprise": 0.0,
         }
 
     # ------------------------------------------------------------------
@@ -1163,7 +1176,7 @@ class TITANSMemory:
             oi = self.net.output_indices
             predicted = self.net.outputs[oi]
             diff = value - predicted
-            return float(self.B.sum(diff ** 2)) / len(self.net.output_indices)
+            return float(self.B.sum(diff**2)) / len(self.net.output_indices)
         finally:
             self.net._restore_recurrent_state(saved)
 
@@ -1191,7 +1204,7 @@ class TITANSMemory:
         oi = self.net.output_indices
         predicted = self.net.outputs[oi]
         diff = value - predicted
-        mse = float(self.B.sum(diff ** 2)) / len(oi)
+        mse = float(self.B.sum(diff**2)) / len(oi)
 
         # Update surprise EMA
         self._surprise_count += 1
@@ -1202,8 +1215,8 @@ class TITANSMemory:
             self._surprise_ema = alpha * mse + (1 - alpha) * self._surprise_ema
 
         # Track stats
-        self.stats['total_surprise'] += mse
-        self.stats['max_surprise'] = max(self.stats['max_surprise'], mse)
+        self.stats["total_surprise"] += mse
+        self.stats["max_surprise"] = max(self.stats["max_surprise"], mse)
         self._step_count += 1
 
         # Decide whether to write
@@ -1231,19 +1244,18 @@ class TITANSMemory:
             if cfg.surprise_modulated_lr and self._surprise_ema > 1e-10:
                 self.net._current_lr = saved_lr
 
-            self.stats['total_writes'] += 1
+            self.stats["total_writes"] += 1
         else:
             # Still update P matrix for gradient tracking even if we skip write
             self.net._update_p_matrix(z)
-            self.net.p_matrix_old, self.net.p_matrix = \
-                self.net.p_matrix, self.net.p_matrix_old
-            self.stats['total_skipped'] += 1
+            self.net.p_matrix_old, self.net.p_matrix = self.net.p_matrix, self.net.p_matrix_old
+            self.stats["total_skipped"] += 1
 
         return {
-            'surprise': mse,
-            'wrote': wrote,
-            'effective_lr': effective_lr,
-            'surprise_ema': self._surprise_ema,
+            "surprise": mse,
+            "wrote": wrote,
+            "effective_lr": effective_lr,
+            "surprise_ema": self._surprise_ema,
         }
 
     def step(self, key, value) -> Dict[str, Any]:
@@ -1272,7 +1284,7 @@ class TITANSMemory:
 
         # Compute surprise (MSE)
         diff = value - self.net.outputs[oi]
-        mse = float(self.B.sum(diff ** 2)) / len(oi)
+        mse = float(self.B.sum(diff**2)) / len(oi)
 
         # Update surprise EMA
         self._surprise_count += 1
@@ -1282,8 +1294,8 @@ class TITANSMemory:
             alpha = cfg.surprise_ema_alpha
             self._surprise_ema = alpha * mse + (1 - alpha) * self._surprise_ema
 
-        self.stats['total_surprise'] += mse
-        self.stats['max_surprise'] = max(self.stats['max_surprise'], mse)
+        self.stats["total_surprise"] += mse
+        self.stats["max_surprise"] = max(self.stats["max_surprise"], mse)
         self._step_count += 1
 
         # Decide whether to write
@@ -1307,19 +1319,18 @@ class TITANSMemory:
             if cfg.surprise_modulated_lr and self._surprise_ema > 1e-10:
                 self.net._current_lr = saved_lr
 
-            self.stats['total_writes'] += 1
+            self.stats["total_writes"] += 1
         else:
             self.net._update_p_matrix(z)
-            self.net.p_matrix_old, self.net.p_matrix = \
-                self.net.p_matrix, self.net.p_matrix_old
-            self.stats['total_skipped'] += 1
+            self.net.p_matrix_old, self.net.p_matrix = self.net.p_matrix, self.net.p_matrix_old
+            self.stats["total_skipped"] += 1
 
         return {
-            'predicted': predicted,
-            'surprise': mse,
-            'wrote': wrote,
-            'effective_lr': effective_lr,
-            'surprise_ema': self._surprise_ema,
+            "predicted": predicted,
+            "surprise": mse,
+            "wrote": wrote,
+            "effective_lr": effective_lr,
+            "surprise_ema": self._surprise_ema,
         }
 
     # ------------------------------------------------------------------
@@ -1342,7 +1353,7 @@ class TITANSMemory:
         if net.config.grad_clip_norm > 0:
             gnorm = net.B.norm(net.grad_buffer)
             if gnorm > net.config.grad_clip_norm:
-                net.grad_buffer *= (net.config.grad_clip_norm / (gnorm + 1e-8))
+                net.grad_buffer *= net.config.grad_clip_norm / (gnorm + 1e-8)
 
         # Accumulate
         self._grad_accum += net.grad_buffer
@@ -1377,7 +1388,7 @@ class TITANSMemory:
         """
         rate = decay if decay is not None else self.config.weight_decay
         if rate > 0:
-            self.net.weights *= (1.0 - rate)
+            self.net.weights *= 1.0 - rate
 
     def reset(self):
         """Reset memory state (clear hidden state and P matrix, keep weights)."""
@@ -1397,8 +1408,7 @@ class TITANSMemory:
         self._surprise_ema = 0.0
         self._surprise_count = 0
         self._step_count = 0
-        self.stats = {k: 0 if isinstance(v, int) else 0.0
-                      for k, v in self.stats.items()}
+        self.stats = {k: 0 if isinstance(v, int) else 0.0 for k, v in self.stats.items()}
 
     # ------------------------------------------------------------------
     # Inspection
@@ -1407,22 +1417,24 @@ class TITANSMemory:
     @property
     def write_ratio(self) -> float:
         """Fraction of steps that resulted in memory writes."""
-        total = self.stats['total_writes'] + self.stats['total_skipped']
-        return self.stats['total_writes'] / max(1, total)
+        total = self.stats["total_writes"] + self.stats["total_skipped"]
+        return self.stats["total_writes"] / max(1, total)
 
     @property
     def avg_surprise(self) -> float:
-        return self.stats['total_surprise'] / max(1, self._step_count)
+        return self.stats["total_surprise"] / max(1, self._step_count)
 
     def summary(self) -> str:
-        return (f"TITANSMemory: {self.config.key_dim}→{self.config.value_dim} "
-                f"(hidden={self.config.hidden_dim}, "
-                f"gated={self.config.gated}) "
-                f"writes={self.stats['total_writes']} "
-                f"skipped={self.stats['total_skipped']} "
-                f"write_ratio={self.write_ratio:.1%} "
-                f"avg_surprise={self.avg_surprise:.4f} "
-                f"surprise_ema={self._surprise_ema:.4f}")
+        return (
+            f"TITANSMemory: {self.config.key_dim}→{self.config.value_dim} "
+            f"(hidden={self.config.hidden_dim}, "
+            f"gated={self.config.gated}) "
+            f"writes={self.stats['total_writes']} "
+            f"skipped={self.stats['total_skipped']} "
+            f"write_ratio={self.write_ratio:.1%} "
+            f"avg_surprise={self.avg_surprise:.4f} "
+            f"surprise_ema={self._surprise_ema:.4f}"
+        )
 
     # ------------------------------------------------------------------
     # Serialization
@@ -1438,61 +1450,53 @@ class TITANSMemory:
                 saves learned weights (faster restart, re-warms in ~few tokens).
         """
         sd = self.net.state_dict()
-        sd['titans_config'] = self.config.__dict__
-        sd['titans_stats'] = self.stats
-        sd['surprise_ema'] = self._surprise_ema
-        sd['surprise_count'] = self._surprise_count
-        sd['step_count'] = self._step_count
+        sd["titans_config"] = self.config.__dict__
+        sd["titans_stats"] = self.stats
+        sd["surprise_ema"] = self._surprise_ema
+        sd["surprise_count"] = self._surprise_count
+        sd["step_count"] = self._step_count
         if include_hidden_state:
-            sd['hidden_state'] = {
-                'outputs': self.B.to_numpy(self.net.outputs).tolist(),
-                'activations': self.B.to_numpy(self.net.activations).tolist(),
-                'p_matrix_old': self.B.to_numpy(self.net.p_matrix_old).tolist(),
+            sd["hidden_state"] = {
+                "outputs": self.B.to_numpy(self.net.outputs).tolist(),
+                "activations": self.B.to_numpy(self.net.activations).tolist(),
+                "p_matrix_old": self.B.to_numpy(self.net.p_matrix_old).tolist(),
             }
             if self.config.gated:
-                sd['hidden_state']['prev_outputs'] = \
-                    self.B.to_numpy(self.net.prev_outputs).tolist()
-                sd['hidden_state']['gate_values'] = \
-                    self.B.to_numpy(self.net.gate_values).tolist()
-        with open(path, 'w') as f:
+                sd["hidden_state"]["prev_outputs"] = self.B.to_numpy(self.net.prev_outputs).tolist()
+                sd["hidden_state"]["gate_values"] = self.B.to_numpy(self.net.gate_values).tolist()
+        with open(path, "w") as f:
             json.dump(sd, f, indent=2)
 
     @classmethod
-    def load(cls, path: str) -> 'TITANSMemory':
+    def load(cls, path: str) -> "TITANSMemory":
         with open(path) as f:
             d = json.load(f)
-        tcfg = TITANSConfig(**d['titans_config'])
+        tcfg = TITANSConfig(**d["titans_config"])
         dt = getattr(np, tcfg.dtype)
         mem = cls(tcfg)
         B = mem.B
 
         # Restore learned weights
-        mem.net.weights = B.from_numpy(np.array(d['weights'], dtype=dt))
-        if tcfg.gated and 'gate_weights' in d:
-            mem.net.gate_weights = B.from_numpy(
-                np.array(d['gate_weights'], dtype=dt))
-            mem.net.gate_bias = B.from_numpy(
-                np.array(d['gate_bias'], dtype=dt))
+        mem.net.weights = B.from_numpy(np.array(d["weights"], dtype=dt))
+        if tcfg.gated and "gate_weights" in d:
+            mem.net.gate_weights = B.from_numpy(np.array(d["gate_weights"], dtype=dt))
+            mem.net.gate_bias = B.from_numpy(np.array(d["gate_bias"], dtype=dt))
 
         # Restore tracking state
-        mem.stats = d.get('titans_stats', mem.stats)
-        mem._surprise_ema = d.get('surprise_ema', 0.0)
-        mem._surprise_count = d.get('surprise_count', 0)
-        mem._step_count = d.get('step_count', 0)
+        mem.stats = d.get("titans_stats", mem.stats)
+        mem._surprise_ema = d.get("surprise_ema", 0.0)
+        mem._surprise_count = d.get("surprise_count", 0)
+        mem._step_count = d.get("step_count", 0)
 
         # Restore hidden state (if saved)
-        hs = d.get('hidden_state')
+        hs = d.get("hidden_state")
         if hs:
-            mem.net.outputs = B.from_numpy(np.array(hs['outputs'], dtype=dt))
-            mem.net.activations = B.from_numpy(
-                np.array(hs['activations'], dtype=dt))
-            mem.net.p_matrix_old = B.from_numpy(
-                np.array(hs['p_matrix_old'], dtype=dt))
-            if tcfg.gated and 'prev_outputs' in hs:
-                mem.net.prev_outputs = B.from_numpy(
-                    np.array(hs['prev_outputs'], dtype=dt))
-                mem.net.gate_values = B.from_numpy(
-                    np.array(hs['gate_values'], dtype=dt))
+            mem.net.outputs = B.from_numpy(np.array(hs["outputs"], dtype=dt))
+            mem.net.activations = B.from_numpy(np.array(hs["activations"], dtype=dt))
+            mem.net.p_matrix_old = B.from_numpy(np.array(hs["p_matrix_old"], dtype=dt))
+            if tcfg.gated and "prev_outputs" in hs:
+                mem.net.prev_outputs = B.from_numpy(np.array(hs["prev_outputs"], dtype=dt))
+                mem.net.gate_values = B.from_numpy(np.array(hs["gate_values"], dtype=dt))
 
         return mem
 
@@ -1510,8 +1514,7 @@ if __name__ == "__main__":
 
     # -- Test 1: Basic read/write --
     print("\n--- Test 1: Basic read/write associative memory ---")
-    mem = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8,
-                       lr=0.01, gated=True, verbose=False)
+    mem = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8, lr=0.01, gated=True, verbose=False)
     # Train on 3 key-value pairs, repeated
     keys = np.eye(4, dtype=np.float32)[:3]
     vals = np.array([[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]], dtype=np.float32)
@@ -1521,7 +1524,7 @@ if __name__ == "__main__":
             mem.write(k, v)
 
     # Read back
-    print(f"  After 50 epochs of 3 patterns:")
+    print("  After 50 epochs of 3 patterns:")
     total_err = 0
     for k, v in zip(keys, vals):
         pred = mem.read(k)
@@ -1534,27 +1537,39 @@ if __name__ == "__main__":
 
     # -- Test 2: Surprise gating --
     print("\n--- Test 2: Surprise gating ---")
-    mem2 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8,
-                        lr=0.01, surprise_threshold=0.01,
-                        gated=True, verbose=False)
+    mem2 = TITANSMemory(
+        key_dim=4,
+        value_dim=2,
+        hidden_dim=8,
+        lr=0.01,
+        surprise_threshold=0.01,
+        gated=True,
+        verbose=False,
+    )
     # Write same pattern many times — surprise should drop, writes should stop
     k_rep = np.array([1, 0, 0, 0], dtype=np.float32)
     v_rep = np.array([1, 0], dtype=np.float32)
     surprises = []
     for i in range(100):
         result = mem2.write(k_rep, v_rep)
-        surprises.append(result['surprise'])
+        surprises.append(result["surprise"])
 
     print(f"  Surprise: first={surprises[0]:.4f} → last={surprises[-1]:.6f}")
     print(f"  {mem2.summary()}")
-    results.append(("2. Surprise gating",
-                     surprises[-1], mem2.write_ratio))
+    results.append(("2. Surprise gating", surprises[-1], mem2.write_ratio))
 
     # -- Test 3: Surprise-modulated LR --
     print("\n--- Test 3: Surprise-modulated LR ---")
-    mem3 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8,
-                        lr=0.005, surprise_modulated_lr=True,
-                        surprise_threshold=0.0, gated=True, verbose=False)
+    mem3 = TITANSMemory(
+        key_dim=4,
+        value_dim=2,
+        hidden_dim=8,
+        lr=0.005,
+        surprise_modulated_lr=True,
+        surprise_threshold=0.0,
+        gated=True,
+        verbose=False,
+    )
     # Alternate between familiar and novel patterns
     k_familiar = np.array([1, 0, 0, 0], dtype=np.float32)
     v_familiar = np.array([1, 0], dtype=np.float32)
@@ -1569,20 +1584,24 @@ if __name__ == "__main__":
     r_novel = mem3.write(k_novel, v_novel)
     # Present familiar again — should get low effective LR
     r_familiar = mem3.write(k_familiar, v_familiar)
-    print(f"  Novel:    surprise={r_novel['surprise']:.4f}  "
-          f"eff_lr={r_novel['effective_lr']:.6f}")
-    print(f"  Familiar: surprise={r_familiar['surprise']:.4f}  "
-          f"eff_lr={r_familiar['effective_lr']:.6f}")
-    print(f"  LR ratio (novel/familiar): "
-          f"{r_novel['effective_lr']/max(r_familiar['effective_lr'], 1e-10):.1f}x")
-    results.append(("3. Surprise-modulated LR",
-                     r_novel['effective_lr'], r_familiar['effective_lr']))
+    print(f"  Novel:    surprise={r_novel['surprise']:.4f}  eff_lr={r_novel['effective_lr']:.6f}")
+    print(
+        f"  Familiar: surprise={r_familiar['surprise']:.4f}  "
+        f"eff_lr={r_familiar['effective_lr']:.6f}"
+    )
+    print(
+        f"  LR ratio (novel/familiar): "
+        f"{r_novel['effective_lr'] / max(r_familiar['effective_lr'], 1e-10):.1f}x"
+    )
+    results.append(
+        ("3. Surprise-modulated LR", r_novel["effective_lr"], r_familiar["effective_lr"])
+    )
 
     # -- Test 4: Momentum window --
     print("\n--- Test 4: Momentum buffer (accumulate over 5 steps) ---")
-    mem4 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8,
-                        lr=0.01, momentum_window=5,
-                        gated=True, verbose=False)
+    mem4 = TITANSMemory(
+        key_dim=4, value_dim=2, hidden_dim=8, lr=0.01, momentum_window=5, gated=True, verbose=False
+    )
     for epoch in range(50):
         for k, v in zip(keys, vals):
             mem4.write(k, v)
@@ -1596,23 +1615,25 @@ if __name__ == "__main__":
 
     # -- Test 5: step() combined interface --
     print("\n--- Test 5: step() read-then-write ---")
-    mem5 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8,
-                        lr=0.01, gated=True, verbose=False)
+    mem5 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8, lr=0.01, gated=True, verbose=False)
     first_step = mem5.step(keys[0], vals[0])
-    print(f"  First step: pred={first_step['predicted'].round(3)}  "
-          f"surprise={first_step['surprise']:.4f}")
+    print(
+        f"  First step: pred={first_step['predicted'].round(3)}  "
+        f"surprise={first_step['surprise']:.4f}"
+    )
     for epoch in range(30):
         for k, v in zip(keys, vals):
             mem5.step(k, v)
     last_step = mem5.step(keys[0], vals[0])
-    print(f"  After 30 epochs: pred={last_step['predicted'].round(3)}  "
-          f"surprise={last_step['surprise']:.6f}")
-    results.append(("5. step() interface", last_step['surprise'], None))
+    print(
+        f"  After 30 epochs: pred={last_step['predicted'].round(3)}  "
+        f"surprise={last_step['surprise']:.6f}"
+    )
+    results.append(("5. step() interface", last_step["surprise"], None))
 
     # -- Test 6: Forgetting --
     print("\n--- Test 6: Explicit forgetting ---")
-    mem6 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8,
-                        lr=0.01, gated=True, verbose=False)
+    mem6 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8, lr=0.01, gated=True, verbose=False)
     for epoch in range(50):
         for k, v in zip(keys, vals):
             mem6.write(k, v)
@@ -1625,8 +1646,7 @@ if __name__ == "__main__":
 
     # -- Test 7: Save/load round-trip with hidden state --
     print("\n--- Test 7: Save/load with hidden state persistence ---")
-    mem7 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8,
-                        lr=0.01, gated=True, verbose=False)
+    mem7 = TITANSMemory(key_dim=4, value_dim=2, hidden_dim=8, lr=0.01, gated=True, verbose=False)
     for epoch in range(20):
         for k, v in zip(keys, vals):
             mem7.write(k, v)
@@ -1642,18 +1662,26 @@ if __name__ == "__main__":
     mem7_cold = TITANSMemory.load("/tmp/titans_cold.json")
     pred_cold = mem7_cold.read(keys[0])
     diff_cold = np.max(np.abs(pred_orig - pred_cold))
-    print(f"  With hidden state:    diff={diff_with_hs:.2e}  "
-          f"{'PASS' if diff_with_hs < 1e-5 else 'FAIL'}")
-    print(f"  Without (cold start): diff={diff_cold:.2e}  "
-          f"(expected non-zero, re-warms quickly)")
+    print(
+        f"  With hidden state:    diff={diff_with_hs:.2e}  "
+        f"{'PASS' if diff_with_hs < 1e-5 else 'FAIL'}"
+    )
+    print(f"  Without (cold start): diff={diff_cold:.2e}  (expected non-zero, re-warms quickly)")
 
     # -- Test 8: Larger memory for embedding-like vectors --
     print("\n--- Test 8: 64-dim embedding memory (LLM-like) ---")
     np.random.seed(42)
-    mem8 = TITANSMemory(key_dim=64, value_dim=64, hidden_dim=32,
-                        lr=0.003, surprise_threshold=0.001,
-                        surprise_modulated_lr=True,
-                        grad_clip_norm=1.0, gated=True, verbose=False)
+    mem8 = TITANSMemory(
+        key_dim=64,
+        value_dim=64,
+        hidden_dim=32,
+        lr=0.003,
+        surprise_threshold=0.001,
+        surprise_modulated_lr=True,
+        grad_clip_norm=1.0,
+        gated=True,
+        verbose=False,
+    )
     # Generate 20 random key-value pairs (simulating LLM embeddings)
     kv_keys = np.random.randn(20, 64).astype(np.float32)
     kv_keys /= np.linalg.norm(kv_keys, axis=1, keepdims=True)
@@ -1686,22 +1714,30 @@ if __name__ == "__main__":
         inp = np.zeros(4, dtype=np.float32)
         inp[c] = 1.0
         seq_tgt.append([1.0 if (c == 1 and last_a) else 0.0])
-        last_a = (c == 0)
+        last_a = c == 0
         seq_in.append(inp)
     seq_in, seq_tgt = np.array(seq_in), np.array(seq_tgt)
 
     cfg9 = RTRLConfig(
-        num_inputs=4, num_outputs=1, num_hidden=2,
-        time_delay=1, epochs=100, lr=0.003,
-        optimizer="adam", lr_schedule="fixed",
-        gated=True, hidden_activation="tanh", output_activation="sigmoid",
-        init="xavier", categorical_output=False, verbose=False)
+        num_inputs=4,
+        num_outputs=1,
+        num_hidden=2,
+        time_delay=1,
+        epochs=100,
+        lr=0.003,
+        optimizer="adam",
+        lr_schedule="fixed",
+        gated=True,
+        hidden_activation="tanh",
+        output_activation="sigmoid",
+        init="xavier",
+        categorical_output=False,
+        verbose=False,
+    )
     net9 = ModernSubgroupedRTRL(cfg9)
     h9 = net9.train(seq_in, seq_tgt)
-    print(f"  Internal State: err={h9[-1]['avg_error']:.6f}  "
-          f"acc={h9[-1]['accuracy']:.1f}%")
-    results.append(("9. RTRL regression (gated)", h9[-1]['avg_error'],
-                     h9[-1]['accuracy']))
+    print(f"  Internal State: err={h9[-1]['avg_error']:.6f}  acc={h9[-1]['accuracy']:.1f}%")
+    results.append(("9. RTRL regression (gated)", h9[-1]["avg_error"], h9[-1]["accuracy"]))
 
     # -- Summary --
     print("\n" + "=" * 65)

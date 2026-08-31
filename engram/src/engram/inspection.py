@@ -14,6 +14,7 @@ Aliases at the bottom of this module map the inspector names
 (EvidenceItem, Section) onto the local names so code importing either
 name from this module works correctly.
 """
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -25,6 +26,7 @@ from llm_harness_core import MemoryRecord, TraceEvent
 @dataclass(frozen=True)
 class PromptSectionTrace:
     """One section of the assembled prompt (system, working, episodic, user, etc.)."""
+
     title: str
     origin: str
     text: str
@@ -35,7 +37,8 @@ class PromptSectionTrace:
 @dataclass(frozen=True)
 class EvidenceTrace:
     """One piece of retrieved context that contributed to the prompt."""
-    source: str   # e.g. "working", "episodic", "semantic", "cold"
+
+    source: str  # e.g. "working", "episodic", "semantic", "cold"
     text: str
     score: Optional[float] = None
     meta: dict[str, Any] = field(default_factory=dict)
@@ -47,6 +50,8 @@ class EvidenceTrace:
             score=self.score,
             metadata=dict(self.meta),
         )
+
+
 def _evidence_provenance(evidence: Any) -> dict[str, Any]:
     meta = dict(getattr(evidence, "meta", {}) or {})
     prov: dict[str, Any] = {
@@ -54,8 +59,15 @@ def _evidence_provenance(evidence: Any) -> dict[str, Any]:
         "augmenter": "engram",
     }
     for key in (
-        "session_id", "project_id", "episode_id", "topic_key",
-        "tenant", "source", "writer", "trust", "quarantined",
+        "session_id",
+        "project_id",
+        "episode_id",
+        "topic_key",
+        "tenant",
+        "source",
+        "writer",
+        "trust",
+        "quarantined",
     ):
         if key in meta:
             prov[key] = meta[key]
@@ -75,6 +87,7 @@ def _evidence_transformations(evidence: Any) -> tuple[str, ...]:
 
 def build_interop_events(trace: Any) -> list:
     from llm_harness_core import TraceEvent
+
     events = [
         TraceEvent(
             event_type="prompt_build_completed",
@@ -112,10 +125,10 @@ def build_interop_events(trace: Any) -> list:
     return events
 
 
-
 @dataclass(frozen=True)
 class TokenAccountingTrace:
     """Token budget accounting for a single prompt build."""
+
     target_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
     per_origin_budget: dict[str, int] = field(default_factory=dict)
@@ -128,6 +141,7 @@ class TokenAccountingTrace:
 @dataclass(frozen=True)
 class PromptBuildTrace:
     """Complete trace for one prompt-build cycle."""
+
     sections: list[PromptSectionTrace] = field(default_factory=list)
     evidence: list[EvidenceTrace] = field(default_factory=list)
     token_accounting: TokenAccountingTrace = field(default_factory=TokenAccountingTrace)
@@ -145,8 +159,8 @@ class PromptBuildTrace:
 # Aliases — map llm_inspector observability names onto local names.
 # These are in-module aliases only; no cross-package import is introduced.
 # ---------------------------------------------------------------------------
-EvidenceItem = EvidenceTrace       # llm_inspector calls this EvidenceItem
-Section = PromptSectionTrace       # llm_inspector calls this Section
+EvidenceItem = EvidenceTrace  # llm_inspector calls this EvidenceItem
+Section = PromptSectionTrace  # llm_inspector calls this Section
 
 
 __all__ = [

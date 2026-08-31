@@ -164,9 +164,7 @@ def test_project_memory_prompt_contains_synthesized_context(tmp_path):
         assert "Network predicts relevance to:" in result["prompt"]
         assert hint is not None
         assert hint.metadata["aligned_episodes"]
-        assert hint.metadata["aligned_episodes"][0]["text"] == (
-            "The deployment region is west."
-        )
+        assert hint.metadata["aligned_episodes"][0]["text"] == ("The deployment region is west.")
     finally:
         memory.close()
 
@@ -247,9 +245,7 @@ def test_non_finite_state_disables_reads_writes_and_hints():
         ContextEmbedder(),
         None,
         _config(min_warmup_steps=0),
-        episode_provider=lambda limit: [
-            ("ep1", np.ones(8, dtype=np.float32), "stored episode")
-        ],
+        episode_provider=lambda limit: [("ep1", np.ones(8, dtype=np.float32), "stored episode")],
     )
     assert layer._neural._memory is not None
     layer._neural._memory.net.weights.flat[0] = np.nan

@@ -9,9 +9,45 @@ from typing import Any, Iterable, Pattern
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_./-]+")
 _STOPWORDS = {
-    "a", "an", "and", "are", "as", "at", "be", "choose", "did", "do", "does", "for", "from", "how",
-    "i", "in", "is", "it", "local", "my", "now", "of", "on", "or", "should", "that", "the", "this",
-    "to", "use", "we", "what", "when", "which", "who", "why", "with", "our", "your",
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "choose",
+    "did",
+    "do",
+    "does",
+    "for",
+    "from",
+    "how",
+    "i",
+    "in",
+    "is",
+    "it",
+    "local",
+    "my",
+    "now",
+    "of",
+    "on",
+    "or",
+    "should",
+    "that",
+    "the",
+    "this",
+    "to",
+    "use",
+    "we",
+    "what",
+    "when",
+    "which",
+    "who",
+    "why",
+    "with",
+    "our",
+    "your",
 }
 _CORRECTION_USE_INSTEAD = re.compile(
     r"^\s*(?:correction|update)\s*:\s*(?:for\s+)?(?P<subject>[^,.;:]+?)\s*,\s*"
@@ -31,7 +67,9 @@ _KEEP_IN_NOT = re.compile(
     r"^\s*(?:preference|decision)\s*:\s*keep\s+(?P<subject>.+?)\s+in\s+(?P<new>.+?)\s*,\s*not\s+in\s+(?P<old>.+?)(?:[.?!]\s*)?$",
     re.IGNORECASE,
 )
-_PREFERENCE_PREFIX = re.compile(r"^\s*preference\s*:\s*(?P<content>.+?)(?:[.?!]\s*)?$", re.IGNORECASE)
+_PREFERENCE_PREFIX = re.compile(
+    r"^\s*preference\s*:\s*(?P<content>.+?)(?:[.?!]\s*)?$", re.IGNORECASE
+)
 _DECISION_PREFIX = re.compile(r"^\s*decision\s*:\s*(?P<content>.+?)(?:[.?!]\s*)?$", re.IGNORECASE)
 _TOKEN_ALIASES = {
     "documentation": {"documentation", "docs"},
@@ -50,7 +88,19 @@ _TOKEN_ALIASES = {
     "summary": {"summary"},
     "summaries": {"summary"},
 }
-_PROGRAMMING_LANGUAGES = {"python", "java", "javascript", "typescript", "rust", "go", "haskell", "c", "c++", "csharp", "java"}
+_PROGRAMMING_LANGUAGES = {
+    "python",
+    "java",
+    "javascript",
+    "typescript",
+    "rust",
+    "go",
+    "haskell",
+    "c",
+    "c++",
+    "csharp",
+    "java",
+}
 
 
 @dataclass(frozen=True)
@@ -147,7 +197,9 @@ class LightweightIngestionPolicy:
             internal_retrieval_limit=int(config.get("internal_retrieval_limit", 6)),
             retrieval_min_score=float(config.get("retrieval_min_score", 0.16)),
             auto_ingest_turns=bool(config.get("auto_ingest_turns", True)),
-            auto_ingest_roles=tuple(str(role).strip().lower() for role in configured_roles if str(role).strip()),
+            auto_ingest_roles=tuple(
+                str(role).strip().lower() for role in configured_roles if str(role).strip()
+            ),
         )
 
 
@@ -202,7 +254,12 @@ def derive_search_terms(text: str, metadata: dict[str, Any] | None = None) -> li
     if terms & _PROGRAMMING_LANGUAGES:
         terms.update({"language", "tool", "script"})
     lowered = (text or "").lower()
-    if "markdown" in lowered and ("repo" in lowered or "repository" in lowered or "docs" in lowered or "documentation" in lowered):
+    if "markdown" in lowered and (
+        "repo" in lowered
+        or "repository" in lowered
+        or "docs" in lowered
+        or "documentation" in lowered
+    ):
         terms.update({"documentation", "docs", "repo", "repository", "markdown"})
     if "docker" in lowered and "command" in lowered and "execution" in lowered:
         terms.update({"sandbox", "docker", "command", "execution"})
@@ -225,7 +282,11 @@ def canonicalize_episode(text: str, metadata: dict[str, Any] | None = None) -> C
         new_value = _canonical_value(match.group("new"))
         old_value = _canonical_value(match.group("old"))
         verb = "prefer" if "prefer" in stripped.lower() else "use"
-        local_hint = " locally" if " locally instead of " in stripped.lower() and "locally" not in new_value.lower() else ""
+        local_hint = (
+            " locally"
+            if " locally instead of " in stripped.lower() and "locally" not in new_value.lower()
+            else ""
+        )
         topic_key = f"usage::{_slug(subject)}"
         canonical_text = f"For {subject}, {verb} {new_value}{local_hint}."
         return CanonicalizedEpisode(
@@ -237,7 +298,8 @@ def canonicalize_episode(text: str, metadata: dict[str, Any] | None = None) -> C
                 "old_value": old_value,
                 "search_terms": derive_search_terms(f"{subject} {new_value} {old_value}", payload),
                 "update_type": "correction",
-                "kind": payload.get("kind") or ("preference" if verb == "prefer" else payload.get("kind")),
+                "kind": payload.get("kind")
+                or ("preference" if verb == "prefer" else payload.get("kind")),
             },
             topic_key=topic_key,
         )
@@ -276,7 +338,9 @@ def canonicalize_episode(text: str, metadata: dict[str, Any] | None = None) -> C
                 "canonical_update": True,
                 "topic_key": topic_key,
                 "old_value": old_value,
-                "search_terms": derive_search_terms(f"{subject} region deployment {new_value} {old_value}", payload),
+                "search_terms": derive_search_terms(
+                    f"{subject} region deployment {new_value} {old_value}", payload
+                ),
                 "update_type": "region_update",
                 "kind": payload.get("kind") or "decision",
             },
@@ -297,9 +361,12 @@ def canonicalize_episode(text: str, metadata: dict[str, Any] | None = None) -> C
                 "canonical_update": True,
                 "topic_key": topic_key,
                 "old_value": old_value,
-                "search_terms": derive_search_terms(f"{subject} documentation docs repo {new_value} {old_value}", payload),
+                "search_terms": derive_search_terms(
+                    f"{subject} documentation docs repo {new_value} {old_value}", payload
+                ),
                 "update_type": "location_preference",
-                "kind": payload.get("kind") or ("preference" if stripped.lower().startswith("preference") else "decision"),
+                "kind": payload.get("kind")
+                or ("preference" if stripped.lower().startswith("preference") else "decision"),
             },
             topic_key=topic_key,
         )
@@ -309,7 +376,11 @@ def canonicalize_episode(text: str, metadata: dict[str, Any] | None = None) -> C
         content = _canonical_sentence(match.group("content"))
         return CanonicalizedEpisode(
             text=content,
-            metadata={**payload, "kind": payload.get("kind") or "preference", "search_terms": derive_search_terms(content, payload)},
+            metadata={
+                **payload,
+                "kind": payload.get("kind") or "preference",
+                "search_terms": derive_search_terms(content, payload),
+            },
             topic_key=None,
         )
 
@@ -318,7 +389,11 @@ def canonicalize_episode(text: str, metadata: dict[str, Any] | None = None) -> C
         content = _canonical_sentence(match.group("content"))
         return CanonicalizedEpisode(
             text=content,
-            metadata={**payload, "kind": payload.get("kind") or "decision", "search_terms": derive_search_terms(content, payload)},
+            metadata={
+                **payload,
+                "kind": payload.get("kind") or "decision",
+                "search_terms": derive_search_terms(content, payload),
+            },
             topic_key=None,
         )
 
@@ -337,10 +412,8 @@ def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").strip().lower())
 
 
-
 def tokenize(text: str) -> set[str]:
     return _expanded_tokens(text)
-
 
 
 def text_similarity(a: str, b: str) -> float:
@@ -359,7 +432,6 @@ def text_similarity(a: str, b: str) -> float:
     return max(jaccard, ratio)
 
 
-
 def is_ephemeral(text: str, metadata: dict[str, Any], policy: LightweightIngestionPolicy) -> bool:
     if metadata.get("ephemeral"):
         return True
@@ -373,12 +445,10 @@ def memory_kind(metadata: dict[str, Any]) -> str:
     return str(metadata.get("kind", metadata.get("type", "")) or "").strip().lower()
 
 
-
 def assistant_memory_allowed(metadata: dict[str, Any], policy: LightweightIngestionPolicy) -> bool:
     if bool(metadata.get("allow_assistant_memory")):
         return True
     return memory_kind(metadata) in {kind.lower() for kind in policy.assistant_memory_kinds}
-
 
 
 def score_text(
@@ -402,7 +472,12 @@ def score_text(
     explicit_importance = metadata.get("importance", 0.0)
 
     if role == "assistant" and not assistant_memory_allowed(metadata, policy):
-        return IngestionDecision(False, max(0.0, min(1.0, float(explicit_importance or 0.0))), ("assistant_turn_filtered",), normalized)
+        return IngestionDecision(
+            False,
+            max(0.0, min(1.0, float(explicit_importance or 0.0))),
+            ("assistant_turn_filtered",),
+            normalized,
+        )
 
     score = 0.05
     lowered = cleaned.lower()
@@ -437,9 +512,10 @@ def score_text(
         reasons.append("canonical_update_signal")
 
     importance = max(float(explicit_importance or 0.0), min(1.0, score))
-    should_store = importance >= policy.episode_threshold and len(cleaned) >= policy.min_episode_chars
+    should_store = (
+        importance >= policy.episode_threshold and len(cleaned) >= policy.min_episode_chars
+    )
     return IngestionDecision(should_store, importance, tuple(reasons), normalized)
-
 
 
 def score_episode_match(
@@ -498,7 +574,6 @@ def score_episode_match(
     return max(0.0, min(1.0, score))
 
 
-
 def dedupe_ranked_rows(
     rows: Iterable[dict[str, Any]],
     *,
@@ -510,7 +585,10 @@ def dedupe_ranked_rows(
         text = str(row.get("text", ""))
         if not text.strip():
             continue
-        if any(text_similarity(text, str(existing.get("text", ""))) >= dedup_threshold for existing in selected):
+        if any(
+            text_similarity(text, str(existing.get("text", ""))) >= dedup_threshold
+            for existing in selected
+        ):
             continue
         selected.append(row)
         if len(selected) >= int(limit):

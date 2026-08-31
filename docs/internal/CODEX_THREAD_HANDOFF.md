@@ -95,6 +95,11 @@ The work progressed through evidence rather than assuming a design:
     smoke checks were retained with narrow annotations. Engine and targeted
     cross-package tests passed 320 with 14 skips; the full gate remains at
     1,268 passed. `engram` is next.
+24. `engram` is now lint-clean, formatted, and included in the shared gate. Its
+    standalone runner now uses an explicit import registry instead of dynamic
+    `locals()` harvesting. The fallback runner passed 71 of 72 checks with one
+    Ollama skip, and the full gate remains at 1,268 passed. All active libraries
+    are adopted; examples, scripts, and root tests remain for classification.
 
 Key commits, oldest to newest:
 
@@ -137,7 +142,7 @@ arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
 complete. The active maintenance sequence is Python-quality adoption, next
-through `engram`. A deeper
+through examples, scripts, and root integration tests. A deeper
 command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.

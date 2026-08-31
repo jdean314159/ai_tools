@@ -21,11 +21,11 @@ class EmbeddingService:
     ) -> Embedder:
         try:
             from .sentence_transformers import SentenceTransformersEmbedder
+
             return SentenceTransformersEmbedder(model=model, device=device)
         except ImportError:
             raise ImportError(
-                "sentence-transformers not installed: "
-                "pip install engram[sentence-transformers]"
+                "sentence-transformers not installed: pip install engram[sentence-transformers]"
             )
 
     @staticmethod

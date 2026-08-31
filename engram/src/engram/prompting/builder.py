@@ -386,8 +386,10 @@ def build_prompt_from_context(
 
     final_parts = list(sections)
     included_items: dict[str, list[Any]] = {
-        "working": list(context_result.working), "episodic": list(context_result.episodic),
-        "semantic": list(context_result.semantic), "cold": list(context_result.cold),
+        "working": list(context_result.working),
+        "episodic": list(context_result.episodic),
+        "semantic": list(context_result.semantic),
+        "cold": list(context_result.cold),
         "memory_layer": list(advisory_hints or []),
     }
     prompt = render_sections(final_parts)
@@ -404,12 +406,17 @@ def build_prompt_from_context(
         kept_memory: list[tuple[str, str, str]] = []
         included_items = {key: [] for key in included_items}
         origin_titles = {
-            "working": "Working", "episodic": "Episodic", "semantic": "Semantic",
-            "cold": "Cold", "memory_layer": "Memory Layer Hints",
+            "working": "Working",
+            "episodic": "Episodic",
+            "semantic": "Semantic",
+            "cold": "Cold",
+            "memory_layer": "Memory Layer Hints",
         }
         origin_items = {
-            "working": context_result.working, "episodic": context_result.episodic,
-            "semantic": context_result.semantic, "cold": context_result.cold,
+            "working": context_result.working,
+            "episodic": context_result.episodic,
+            "semantic": context_result.semantic,
+            "cold": context_result.cold,
             "memory_layer": list(advisory_hints or []),
         }
         for origin, _title, _text in memory_parts:
@@ -419,7 +426,10 @@ def build_prompt_from_context(
                 trial_part = (origin, origin_titles[origin], format_items(trial_items))
                 other_parts = [part for part in kept_memory if part[0] != origin]
                 trial_parts = system_parts + other_parts + [trial_part] + user_parts
-                if count_text_tokens(render_sections(trial_parts), token_counter=token_counter) <= available_for_prompt:
+                if (
+                    count_text_tokens(render_sections(trial_parts), token_counter=token_counter)
+                    <= available_for_prompt
+                ):
                     accepted.append(item)
                 else:
                     break
@@ -433,12 +443,16 @@ def build_prompt_from_context(
 
     advisory_tokens = count_items_tokens(advisory_hints or [], token_counter=token_counter)
     candidate_counts = {
-        "working": len(context_result.working), "episodic": len(context_result.episodic),
-        "semantic": len(context_result.semantic), "cold": len(context_result.cold),
+        "working": len(context_result.working),
+        "episodic": len(context_result.episodic),
+        "semantic": len(context_result.semantic),
+        "cold": len(context_result.cold),
         "memory_layer": len(advisory_hints or []),
     }
     included_counts = {key: len(included_items.get(key, [])) for key in candidate_counts}
-    excluded_counts = {key: candidate_counts[key] - included_counts[key] for key in candidate_counts}
+    excluded_counts = {
+        key: candidate_counts[key] - included_counts[key] for key in candidate_counts
+    }
     memory_candidate_count = sum(candidate_counts.values())
     memory_included_count = sum(included_counts.values())
     budget_diagnostics = {

@@ -11,9 +11,9 @@ Requirements:
     pip install pytest               # Preferred runner
     OR run this script directly (no pytest needed)
 """
+
 from __future__ import annotations
 import sys
-import os
 import time
 import json
 import uuid
@@ -30,6 +30,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 # Try pytest first
 try:
     import pytest
+
     HAS_PYTEST = True
 except ImportError:
     HAS_PYTEST = False
@@ -40,6 +41,7 @@ VERBOSE = "--verbose" in sys.argv or "-v" in sys.argv
 # ---------------------------------------------------------------------------
 # Minimal test harness (used when pytest is unavailable)
 # ---------------------------------------------------------------------------
+
 
 class TestRunner:
     def __init__(self):
@@ -66,9 +68,11 @@ class TestRunner:
 
     def report(self):
         total = self.passed + self.failed + self.skipped
-        print(f"\n{'='*60}")
-        print(f"Results: {self.passed}/{total} passed  |  "
-              f"{self.failed} failed  |  {self.skipped} skipped")
+        print(f"\n{'=' * 60}")
+        print(
+            f"Results: {self.passed}/{total} passed  |  "
+            f"{self.failed} failed  |  {self.skipped} skipped"
+        )
         if self._failures:
             print("\nFailure details:")
             for name, tb in self._failures:
@@ -85,6 +89,7 @@ def tmp():
 # Imports
 # ---------------------------------------------------------------------------
 
+
 def _import_all():
     from engram.retrieval.hybrid import reciprocal_rank_fusion, hybrid_episode_search
     from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
@@ -98,12 +103,31 @@ def _import_all():
     from engram.version import SCHEMA_VERSION
     from engram import ProjectMemory
     from mock_helpers import MockEmbedder
-    return {k: v for k, v in locals().items()}
+
+    return {
+        "CachedEmbedder": CachedEmbedder,
+        "EmbeddingCache": EmbeddingCache,
+        "EmbeddingResult": EmbeddingResult,
+        "ForgettingConfig": ForgettingConfig,
+        "ForgettingPolicy": ForgettingPolicy,
+        "MockEmbedder": MockEmbedder,
+        "ProjectMemory": ProjectMemory,
+        "SCHEMA_VERSION": SCHEMA_VERSION,
+        "SchemaManager": SchemaManager,
+        "SemanticExtractor": SemanticExtractor,
+        "SemanticGraph": SemanticGraph,
+        "detect_contradiction": detect_contradiction,
+        "hybrid_episode_search": hybrid_episode_search,
+        "migrate_paired_exchanges": migrate_paired_exchanges,
+        "migrate_semantic_graph": migrate_semantic_graph,
+        "reciprocal_rank_fusion": reciprocal_rank_fusion,
+    }
 
 
 # ---------------------------------------------------------------------------
 # Test suites
 # ---------------------------------------------------------------------------
+
 
 def suite_rrf(r: TestRunner, ns: dict):
     rrf = ns["reciprocal_rank_fusion"]
@@ -146,47 +170,71 @@ def suite_rrf(r: TestRunner, ns: dict):
 
     def hybrid_text_only():
         now = time.time()
-        result = h(query="t", query_embedding=None, text_results=[
-            {"id": "a", "text": "t", "importance": 0.8, "created_at": now},
-            {"id": "b", "text": "t", "importance": 0.5, "created_at": now},
-        ])
+        result = h(
+            query="t",
+            query_embedding=None,
+            text_results=[
+                {"id": "a", "text": "t", "importance": 0.8, "created_at": now},
+                {"id": "b", "text": "t", "importance": 0.5, "created_at": now},
+            ],
+        )
         assert len(result) == 2 and all("final_score" in x for x in result)
 
     def hybrid_combined():
         now = time.time()
-        vr = [{"id": "a", "text": "v", "importance": 0.5, "created_at": now},
-              {"id": "b", "text": "both", "importance": 0.5, "created_at": now}]
-        tr = [{"id": "b", "text": "both", "importance": 0.5, "created_at": now},
-              {"id": "c", "text": "t", "importance": 0.5, "created_at": now}]
-        result = h(query="t", query_embedding=[0.1]*8, vector_results=vr, text_results=tr)
+        vr = [
+            {"id": "a", "text": "v", "importance": 0.5, "created_at": now},
+            {"id": "b", "text": "both", "importance": 0.5, "created_at": now},
+        ]
+        tr = [
+            {"id": "b", "text": "both", "importance": 0.5, "created_at": now},
+            {"id": "c", "text": "t", "importance": 0.5, "created_at": now},
+        ]
+        result = h(query="t", query_embedding=[0.1] * 8, vector_results=vr, text_results=tr)
         assert {x["id"] for x in result} == {"a", "b", "c"} and result[0]["id"] == "b"
 
     def recency_boost():
         now = time.time()
-        result = h(query="t", query_embedding=None, recency_boost=True, text_results=[
-            {"id": "r", "text": "t", "importance": 0.5, "created_at": now},
-            {"id": "o", "text": "t", "importance": 0.5, "created_at": now - 60*86400},
-        ])
+        result = h(
+            query="t",
+            query_embedding=None,
+            recency_boost=True,
+            text_results=[
+                {"id": "r", "text": "t", "importance": 0.5, "created_at": now},
+                {"id": "o", "text": "t", "importance": 0.5, "created_at": now - 60 * 86400},
+            ],
+        )
         scores = {x["id"]: x["final_score"] for x in result}
         assert scores["r"] > scores["o"]
 
     def importance_boost():
         now = time.time()
-        result = h(query="t", query_embedding=None, recency_boost=False, importance_boost=True,
-                   text_results=[
-                       {"id": "h", "text": "t", "importance": 1.0, "created_at": now},
-                       {"id": "l", "text": "t", "importance": 0.0, "created_at": now},
-                   ])
+        result = h(
+            query="t",
+            query_embedding=None,
+            recency_boost=False,
+            importance_boost=True,
+            text_results=[
+                {"id": "h", "text": "t", "importance": 1.0, "created_at": now},
+                {"id": "l", "text": "t", "importance": 0.0, "created_at": now},
+            ],
+        )
         scores = {x["id"]: x["final_score"] for x in result}
         ratio = scores["h"] / scores["l"]
         assert 1.4 < ratio < 1.6
 
     for name, fn in [
-        ("single_list", single_list), ("two_lists_agree", two_lists_agree),
-        ("disjoint", disjoint), ("empty", empty), ("missing_id", missing_id),
-        ("custom_k", custom_k), ("preserves_data", preserves_data),
-        ("hybrid_none", hybrid_none), ("hybrid_text_only", hybrid_text_only),
-        ("hybrid_combined", hybrid_combined), ("recency_boost", recency_boost),
+        ("single_list", single_list),
+        ("two_lists_agree", two_lists_agree),
+        ("disjoint", disjoint),
+        ("empty", empty),
+        ("missing_id", missing_id),
+        ("custom_k", custom_k),
+        ("preserves_data", preserves_data),
+        ("hybrid_none", hybrid_none),
+        ("hybrid_text_only", hybrid_text_only),
+        ("hybrid_combined", hybrid_combined),
+        ("recency_boost", recency_boost),
         ("importance_boost", importance_boost),
     ]:
         r.run(f"rrf/{name}", fn)
@@ -233,10 +281,12 @@ def suite_cache(r: TestRunner, ns: dict):
 
     def hit_prevents_call():
         call_count = [0]
+
         class CE(MockEmbedder):
             def embed(self, text):
                 call_count[0] += 1
                 return super().embed(text)
+
         c = EmbeddingCache(tmp() / "c.db")
         ce = CachedEmbedder(CE(), c)
         r1 = ce.embed("test")
@@ -258,10 +308,14 @@ def suite_cache(r: TestRunner, ns: dict):
         assert ce.dimension == MockEmbedder.DIMENSION
 
     for name, fn in [
-        ("miss_none", miss_none), ("put_get", put_get),
-        ("models_isolated", models_isolated), ("put_overwrites", put_overwrites),
-        ("persists", persists), ("stats", stats),
-        ("hit_prevents_call", hit_prevents_call), ("batch_mixed", batch_mixed),
+        ("miss_none", miss_none),
+        ("put_get", put_get),
+        ("models_isolated", models_isolated),
+        ("put_overwrites", put_overwrites),
+        ("persists", persists),
+        ("stats", stats),
+        ("hit_prevents_call", hit_prevents_call),
+        ("batch_mixed", batch_mixed),
         ("dimension_passthrough", dimension_passthrough),
     ]:
         r.run(f"cache/{name}", fn)
@@ -330,11 +384,14 @@ def suite_forgetting(r: TestRunner, ns: dict):
         g = SemanticGraph()
         for i in range(10):
             af(g, f"f:{i}", confidence=0.01, age_days=60, access_count=0)
-        assert g.forget_low_importance_facts(min_confidence=0.1, min_age_days=30, max_to_prune=3) == 3
+        assert (
+            g.forget_low_importance_facts(min_confidence=0.1, min_age_days=30, max_to_prune=3) == 3
+        )
 
     def superseded_removes_old():
         g = SemanticGraph()
-        af(g, "f:o"); af(g, "f:n")
+        af(g, "f:o")
+        af(g, "f:n")
         g.supersede_fact("f:o", "f:n")
         g.graph.nodes["f:o"]["superseded_at"] = time.time() - 91 * 86400
         assert g.forget_superseded_facts(min_age_days=90) == 1
@@ -342,7 +399,8 @@ def suite_forgetting(r: TestRunner, ns: dict):
 
     def superseded_keeps_recent():
         g = SemanticGraph()
-        af(g, "f:o"); af(g, "f:n")
+        af(g, "f:o")
+        af(g, "f:n")
         g.supersede_fact("f:o", "f:n")
         assert g.forget_superseded_facts(min_age_days=90) == 0
 
@@ -350,16 +408,23 @@ def suite_forgetting(r: TestRunner, ns: dict):
         g = SemanticGraph()
         af(g, "f:p", confidence=0.01, age_days=60, access_count=0)
         af(g, "f:a", confidence=0.9)
-        config = ForgettingConfig(enable_decay=True, decay_rate=0.5, decay_period_days=7,
-                                   enable_pruning=True, min_confidence=0.1, min_age_days=30)
+        config = ForgettingConfig(
+            enable_decay=True,
+            decay_rate=0.5,
+            decay_period_days=7,
+            enable_pruning=True,
+            min_confidence=0.1,
+            min_age_days=30,
+        )
         stats = ForgettingPolicy(config).run_maintenance(g)
         assert stats["decayed"] == 1 and stats["pruned"] >= 1
 
     def policy_disabled():
         g = SemanticGraph()
         af(g, "f:l", confidence=0.01, age_days=60, access_count=0)
-        config = ForgettingConfig(enable_decay=False, enable_pruning=False,
-                                   enable_superseded_cleanup=False)
+        config = ForgettingConfig(
+            enable_decay=False, enable_pruning=False, enable_superseded_cleanup=False
+        )
         stats = ForgettingPolicy(config).run_maintenance(g)
         assert stats["pruned"] == 0 and g.graph.has_node("f:l")
 
@@ -371,8 +436,10 @@ def suite_forgetting(r: TestRunner, ns: dict):
         assert (d / "g.json").exists()
 
     for name, fn in [
-        ("config_valid", config_valid), ("config_invalid", config_invalid),
-        ("config_defaults", config_defaults), ("decay_reduces", decay_reduces),
+        ("config_valid", config_valid),
+        ("config_invalid", config_invalid),
+        ("config_defaults", config_defaults),
+        ("decay_reduces", decay_reduces),
         ("decay_recent_unchanged", decay_recent_unchanged),
         ("decay_floors_at_zero", decay_floors_at_zero),
         ("prune_low_old", prune_low_old),
@@ -380,7 +447,8 @@ def suite_forgetting(r: TestRunner, ns: dict):
         ("prune_max_limit", prune_max_limit),
         ("superseded_removes_old", superseded_removes_old),
         ("superseded_keeps_recent", superseded_keeps_recent),
-        ("policy_all", policy_all), ("policy_disabled", policy_disabled),
+        ("policy_all", policy_all),
+        ("policy_disabled", policy_disabled),
         ("policy_saves", policy_saves),
     ]:
         r.run(f"forgetting/{name}", fn)
@@ -388,17 +456,25 @@ def suite_forgetting(r: TestRunner, ns: dict):
 
 def suite_extraction(r: TestRunner, ns: dict):
     SemanticExtractor = ns["SemanticExtractor"]
-    pe = lambda: SemanticExtractor(pattern_only=True)
-    ef = lambda t: pe().extract(t).facts
+
+    def pe():
+        return SemanticExtractor(pattern_only=True)
+
+    def ef(text):
+        return pe().extract(text).facts
 
     def prefer_for():
-        assert any(f.fact_type == "preference" for f in ef("I prefer BeautifulSoup for HTML parsing."))
+        assert any(
+            f.fact_type == "preference" for f in ef("I prefer BeautifulSoup for HTML parsing.")
+        )
 
     def like_for():
         assert any(f.fact_type == "preference" for f in ef("We like FastAPI for building APIs."))
 
     def decided():
-        assert any(f.fact_type == "decision" for f in ef("We decided to use PostgreSQL for the database."))
+        assert any(
+            f.fact_type == "decision" for f in ef("We decided to use PostgreSQL for the database.")
+        )
 
     def actually():
         assert any(f.fact_type == "correction" for f in ef("Actually, lxml is faster here."))
@@ -413,32 +489,41 @@ def suite_extraction(r: TestRunner, ns: dict):
         assert pe().extract("I prefer Python for scripting.").llm_used is False
 
     def llm_fallback():
-        resp = json.dumps([{"type": "preference", "subject": "deploy",
-                            "value": "docker", "confidence": 0.8}])
+        resp = json.dumps(
+            [{"type": "preference", "subject": "deploy", "value": "docker", "confidence": 0.8}]
+        )
         mock = MagicMock()
         mock.generate.return_value.message.content = resp
-        result = SemanticExtractor(llm_engine=mock, enable_llm_extraction=True
-                                   ).extract("We ship in containers.")
+        result = SemanticExtractor(llm_engine=mock, enable_llm_extraction=True).extract(
+            "We ship in containers."
+        )
         assert result.llm_used and result.facts[0].value == "docker"
 
     def llm_empty():
         mock = MagicMock()
         mock.generate.return_value.message.content = "[]"
-        assert SemanticExtractor(llm_engine=mock, enable_llm_extraction=True
-                                 ).extract("Blue sky.").facts == []
+        assert (
+            SemanticExtractor(llm_engine=mock, enable_llm_extraction=True)
+            .extract("Blue sky.")
+            .facts
+            == []
+        )
 
     def llm_malformed():
         mock = MagicMock()
         mock.generate.return_value.message.content = "not json {{{"
-        assert SemanticExtractor(llm_engine=mock, enable_llm_extraction=True
-                                 ).extract("text.").facts == []
+        assert (
+            SemanticExtractor(llm_engine=mock, enable_llm_extraction=True).extract("text.").facts
+            == []
+        )
 
     def llm_markdown():
         resp = '```json\n[{"type":"decision","subject":"db","value":"pg","confidence":0.9}]\n```'
         mock = MagicMock()
         mock.generate.return_value.message.content = resp
-        result = SemanticExtractor(llm_engine=mock, enable_llm_extraction=True
-                                   ).extract("Which db to use.")
+        result = SemanticExtractor(llm_engine=mock, enable_llm_extraction=True).extract(
+            "Which db to use."
+        )
         assert result.llm_used and result.facts[0].value == "pg"
 
     def llm_disabled():
@@ -449,16 +534,24 @@ def suite_extraction(r: TestRunner, ns: dict):
     def llm_failure():
         mock = MagicMock()
         mock.generate.side_effect = RuntimeError("down")
-        assert SemanticExtractor(llm_engine=mock, enable_llm_extraction=True
-                                 ).extract("text.").facts == []
+        assert (
+            SemanticExtractor(llm_engine=mock, enable_llm_extraction=True).extract("text.").facts
+            == []
+        )
 
     for name, fn in [
-        ("prefer_for", prefer_for), ("like_for", like_for),
-        ("decided", decided), ("actually", actually),
-        ("no_generic", no_generic), ("no_empty", no_empty),
-        ("result_no_llm", result_no_llm), ("llm_fallback", llm_fallback),
-        ("llm_empty", llm_empty), ("llm_malformed", llm_malformed),
-        ("llm_markdown", llm_markdown), ("llm_disabled", llm_disabled),
+        ("prefer_for", prefer_for),
+        ("like_for", like_for),
+        ("decided", decided),
+        ("actually", actually),
+        ("no_generic", no_generic),
+        ("no_empty", no_empty),
+        ("result_no_llm", result_no_llm),
+        ("llm_fallback", llm_fallback),
+        ("llm_empty", llm_empty),
+        ("llm_malformed", llm_malformed),
+        ("llm_markdown", llm_markdown),
+        ("llm_disabled", llm_disabled),
         ("llm_failure", llm_failure),
     ]:
         r.run(f"extraction/{name}", fn)
@@ -475,14 +568,20 @@ def suite_migration(r: TestRunner, ns: dict):
         pd.mkdir(parents=True)
         (pd / "sessions").mkdir()
         episodes = [
-            {"id": f"ep_{uuid.uuid4().hex[:8]}",
-             "text": "I prefer BeautifulSoup for HTML parsing.",
-             "importance": 0.8, "created_at": time.time(),
-             "metadata": {"role": "user", "session_id": "s1"}},
-            {"id": f"ep_{uuid.uuid4().hex[:8]}",
-             "text": "We decided to use PostgreSQL for the main database.",
-             "importance": 0.9, "created_at": time.time(),
-             "metadata": {"role": "user", "session_id": "s1"}},
+            {
+                "id": f"ep_{uuid.uuid4().hex[:8]}",
+                "text": "I prefer BeautifulSoup for HTML parsing.",
+                "importance": 0.8,
+                "created_at": time.time(),
+                "metadata": {"role": "user", "session_id": "s1"},
+            },
+            {
+                "id": f"ep_{uuid.uuid4().hex[:8]}",
+                "text": "We decided to use PostgreSQL for the main database.",
+                "importance": 0.9,
+                "created_at": time.time(),
+                "metadata": {"role": "user", "session_id": "s1"},
+            },
         ]
         with (pd / "episodes.jsonl").open("w") as f:
             for ep in episodes:
@@ -510,8 +609,9 @@ def suite_migration(r: TestRunner, ns: dict):
                 if line.strip():
                     episodes.append(json.loads(line))
         paired = [ep for ep in episodes if ep.get("metadata", {}).get("type") == "exchange"]
-        assert all(ep["text"].startswith("User: ") and "\nAssistant: " in ep["text"]
-                   for ep in paired)
+        assert all(
+            ep["text"].startswith("User: ") and "\nAssistant: " in ep["text"] for ep in paired
+        )
 
     def no_sessions():
         pd = tmp() / "project"
@@ -548,10 +648,14 @@ def suite_migration(r: TestRunner, ns: dict):
         assert SchemaManager(pd).get_version() == "2.0"
 
     for name, fn in [
-        ("paired_basic", paired_basic), ("paired_format", paired_format),
-        ("no_sessions", no_sessions), ("semantic_creates_graph", semantic_creates_graph),
-        ("schema_sets", schema_sets), ("schema_detects_old", schema_detects_old),
-        ("schema_no_file", schema_no_file), ("schema_reload", schema_reload),
+        ("paired_basic", paired_basic),
+        ("paired_format", paired_format),
+        ("no_sessions", no_sessions),
+        ("semantic_creates_graph", semantic_creates_graph),
+        ("schema_sets", schema_sets),
+        ("schema_detects_old", schema_detects_old),
+        ("schema_no_file", schema_no_file),
+        ("schema_reload", schema_reload),
     ]:
         r.run(f"migration/{name}", fn)
 
@@ -572,7 +676,8 @@ def suite_core(r: TestRunner, ns: dict):
         mem = ProjectMemory(session_id="s1")
         eid = mem.store_episode(
             "Session summary: practiced greetings and conversation.",
-            metadata={"type": "session_summary"}, importance=0.95,
+            metadata={"type": "session_summary"},
+            importance=0.95,
         )
         results = mem.search_episodes("summary", n=5, min_importance=0.5)
         stats = mem.get_stats()
@@ -585,7 +690,8 @@ def suite_core(r: TestRunner, ns: dict):
             m1.add_turn("assistant", "Muy bien, sigamos practicando.", session_id="s1")
             eid = m1.store_episode(
                 "Session summary: practiced greetings and present tense.",
-                metadata={"type": "session_summary"}, importance=0.95,
+                metadata={"type": "session_summary"},
+                importance=0.95,
             )
             m1.close()
             m2 = ProjectMemory(base_dir=d, project_id="proj", session_id="s1")
@@ -597,8 +703,9 @@ def suite_core(r: TestRunner, ns: dict):
 
     def pairing():
         with tempfile.TemporaryDirectory() as d:
-            mem = ProjectMemory(base_dir=d, project_id="p", session_id="s1",
-                                auto_pair_assistant=True)
+            mem = ProjectMemory(
+                base_dir=d, project_id="p", session_id="s1", auto_pair_assistant=True
+            )
             mem.add_turn("user", "What is Python?", "s1")
             mem.add_turn("assistant", "Python is a programming language.", "s1")
             assert mem.get_stats()["episodic"]["pairing"]["paired_exchanges"] == 1
@@ -607,8 +714,13 @@ def suite_core(r: TestRunner, ns: dict):
 
     def orphan():
         with tempfile.TemporaryDirectory() as d:
-            mem = ProjectMemory(base_dir=d, project_id="p", session_id="s1",
-                                auto_pair_assistant=True, orphan_assistant_handling="skip")
+            mem = ProjectMemory(
+                base_dir=d,
+                project_id="p",
+                session_id="s1",
+                auto_pair_assistant=True,
+                orphan_assistant_handling="skip",
+            )
             mem.add_turn("assistant", "Hello orphan.", "s1")
             assert mem.get_stats()["episodic"]["pairing"]["orphan_assistants"] == 1
             mem.close()
@@ -618,7 +730,8 @@ def suite_core(r: TestRunner, ns: dict):
             with ProjectMemory(base_dir=d, project_id="p", session_id="s1") as mem:
                 eid = mem.store_episode(
                     "This test episode about databases will be deleted.",
-                    importance=0.9, bypass_filter=True,
+                    importance=0.9,
+                    bypass_filter=True,
                 )
                 count_before = len(mem._episodes)
                 assert mem.delete_episode(eid) is True
@@ -642,7 +755,8 @@ def suite_core(r: TestRunner, ns: dict):
             with ProjectMemory(base_dir=d, project_id="p", session_id="s1") as mem:
                 mem.store_episode(
                     "Important project data about machine learning systems.",
-                    importance=0.9, bypass_filter=True,
+                    importance=0.9,
+                    bypass_filter=True,
                 )
                 assert len(mem._episodes) > 0
                 result = mem.forget_user_data()
@@ -650,7 +764,7 @@ def suite_core(r: TestRunner, ns: dict):
 
     def writer_lock_live():
         with tempfile.TemporaryDirectory() as d:
-            with ProjectMemory(base_dir=d, project_id="p", session_id="s1") as m1:
+            with ProjectMemory(base_dir=d, project_id="p", session_id="s1"):
                 try:
                     m2 = ProjectMemory(base_dir=d, project_id="p", session_id="s2")
                     m2.close()
@@ -675,14 +789,21 @@ def suite_core(r: TestRunner, ns: dict):
             assert g2.query_facts(subject="parsing")[0]["value"] == "beautifulsoup"
 
     def contradiction():
-        existing = [{"id": "f:001", "subject": "lib", "value": "requests",
-                     "fact_type": "preference"}]
-        assert detect_contradiction(
-            {"subject": "lib", "value": "httpx", "fact_type": "preference"}, existing
-        ) == "f:001"
-        assert detect_contradiction(
-            {"subject": "lib", "value": "requests", "fact_type": "preference"}, existing
-        ) is None
+        existing = [
+            {"id": "f:001", "subject": "lib", "value": "requests", "fact_type": "preference"}
+        ]
+        assert (
+            detect_contradiction(
+                {"subject": "lib", "value": "httpx", "fact_type": "preference"}, existing
+            )
+            == "f:001"
+        )
+        assert (
+            detect_contradiction(
+                {"subject": "lib", "value": "requests", "fact_type": "preference"}, existing
+            )
+            is None
+        )
 
     def malformed_jsonl():
         with tempfile.TemporaryDirectory() as d:
@@ -690,7 +811,7 @@ def suite_core(r: TestRunner, ns: dict):
             Path(d, "proj").mkdir()
             ep_path.write_text(
                 '{"id":"ep_001","text":"valid episode one here","importance":0.8,"created_at":1000}\n'
-                'this is not json\n'
+                "this is not json\n"
                 '{"id":"ep_002","text":"valid episode two here","importance":0.7,"created_at":1001}\n'
             )
             mem = ProjectMemory(base_dir=d, project_id="proj", session_id="s1")
@@ -702,21 +823,30 @@ def suite_core(r: TestRunner, ns: dict):
             gp = Path(d) / "proj" / "semantic_graph.json"
             Path(d, "proj").mkdir()
             gp.write_text("not json {{{")
-            mem = ProjectMemory(base_dir=d, project_id="proj", session_id="s1",
-                                enable_semantic_graph=True)
+            mem = ProjectMemory(
+                base_dir=d, project_id="proj", session_id="s1", enable_semantic_graph=True
+            )
             assert mem.semantic is not None
             assert mem.semantic.graph.number_of_nodes() == 0
             assert gp.with_suffix(".json.corrupted").exists()
             mem.close()
 
     for name, fn in [
-        ("build_prompt", build_prompt), ("episode_stats", episode_stats),
-        ("persistence", persistence), ("pairing", pairing), ("orphan", orphan),
-        ("delete_episode", delete_episode), ("delete_nonexistent", delete_nonexistent),
-        ("forget_session", forget_session), ("forget_user_data", forget_user_data),
-        ("writer_lock_live", writer_lock_live), ("stale_lock_cleared", stale_lock_cleared),
-        ("semantic_graph", semantic_graph), ("contradiction", contradiction),
-        ("malformed_jsonl", malformed_jsonl), ("corrupted_graph", corrupted_graph),
+        ("build_prompt", build_prompt),
+        ("episode_stats", episode_stats),
+        ("persistence", persistence),
+        ("pairing", pairing),
+        ("orphan", orphan),
+        ("delete_episode", delete_episode),
+        ("delete_nonexistent", delete_nonexistent),
+        ("forget_session", forget_session),
+        ("forget_user_data", forget_user_data),
+        ("writer_lock_live", writer_lock_live),
+        ("stale_lock_cleared", stale_lock_cleared),
+        ("semantic_graph", semantic_graph),
+        ("contradiction", contradiction),
+        ("malformed_jsonl", malformed_jsonl),
+        ("corrupted_graph", corrupted_graph),
     ]:
         r.run(f"core/{name}", fn)
 
@@ -727,6 +857,7 @@ def suite_ollama(r: TestRunner, ns: dict):
     def _ollama_available():
         try:
             import requests
+
             return requests.get("http://localhost:11434/api/tags", timeout=3).status_code == 200
         except Exception:
             return False
@@ -734,24 +865,28 @@ def suite_ollama(r: TestRunner, ns: dict):
     def _model_available(model):
         try:
             import requests
-            tags = requests.get("http://localhost:11434/api/tags", timeout=3).json().get("models", [])
+
+            tags = (
+                requests.get("http://localhost:11434/api/tags", timeout=3).json().get("models", [])
+            )
             return any(m.get("name", "").startswith(model.split(":")[0]) for m in tags)
         except Exception:
             return False
 
     if not INCLUDE_OLLAMA:
-        r.run("ollama/skipped", lambda: None,
-              skip_reason="Pass --ollama to run integration tests")
+        r.run("ollama/skipped", lambda: None, skip_reason="Pass --ollama to run integration tests")
         return
 
     if not _ollama_available():
-        r.run("ollama/all", lambda: None,
-              skip_reason="Ollama not running at localhost:11434")
+        r.run("ollama/all", lambda: None, skip_reason="Ollama not running at localhost:11434")
         return
 
     if not _model_available("nomic-embed-text"):
-        r.run("ollama/all", lambda: None,
-              skip_reason="nomic-embed-text not pulled (run: ollama pull nomic-embed-text)")
+        r.run(
+            "ollama/all",
+            lambda: None,
+            skip_reason="nomic-embed-text not pulled (run: ollama pull nomic-embed-text)",
+        )
         return
 
     from engram.embeddings.ollama import OllamaEmbedder
@@ -766,8 +901,11 @@ def suite_ollama(r: TestRunner, ns: dict):
         e = OllamaEmbedder(model="nomic-embed-text")
         with tempfile.TemporaryDirectory() as d:
             mem = ProjectMemory(
-                base_dir=d, project_id="ollama_test", session_id="s1",
-                embedder=e, auto_pair_assistant=True,
+                base_dir=d,
+                project_id="ollama_test",
+                session_id="s1",
+                embedder=e,
+                auto_pair_assistant=True,
             )
             mem.add_turn("user", "I am building a web scraper for job listings.", "s1")
             mem.add_turn("assistant", "Are you using BeautifulSoup?", "s1")
@@ -780,6 +918,7 @@ def suite_ollama(r: TestRunner, ns: dict):
 
     def embedding_cache():
         from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
+
         e = OllamaEmbedder(model="nomic-embed-text")
         with tempfile.TemporaryDirectory() as d:
             cached = CachedEmbedder(e, EmbeddingCache(Path(d) / "cache.db"))
@@ -793,15 +932,18 @@ def suite_ollama(r: TestRunner, ns: dict):
         from engram.storage.chromadb_store import DimensionMismatchError
         from engram import ProjectMemory
         from mock_helpers import MockEmbedder
+
         e = OllamaEmbedder(model="nomic-embed-text")
         with tempfile.TemporaryDirectory() as d:
             mem = ProjectMemory(base_dir=d, project_id="dim_test", session_id="s1", embedder=e)
-            mem.store_episode("Testing dimension mismatch with real embedder.",
-                              importance=0.8, bypass_filter=True)
+            mem.store_episode(
+                "Testing dimension mismatch with real embedder.", importance=0.8, bypass_filter=True
+            )
             mem.close()
             try:
-                mem2 = ProjectMemory(base_dir=d, project_id="dim_test", session_id="s1",
-                                     embedder=MockEmbedder())
+                mem2 = ProjectMemory(
+                    base_dir=d, project_id="dim_test", session_id="s1", embedder=MockEmbedder()
+                )
                 mem2.close()
                 assert False, "Should have raised DimensionMismatchError"
             except DimensionMismatchError:
@@ -820,8 +962,9 @@ def suite_ollama(r: TestRunner, ns: dict):
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
-    if HAS_PYTEST and not ("--no-pytest" in sys.argv):
+    if HAS_PYTEST and "--no-pytest" not in sys.argv:
         # Prefer pytest when available
         args = [str(ROOT / "tests"), "-v" if VERBOSE else "-q"]
         if not INCLUDE_OLLAMA:
@@ -830,7 +973,7 @@ def main():
 
     # Fallback: run directly
     print("engram Test Runner")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     try:
         ns = _import_all()

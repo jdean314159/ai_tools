@@ -1,16 +1,18 @@
 """Tests for fact extraction patterns and LLM fallback."""
+
 from __future__ import annotations
 import json
-import pytest
-from engram.semantic.extractor import SemanticExtractor, ExtractedFact, ExtractionResult
+from engram.semantic.extractor import SemanticExtractor, ExtractionResult
 
 
 # ---------------------------------------------------------------------------
 # Pattern extraction
 # ---------------------------------------------------------------------------
 
+
 class PatternExtractor(SemanticExtractor):
     """Convenience: always pattern-only."""
+
     def __init__(self):
         super().__init__(pattern_only=True)
 
@@ -20,6 +22,7 @@ def extract(text):
 
 
 # --- Preference patterns ---
+
 
 def test_prefer_for():
     facts = extract("I prefer BeautifulSoup for HTML parsing.")
@@ -49,11 +52,14 @@ def test_my_favorite():
 
 # --- Decision patterns ---
 
+
 def test_decided_to_use():
     facts = extract("We decided to use PostgreSQL for the database.")
     decisions = [f for f in facts if f.fact_type == "decision"]
     assert len(decisions) >= 1
-    assert "postgresql" in decisions[0].value.lower() or "postgresql" in decisions[0].subject.lower()
+    assert (
+        "postgresql" in decisions[0].value.lower() or "postgresql" in decisions[0].subject.lower()
+    )
 
 
 def test_going_with():
@@ -63,6 +69,7 @@ def test_going_with():
 
 
 # --- Correction patterns ---
+
 
 def test_actually_is():
     facts = extract("Actually, lxml is faster than BeautifulSoup.")
@@ -77,6 +84,7 @@ def test_correction_prefix():
 
 
 # --- No match cases ---
+
 
 def test_no_facts_generic_text():
     facts = extract("The weather is nice today.")
@@ -94,6 +102,7 @@ def test_no_facts_greeting():
 
 
 # --- Confidence levels ---
+
 
 def test_preference_confidence_level():
     """Preference patterns should have confidence ~0.7."""
@@ -116,6 +125,7 @@ def test_correction_higher_confidence():
 
 
 # --- ExtractionResult ---
+
 
 def test_extraction_result_no_llm():
     extractor = PatternExtractor()
@@ -143,13 +153,14 @@ def test_extraction_result_llm_not_called_on_pattern_match():
 # LLM fallback
 # ---------------------------------------------------------------------------
 
+
 def test_llm_fallback_on_no_pattern_match():
     """LLM is called when patterns find nothing."""
     from unittest.mock import MagicMock
 
-    llm_response = json.dumps([
-        {"type": "preference", "subject": "deployment", "value": "docker", "confidence": 0.8}
-    ])
+    llm_response = json.dumps(
+        [{"type": "preference", "subject": "deployment", "value": "docker", "confidence": 0.8}]
+    )
     mock_llm = MagicMock()
     mock_llm.generate.return_value.message.content = llm_response
 
@@ -212,7 +223,7 @@ def test_llm_not_called_when_disabled():
 
     mock_llm = MagicMock()
     extractor = SemanticExtractor(llm_engine=mock_llm, enable_llm_extraction=False)
-    result = extractor.extract("We should probably containerize our services soon.")
+    extractor.extract("We should probably containerize our services soon.")
 
     mock_llm.generate.assert_not_called()
 
@@ -232,11 +243,13 @@ def test_llm_fallback_skips_facts_with_no_subject_or_value():
     """Facts missing subject or value are dropped."""
     from unittest.mock import MagicMock
 
-    llm_response = json.dumps([
-        {"type": "preference", "subject": "db", "value": "mysql", "confidence": 0.8},
-        {"type": "preference", "subject": "", "value": "postgres"},  # No subject
-        {"type": "decision", "subject": "cache"},                    # No value
-    ])
+    llm_response = json.dumps(
+        [
+            {"type": "preference", "subject": "db", "value": "mysql", "confidence": 0.8},
+            {"type": "preference", "subject": "", "value": "postgres"},  # No subject
+            {"type": "decision", "subject": "cache"},  # No value
+        ]
+    )
     mock_llm = MagicMock()
     mock_llm.generate.return_value.message.content = llm_response
 
@@ -265,6 +278,7 @@ def test_llm_failure_returns_empty():
 # ---------------------------------------------------------------------------
 # Role filtering
 # ---------------------------------------------------------------------------
+
 
 def test_extract_from_user_role():
     extractor = PatternExtractor()

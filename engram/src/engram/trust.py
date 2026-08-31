@@ -1,4 +1,5 @@
 """Trust policy primitives for persistent memory boundaries."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -59,8 +60,10 @@ class MemoryTrustPolicy:
             raise ValueError("tenant_id must be non-empty")
         if self.ingestion_violation not in {"reject", "quarantine"}:
             raise ValueError("ingestion_violation must be 'reject' or 'quarantine'")
-        if any(not isinstance(alias, str) or not alias.strip() or alias != alias.strip()
-               for alias in self.tenant_aliases):
+        if any(
+            not isinstance(alias, str) or not alias.strip() or alias != alias.strip()
+            for alias in self.tenant_aliases
+        ):
             raise ValueError("tenant_aliases must contain non-empty normalized strings")
         if self.tenant_id in self.tenant_aliases:
             raise ValueError("tenant_aliases must not repeat tenant_id")

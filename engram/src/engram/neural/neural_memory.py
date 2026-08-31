@@ -95,25 +95,26 @@ class NeuralMemoryConfig:
       - leaky_relu/linear activations outperform tanh/linear for embedding
         regression (preserves gradient sign through dead zones).
     """
+
     enabled: bool = True
     config_version: int = 3
 
     # Dimensions
-    key_dim: int = 64           # Input embedding dimension
-    value_dim: int = 32         # Stable resolution for embedding reconstruction
-    hidden_dim: int = 32        # RTRL hidden neurons (do not increase above 32)
+    key_dim: int = 64  # Input embedding dimension
+    value_dim: int = 32  # Stable resolution for embedding reconstruction
+    hidden_dim: int = 32  # RTRL hidden neurons (do not increase above 32)
     min_warmup_steps: int = 50  # Paired observations required for prompt hints
     prompt_advisory_enabled: bool = False  # Experimental; content quality unproven
     importance_advisory_enabled: bool = False  # Never alter recall by default
 
     # Embedding projection (text embedder → RTRL dimensions)
-    embedding_dim: int = 384    # all-MiniLM-L6-v2 output dimension
-    projection_seed: int = 42   # Deterministic projection per project
+    embedding_dim: int = 384  # all-MiniLM-L6-v2 output dimension
+    projection_seed: int = 42  # Deterministic projection per project
     initialization_seed: int = 42  # Deterministic fresh RTRL weights
 
     # Learning — optimal from sweep
-    lr: float = 0.003           # 0.001 is stable alternative for very long sessions
-    grad_clip_norm: float = 1.0 # Must be ≤ 1.0 for hidden_dim=32; 5.0 causes overflow
+    lr: float = 0.003  # 0.001 is stable alternative for very long sessions
+    grad_clip_norm: float = 1.0  # Must be ≤ 1.0 for hidden_dim=32; 5.0 causes overflow
     weight_decay: float = 1e-5
     surprise_threshold: float = 0.001
     surprise_modulated_lr: bool = True
@@ -121,7 +122,7 @@ class NeuralMemoryConfig:
     affinity_weight: float = 0.15
 
     # Architecture (do not change without re-sweeping)
-    gated: bool = True          # GRU gating — non-optional
+    gated: bool = True  # GRU gating — non-optional
     layer_norm: bool = False
     hidden_activation: str = "leaky_relu"
     output_activation: str = "linear"
@@ -132,7 +133,7 @@ class NeuralMemoryConfig:
     save_hidden_state: bool = True  # Save full state for exact resume
 
     # Runtime
-    device: str = "cpu"         # RTRL is fast enough on CPU
+    device: str = "cpu"  # RTRL is fast enough on CPU
     dtype: str = "float32"
     verbose: bool = False
 
@@ -181,7 +182,9 @@ class NeuralMemory:
             config: Configuration. None = optimal defaults.
         """
         self.config = config or NeuralMemoryConfig()
-        self.project_dir = Path(project_dir).expanduser().resolve(strict=False) if project_dir else None
+        self.project_dir = (
+            Path(project_dir).expanduser().resolve(strict=False) if project_dir else None
+        )
         self._memory: Optional[TITANSMemory] = None
         self._session_start = time.time()
         self._memory_role = "auxiliary_embedding_memory"
@@ -258,8 +261,7 @@ class NeuralMemory:
             self._memory = TITANSMemory(tcfg)
         finally:
             np.random.set_state(numpy_state)
-        logger.info("Created fresh neural memory: %d params",
-                     self._param_count())
+        logger.info("Created fresh neural memory: %d params", self._param_count())
 
     def _save_path(self) -> Optional[Path]:
         if self.project_dir:
@@ -315,12 +317,12 @@ class NeuralMemory:
         """
         if not self.config.enabled or self._memory is None or not self._healthy:
             return {
-                'predicted': np.zeros(self.config.value_dim),
-                'surprise': 0.0,
-                'wrote': False,
-                'effective_lr': 0.0,
-                'surprise_ema': 0.0,
-                'healthy': self._healthy,
+                "predicted": np.zeros(self.config.value_dim),
+                "surprise": 0.0,
+                "wrote": False,
+                "effective_lr": 0.0,
+                "surprise_ema": 0.0,
+                "healthy": self._healthy,
             }
 
         with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
@@ -329,12 +331,12 @@ class NeuralMemory:
         if not self._state_is_finite(result):
             self._mark_unhealthy("non-finite neural state after step")
             return {
-                'predicted': np.zeros(self.config.value_dim),
-                'surprise': 0.0,
-                'wrote': False,
-                'effective_lr': 0.0,
-                'surprise_ema': 0.0,
-                'healthy': False,
+                "predicted": np.zeros(self.config.value_dim),
+                "surprise": 0.0,
+                "wrote": False,
+                "effective_lr": 0.0,
+                "surprise_ema": 0.0,
+                "healthy": False,
             }
         result["healthy"] = True
         return result
@@ -360,10 +362,7 @@ class NeuralMemory:
             net.p_matrix_old,
             net.grad_buffer,
         )
-        return all(
-            np.isfinite(self._memory.B.to_numpy(array)).all()
-            for array in arrays
-        )
+        return all(np.isfinite(self._memory.B.to_numpy(array)).all() for array in arrays)
 
     def _mark_unhealthy(self, reason: str) -> None:
         if self._healthy:
@@ -411,7 +410,11 @@ class NeuralMemory:
         current = getattr(self.config, "model_fingerprint", "default")
         if current == model_fingerprint:
             return False
-        logger.info("Neural memory fingerprint changed from %s to %s; resetting state", current, model_fingerprint)
+        logger.info(
+            "Neural memory fingerprint changed from %s to %s; resetting state",
+            current,
+            model_fingerprint,
+        )
         self.config.model_fingerprint = model_fingerprint
         self.reset_full()
         return True
@@ -455,7 +458,7 @@ class NeuralMemory:
         cls,
         project_dir: Path,
         config: Optional[NeuralMemoryConfig] = None,
-    ) -> 'NeuralMemory':
+    ) -> "NeuralMemory":
         """Load neural memory from project directory.
 
         Args:
@@ -484,12 +487,12 @@ class NeuralMemory:
             "model_fingerprint": getattr(self.config, "model_fingerprint", "default"),
             "total_steps": self._memory._step_count,
             "session_steps": self._session_steps,
-            "total_writes": mem_stats['total_writes'],
-            "total_skipped": mem_stats['total_skipped'],
+            "total_writes": mem_stats["total_writes"],
+            "total_skipped": mem_stats["total_skipped"],
             "write_ratio": self._memory.write_ratio,
             "avg_surprise": self._memory.avg_surprise,
             "surprise_ema": self._memory._surprise_ema,
-            "max_surprise": mem_stats['max_surprise'],
+            "max_surprise": mem_stats["max_surprise"],
             "params": self._param_count(),
             "session_duration_s": time.time() - self._session_start,
         }

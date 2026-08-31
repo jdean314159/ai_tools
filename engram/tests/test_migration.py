@@ -1,12 +1,10 @@
 """Tests for migration CLI tools."""
+
 from __future__ import annotations
 import json
 import time
 import uuid
-import tempfile
-import pytest
 from pathlib import Path
-from tests.conftest import MockEmbedder
 
 
 def make_project(base_dir: Path, project_id: str = "test_project"):
@@ -72,12 +70,11 @@ def make_project(base_dir: Path, project_id: str = "test_project"):
 # Paired exchange migration
 # ---------------------------------------------------------------------------
 
+
 def test_migrate_paired_exchanges_basic(tmp_path):
     from engram.cli.migrate import migrate_paired_exchanges
 
     project_dir, _ = make_project(tmp_path)
-    original_episode_count = len(list(project_dir.glob("episodes.jsonl")))
-
     added = migrate_paired_exchanges(project_dir)
 
     # 2 pairs in s1 + 1 pair in s2 = 3
@@ -173,10 +170,10 @@ def test_migrate_empty_sessions(tmp_path):
 # Semantic graph migration
 # ---------------------------------------------------------------------------
 
+
 def test_migrate_semantic_graph_pattern_only(tmp_path):
     """Pattern-only extraction produces facts without LLM."""
     from engram.cli.migrate import migrate_semantic_graph
-    from engram.semantic.graph import SemanticGraph
 
     project_dir, _ = make_project(tmp_path)
     extracted = migrate_semantic_graph(project_dir, llm_engine=None)
@@ -219,6 +216,7 @@ def test_migrate_semantic_no_episodes(tmp_path):
 # ---------------------------------------------------------------------------
 # Schema version
 # ---------------------------------------------------------------------------
+
 
 def test_migration_sets_schema_version(tmp_path):
     """Full migration sets schema version to SCHEMA_VERSION."""

@@ -33,9 +33,7 @@ class RecordingLayer:
         self.recall_queries.append(query)
         if self.boost_candidate_id is None:
             return None
-        return RecallContribution(
-            affinity={self.boost_candidate_id: self.boost_value}
-        )
+        return RecallContribution(affinity={self.boost_candidate_id: self.boost_value})
 
     def contribute_to_prompt(self, query: RecallQuery) -> PromptHint | None:
         self.prompt_queries.append(query)
@@ -123,12 +121,10 @@ def test_no_registered_layers_preserve_core_flow() -> None:
         _seed_memory(memory)
 
     baseline_search = [
-        (item.text, item.importance)
-        for item in baseline.search_episodes("architecture", n=5)
+        (item.text, item.importance) for item in baseline.search_episodes("architecture", n=5)
     ]
     comparison_search = [
-        (item.text, item.importance)
-        for item in comparison.search_episodes("architecture", n=5)
+        (item.text, item.importance) for item in comparison.search_episodes("architecture", n=5)
     ]
 
     assert comparison_search == baseline_search
@@ -261,12 +257,10 @@ def test_failing_layer_never_breaks_core_flows(caplog) -> None:
             _seed_memory(item)
 
         actual_search = [
-            (item.text, item.importance)
-            for item in memory.search_episodes("architecture", n=5)
+            (item.text, item.importance) for item in memory.search_episodes("architecture", n=5)
         ]
         expected_search = [
-            (item.text, item.importance)
-            for item in baseline.search_episodes("architecture", n=5)
+            (item.text, item.importance) for item in baseline.search_episodes("architecture", n=5)
         ]
         actual_prompt = _result_snapshot(memory.build_prompt("Explain the architecture."))
         expected_prompt = _result_snapshot(baseline.build_prompt("Explain the architecture."))

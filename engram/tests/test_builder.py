@@ -10,6 +10,7 @@ Covers:
 - build_prompt_from_context: basic assembly, budget enforcement, compression
 - build_prompt_trace_from_result: section and evidence population
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -21,7 +22,6 @@ from engram.prompting.builder import (
     _parts_from_prompt,
     build_prompt_from_context,
     build_prompt_trace_from_result,
-    count_items_tokens,
     count_text_tokens,
     format_items,
     normalize_retrieval_result,
@@ -35,6 +35,7 @@ from engram.retrieval.context import ContextResult
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class FakeItem:
@@ -50,6 +51,7 @@ def word_counter(text: str) -> int:
 # ---------------------------------------------------------------------------
 # safe_text
 # ---------------------------------------------------------------------------
+
 
 class TestSafeText:
     def test_dataclass_with_text_attr(self):
@@ -82,6 +84,7 @@ class TestSafeText:
 # safe_score
 # ---------------------------------------------------------------------------
 
+
 class TestSafeScore:
     def test_from_attr(self):
         assert safe_score(FakeItem(text="x", score=0.9)) == pytest.approx(0.9)
@@ -103,6 +106,7 @@ class TestSafeScore:
 # count_text_tokens
 # ---------------------------------------------------------------------------
 
+
 class TestCountTextTokens:
     def test_empty_string(self):
         assert count_text_tokens("") == 0
@@ -119,6 +123,7 @@ class TestCountTextTokens:
     def test_custom_counter_exception_falls_back(self):
         def bad_counter(t: str) -> int:
             raise RuntimeError("broken")
+
         # Should not raise; falls back to word split
         result = count_text_tokens("one two", token_counter=bad_counter)
         assert result >= 1
@@ -127,6 +132,7 @@ class TestCountTextTokens:
 # ---------------------------------------------------------------------------
 # normalize_retrieval_result
 # ---------------------------------------------------------------------------
+
 
 class TestNormalizeRetrievalResult:
     def test_context_result_passthrough(self):
@@ -172,6 +178,7 @@ class TestNormalizeRetrievalResult:
 # format_items
 # ---------------------------------------------------------------------------
 
+
 class TestFormatItems:
     def test_empty(self):
         assert format_items([]) == ""
@@ -201,6 +208,7 @@ class TestFormatItems:
 # render_sections / _parts_from_prompt round-trip
 # ---------------------------------------------------------------------------
 
+
 class TestRenderAndParse:
     def test_round_trip(self):
         parts = [
@@ -228,6 +236,7 @@ class TestRenderAndParse:
 # ---------------------------------------------------------------------------
 # build_prompt_from_context
 # ---------------------------------------------------------------------------
+
 
 class TestBuildPromptFromContext:
     def _ctx(self, working=None, episodic=None) -> ContextResult:
@@ -263,20 +272,26 @@ class TestBuildPromptFromContext:
         result = build_prompt_from_context(
             user_message="short",
             context=ctx,
-            total_prompt_tokens=10,   # tiny budget
+            total_prompt_tokens=10,  # tiny budget
             reserve_output_tokens=0,
             token_counter=word_counter,
         )
         assert result["compressed"] is True
 
     def test_compression_packs_ranked_items_and_reports_exclusions(self):
-        ctx = self._ctx(episodic=[
-            {"id": "ep_1", "text": "short relevant memory", "metadata": {"topic_key": "topic"}},
-            {"id": "ep_2", "text": "word " * 100},
-        ])
+        ctx = self._ctx(
+            episodic=[
+                {"id": "ep_1", "text": "short relevant memory", "metadata": {"topic_key": "topic"}},
+                {"id": "ep_2", "text": "word " * 100},
+            ]
+        )
         result = build_prompt_from_context(
-            user_message="question", context=ctx, total_prompt_tokens=18,
-            reserve_output_tokens=0, token_counter=word_counter, return_trace=True,
+            user_message="question",
+            context=ctx,
+            total_prompt_tokens=18,
+            reserve_output_tokens=0,
+            token_counter=word_counter,
+            return_trace=True,
         )
         assert "short relevant memory" in result["prompt"]
         assert result["budget_diagnostics"]["included_item_counts"]["episodic"] == 1
@@ -318,6 +333,7 @@ class TestBuildPromptFromContext:
 # ---------------------------------------------------------------------------
 # build_prompt_trace_from_result
 # ---------------------------------------------------------------------------
+
 
 class TestBuildPromptTraceFromResult:
     def _make_result(self, prompt: str = "## User\nhello", ctx: Any = None) -> dict:

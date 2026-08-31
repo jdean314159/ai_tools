@@ -1,5 +1,4 @@
 from __future__ import annotations
-import tempfile
 from engram import ProjectMemory
 from engram.semantic.graph import SemanticGraph
 from engram.semantic.extractor import SemanticExtractor
@@ -29,20 +28,26 @@ def test_graph_persist_reload(tmp_path):
 
 
 def test_contradiction_detection():
-    existing = [{"id": "fact:001", "subject": "library", "value": "requests", "fact_type": "preference"}]
+    existing = [
+        {"id": "fact:001", "subject": "library", "value": "requests", "fact_type": "preference"}
+    ]
     new_fact = {"subject": "library", "value": "httpx", "fact_type": "preference"}
     contradicted = detect_contradiction(new_fact, existing)
     assert contradicted == "fact:001"
 
 
 def test_no_contradiction_same_value():
-    existing = [{"id": "fact:001", "subject": "library", "value": "requests", "fact_type": "preference"}]
+    existing = [
+        {"id": "fact:001", "subject": "library", "value": "requests", "fact_type": "preference"}
+    ]
     new_fact = {"subject": "library", "value": "requests", "fact_type": "preference"}
     assert detect_contradiction(new_fact, existing) is None
 
 
 def test_no_contradiction_different_type():
-    existing = [{"id": "fact:001", "subject": "library", "value": "requests", "fact_type": "preference"}]
+    existing = [
+        {"id": "fact:001", "subject": "library", "value": "requests", "fact_type": "preference"}
+    ]
     new_fact = {"subject": "library", "value": "httpx", "fact_type": "decision"}
     assert detect_contradiction(new_fact, existing) is None
 
@@ -71,6 +76,7 @@ def test_pattern_extraction():
 
 def test_forgetting_pruning(tmp_path):
     import time
+
     graph = SemanticGraph(persist_path=tmp_path / "graph.json")
     graph.add_fact("fact:old_low", "preference", "old_lib", "whatever", confidence=0.05)
     # Backdating creation to force pruning

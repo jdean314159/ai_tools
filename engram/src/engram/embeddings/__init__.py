@@ -4,7 +4,11 @@ from .cache import EmbeddingCache, CachedEmbedder
 from .factory import EmbeddingService
 
 __all__ = [
-    "Embedder", "EmbeddingResult", "BatchEmbeddingResult",
-    "OllamaEmbedder", "EmbeddingService",
-    "EmbeddingCache", "CachedEmbedder",
+    "Embedder",
+    "EmbeddingResult",
+    "BatchEmbeddingResult",
+    "OllamaEmbedder",
+    "EmbeddingService",
+    "EmbeddingCache",
+    "CachedEmbedder",
 ]

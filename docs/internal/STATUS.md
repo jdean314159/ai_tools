@@ -289,6 +289,18 @@ integration tests passed 320 tests with 14 skips; the full repository gate
 remains 1,268 passed, 304 skipped, with the same three warnings. `engram` is the
 next staged package.
 
+The eighth Python-quality checkpoint adopts all of `engram`. Its 55 lint
+findings were mostly dead imports and assignments, plus compressed standalone
+test-runner constructs. The runner's dynamic `locals()` registry is now an
+explicit name-to-object mapping, preserving import coverage while making the
+dependency-light suite statically understandable. Ruff mechanically formatted
+50 files, and the shared gate now covers 375 files. The available focused
+pytest set passed 19 tests with 238 optional-dependency skips; the fallback
+runner passed 71 of 72 checks with one Ollama skip. The full repository gate
+remains 1,268 passed, 304 skipped, with the same three warnings. All active
+library packages are now adopted; examples, scripts, and root integration tests
+remain for classification.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

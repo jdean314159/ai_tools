@@ -1,5 +1,4 @@
 from __future__ import annotations
-import tempfile
 from engram import ProjectMemory
 
 
@@ -46,7 +45,9 @@ def test_orphan_store(tmp_path):
 
 def test_pairing_disabled(tmp_path):
     mem = ProjectMemory(
-        base_dir=tmp_path, project_id="np", session_id="s1",
+        base_dir=tmp_path,
+        project_id="np",
+        session_id="s1",
         auto_pair_assistant=False,
     )
     mem.add_turn("user", "Question?", "s1")

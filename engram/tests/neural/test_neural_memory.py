@@ -10,13 +10,9 @@ def test_fresh_initialization_is_seeded_without_mutating_global_rng():
     expected_next = np.random.random()
     np.random.seed(7)
 
-    first = NeuralMemory(
-        config=NeuralMemoryConfig(initialization_seed=123, verbose=False)
-    )
+    first = NeuralMemory(config=NeuralMemoryConfig(initialization_seed=123, verbose=False))
     observed_next = np.random.random()
-    second = NeuralMemory(
-        config=NeuralMemoryConfig(initialization_seed=123, verbose=False)
-    )
+    second = NeuralMemory(config=NeuralMemoryConfig(initialization_seed=123, verbose=False))
 
     assert observed_next == expected_next
     np.testing.assert_array_equal(
@@ -52,9 +48,7 @@ def test_neural_memory_step_and_read_use_stable_numpy_defaults():
     assert np.linalg.norm(recalled) > 0.0
     assert final["surprise"] < first["surprise"]
     assert np.isfinite(recalled).all()
-    assert np.isfinite(
-        memory._memory.B.to_numpy(memory._memory.net.p_matrix_old)
-    ).all()
+    assert np.isfinite(memory._memory.B.to_numpy(memory._memory.net.p_matrix_old)).all()
 
 
 def test_neural_memory_state_round_trips(tmp_path):

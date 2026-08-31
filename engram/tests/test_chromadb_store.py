@@ -1,15 +1,14 @@
 """Tests for ChromaDBStore."""
+
 from __future__ import annotations
 import pytest
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 
 def make_store(tmp_path, dim=8, name="test_collection"):
     """Create a ChromaDBStore with mock chromadb."""
     try:
         from engram.storage.chromadb_store import ChromaDBStore
+
         return ChromaDBStore(
             persist_directory=tmp_path / "chroma",
             collection_name=name,
@@ -21,16 +20,19 @@ def make_store(tmp_path, dim=8, name="test_collection"):
 
 class FakeEmbedder:
     """Minimal embedder for ChromaDB tests."""
+
     DIMENSION = 8
     model_name = "fake:test"
     dimension = DIMENSION
 
     def embed(self, text):
         from tests.conftest import MockEmbedder
+
         return MockEmbedder().embed(text)
 
     def embed_batch(self, texts):
         from tests.conftest import MockEmbedder
+
         return MockEmbedder().embed_batch(texts)
 
 
@@ -133,6 +135,7 @@ def test_dimension_mismatch_message_is_helpful(tmp_path):
 def test_new_collection_no_mismatch(tmp_path):
     """New collection with any dimension is fine."""
     from engram.storage.chromadb_store import ChromaDBStore
+
     store = ChromaDBStore(tmp_path / "chroma", "new_col", embedding_dimension=1024)
     assert store.count() == 0
 
@@ -141,7 +144,9 @@ def test_metadata_sanitization(tmp_path):
     """Complex metadata types are serialized to strings."""
     store = make_store(tmp_path)
     store.add(
-        "ep_001", "text", [0.1] * 8,
+        "ep_001",
+        "text",
+        [0.1] * 8,
         metadata={
             "list_val": [1, 2, 3],
             "dict_val": {"key": "val"},
@@ -150,7 +155,7 @@ def test_metadata_sanitization(tmp_path):
             "int_val": 42,
             "float_val": 0.5,
             "bool_val": True,
-        }
+        },
     )
     results = store.query([0.1] * 8, n=1)
     meta = results["metadatas"][0][0]

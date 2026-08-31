@@ -171,16 +171,12 @@ def test_project_memory_neural_does_not_change_retrieval_order(tmp_path):
             memory.chromadb = None
 
         baseline_ranked = baseline.search_episodes("query", n=2)
-        assert baseline_ranked[0].text.endswith(
-            "unrelated answer"
-        )
+        assert baseline_ranked[0].text.endswith("unrelated answer")
         assert neural.neural_layer is not None
         _train_pair(neural.neural_layer)
         ranked = neural.search_episodes("query", n=2)
 
-        assert [item.text for item in ranked] == [
-            item.text for item in baseline_ranked
-        ]
+        assert [item.text for item in ranked] == [item.text for item in baseline_ranked]
     finally:
         baseline.close()
         neural.close()
@@ -268,13 +264,9 @@ def test_surprise_adjusts_episode_importance_in_memory_and_jsonl(tmp_path):
             bypass_filter=True,
         )
 
-        episode = next(
-            item for item in memory._episodes if item["id"] == episode_id
-        )
+        episode = next(item for item in memory._episodes if item["id"] == episode_id)
         persisted = memory._read_jsonl(memory._episodes_path)
-        persisted_episode = next(
-            item for item in persisted if item["id"] == episode_id
-        )
+        persisted_episode = next(item for item in persisted if item["id"] == episode_id)
         assert episode["importance"] == 0.8
         assert persisted_episode["importance"] == 0.8
     finally:
@@ -323,9 +315,7 @@ def test_surprise_does_not_adjust_importance_without_explicit_opt_in(tmp_path):
             importance=0.5,
             bypass_filter=True,
         )
-        episode = next(
-            item for item in memory._episodes if item["id"] == episode_id
-        )
+        episode = next(item for item in memory._episodes if item["id"] == episode_id)
 
         assert episode["importance"] == 0.5
     finally:

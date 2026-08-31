@@ -35,8 +35,7 @@ def observation_from_engram(
 ) -> MemoryCaseObservation:
     """Create a staged observation using structured Engram provenance."""
     retrieved_ids = tuple(
-        evidence_id for item in retrieved_items
-        if (evidence_id := _evidence_id(item)) is not None
+        evidence_id for item in retrieved_items if (evidence_id := _evidence_id(item)) is not None
     )
     trace = prompt_result.get("trace")
     prompt_ids: list[str] = []

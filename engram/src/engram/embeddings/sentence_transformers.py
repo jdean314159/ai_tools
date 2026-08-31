@@ -31,13 +31,17 @@ class SentenceTransformersEmbedder(Embedder):
     def embed(self, text: str) -> EmbeddingResult:
         embedding = self._model.encode(text).tolist()
         return EmbeddingResult(
-            text=text, embedding=embedding,
-            model=self.model_name, dimension=self._dimension,
+            text=text,
+            embedding=embedding,
+            model=self.model_name,
+            dimension=self._dimension,
         )
 
     def embed_batch(self, texts: List[str]) -> BatchEmbeddingResult:
         embeddings = self._model.encode(texts).tolist()
         return BatchEmbeddingResult(
-            texts=texts, embeddings=embeddings,
-            model=self.model_name, dimension=self._dimension,
+            texts=texts,
+            embeddings=embeddings,
+            model=self.model_name,
+            dimension=self._dimension,
         )

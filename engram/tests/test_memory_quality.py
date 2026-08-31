@@ -58,7 +58,9 @@ def test_search_episodes_scores_and_deduplicates_results() -> None:
 
     assert results
     assert "SQLite" in results[0].text
-    assert len(results) == 1 or all("SQLite" not in item.text or item is results[0] for item in results[1:])
+    assert len(results) == 1 or all(
+        "SQLite" not in item.text or item is results[0] for item in results[1:]
+    )
 
 
 def test_build_prompt_uses_internal_episode_retrieval_without_external_retriever() -> None:
@@ -92,7 +94,6 @@ def test_add_turn_can_auto_ingest_high_value_turns() -> None:
     assert stats["episodic"]["quality"]["auto_ingested"] >= 1
 
 
-
 def test_add_turn_does_not_auto_ingest_assistant_turns_by_default() -> None:
     memory = ProjectMemory(session_id="s1")
 
@@ -109,7 +110,6 @@ def test_add_turn_does_not_auto_ingest_assistant_turns_by_default() -> None:
     assert stats["episodic"]["quality"]["assistant_auto_ingest_skipped"] >= 1
 
 
-
 def test_store_episode_allows_explicit_assistant_summary_types() -> None:
     memory = ProjectMemory(session_id="s1")
 
@@ -124,7 +124,6 @@ def test_store_episode_allows_explicit_assistant_summary_types() -> None:
     assert episode_id
     assert results
     assert "VISION.md" in results[0].text
-
 
 
 def test_store_episode_filters_generic_assistant_outputs_without_explicit_type() -> None:
@@ -155,7 +154,6 @@ def test_add_turn_auto_ingests_canonical_correction_updates() -> None:
     assert "SQLite for analytics" not in results[0].text
 
 
-
 def test_add_turn_auto_ingests_schedule_updates() -> None:
     memory = ProjectMemory(session_id="s1")
 
@@ -170,7 +168,6 @@ def test_add_turn_auto_ingests_schedule_updates() -> None:
     assert results
     assert "Wednesday at 2 PM" in results[0].text
     assert "Tuesday" not in results[0].text
-
 
 
 def test_store_episode_replaces_prior_topic_updates() -> None:
@@ -213,7 +210,6 @@ def test_store_episode_canonicalizes_docs_location_preference() -> None:
     assert "Google Docs" not in results[0].text
 
 
-
 def test_add_turn_auto_ingests_region_and_model_updates() -> None:
     memory = ProjectMemory(session_id="s1")
 
@@ -239,7 +235,6 @@ def test_add_turn_auto_ingests_region_and_model_updates() -> None:
     assert "qwen3:8b" not in model[0].text
 
 
-
 def test_search_episodes_handles_sandbox_policy_language() -> None:
     memory = ProjectMemory(session_id="s1")
 
@@ -248,7 +243,9 @@ def test_search_episodes_handles_sandbox_policy_language() -> None:
         importance=0.9,
     )
 
-    results = memory.search_episodes("How should command execution be sandboxed when possible?", n=5)
+    results = memory.search_episodes(
+        "How should command execution be sandboxed when possible?", n=5
+    )
 
     assert results
     assert "docker" in results[0].text.lower()

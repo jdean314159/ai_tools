@@ -1,4 +1,5 @@
 """Migration tool: upgrade engram v1.0 projects to v2.0."""
+
 from __future__ import annotations
 import argparse
 import json
@@ -35,7 +36,9 @@ def migrate_embeddings(project_dir: Path, embedder_model: str, batch_size: int =
         embedding_dimension=embedder.dimension,
     )
     chromadb.rebuild_from_episodes(episodes, embedder, batch_size=batch_size)
-    print(f"  Indexed: {chromadb.count()} | Cache hits: {embedder.hits} | misses: {embedder.misses}")
+    print(
+        f"  Indexed: {chromadb.count()} | Cache hits: {embedder.hits} | misses: {embedder.misses}"
+    )
     return chromadb.count()
 
 
@@ -57,8 +60,10 @@ def migrate_paired_exchanges(project_dir: Path) -> int:
                     turns.append(json.loads(line))
 
         for i in range(len(turns) - 1):
-            if (str(turns[i].get("role", "")).lower() == "user"
-                    and str(turns[i + 1].get("role", "")).lower() == "assistant"):
+            if (
+                str(turns[i].get("role", "")).lower() == "user"
+                and str(turns[i + 1].get("role", "")).lower() == "assistant"
+            ):
                 user_text = turns[i].get("text", "")
                 asst_text = turns[i + 1].get("text", "")
                 episode = {
@@ -153,6 +158,7 @@ def main():
 
     from engram.storage.schema import SchemaManager
     from engram.version import SCHEMA_VERSION
+
     SchemaManager(args.project_dir).set_version(SCHEMA_VERSION)
     print(f"\nMigration complete! Schema: {SCHEMA_VERSION}")
 

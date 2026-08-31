@@ -10,19 +10,20 @@ Requirements:
     ollama pull nomic-embed-text
     ollama pull qwen3.5:9b  (optional, for extractor tests)
 """
+
 from __future__ import annotations
-import tempfile
 import pytest
-from pathlib import Path
 
 
 # ---------------------------------------------------------------------------
 # Fixtures / skip helpers
 # ---------------------------------------------------------------------------
 
+
 def _ollama_available() -> bool:
     try:
         import requests
+
         r = requests.get("http://localhost:11434/api/tags", timeout=3)
         return r.status_code == 200
     except Exception:
@@ -32,6 +33,7 @@ def _ollama_available() -> bool:
 def _model_available(model_name: str) -> bool:
     try:
         import requests
+
         r = requests.get("http://localhost:11434/api/tags", timeout=3)
         tags = r.json().get("models", [])
         return any(m.get("name", "").startswith(model_name.split(":")[0]) for m in tags)
@@ -53,12 +55,14 @@ requires_nomic = pytest.mark.skipif(
 @pytest.fixture
 def ollama_embedder():
     from engram.embeddings.ollama import OllamaEmbedder
+
     return OllamaEmbedder(model="nomic-embed-text")
 
 
 @pytest.fixture
 def memory_with_real_embedder(tmp_path, ollama_embedder):
     from engram import ProjectMemory
+
     mem = ProjectMemory(
         base_dir=tmp_path,
         project_id="integration_test",
@@ -74,6 +78,7 @@ def memory_with_real_embedder(tmp_path, ollama_embedder):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 @requires_nomic
 def test_real_embedder_dimension(ollama_embedder):
@@ -136,7 +141,9 @@ def test_persistence_across_reopen_with_embeddings(tmp_path, ollama_embedder):
 
     # First session
     mem1 = ProjectMemory(
-        base_dir=tmp_path, project_id="persist_test", session_id="s1",
+        base_dir=tmp_path,
+        project_id="persist_test",
+        session_id="s1",
         embedder=ollama_embedder,
     )
     mem1.add_turn("user", "Remember that I prefer dark mode in all editors.", "s1")
@@ -145,8 +152,11 @@ def test_persistence_across_reopen_with_embeddings(tmp_path, ollama_embedder):
 
     # Reopen
     from engram.embeddings.ollama import OllamaEmbedder
+
     mem2 = ProjectMemory(
-        base_dir=tmp_path, project_id="persist_test", session_id="s1",
+        base_dir=tmp_path,
+        project_id="persist_test",
+        session_id="s1",
         embedder=OllamaEmbedder(model="nomic-embed-text"),
     )
     assert len(mem2._episodes) == count_before
@@ -165,7 +175,9 @@ def test_dimension_mismatch_raises_error(tmp_path, ollama_embedder):
 
     # Create with real 768-dim embedder
     mem = ProjectMemory(
-        base_dir=tmp_path, project_id="dim_test", session_id="s1",
+        base_dir=tmp_path,
+        project_id="dim_test",
+        session_id="s1",
         embedder=ollama_embedder,
     )
     mem.store_episode(
@@ -177,9 +189,12 @@ def test_dimension_mismatch_raises_error(tmp_path, ollama_embedder):
 
     # Reopen with mock 8-dim embedder — should raise DimensionMismatchError
     from tests.conftest import MockEmbedder
+
     with pytest.raises(DimensionMismatchError) as exc_info:
         mem2 = ProjectMemory(
-            base_dir=tmp_path, project_id="dim_test", session_id="s1",
+            base_dir=tmp_path,
+            project_id="dim_test",
+            session_id="s1",
             embedder=MockEmbedder(),
         )
         mem2.close()

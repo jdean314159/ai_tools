@@ -34,7 +34,7 @@ def detect_contradiction(
         existing_subject = existing.get("subject", "").lower()
         existing_value = existing.get("value", "").lower()
 
-        subject_match = (new_subject == existing_subject)
+        subject_match = new_subject == existing_subject
 
         if not subject_match and embedder:
             try:

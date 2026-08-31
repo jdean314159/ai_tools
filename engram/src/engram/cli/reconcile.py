@@ -1,4 +1,5 @@
 """CLI: reconcile ChromaDB against JSONL source of truth."""
+
 from __future__ import annotations
 import argparse
 import json
@@ -60,8 +61,12 @@ def reconcile_project(project_dir: Path, embedder_model: str, dry_run: bool = Fa
             continue
         try:
             emb = embedder.embed(ep.get("text", "")).embedding
-            chromadb.add(episode_id=ep["id"], text=ep.get("text", ""),
-                         embedding=emb, metadata=ep.get("metadata", {}))
+            chromadb.add(
+                episode_id=ep["id"],
+                text=ep.get("text", ""),
+                embedding=emb,
+                metadata=ep.get("metadata", {}),
+            )
             added += 1
         except Exception as e:
             print(f"Failed to add {ep['id']}: {e}")

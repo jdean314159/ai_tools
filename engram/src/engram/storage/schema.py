@@ -29,6 +29,7 @@ class SchemaManager:
 
     def set_version(self, version: str, metadata: Optional[dict] = None):
         from ..version import __version__
+
         data = {
             "version": version,
             "engram_version": __version__,

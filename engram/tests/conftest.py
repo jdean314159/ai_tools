@@ -37,8 +37,9 @@ class MockEmbedder(Embedder):
 
     def _text_to_vector(self, text: str) -> list:
         import hashlib
+
         h = hashlib.md5(text.encode()).digest()
-        return [(b - 128) / 128.0 for b in h[:self.DIMENSION]]
+        return [(b - 128) / 128.0 for b in h[: self.DIMENSION]]
 
 
 class MockLLMEngine:
@@ -67,6 +68,7 @@ def mock_llm():
 def temp_memory(mock_embedder):
     """Full-featured memory with mock embedder (no Ollama needed)."""
     from engram import ProjectMemory
+
     with tempfile.TemporaryDirectory() as tmpdir:
         mem = ProjectMemory(
             base_dir=tmpdir,
@@ -84,6 +86,7 @@ def temp_memory(mock_embedder):
 def temp_memory_no_embedder():
     """Text-only memory (backward compat)."""
     from engram import ProjectMemory
+
     with tempfile.TemporaryDirectory() as tmpdir:
         mem = ProjectMemory(
             base_dir=tmpdir,

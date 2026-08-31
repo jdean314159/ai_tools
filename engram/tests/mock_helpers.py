@@ -1,4 +1,5 @@
 """Mock helpers for tests - no pytest dependency."""
+
 from __future__ import annotations
 from unittest.mock import MagicMock
 from engram.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResult
@@ -6,6 +7,7 @@ from engram.embeddings.base import Embedder, EmbeddingResult, BatchEmbeddingResu
 
 class MockEmbedder(Embedder):
     """Deterministic 8-dim embedder using text hash. No Ollama required."""
+
     DIMENSION = 8
 
     @property
@@ -18,20 +20,25 @@ class MockEmbedder(Embedder):
 
     def embed(self, text: str) -> EmbeddingResult:
         return EmbeddingResult(
-            text=text, embedding=self._vec(text),
-            model=self.model_name, dimension=self.DIMENSION,
+            text=text,
+            embedding=self._vec(text),
+            model=self.model_name,
+            dimension=self.DIMENSION,
         )
 
     def embed_batch(self, texts: list) -> BatchEmbeddingResult:
         return BatchEmbeddingResult(
-            texts=texts, embeddings=[self._vec(t) for t in texts],
-            model=self.model_name, dimension=self.DIMENSION,
+            texts=texts,
+            embeddings=[self._vec(t) for t in texts],
+            model=self.model_name,
+            dimension=self.DIMENSION,
         )
 
     def _vec(self, text: str) -> list:
         import hashlib
+
         h = hashlib.md5(text.encode()).digest()
-        return [(b - 128) / 128.0 for b in h[:self.DIMENSION]]
+        return [(b - 128) / 128.0 for b in h[: self.DIMENSION]]
 
 
 class MockLLMEngine:

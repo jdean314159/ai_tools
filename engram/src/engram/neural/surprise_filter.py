@@ -19,8 +19,8 @@ Author: Jeffrey Dean
 import numpy as np
 import logging
 import time
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional
+from dataclasses import dataclass
 from pathlib import Path
 from collections import deque
 import json
@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SurpriseMetrics:
     """Metrics for a single piece of content."""
+
     perplexity: float
     mean_logprob: float
     token_count: int
@@ -52,6 +53,7 @@ class SurpriseMetrics:
 @dataclass
 class SurpriseBaseline:
     """Baseline surprise statistics calibrated on human data."""
+
     mean: float
     std: float
     percentiles: Dict[int, float]  # {50: 10.5, 80: 18.2, 90: 25.3, 95: 32.1}
@@ -81,6 +83,7 @@ class SurpriseBaseline:
 @dataclass
 class FilterStats:
     """Statistics for surprise filter operation."""
+
     total_evaluated: int = 0
     total_stored: int = 0
     total_rejected: int = 0
@@ -96,15 +99,11 @@ class FilterStats:
             self.total_stored += 1
             # Running average
             n = self.total_stored
-            self.avg_perplexity_stored = (
-                (self.avg_perplexity_stored * (n - 1) + perplexity) / n
-            )
+            self.avg_perplexity_stored = (self.avg_perplexity_stored * (n - 1) + perplexity) / n
         else:
             self.total_rejected += 1
             n = self.total_rejected
-            self.avg_perplexity_rejected = (
-                (self.avg_perplexity_rejected * (n - 1) + perplexity) / n
-            )
+            self.avg_perplexity_rejected = (self.avg_perplexity_rejected * (n - 1) + perplexity) / n
 
         self.storage_rate = self.total_stored / self.total_evaluated
 
@@ -197,9 +196,9 @@ class SurpriseFilter:
         # Per-project overrides
         self.project_thresholds = {
             "programming_assistant": 28.0,  # Higher = only novel patterns
-            "language_tutor": 18.0,         # Lower = catch vocabulary mistakes
-            "file_organizer": 25.0,         # Medium = categorization decisions
-            "voice_interface": 22.0,        # Medium = command patterns
+            "language_tutor": 18.0,  # Lower = catch vocabulary mistakes
+            "file_organizer": 25.0,  # Medium = categorization decisions
+            "voice_interface": 22.0,  # Medium = command patterns
         }
 
         # Adaptive threshold with momentum
@@ -240,9 +239,7 @@ class SurpriseFilter:
                 "does not support generate_with_logprobs()."
             )
         try:
-            result = self.llm_engine.generate_with_logprobs(
-                text, max_tokens=1, temperature=0
-            )
+            result = self.llm_engine.generate_with_logprobs(text, max_tokens=1, temperature=0)
             if result.token_count == 0:
                 return None
             return result.perplexity
@@ -274,7 +271,9 @@ class SurpriseFilter:
             return self.baseline
 
         if len(human_texts) < 50:
-            logger.warning("Only %d samples. Recommend >100 for reliable calibration.", len(human_texts))
+            logger.warning(
+                "Only %d samples. Recommend >100 for reliable calibration.", len(human_texts)
+            )
 
         logger.info("Calibrating surprise filter on %d human texts...", len(human_texts))
 
@@ -372,8 +371,7 @@ class SurpriseFilter:
             recent_mean = np.mean(list(self.recent_perplexities))
             # Momentum update: new_threshold = momentum * old + (1 - momentum) * recent_mean
             self.current_threshold = (
-                self.momentum * self.current_threshold +
-                (1 - self.momentum) * recent_mean
+                self.momentum * self.current_threshold + (1 - self.momentum) * recent_mean
             )
 
         # Use project-specific threshold if calibrated
@@ -428,9 +426,7 @@ class SurpriseFilter:
                 continue
 
             try:
-                raw = self.llm_engine.generate_with_logprobs(
-                    text, max_tokens=1, temperature=0
-                )
+                raw = self.llm_engine.generate_with_logprobs(text, max_tokens=1, temperature=0)
                 mean_logprob = raw.mean_logprob
                 token_count = raw.token_count
             except Exception:
@@ -455,14 +451,16 @@ class SurpriseFilter:
         """Get filter statistics."""
         stats = self.stats.to_dict()
 
-        stats.update({
-            "project_id": self.project_id,
-            "current_threshold": self.current_threshold,
-            "is_calibrated": self.is_calibrated,
-            "logprobs_available": self._logprobs_available,
-            "baseline": self.baseline.to_dict() if self.baseline else None,
-            "recent_perplexities_count": len(self.recent_perplexities),
-        })
+        stats.update(
+            {
+                "project_id": self.project_id,
+                "current_threshold": self.current_threshold,
+                "is_calibrated": self.is_calibrated,
+                "logprobs_available": self._logprobs_available,
+                "baseline": self.baseline.to_dict() if self.baseline else None,
+                "recent_perplexities_count": len(self.recent_perplexities),
+            }
+        )
 
         return stats
 
@@ -481,7 +479,7 @@ class SurpriseFilter:
         path = Path(path).expanduser().resolve(strict=False)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
         logger.info("Calibration saved to %s", path)
@@ -493,7 +491,7 @@ class SurpriseFilter:
         if not path.exists():
             raise FileNotFoundError(f"Calibration file not found: {path}")
 
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = json.load(f)
 
         self.baseline = SurpriseBaseline.from_dict(data["baseline"])

@@ -9,6 +9,7 @@ def get_token_counter(model: str = "cl100k_base") -> Callable[[str], int]:
     """Get a token counter. Tries tiktoken first, falls back to approximation."""
     try:
         import tiktoken
+
         encoding = tiktoken.get_encoding(model)
         logger.debug(f"Using tiktoken encoder: {model}")
         return lambda text: len(encoding.encode(text))

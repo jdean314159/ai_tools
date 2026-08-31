@@ -38,9 +38,7 @@ class EmbeddingCache:
     def get(self, text: str, model: str) -> Optional[List[float]]:
         key = self._make_key(text, model)
         conn = sqlite3.connect(self.cache_path)
-        cursor = conn.execute(
-            "SELECT embedding FROM embeddings WHERE cache_key = ?", (key,)
-        )
+        cursor = conn.execute("SELECT embedding FROM embeddings WHERE cache_key = ?", (key,))
         row = cursor.fetchone()
         conn.close()
         return json.loads(row[0]) if row else None
@@ -52,17 +50,21 @@ class EmbeddingCache:
             """INSERT OR REPLACE INTO embeddings
                (cache_key, text, model, embedding, dimension, created_at)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (key, result.text, result.model,
-             json.dumps(result.embedding), result.dimension, time.time()),
+            (
+                key,
+                result.text,
+                result.model,
+                json.dumps(result.embedding),
+                result.dimension,
+                time.time(),
+            ),
         )
         conn.commit()
         conn.close()
 
     def get_stats(self) -> dict:
         conn = sqlite3.connect(self.cache_path)
-        cursor = conn.execute(
-            "SELECT COUNT(*), COUNT(DISTINCT model) FROM embeddings"
-        )
+        cursor = conn.execute("SELECT COUNT(*), COUNT(DISTINCT model) FROM embeddings")
         total, models = cursor.fetchone()
         conn.close()
         return {"total_embeddings": total, "unique_models": models}
@@ -90,8 +92,10 @@ class CachedEmbedder:
         if cached is not None:
             self.hits += 1
             return EmbeddingResult(
-                text=text, embedding=cached,
-                model=self.embedder.model_name, dimension=len(cached),
+                text=text,
+                embedding=cached,
+                model=self.embedder.model_name,
+                dimension=len(cached),
             )
         self.misses += 1
         result = self.embedder.embed(text)
@@ -118,12 +122,18 @@ class CachedEmbedder:
             for local_i, global_i in enumerate(uncached_indices):
                 embedding = batch.embeddings[local_i]
                 results[global_i] = embedding
-                self.cache.put(EmbeddingResult(
-                    text=batch.texts[local_i], embedding=embedding,
-                    model=self.embedder.model_name, dimension=self.dimension,
-                ))
+                self.cache.put(
+                    EmbeddingResult(
+                        text=batch.texts[local_i],
+                        embedding=embedding,
+                        model=self.embedder.model_name,
+                        dimension=self.dimension,
+                    )
+                )
 
         return BatchEmbeddingResult(
-            texts=texts, embeddings=results,
-            model=self.embedder.model_name, dimension=self.dimension,
+            texts=texts,
+            embeddings=results,
+            model=self.embedder.model_name,
+            dimension=self.dimension,
         )

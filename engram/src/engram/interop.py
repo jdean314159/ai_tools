@@ -14,8 +14,12 @@ def describe_memory(memory: Any) -> CapabilityDescriptor:
         "session_id": getattr(memory, "session_id", None),
         "has_retriever": getattr(memory, "retriever", None) is not None,
         "auto_ingest_turns": getattr(getattr(memory, "_quality", None), "auto_ingest_turns", False),
-        "auto_ingest_roles": list(getattr(getattr(memory, "_quality", None), "auto_ingest_roles", ())),
-        "assistant_memory_kinds": list(getattr(getattr(memory, "_quality", None), "assistant_memory_kinds", ())),
+        "auto_ingest_roles": list(
+            getattr(getattr(memory, "_quality", None), "auto_ingest_roles", ())
+        ),
+        "assistant_memory_kinds": list(
+            getattr(getattr(memory, "_quality", None), "assistant_memory_kinds", ())
+        ),
         "supports_canonical_updates": True,
     }
     return CapabilityDescriptor(
@@ -24,7 +28,16 @@ def describe_memory(memory: Any) -> CapabilityDescriptor:
         component=memory.__class__.__name__,
         version="0.1.0",
         summary="Prompt augmentation with lightweight user-preferred memory hygiene, canonical updates, and retrieval.",
-        features=("prompt_augmentation", "working_memory", "episodic_memory", "trace_events", "lightweight_ingestion", "user_preferred_ingestion", "deduped_retrieval", "canonical_updates"),
+        features=(
+            "prompt_augmentation",
+            "working_memory",
+            "episodic_memory",
+            "trace_events",
+            "lightweight_ingestion",
+            "user_preferred_ingestion",
+            "deduped_retrieval",
+            "canonical_updates",
+        ),
         input_types=("llm_message", "augment_request"),
         output_types=("prompt", "operation_result", "trace_event[]"),
         metadata=metadata,

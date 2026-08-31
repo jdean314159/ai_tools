@@ -1,7 +1,7 @@
 """Tests for forgetting policy: decay, pruning, superseded cleanup."""
+
 from __future__ import annotations
 import time
-import tempfile
 import pytest
 from pathlib import Path
 from engram.semantic.graph import SemanticGraph
@@ -13,8 +13,9 @@ def make_graph(tmp_path=None):
     return SemanticGraph(persist_path=path)
 
 
-def add_fact(graph, fact_id, subject="subject", value="value",
-             confidence=0.5, age_days=0, access_count=0):
+def add_fact(
+    graph, fact_id, subject="subject", value="value", confidence=0.5, age_days=0, access_count=0
+):
     """Helper to add a fact with backdated timestamps."""
     graph.add_fact(fact_id, "preference", subject, value, confidence=confidence)
     now = time.time()
@@ -27,6 +28,7 @@ def add_fact(graph, fact_id, subject="subject", value="value",
 # ---------------------------------------------------------------------------
 # ForgettingConfig validation
 # ---------------------------------------------------------------------------
+
 
 def test_config_valid():
     config = ForgettingConfig(decay_rate=0.9, min_confidence=0.1)
@@ -57,6 +59,7 @@ def test_config_defaults():
 # ---------------------------------------------------------------------------
 # Importance decay
 # ---------------------------------------------------------------------------
+
 
 def test_decay_reduces_confidence():
     graph = make_graph()
@@ -109,13 +112,16 @@ def test_decay_only_affects_facts():
 # Low-importance pruning
 # ---------------------------------------------------------------------------
 
+
 def test_prune_removes_low_confidence_old_facts():
     graph = make_graph()
     add_fact(graph, "fact:old_low", confidence=0.05, age_days=40, access_count=0)
     add_fact(graph, "fact:new_high", confidence=0.9, age_days=0)
 
     removed = graph.forget_low_importance_facts(
-        min_confidence=0.1, min_age_days=30, max_to_prune=100,
+        min_confidence=0.1,
+        min_age_days=30,
+        max_to_prune=100,
     )
 
     assert removed == 1
@@ -152,7 +158,9 @@ def test_prune_respects_max_limit():
         add_fact(graph, f"fact:{i:03d}", confidence=0.01, age_days=60, access_count=0)
 
     removed = graph.forget_low_importance_facts(
-        min_confidence=0.1, min_age_days=30, max_to_prune=3,
+        min_confidence=0.1,
+        min_age_days=30,
+        max_to_prune=3,
     )
     assert removed == 3
     assert graph.graph.number_of_nodes() > 0  # Some remain
@@ -168,6 +176,7 @@ def test_prune_empty_graph():
 # ---------------------------------------------------------------------------
 # Superseded fact cleanup
 # ---------------------------------------------------------------------------
+
 
 def test_superseded_cleanup_removes_old():
     """Old superseded facts are removed after age threshold."""
@@ -215,6 +224,7 @@ def test_superseded_cleanup_only_removes_superseded():
 # ---------------------------------------------------------------------------
 # ForgettingPolicy integration
 # ---------------------------------------------------------------------------
+
 
 def test_policy_runs_all_enabled():
     """Policy with all features enabled runs decay, pruning, and cleanup."""

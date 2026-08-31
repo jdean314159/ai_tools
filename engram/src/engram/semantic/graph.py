@@ -1,7 +1,6 @@
 from __future__ import annotations
 import json
 import time
-import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import logging
@@ -23,6 +22,7 @@ class SemanticGraph:
             raise ImportError("networkx not installed: pip install networkx")
 
         import networkx as nx
+
         self.graph: nx.DiGraph = nx.DiGraph()
         self.persist_path = Path(persist_path) if persist_path else None
         if self.persist_path and self.persist_path.exists():
@@ -57,23 +57,34 @@ class SemanticGraph:
         subject_node = f"entity:{subject}"
         if not self.graph.has_node(subject_node):
             self.graph.add_node(
-                subject_node, node_type="entity",
-                text=subject, created_at=now, accessed_at=now,
+                subject_node,
+                node_type="entity",
+                text=subject,
+                created_at=now,
+                accessed_at=now,
             )
         self.graph.add_edge(
-            fact_id, subject_node,
-            relation_type="about", confidence=confidence, created_at=now,
+            fact_id,
+            subject_node,
+            relation_type="about",
+            confidence=confidence,
+            created_at=now,
         )
         return fact_id
 
-    def add_relation(self, source_id: str, target_id: str, relation_type: str, confidence: float = 0.8):
+    def add_relation(
+        self, source_id: str, target_id: str, relation_type: str, confidence: float = 0.8
+    ):
         if not self.graph.has_node(source_id):
             raise ValueError(f"Source node not found: {source_id}")
         if not self.graph.has_node(target_id):
             raise ValueError(f"Target node not found: {target_id}")
         self.graph.add_edge(
-            source_id, target_id,
-            relation_type=relation_type, confidence=float(confidence), created_at=time.time(),
+            source_id,
+            target_id,
+            relation_type=relation_type,
+            confidence=float(confidence),
+            created_at=time.time(),
         )
 
     def supersede_fact(self, old_fact_id: str, new_fact_id: str):
@@ -108,18 +119,20 @@ class SemanticGraph:
                 continue
             age_days = (now - attrs.get("created_at", now)) / 86400.0
             recency = max(0.5, 1.0 - (age_days / 90.0))
-            facts.append({
-                "id": node_id,
-                "fact_type": attrs.get("fact_type"),
-                "subject": attrs.get("subject"),
-                "value": attrs.get("value"),
-                "text": attrs.get("text"),
-                "confidence": attrs.get("confidence"),
-                "score": attrs.get("confidence", 0.5) * recency,
-                "created_at": attrs.get("created_at"),
-                "superseded": attrs.get("superseded", False),
-                "metadata": attrs.get("metadata", {}),
-            })
+            facts.append(
+                {
+                    "id": node_id,
+                    "fact_type": attrs.get("fact_type"),
+                    "subject": attrs.get("subject"),
+                    "value": attrs.get("value"),
+                    "text": attrs.get("text"),
+                    "confidence": attrs.get("confidence"),
+                    "score": attrs.get("confidence", 0.5) * recency,
+                    "created_at": attrs.get("created_at"),
+                    "superseded": attrs.get("superseded", False),
+                    "metadata": attrs.get("metadata", {}),
+                }
+            )
         facts.sort(key=lambda f: f["score"], reverse=True)
         for fact in facts[:limit]:
             self.graph.nodes[fact["id"]]["accessed_at"] = now
@@ -155,7 +168,8 @@ class SemanticGraph:
         now = time.time()
         cutoff = now - (min_age_days * 86400)
         to_remove = [
-            node_id for node_id, attrs in self.graph.nodes(data=True)
+            node_id
+            for node_id, attrs in self.graph.nodes(data=True)
             if attrs.get("node_type") == "fact"
             and attrs.get("superseded")
             and attrs.get("superseded_at", attrs.get("created_at", now)) < cutoff
@@ -174,7 +188,7 @@ class SemanticGraph:
             accessed_at = attrs.get("accessed_at", attrs.get("created_at", now))
             periods = int((now - accessed_at) / period_seconds)
             if periods > 0:
-                new_conf = attrs.get("confidence", 0.5) * (decay_rate ** periods)
+                new_conf = attrs.get("confidence", 0.5) * (decay_rate**periods)
                 self.graph.nodes[node_id]["confidence"] = max(0.0, new_conf)
 
     def save(self):
@@ -183,7 +197,9 @@ class SemanticGraph:
         self.persist_path.parent.mkdir(parents=True, exist_ok=True)
         data = {
             "nodes": [{"id": nid, **attrs} for nid, attrs in self.graph.nodes(data=True)],
-            "edges": [{"source": u, "target": v, **attrs} for u, v, attrs in self.graph.edges(data=True)],
+            "edges": [
+                {"source": u, "target": v, **attrs} for u, v, attrs in self.graph.edges(data=True)
+            ],
             "metadata": {
                 "node_count": self.graph.number_of_nodes(),
                 "edge_count": self.graph.number_of_edges(),
@@ -193,6 +209,7 @@ class SemanticGraph:
         # Write to a temp file then atomically rename to avoid corrupt JSON on
         # crash or KeyboardInterrupt mid-write (os.replace is atomic on POSIX).
         import os
+
         tmp = self.persist_path.with_suffix(".tmp")
         try:
             with tmp.open("w") as f:
@@ -221,9 +238,12 @@ class SemanticGraph:
 
     def get_stats(self) -> Dict[str, Any]:
         fact_nodes = sum(1 for _, a in self.graph.nodes(data=True) if a.get("node_type") == "fact")
-        entity_nodes = sum(1 for _, a in self.graph.nodes(data=True) if a.get("node_type") == "entity")
+        entity_nodes = sum(
+            1 for _, a in self.graph.nodes(data=True) if a.get("node_type") == "entity"
+        )
         superseded = sum(
-            1 for _, a in self.graph.nodes(data=True)
+            1
+            for _, a in self.graph.nodes(data=True)
             if a.get("node_type") == "fact" and a.get("superseded")
         )
         return {

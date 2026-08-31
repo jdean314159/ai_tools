@@ -1,16 +1,16 @@
 """Tests for EmbeddingCache and CachedEmbedder."""
+
 from __future__ import annotations
-import tempfile
-import pytest
-from pathlib import Path
 
 
 # ---------------------------------------------------------------------------
 # EmbeddingCache unit tests
 # ---------------------------------------------------------------------------
 
+
 def test_cache_miss_returns_none(tmp_path):
     from engram.embeddings.cache import EmbeddingCache
+
     cache = EmbeddingCache(tmp_path / "cache.db")
     result = cache.get("unseen text", "model:test")
     assert result is None
@@ -96,6 +96,7 @@ def test_cache_stats(tmp_path):
 def test_cache_key_is_deterministic(tmp_path):
     """Same text+model always produces same cache key."""
     from engram.embeddings.cache import EmbeddingCache
+
     cache = EmbeddingCache(tmp_path / "cache.db")
     key1 = cache._make_key("hello", "model:x")
     key2 = cache._make_key("hello", "model:x")
@@ -108,13 +109,13 @@ def test_cache_key_is_deterministic(tmp_path):
 # CachedEmbedder tests
 # ---------------------------------------------------------------------------
 
+
 def test_cached_embedder_hit_prevents_underlying_call(tmp_path):
     """Cache hit should not call underlying embedder again."""
     from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
     from tests.conftest import MockEmbedder
 
     call_count = 0
-    original_embed = MockEmbedder.embed
 
     class CountingEmbedder(MockEmbedder):
         def embed(self, text):
@@ -144,7 +145,6 @@ def test_cached_embedder_hit_prevents_underlying_call(tmp_path):
 def test_cached_embedder_batch_mixed(tmp_path):
     """Batch with some cached, some not."""
     from engram.embeddings.cache import EmbeddingCache, CachedEmbedder
-    from engram.embeddings.base import EmbeddingResult
     from tests.conftest import MockEmbedder
 
     cache = EmbeddingCache(tmp_path / "cache.db")
@@ -158,7 +158,7 @@ def test_cached_embedder_batch_mixed(tmp_path):
     result = cached.embed_batch(["text_a", "text_b", "text_c"])
 
     assert len(result.embeddings) == 3
-    assert cached.hits == 1   # text_a was cached
+    assert cached.hits == 1  # text_a was cached
     assert cached.misses == 2  # text_b, text_c were not
 
 

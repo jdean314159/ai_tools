@@ -83,8 +83,7 @@ class WriterLock:
                 if holder_pid is not None and not _pid_is_alive(holder_pid):
                     # Stale lock from dead process
                     logger.warning(
-                        f"Stale writer lock from dead PID {holder_pid}. "
-                        f"Clearing and retrying."
+                        f"Stale writer lock from dead PID {holder_pid}. Clearing and retrying."
                     )
                     os.close(self._fd)
                     self._fd = None
@@ -124,9 +123,7 @@ class WriterLock:
             logger.warning(f"Unreadable lock file at {self.lock_path}, clearing.")
             self._force_clear_lock()
         elif not _pid_is_alive(pid):
-            logger.warning(
-                f"Stale lock from dead PID {pid} at {self.lock_path}, clearing."
-            )
+            logger.warning(f"Stale lock from dead PID {pid} at {self.lock_path}, clearing.")
             self._force_clear_lock()
 
     def _force_clear_lock(self):

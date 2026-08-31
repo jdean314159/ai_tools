@@ -1,6 +1,6 @@
 """Tests for hybrid retrieval (RRF) module."""
+
 from __future__ import annotations
-import pytest
 from engram.retrieval.hybrid import reciprocal_rank_fusion, hybrid_episode_search
 import time
 
@@ -8,6 +8,7 @@ import time
 # ---------------------------------------------------------------------------
 # reciprocal_rank_fusion
 # ---------------------------------------------------------------------------
+
 
 def test_rrf_single_list():
     """Single list: RRF score = 1/(k+rank). Order preserved."""
@@ -89,6 +90,7 @@ def test_rrf_preserves_item_data():
 # hybrid_episode_search
 # ---------------------------------------------------------------------------
 
+
 def make_episode(id_, text, importance=0.5, age_days=0):
     return {
         "id": id_,
@@ -100,8 +102,10 @@ def make_episode(id_, text, importance=0.5, age_days=0):
 
 def test_hybrid_no_results():
     result = hybrid_episode_search(
-        query="test", query_embedding=None,
-        vector_results=None, text_results=None,
+        query="test",
+        query_embedding=None,
+        vector_results=None,
+        text_results=None,
     )
     assert result == []
 
@@ -113,8 +117,10 @@ def test_hybrid_text_only():
         make_episode("b", "java programming", importance=0.5),
     ]
     result = hybrid_episode_search(
-        query="python", query_embedding=None,
-        vector_results=None, text_results=text_results,
+        query="python",
+        query_embedding=None,
+        vector_results=None,
+        text_results=text_results,
     )
     assert len(result) == 2
     assert all("final_score" in r for r in result)
@@ -127,8 +133,10 @@ def test_hybrid_vector_only():
         make_episode("b", "another match", importance=0.6),
     ]
     result = hybrid_episode_search(
-        query="test", query_embedding=[0.1] * 8,
-        vector_results=vector_results, text_results=None,
+        query="test",
+        query_embedding=[0.1] * 8,
+        vector_results=vector_results,
+        text_results=None,
     )
     assert len(result) == 2
     assert all("final_score" in r for r in result)
@@ -139,8 +147,10 @@ def test_hybrid_combined():
     vector_results = [make_episode("a", "vector match"), make_episode("b", "both match")]
     text_results = [make_episode("b", "both match"), make_episode("c", "text match")]
     result = hybrid_episode_search(
-        query="match", query_embedding=[0.1] * 8,
-        vector_results=vector_results, text_results=text_results,
+        query="match",
+        query_embedding=[0.1] * 8,
+        vector_results=vector_results,
+        text_results=text_results,
     )
     ids = {r["id"] for r in result}
     assert ids == {"a", "b", "c"}
@@ -153,8 +163,10 @@ def test_recency_boost_applied():
     recent = make_episode("recent", "test text query", importance=0.5, age_days=0)
     old = make_episode("old", "test text query", importance=0.5, age_days=60)
     result = hybrid_episode_search(
-        query="test", query_embedding=None,
-        text_results=[recent, old], recency_boost=True,
+        query="test",
+        query_embedding=None,
+        text_results=[recent, old],
+        recency_boost=True,
     )
     recent_score = next(r["final_score"] for r in result if r["id"] == "recent")
     old_score = next(r["final_score"] for r in result if r["id"] == "old")
@@ -166,8 +178,11 @@ def test_recency_boost_disabled():
     recent = make_episode("recent", "test", importance=0.5, age_days=0)
     old = make_episode("old", "test", importance=0.5, age_days=60)
     result = hybrid_episode_search(
-        query="test", query_embedding=None,
-        text_results=[recent, old], recency_boost=False, importance_boost=False,
+        query="test",
+        query_embedding=None,
+        text_results=[recent, old],
+        recency_boost=False,
+        importance_boost=False,
     )
     recent_score = next(r["final_score"] for r in result if r["id"] == "recent")
     old_score = next(r["final_score"] for r in result if r["id"] == "old")
@@ -179,9 +194,11 @@ def test_importance_boost_applied():
     high = make_episode("high", "test content", importance=1.0)
     low = make_episode("low", "test content", importance=0.0)
     result = hybrid_episode_search(
-        query="test", query_embedding=None,
+        query="test",
+        query_embedding=None,
         text_results=[high, low],
-        recency_boost=False, importance_boost=True,
+        recency_boost=False,
+        importance_boost=True,
     )
     high_score = next(r["final_score"] for r in result if r["id"] == "high")
     low_score = next(r["final_score"] for r in result if r["id"] == "low")
@@ -196,9 +213,11 @@ def test_importance_boost_range():
         make_episode("full", "test", importance=1.0),
     ]
     result = hybrid_episode_search(
-        query="test", query_embedding=None,
+        query="test",
+        query_embedding=None,
         text_results=items,
-        recency_boost=False, importance_boost=True,
+        recency_boost=False,
+        importance_boost=True,
     )
     scores = {r["id"]: r["final_score"] for r in result}
     # At importance=0: multiplier = 0.8 + 0*0.4 = 0.8

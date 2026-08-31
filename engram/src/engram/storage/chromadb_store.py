@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class DimensionMismatchError(ValueError):
     """Raised when embedder dimension doesn't match existing ChromaDB collection."""
+
     pass
 
 
@@ -101,10 +102,7 @@ class ChromaDBStore:
         embeddings: List[List[float]],
         metadatas: Optional[List[Dict[str, Any]]] = None,
     ):
-        safe = [
-            self._sanitize_metadata(m or {})
-            for m in (metadatas or [{} for _ in episode_ids])
-        ]
+        safe = [self._sanitize_metadata(m or {}) for m in (metadatas or [{} for _ in episode_ids])]
         for m in safe:
             m["indexed_at"] = time.time()
         self.collection.add(
@@ -173,7 +171,7 @@ class ChromaDBStore:
             },
         )
         for i in range(0, len(episodes), batch_size):
-            batch = episodes[i:i + batch_size]
+            batch = episodes[i : i + batch_size]
             ids = [ep.get("id") or str(uuid.uuid4()) for ep in batch]
             texts = [ep.get("text", "") for ep in batch]
             metas = [ep.get("metadata", {}) for ep in batch]

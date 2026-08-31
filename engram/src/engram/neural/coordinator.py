@@ -146,8 +146,7 @@ class NeuralMemoryLayer:
         query = np.asarray(query_embedding, dtype=np.float32)
         if query.ndim != 1 or query.size != self.config.embedding_dim:
             raise ValueError(
-                f"query embedding dimension {query.size}, "
-                f"expected {self.config.embedding_dim}"
+                f"query embedding dimension {query.size}, expected {self.config.embedding_dim}"
             )
         value = self._neural.read(self._key_projector(query))
         return self._value_projector.pseudoinverse() @ value
@@ -189,9 +188,7 @@ class NeuralMemoryLayer:
             candidate_norm = float(np.linalg.norm(candidate))
             if candidate_norm < 1e-10:
                 continue
-            similarity = float(
-                np.dot(approx, candidate) / (approx_norm * candidate_norm)
-            )
+            similarity = float(np.dot(approx, candidate) / (approx_norm * candidate_norm))
             if math.isfinite(similarity):
                 aligned.append(
                     {
@@ -211,10 +208,7 @@ class NeuralMemoryLayer:
             "avg_surprise": float(stats.get("avg_surprise", 0.0)),
             "total_steps": int(stats.get("total_steps", 0)),
             "trajectory": self._surprise_trajectory(),
-            "warmed_up": (
-                int(stats.get("total_steps", 0))
-                >= int(self.config.min_warmup_steps)
-            ),
+            "warmed_up": (int(stats.get("total_steps", 0)) >= int(self.config.min_warmup_steps)),
         }
 
     def observe(self, observation: MemoryObservation) -> None:

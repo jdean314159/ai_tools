@@ -45,8 +45,13 @@ class SemanticExtractor:
             re.compile(r"my favorite (\w+) is (\w+)", re.IGNORECASE),
         ]
         self._decision_patterns = [
-            re.compile(r"(?:we |let's |I'll )?(?:decided|decide) to (?:use |go with )?(\w+)(?: for )(.+?)(?:\.|$)", re.IGNORECASE),
-            re.compile(r"(?:we're|we are|I'm) going with (\w+)(?: for )(.+?)(?:\.|$)", re.IGNORECASE),
+            re.compile(
+                r"(?:we |let's |I'll )?(?:decided|decide) to (?:use |go with )?(\w+)(?: for )(.+?)(?:\.|$)",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"(?:we're|we are|I'm) going with (\w+)(?: for )(.+?)(?:\.|$)", re.IGNORECASE
+            ),
         ]
         self._correction_patterns = [
             re.compile(r"actually,? (?:it's |the )?(\w+) is (\w+)", re.IGNORECASE),
@@ -72,29 +77,41 @@ class SemanticExtractor:
             for match in pattern.finditer(text):
                 if len(match.groups()) == 2:
                     value, subject = match.groups()
-                    facts.append(ExtractedFact(
-                        fact_type="preference",
-                        subject=subject.strip(), value=value.strip(),
-                        confidence=0.7, text_span=match.group(0),
-                    ))
+                    facts.append(
+                        ExtractedFact(
+                            fact_type="preference",
+                            subject=subject.strip(),
+                            value=value.strip(),
+                            confidence=0.7,
+                            text_span=match.group(0),
+                        )
+                    )
         for pattern in self._decision_patterns:
             for match in pattern.finditer(text):
                 if len(match.groups()) == 2:
                     value, subject = match.groups()
-                    facts.append(ExtractedFact(
-                        fact_type="decision",
-                        subject=subject.strip(), value=value.strip(),
-                        confidence=0.75, text_span=match.group(0),
-                    ))
+                    facts.append(
+                        ExtractedFact(
+                            fact_type="decision",
+                            subject=subject.strip(),
+                            value=value.strip(),
+                            confidence=0.75,
+                            text_span=match.group(0),
+                        )
+                    )
         for pattern in self._correction_patterns:
             for match in pattern.finditer(text):
                 if len(match.groups()) == 2:
                     subject, value = match.groups()
-                    facts.append(ExtractedFact(
-                        fact_type="correction",
-                        subject=subject.strip(), value=value.strip(),
-                        confidence=0.85, text_span=match.group(0),
-                    ))
+                    facts.append(
+                        ExtractedFact(
+                            fact_type="correction",
+                            subject=subject.strip(),
+                            value=value.strip(),
+                            confidence=0.85,
+                            text_span=match.group(0),
+                        )
+                    )
         return facts
 
     def _extract_with_llm(
@@ -148,7 +165,8 @@ class SemanticExtractor:
                     confidence=float(f.get("confidence", 0.6)),
                     text_span=text[:100],
                 )
-                for f in facts_data if f.get("subject") and f.get("value")
+                for f in facts_data
+                if f.get("subject") and f.get("value")
             ]
         except Exception as e:
             logger.debug(f"LLM extraction failed: {e}")
