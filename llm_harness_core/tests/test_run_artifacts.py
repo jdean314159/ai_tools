@@ -96,14 +96,23 @@ def test_unknown_envelope_version_fails() -> None:
 
 
 def test_unknown_body_version_keeps_envelope_readable_but_reports_unsupported() -> None:
-    artifact = RunArtifact(envelope=replace(_artifact().envelope, body_version=99), body={"future": True})
+    artifact = RunArtifact(
+        envelope=replace(_artifact().envelope, body_version=99), body={"future": True}
+    )
     parsed = artifact_from_dict(artifact_to_dict(artifact))
 
     assert parsed.envelope.record_id == "rr_test"
-    assert body_support_status(
-        parsed,
-        (SupportedBodyContract(kind="agent_run", body_version=1, profile="test.profile", profile_version=1),),
-    ) == "unsupported"
+    assert (
+        body_support_status(
+            parsed,
+            (
+                SupportedBodyContract(
+                    kind="agent_run", body_version=1, profile="test.profile", profile_version=1
+                ),
+            ),
+        )
+        == "unsupported"
+    )
 
 
 def test_envelope_requires_recorder_or_adapter() -> None:
@@ -260,7 +269,9 @@ def test_bundle_writer_never_overwrites_existing_target(tmp_path) -> None:
     root.mkdir()
 
     with pytest.raises(FileExistsError):
-        write_artifact_bundle(_artifact_with_attachment(b"fixture"), root, {"environment": b"fixture"})
+        write_artifact_bundle(
+            _artifact_with_attachment(b"fixture"), root, {"environment": b"fixture"}
+        )
 
 
 def test_bundle_loader_rejects_root_artifact_escape(tmp_path) -> None:

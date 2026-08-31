@@ -229,6 +229,15 @@ session import, or bundle-directory replay. See
 The subsequent repository gate passed with 1,267 tests, 304 skips, and the same
 three multiprocessing/fork deprecation warnings.
 
+The first Python-quality normalization checkpoint adds one conservative root
+Ruff policy, scoped Make targets, and a CI format/lint gate for
+`llm_harness_core`. That package is now fully formatted and passes the initial
+`E4`/`E7`/`E9`/`F` baseline. A measured package-by-package adoption inventory is
+recorded in `docs/internal/PYTHON-QUALITY-ADOPTION.md`; the remaining findings
+are deliberately not hidden behind broad ignores or mixed into one mass-format
+commit. The package test gate passed 28 tests, and the repository gate remained
+at 1,267 passed, 304 skipped, with the same three warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

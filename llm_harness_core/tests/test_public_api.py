@@ -42,9 +42,15 @@ def test_core_public_api_smoke() -> None:
 
     eval_request = EvaluatorRequest(candidate="Python", expected_texts=("python",))
     eval_result = SubstringMatchEvaluator().evaluate(eval_request)
-    sim_result = SimilarityEvaluator(threshold=0.1).evaluate(EvaluatorRequest(candidate="python", reference_answer="python"))
-    judge_result = LLMJudgeEvaluator(judge=lambda req: EvaluationResult(evaluator="llm_as_judge", score=1.0, passed=True)).evaluate(eval_request)
-    bundle = generate_synthetic_bundle(SyntheticDataConfig(topic="Project Atlas", memory_count=2, retrieval_count=2))
+    sim_result = SimilarityEvaluator(threshold=0.1).evaluate(
+        EvaluatorRequest(candidate="python", reference_answer="python")
+    )
+    judge_result = LLMJudgeEvaluator(
+        judge=lambda req: EvaluationResult(evaluator="llm_as_judge", score=1.0, passed=True)
+    ).evaluate(eval_request)
+    bundle = generate_synthetic_bundle(
+        SyntheticDataConfig(topic="Project Atlas", memory_count=2, retrieval_count=2)
+    )
 
     assert descriptor.supports("chat")
     assert result.ok is True

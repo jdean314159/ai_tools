@@ -69,9 +69,7 @@ class TimeDeclaration:
 
     def __post_init__(self) -> None:
         if self.artifact_created_at is None and self.adapted_at is None:
-            raise ArtifactValidationError(
-                "artifact_created_at or adapted_at must be declared"
-            )
+            raise ArtifactValidationError("artifact_created_at or adapted_at must be declared")
 
 
 @dataclass(frozen=True)
@@ -153,16 +151,16 @@ class Attachment:
 
     def __post_init__(self) -> None:
         if self.declared_inclusion not in {"bundled", "detached"}:
-            raise ArtifactValidationError(f"invalid attachment inclusion: {self.declared_inclusion}")
+            raise ArtifactValidationError(
+                f"invalid attachment inclusion: {self.declared_inclusion}"
+            )
         if self.requirement not in {"required", "optional"}:
             raise ArtifactValidationError(f"invalid attachment requirement: {self.requirement}")
 
 
 @dataclass(frozen=True)
 class CapabilityRequirement:
-    type: Literal[
-        "attachment", "body_path", "external_service", "implementation", "configuration"
-    ]
+    type: Literal["attachment", "body_path", "external_service", "implementation", "configuration"]
     ref: str
 
 
@@ -176,7 +174,9 @@ class DeterminismClaim:
         if self.claim not in {"not_claimed", "deterministic", "best_effort"}:
             raise ArtifactValidationError(f"invalid determinism claim: {self.claim}")
         if self.evidence_basis not in {"declared", "statically_validated", "exercised"}:
-            raise ArtifactValidationError(f"invalid determinism evidence basis: {self.evidence_basis}")
+            raise ArtifactValidationError(
+                f"invalid determinism evidence basis: {self.evidence_basis}"
+            )
 
 
 @dataclass(frozen=True)
@@ -295,9 +295,7 @@ def artifact_to_dict(artifact: RunArtifact) -> dict[str, Any]:
 def artifact_to_json_bytes(artifact: RunArtifact) -> bytes:
     """Serialize the exact UTF-8 byte representation used by bundle digests."""
 
-    return (
-        json.dumps(artifact_to_dict(artifact), indent=2, sort_keys=True) + "\n"
-    ).encode("utf-8")
+    return (json.dumps(artifact_to_dict(artifact), indent=2, sort_keys=True) + "\n").encode("utf-8")
 
 
 def _construct(cls: type[Any], payload: Mapping[str, Any], **overrides: Any) -> Any:
@@ -356,7 +354,11 @@ def artifact_from_dict(payload: Mapping[str, Any]) -> RunArtifact:
             raw_privacy,
             declared_content_categories=tuple(raw_privacy.get("declared_content_categories", ())),
             transformations_applied=tuple(raw_privacy.get("transformations_applied", ())),
-            validation=_construct(PrivacyValidation, raw_privacy["validation"], scope=tuple(raw_privacy["validation"].get("scope", ()))),
+            validation=_construct(
+                PrivacyValidation,
+                raw_privacy["validation"],
+                scope=tuple(raw_privacy["validation"].get("scope", ())),
+            ),
         )
         omissions = tuple(_construct(Omission, item) for item in raw_envelope.get("omissions", ()))
         capabilities = tuple(
@@ -558,7 +560,9 @@ def write_artifact_bundle(
     target = Path(bundle_root)
     if target.exists():
         raise FileExistsError(f"bundle target already exists: {target}")
-    _confined_bundle_path(target.resolve(strict=False), artifact_filename, label="artifact filename")
+    _confined_bundle_path(
+        target.resolve(strict=False), artifact_filename, label="artifact filename"
+    )
     attachment_id_list = [item.attachment_id for item in artifact.envelope.attachments]
     attachment_ids = set(attachment_id_list)
     if len(attachment_id_list) != len(attachment_ids):

@@ -173,8 +173,21 @@ smoke-openai:
 # Code quality
 # ---------------------------------------------------------------------------
 
-.PHONY: lint
-lint:
+.PHONY: format-python format-check-python lint-python quality-python lint
+PYTHON_QUALITY_SCOPE ?= llm_harness_core/src llm_harness_core/tests
+
+format-python:
+	$(VENV_PYTHON) -m ruff format $(PYTHON_QUALITY_SCOPE)
+
+format-check-python:
+	$(VENV_PYTHON) -m ruff format --check $(PYTHON_QUALITY_SCOPE)
+
+lint-python:
+	$(VENV_PYTHON) -m ruff check $(PYTHON_QUALITY_SCOPE)
+
+quality-python: format-check-python lint-python
+
+lint: quality-python
 	$(TEST_PYTHON) -m mypy llm_engines/src/llm_engines/ \
 		--config-file llm_engines/pyproject.toml \
 		--ignore-missing-imports --no-error-summary

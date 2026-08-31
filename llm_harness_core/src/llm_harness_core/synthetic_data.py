@@ -64,13 +64,19 @@ def _make_memory_contradiction(topic: str, key: str, value: str) -> str:
     if key == "region":
         return f"Historical note: older {topic} deployment plans mentioned us-east-1 instead of {value}."
     if key == "docs_policy":
-        return f"Historical note: some older {topic} notes referenced Google Docs instead of {value}."
+        return (
+            f"Historical note: some older {topic} notes referenced Google Docs instead of {value}."
+        )
     if key == "summary_model":
         return f"Historical note: earlier {topic} summaries used qwen3:8b instead of {value}."
     if key == "analytics_db":
-        return f"Historical note: a past {topic} analytics prototype used SQLite instead of {value}."
+        return (
+            f"Historical note: a past {topic} analytics prototype used SQLite instead of {value}."
+        )
     if key == "review_time":
-        return f"Historical note: the {topic} review used to be on Tuesday morning instead of {value}."
+        return (
+            f"Historical note: the {topic} review used to be on Tuesday morning instead of {value}."
+        )
     if key == "sandbox":
         return f"Historical note: an early {topic} prototype ran commands directly on the host instead of {value}."
     return f"Historical note: an older {topic} plan contradicted the current {key} value {value}."
@@ -104,32 +110,66 @@ def _make_doc_text(topic: str, key: str, value: str) -> str:
         "review_time": f"The current {topic} architecture review time is {value}.",
         "sandbox": f"When available, {topic} command execution should be sandboxed through {value}.",
     }
-    return title_map.get(key, f"{topic} note") + "\n\n" + body_map.get(key, f"{topic} {key} uses {value}.")
+    return (
+        title_map.get(key, f"{topic} note")
+        + "\n\n"
+        + body_map.get(key, f"{topic} {key} uses {value}.")
+    )
 
 
 def _make_doc_contradiction(topic: str, key: str, value: str) -> tuple[str, str]:
     if key == "region":
-        return (f"Astronomy: Mercury observation region", f"The planet Mercury is often observed from east-facing facilities; this note is unrelated to the {topic} project.")
+        return (
+            "Astronomy: Mercury observation region",
+            f"The planet Mercury is often observed from east-facing facilities; this note is unrelated to the {topic} project.",
+        )
     if key == "docs_policy":
-        return (f"Legacy {topic} wiki migration plan", f"A 2024 draft suggested Google Docs for {topic}, but it was never adopted.")
+        return (
+            f"Legacy {topic} wiki migration plan",
+            f"A 2024 draft suggested Google Docs for {topic}, but it was never adopted.",
+        )
     if key == "summary_model":
-        return (f"Legacy {topic} summary benchmark", f"A historical benchmark used qwen3:8b for {topic} summaries before the current policy changed.")
+        return (
+            f"Legacy {topic} summary benchmark",
+            f"A historical benchmark used qwen3:8b for {topic} summaries before the current policy changed.",
+        )
     if key == "analytics_db":
-        return (f"Legacy {topic} prototype analytics", f"An earlier prototype used SQLite for {topic} analytics before the current database decision.")
+        return (
+            f"Legacy {topic} prototype analytics",
+            f"An earlier prototype used SQLite for {topic} analytics before the current database decision.",
+        )
     if key == "review_time":
-        return (f"Archived {topic} meeting schedule", f"An archived schedule listed Tuesday morning for the {topic} review before the change.")
+        return (
+            f"Archived {topic} meeting schedule",
+            f"An archived schedule listed Tuesday morning for the {topic} review before the change.",
+        )
     if key == "sandbox":
-        return (f"Draft {topic} execution note", f"An early draft said host execution was acceptable for {topic}, but that guidance is obsolete.")
+        return (
+            f"Draft {topic} execution note",
+            f"An early draft said host execution was acceptable for {topic}, but that guidance is obsolete.",
+        )
     return (f"Legacy {topic} note", f"An older note contradicted the current {key} value {value}.")
 
 
 def _make_doc_noise(topic: str, index: int) -> tuple[str, str]:
     items = [
-        (f"{topic} style guide draft", f"The {topic} deck should use a blue title slide and larger footer text."),
-        (f"{topic} office snack poll", f"The {topic} team preferred almonds over cookies in a 2025 office poll."),
+        (
+            f"{topic} style guide draft",
+            f"The {topic} deck should use a blue title slide and larger footer text.",
+        ),
+        (
+            f"{topic} office snack poll",
+            f"The {topic} team preferred almonds over cookies in a 2025 office poll.",
+        ),
         (f"{topic} glossary stub", f"This note only defines a few placeholder terms for {topic}."),
-        (f"{topic} archived brainstorm", f"A brainstorm mentioned running {topic} in Antarctica; this was never serious."),
-        (f"{topic} naming ideas", f"The {topic} codename shortlist included Atlas, Mercury, and Drift."),
+        (
+            f"{topic} archived brainstorm",
+            f"A brainstorm mentioned running {topic} in Antarctica; this was never serious.",
+        ),
+        (
+            f"{topic} naming ideas",
+            f"The {topic} codename shortlist included Atlas, Mercury, and Drift.",
+        ),
     ]
     return items[index % len(items)]
 

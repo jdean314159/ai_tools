@@ -44,6 +44,8 @@ jobs:
           python -m mypy llm_engines/src/llm_engines/ \
             --config-file llm_engines/pyproject.toml \
             --ignore-missing-imports --no-error-summary
+      - name: Python style baseline
+        run: make quality-python VENV_PYTHON=python
       - name: Build wheels for all packages
         # examples/ applications are integration vehicles, not published packages.
         # Wheel builds for examples are intentionally omitted.

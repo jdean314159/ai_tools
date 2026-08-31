@@ -33,8 +33,7 @@ class EvaluationResult:
 class Evaluator(Protocol):
     name: str
 
-    def evaluate(self, request: EvaluatorRequest) -> OperationResult[EvaluationResult]:
-        ...
+    def evaluate(self, request: EvaluatorRequest) -> OperationResult[EvaluationResult]: ...
 
 
 @dataclass(frozen=True)
@@ -49,14 +48,23 @@ class SubstringMatchEvaluator:
         forbidden_hits = tuple(
             needle for needle in request.forbidden_texts if needle and needle.lower() in lowered
         )
-        passed = len(expected_hits) >= request.min_expected_hits and len(forbidden_hits) <= request.max_forbidden_hits
+        passed = (
+            len(expected_hits) >= request.min_expected_hits
+            and len(forbidden_hits) <= request.max_forbidden_hits
+        )
         total_expected = len(request.expected_texts)
         hit_score = 1.0 if total_expected == 0 else len(expected_hits) / max(1, total_expected)
-        penalty = 0.0 if not forbidden_hits else min(1.0, len(forbidden_hits) / max(1, len(request.forbidden_texts) or 1))
+        penalty = (
+            0.0
+            if not forbidden_hits
+            else min(1.0, len(forbidden_hits) / max(1, len(request.forbidden_texts) or 1))
+        )
         score = max(0.0, round(hit_score - penalty, 3))
         rationale_parts: list[str] = []
         if request.expected_texts:
-            rationale_parts.append(f"matched {len(expected_hits)}/{len(request.expected_texts)} expected substrings")
+            rationale_parts.append(
+                f"matched {len(expected_hits)}/{len(request.expected_texts)} expected substrings"
+            )
         if request.forbidden_texts:
             rationale_parts.append(f"found {len(forbidden_hits)} forbidden substrings")
         result = EvaluationResult(

@@ -1,0 +1,16 @@
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+# Start with Ruff's conservative default rules. Broader rule families should be
+# enabled only after the existing packages have adopted this baseline.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.format]
+docstring-code-format = true

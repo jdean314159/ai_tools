@@ -82,10 +82,13 @@ def evaluate_memory_case(
         observation.prompt_evidence_ids,
     )
     composition_passed = not missing_prompt and not forbidden_prompt
-    inference_passed = observation.inference_status == "completed" and observation.observed_output is not None
+    inference_passed = (
+        observation.inference_status == "completed" and observation.observed_output is not None
+    )
     observed_output = dict(observation.observed_output or {})
     mismatched_fields = tuple(
-        key for key, expected in spec.expected_output.items()
+        key
+        for key, expected in spec.expected_output.items()
         if key not in observed_output or observed_output[key] != expected
     )
     scoring_passed = inference_passed and not mismatched_fields
@@ -199,7 +202,12 @@ def prepare_new_artifact_path(path: str | Path) -> Path:
 
 
 __all__ = [
-    "MEMORY_STAGES", "MemoryCaseSpec", "MemoryCaseObservation",
-    "MemoryCaseEvaluation", "evaluate_memory_case", "summarize_memory_evaluations",
-    "build_memory_experiment_body", "prepare_new_artifact_path",
+    "MEMORY_STAGES",
+    "MemoryCaseSpec",
+    "MemoryCaseObservation",
+    "MemoryCaseEvaluation",
+    "evaluate_memory_case",
+    "summarize_memory_evaluations",
+    "build_memory_experiment_body",
+    "prepare_new_artifact_path",
 ]

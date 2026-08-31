@@ -67,6 +67,10 @@ The work progressed through evidence rather than assuming a design:
     inspection summary. A supported Flash-Next campaign and an unsupported
     command-isolation profile validate body-summary and envelope-only behavior;
     this does not execute or import the recorded run.
+17. Python-quality normalization now has a root Ruff policy and scoped Make/CI
+    gate. `llm_harness_core` is the first adopted package; the remaining lint
+    and formatting inventory is frozen in
+    `docs/internal/PYTHON-QUALITY-ADOPTION.md` for reviewable package passes.
 
 Key commits, oldest to newest:
 
@@ -108,7 +112,9 @@ to general container security; do not generalize the recovery ceiling to
 arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
-complete. A deeper command-sandbox project would first need
+complete. The active maintenance sequence is Python-quality adoption, next
+through the small zero-lint loop-guard and `mail_lib` packages. A deeper
+command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.
 
