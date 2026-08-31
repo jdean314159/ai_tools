@@ -267,6 +267,8 @@ def test_committed_recovery_artifacts_match_pinned_bytes_and_privacy():
             "afbd321ad261a91bd5f1bc5abf87d08fa4fbfd0a3ccd227e1a0e69c183dc2a8e",
         "2026-08-29-spark-qwen-tool-recovery-baseline-v2.json":
             "9c2405cc7903b1b4c52a807851d3ab316f7645b229965bb04ce2c57818315009",
+        "2026-08-31-spark-qwen38-flash-next-tool-recovery-baseline-v2.json":
+            "1530cc7579d7b13e9059690178036594b497da9a333fd0dd5a4cf9c3a046c6a5",
         "2026-08-29-spark-qwen-tool-recovery-v3-development-v1.json":
             "8e8386f483c98856a406d8d95bbee304946220fe4fdee64839556941771293c8",
         "2026-08-30-spark-qwen-tool-recovery-v4-development-v1.json":

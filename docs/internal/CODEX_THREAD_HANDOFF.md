@@ -53,6 +53,9 @@ The work progressed through evidence rather than assuming a design:
 12. Its unchanged tool-decision campaign passed all four cases in three
     repetitions with thinking off and on. Thinking increased median latency in
     every case without changing exact outcomes from the ceiling baseline.
+13. Its valid frozen tool-recovery baseline passed all four failure families
+    3/3 with zero fabricated success. The ceiling rule stopped the campaign
+    before thinking on; version-4 development remains closed.
 
 Key commits, oldest to newest:
 
@@ -87,12 +90,12 @@ Do not extend the policy from this bounded matrix. Choose one next validation:
    unvalidated package capability one at a time.
 
 The Engram prompt-budget choice, first bounded `agent_lib` policy/trace
-characterization, and Flash-Next core/tool-decision characterizations are
-complete. Do not generalize the agent result to OS/container isolation or the
-model result to recovery after tool results. The leading model-specific next
-gate is a frozen valid tool-recovery baseline; do not reopen or tune the stopped
-version-4 development suite. Other bounded candidates are `agent_lib` command
-isolation or Inspector/UI replay.
+characterization, and Flash-Next core, tool-decision, and valid recovery
+baselines are complete. Do not generalize the agent result to OS/container
+isolation or the recovery ceiling to arbitrary failures. Further model testing
+should select a genuinely new frozen boundary such as context/truncation rather
+than tuning the stopped recovery suite. Other bounded candidates are
+`agent_lib` command isolation or Inspector/UI replay.
 
 ## Verification posture
 

@@ -188,6 +188,14 @@ not measurable. Conditions were sequential and load was not independently
 controlled. See
 `docs/projects/llm_engines/SPARK-QWEN38-FLASH-NEXT-TOOL-DECISIONS-2026-08-31.md`.
 
+The valid frozen version-2 tool-recovery baseline also reached ceiling on
+Flash-Next: explicit error, contradiction, unavailable-tool alternative, and
+incomplete-result follow-up each passed 3/3, with zero fabricated-success cases.
+All 24 model turns reported seed acceptance. The predeclared headroom rule stops
+the experiment, so no thinking-on recovery comparison was run and the stopped
+version-4 development suite remains closed. See
+`docs/projects/llm_engines/SPARK-QWEN38-FLASH-NEXT-TOOL-RECOVERY-2026-08-31.md`.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key
