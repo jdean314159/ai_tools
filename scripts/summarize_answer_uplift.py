@@ -28,14 +28,20 @@ def _summary_lines(title: str, summary: dict) -> list[str]:
         if key in summary:
             lines.append(f"  {key}: {summary[key]}")
     if "failed_probes" in summary:
-        lines.append(f"  failed_probes: {', '.join(summary['failed_probes']) if summary['failed_probes'] else 'none'}")
+        lines.append(
+            f"  failed_probes: {', '.join(summary['failed_probes']) if summary['failed_probes'] else 'none'}"
+        )
     if "failed_raw_probes" in summary:
-        lines.append(f"  failed_raw_probes: {', '.join(summary['failed_raw_probes']) if summary['failed_raw_probes'] else 'none'}")
+        lines.append(
+            f"  failed_raw_probes: {', '.join(summary['failed_raw_probes']) if summary['failed_raw_probes'] else 'none'}"
+        )
     return lines
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Summarize ai_tools answer-uplift memory evaluation results.")
+    parser = argparse.ArgumentParser(
+        description="Summarize ai_tools answer-uplift memory evaluation results."
+    )
     parser.add_argument("report_json", help="Path to memory_eval JSON report.")
     args = parser.parse_args()
 

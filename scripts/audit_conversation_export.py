@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Audit a Claude conversations export without emitting private content."""
+
 from __future__ import annotations
 
 import argparse
@@ -270,9 +271,7 @@ def audit_export(path: Path) -> dict[str, Any]:
                 parent = None
             if valid_message_id:
                 local_parents[message_id] = parent
-                parent_records.append(
-                    (conversation_index, message_index, message_id, parent)
-                )
+                parent_records.append((conversation_index, message_index, message_id, parent))
 
             sender = message.get("sender")
             if isinstance(sender, str):
@@ -359,9 +358,7 @@ def audit_export(path: Path) -> dict[str, Any]:
         if parent_cycles:
             error_counts["parent_cycles"] += parent_cycles
 
-    duplicate_conversations = sum(
-        count - 1 for count in conversation_ids.values() if count > 1
-    )
+    duplicate_conversations = sum(count - 1 for count in conversation_ids.values() if count > 1)
     duplicate_messages = sum(count - 1 for count in message_ids.values() if count > 1)
     if duplicate_conversations:
         error_counts["duplicate_conversation_uuids"] += duplicate_conversations
@@ -395,14 +392,10 @@ def audit_export(path: Path) -> dict[str, Any]:
     if self_parents:
         error_counts["self_parent_references"] += self_parents
 
-    unknown_conversation_fields = sorted(
-        set(conversation_fields) - EXPECTED_CONVERSATION_FIELDS
-    )
+    unknown_conversation_fields = sorted(set(conversation_fields) - EXPECTED_CONVERSATION_FIELDS)
     unknown_message_fields = sorted(set(message_fields) - EXPECTED_MESSAGE_FIELDS)
     if unknown_conversation_fields:
-        warning_counts["unknown_conversation_fields"] += len(
-            unknown_conversation_fields
-        )
+        warning_counts["unknown_conversation_fields"] += len(unknown_conversation_fields)
     if unknown_message_fields:
         warning_counts["unknown_message_fields"] += len(unknown_message_fields)
     if marker_counts:
@@ -410,9 +403,7 @@ def audit_export(path: Path) -> dict[str, Any]:
     if unicode_stats.controls:
         warning_counts["embedded_control_characters"] += unicode_stats.controls
     if unicode_stats.replacement_characters:
-        warning_counts["unicode_replacement_characters"] += (
-            unicode_stats.replacement_characters
-        )
+        warning_counts["unicode_replacement_characters"] += unicode_stats.replacement_characters
     if unicode_stats.unpaired_surrogates:
         error_counts["unpaired_unicode_surrogates"] += unicode_stats.unpaired_surrogates
 
@@ -460,8 +451,7 @@ def audit_export(path: Path) -> dict[str, Any]:
         },
         "readiness": {
             "message_uuid_provenance_usable": (
-                not duplicate_messages
-                and not error_counts["message_missing_uuid"]
+                not duplicate_messages and not error_counts["message_missing_uuid"]
             ),
             "exact_thread_reconstruction_usable": (
                 missing_parents == 0
@@ -483,13 +473,9 @@ def audit_export(path: Path) -> dict[str, Any]:
                 else "proceed"
             ),
         },
-        "errors": [
-            {"code": code, "count": count}
-            for code, count in sorted(error_counts.items())
-        ],
+        "errors": [{"code": code, "count": count} for code, count in sorted(error_counts.items())],
         "warnings": [
-            {"code": code, "count": count}
-            for code, count in sorted(warning_counts.items())
+            {"code": code, "count": count} for code, count in sorted(warning_counts.items())
         ],
         "privacy": {
             "contains_message_text": False,
@@ -571,9 +557,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     warnings = report["warnings"]
     readiness = report["readiness"]
     lines.append(
-        "- Errors: none"
-        if not errors
-        else f"- Errors: `{json.dumps(errors, sort_keys=True)}`"
+        "- Errors: none" if not errors else f"- Errors: `{json.dumps(errors, sort_keys=True)}`"
     )
     lines.append(
         "- Warnings: none"

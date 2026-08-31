@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Prepare and apply human review decisions for knowledge candidates."""
+
 from __future__ import annotations
 
 import argparse
@@ -12,7 +13,7 @@ import uuid
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -27,9 +28,36 @@ TOPIC_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("architecture", ("architect", "modular", "interface", "contract", "pipeline", "system")),
 )
 STOPWORDS = {
-    "the", "a", "an", "and", "or", "of", "to", "in", "for", "with", "on",
-    "is", "are", "be", "as", "that", "this", "when", "should", "can", "may",
-    "from", "by", "their", "its", "using", "use", "used", "into", "than",
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "of",
+    "to",
+    "in",
+    "for",
+    "with",
+    "on",
+    "is",
+    "are",
+    "be",
+    "as",
+    "that",
+    "this",
+    "when",
+    "should",
+    "can",
+    "may",
+    "from",
+    "by",
+    "their",
+    "its",
+    "using",
+    "use",
+    "used",
+    "into",
+    "than",
 }
 MAX_SOURCE_UNIT_CHARS = 20_000
 
@@ -69,9 +97,7 @@ class ReviewDecision(BaseModel):
         if self.action == "split" and (count != 1 or claim_count < 2):
             raise ValueError("split requires one candidate and at least two claims")
         if self.action == "consolidate" and (count < 2 or claim_count != 1):
-            raise ValueError(
-                "consolidate requires at least two candidates and one claim"
-            )
+            raise ValueError("consolidate requires at least two candidates and one claim")
         return self
 
 
@@ -98,9 +124,7 @@ def load_jsonl(path: Path) -> list[dict]:
     if not path.exists():
         return []
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
@@ -126,8 +150,7 @@ def classify_topic(candidate: dict) -> str:
 
 def related_candidates(candidates: list[dict], limit: int = 3) -> dict[str, list[str]]:
     token_sets = {
-        item["candidate_id"]: _tokens(f"{item['statement']} {item['scope']}")
-        for item in candidates
+        item["candidate_id"]: _tokens(f"{item['statement']} {item['scope']}") for item in candidates
     }
     result: dict[str, list[str]] = {}
     for candidate in candidates:
@@ -146,8 +169,7 @@ def related_candidates(candidates: list[dict], limit: int = 3) -> dict[str, list
             if score >= 0.18:
                 scored.append((score, other_id))
         result[candidate_id] = [
-            other_id
-            for _, other_id in sorted(scored, key=lambda row: (-row[0], row[1]))[:limit]
+            other_id for _, other_id in sorted(scored, key=lambda row: (-row[0], row[1]))[:limit]
         ]
     return result
 
@@ -155,10 +177,7 @@ def related_candidates(candidates: list[dict], limit: int = 3) -> dict[str, list
 def _source_units(corpus: list[dict]) -> dict[str, dict]:
     units: dict[str, dict] = {}
     for record_index, record in enumerate(corpus, start=1):
-        if (
-            record.get("source_kind") != "message_text"
-            or record.get("sender") != "assistant"
-        ):
+        if record.get("source_kind") != "message_text" or record.get("sender") != "assistant":
             continue
         text = record.get("normalized_text", "")
         part = 0
@@ -250,9 +269,7 @@ def render_review_html(queue: list[dict], decisions_path: Path) -> str:
         related = ", ".join(item["related_candidate_ids"]) or "none"
         evidence = "".join(
             "<details><summary>"
-            + html.escape(
-                f"{value['source_unit_id']} | message {value['message_uuid']}"
-            )
+            + html.escape(f"{value['source_unit_id']} | message {value['message_uuid']}")
             + "</summary><pre>"
             + html.escape(value["excerpt"])
             + "</pre></details>"
@@ -269,11 +286,11 @@ def render_review_html(queue: list[dict], decisions_path: Path) -> str:
         sections.append(
             f"""
 <article id="{html.escape(candidate_id)}">
-  <h3>{item['review_index']}. {html.escape(candidate_id)}</h3>
-  <p><strong>Statement:</strong> {html.escape(item['statement'])}</p>
-  <p><strong>Scope:</strong> {html.escape(item['scope'])}</p>
-  <p><strong>Evidence kind:</strong> {html.escape(item['evidence_kind'])}</p>
-  <p><strong>Conversation:</strong> {html.escape(item['conversation_uuid'])}</p>
+  <h3>{item["review_index"]}. {html.escape(candidate_id)}</h3>
+  <p><strong>Statement:</strong> {html.escape(item["statement"])}</p>
+  <p><strong>Scope:</strong> {html.escape(item["scope"])}</p>
+  <p><strong>Evidence kind:</strong> {html.escape(item["evidence_kind"])}</p>
+  <p><strong>Conversation:</strong> {html.escape(item["conversation_uuid"])}</p>
   <p><strong>Qualifications:</strong></p><ul>{qualifications}</ul>
   <p><strong>Related:</strong> {html.escape(related)}</p>
   {evidence}
@@ -291,7 +308,7 @@ h2{{border-bottom:2px solid #555;padding-top:2rem}}
 </style></head><body>
 <h1>Knowledge Candidate Review</h1>
 <p>{len(queue)} pending candidates. This file is private and local.</p>
-{''.join(sections)}
+{"".join(sections)}
 </body></html>
 """
 
@@ -307,9 +324,7 @@ def prepare_review(
     decisions_path: Path,
     review_manifest_path: Path,
 ) -> dict:
-    candidate_manifest = json.loads(
-        candidate_manifest_path.read_text(encoding="utf-8")
-    )
+    candidate_manifest = json.loads(candidate_manifest_path.read_text(encoding="utf-8"))
     corpus_manifest = json.loads(corpus_manifest_path.read_text(encoding="utf-8"))
     if sha256_file(candidates_path) != candidate_manifest["candidates_sha256"]:
         raise ValueError("Candidate artifact hash differs from extraction manifest")
@@ -360,10 +375,7 @@ def append_decision(path: Path, decision: ReviewDecision, candidates: set[str]) 
         raise ValueError(f"Duplicate event ID: {decision.event_id}")
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8", newline="\n") as handle:
-        handle.write(
-            json.dumps(decision.model_dump(), ensure_ascii=False, sort_keys=True)
-            + "\n"
-        )
+        handle.write(json.dumps(decision.model_dump(), ensure_ascii=False, sort_keys=True) + "\n")
 
 
 def _latest_decisions(
@@ -401,8 +413,7 @@ def materialize_approved(
         if decision.event_id in emitted_events:
             continue
         if any(
-            latest.get(source_id) is None
-            or latest[source_id].event_id != decision.event_id
+            latest.get(source_id) is None or latest[source_id].event_id != decision.event_id
             for source_id in decision.candidate_ids
         ):
             continue
@@ -411,11 +422,7 @@ def materialize_approved(
             continue
         source_candidates = [by_id[value] for value in decision.candidate_ids]
         source_refs = sorted(
-            {
-                ref
-                for candidate in source_candidates
-                for ref in candidate["source_refs"]
-            }
+            {ref for candidate in source_candidates for ref in candidate["source_refs"]}
         )
         claims: list[ReviewedClaim]
         if decision.action == "approve":
@@ -432,11 +439,12 @@ def materialize_approved(
             claims = decision.claims
         for claim_index, claim in enumerate(claims, start=1):
             payload = claim.model_dump()
-            claim_id = f"claim-{canonical_hash({
-                'payload': payload,
-                'source_candidates': decision.candidate_ids,
-                'claim_index': claim_index,
-            })[:16]}"
+            claim_identity = {
+                "payload": payload,
+                "source_candidates": decision.candidate_ids,
+                "claim_index": claim_index,
+            }
+            claim_id = f"claim-{canonical_hash(claim_identity)[:16]}"
             approved.append(
                 {
                     "schema_version": 1,
@@ -456,9 +464,7 @@ def materialize_approved(
     with approved_path.open("w", encoding="utf-8", newline="\n") as handle:
         for item in approved:
             handle.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n")
-    status_counts = Counter(
-        latest[item].action for item in latest
-    )
+    status_counts = Counter(latest[item].action for item in latest)
     review_complete = len(latest) == len(candidates) and not any(
         action == "defer" for action in status_counts
     )
@@ -549,21 +555,15 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"Prepared {manifest['candidate_count']} review candidates")
         elif args.command == "decide":
-            candidates = {
-                item["candidate_id"] for item in load_jsonl(args.candidates)
-            }
+            candidates = {item["candidate_id"] for item in load_jsonl(args.candidates)}
             replacement_actions = {"edit", "split", "consolidate"}
             claims = []
             if args.action in replacement_actions:
                 if args.claims_json:
-                    raw_claims = json.loads(
-                        args.claims_json.read_text(encoding="utf-8")
-                    )
+                    raw_claims = json.loads(args.claims_json.read_text(encoding="utf-8"))
                     if not isinstance(raw_claims, list):
                         raise ValueError("claims-json must contain a JSON list")
-                    claims = [
-                        ReviewedClaim.model_validate(item) for item in raw_claims
-                    ]
+                    claims = [ReviewedClaim.model_validate(item) for item in raw_claims]
                 else:
                     if not (args.statement and args.scope and args.evidence_kind):
                         raise ValueError(

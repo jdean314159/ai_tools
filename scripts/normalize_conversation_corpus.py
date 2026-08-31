@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build a provenance-preserving normalized corpus from a Claude export."""
+
 from __future__ import annotations
 
 import argparse
@@ -30,9 +31,7 @@ ANSI_ESCAPE_RE = re.compile(
 TRAILING_HORIZONTAL_RE = re.compile(r"[ \t]+$", re.MULTILINE)
 EXCESS_BLANK_LINES_RE = re.compile(r"\n{4,}")
 REMOVED_FORMAT_CHARACTERS = {"\u200b", "\ufeff"}
-EXPECTED_EXPORT_SHA256 = (
-    "368787d2020d97f962bc4f773e550a07bda5ffe3f1b2510fdbe84a8b36ef4735"
-)
+EXPECTED_EXPORT_SHA256 = "368787d2020d97f962bc4f773e550a07bda5ffe3f1b2510fdbe84a8b36ef4735"
 EARLIEST_BENCHMARK_DECISION = "2026-05-22T00:00:00Z"
 
 
@@ -270,9 +269,7 @@ def build_corpus(
         )
 
     selection = load_selection(selection_path)
-    selected_ids = [
-        item["conversation_uuid"] for item in selection["conversations"]
-    ]
+    selected_ids = [item["conversation_uuid"] for item in selection["conversations"]]
     payload = json.loads(export_path.read_text(encoding="utf-8"))
     conversations_by_id = {
         conversation.get("uuid"): conversation
@@ -286,9 +283,7 @@ def build_corpus(
     for conversation_uuid in selected_ids:
         created_at = conversations_by_id[conversation_uuid].get("created_at")
         if not isinstance(created_at, str) or created_at >= EARLIEST_BENCHMARK_DECISION:
-            raise ValueError(
-                "Selected conversations must predate the earliest benchmark decision"
-            )
+            raise ValueError("Selected conversations must predate the earliest benchmark decision")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     record_count = 0
@@ -305,9 +300,7 @@ def build_corpus(
         for conversation_uuid in selected_ids:
             conversation = conversations_by_id[conversation_uuid]
             for record in iter_records(conversation):
-                handle.write(
-                    json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
-                )
+                handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
                 record_count += 1
                 source_counts[record["source_kind"]] += 1
                 sender_counts[str(record["sender"])] += 1

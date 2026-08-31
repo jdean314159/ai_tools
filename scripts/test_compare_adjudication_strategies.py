@@ -103,9 +103,7 @@ def test_policy_overrides_bad_proposal_and_records_changes() -> None:
 
     result, corrections = comparison.apply_policy(proposal, _policy(), _case())
 
-    assert {item.candidate_id: item.status for item in result.adjudications} == _case()[
-        "expected"
-    ]
+    assert {item.candidate_id: item.status for item in result.adjudications} == _case()["expected"]
     assert len(corrections) == 5
     assert corrections[-1]["candidate_id"] == "__current_guidance__"
 
@@ -123,9 +121,7 @@ def test_policy_rejects_unknown_traits() -> None:
 
 
 def test_few_shot_examples_are_unrelated_to_neural_case() -> None:
-    examples_path = Path(
-        "docs/projects/knowledge_mvp/PHASE_5C_FEW_SHOT_EXAMPLES.json"
-    )
+    examples_path = Path("docs/projects/knowledge_mvp/PHASE_5C_FEW_SHOT_EXAMPLES.json")
     text = examples_path.read_text(encoding="utf-8").casefold()
 
     assert "neural" not in text

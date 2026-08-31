@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Validate deterministic decision-history metadata in ADR front matter."""
+
 from __future__ import annotations
 
 import argparse
 import re
-import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Literal
@@ -60,14 +60,8 @@ class HypothesisRecord(BaseModel):
             self.mechanism_status in {"not_demonstrated", "not_applicable"}
             and self.mechanism_evidence
         ):
-            raise ValueError(
-                f"{self.mechanism_status} mechanisms require empty "
-                "mechanism_evidence"
-            )
-        if (
-            self.resolution_status == "resolved_against"
-            and not self.resolution_evidence
-        ):
+            raise ValueError(f"{self.mechanism_status} mechanisms require empty mechanism_evidence")
+        if self.resolution_status == "resolved_against" and not self.resolution_evidence:
             raise ValueError("resolved_against requires resolution_evidence")
         return self
 
@@ -151,9 +145,7 @@ def resolve_reference(reference: str, *, source: Path) -> list[str]:
         if not fragment:
             errors.append(f"{source}: empty heading fragment: {reference!r}")
         elif resolved.suffix.casefold() != ".md":
-            errors.append(
-                f"{source}: heading fragment requires Markdown: {reference!r}"
-            )
+            errors.append(f"{source}: heading fragment requires Markdown: {reference!r}")
         elif fragment not in markdown_heading_slugs(resolved):
             errors.append(f"{source}: unresolved heading fragment: {reference!r}")
     return errors
@@ -193,38 +185,26 @@ def validate_paths(paths: list[Path]) -> tuple[int, int, list[str]]:
         for record in history.hypotheses:
             if record.superseded_by and record.superseded_by not in known_adr_ids:
                 failures.append(
-                    f"{path.relative_to(ROOT)}: unknown superseded_by ADR "
-                    f"{record.superseded_by}"
+                    f"{path.relative_to(ROOT)}: unknown superseded_by ADR {record.superseded_by}"
                 )
             for reference in record_references(record):
-                failures.extend(
-                    resolve_reference(reference, source=path.relative_to(ROOT))
-                )
+                failures.extend(resolve_reference(reference, source=path.relative_to(ROOT)))
 
     by_key: dict[tuple[str, str], list[tuple[Path, str]]] = defaultdict(list)
     for path, history in parsed:
         for record in history.hypotheses:
-            by_key[(record.id, record.application_scope)].append(
-                (path, record.resolution_status)
-            )
+            by_key[(record.id, record.application_scope)].append((path, record.resolution_status))
     for key, entries in by_key.items():
         statuses = {status for _, status in entries}
         if len(statuses) > 1:
-            locations = ", ".join(
-                f"{path.relative_to(ROOT)}={status}" for path, status in entries
-            )
-            failures.append(
-                f"conflicting exact-key decisions for {key[0]}/{key[1]}: "
-                f"{locations}"
-            )
+            locations = ", ".join(f"{path.relative_to(ROOT)}={status}" for path, status in entries)
+            failures.append(f"conflicting exact-key decisions for {key[0]}/{key[1]}: {locations}")
     record_count = sum(len(history.hypotheses) for _, history in parsed)
     return len(parsed), record_count, failures
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Validate ADR decision-history metadata"
-    )
+    parser = argparse.ArgumentParser(description="Validate ADR decision-history metadata")
     parser.add_argument(
         "paths",
         nargs="*",
@@ -233,10 +213,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     paths = (
-        [
-            (ROOT / path).resolve() if not path.is_absolute() else path
-            for path in args.paths
-        ]
+        [(ROOT / path).resolve() if not path.is_absolute() else path for path in args.paths]
         if args.paths
         else sorted((ROOT / "adr").glob("ADR-*.md"))
     )
@@ -246,8 +223,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\n".join(f"- {failure}" for failure in failures))
         return 1
     print(
-        "Decision-history validation passed "
-        f"({document_count} documents, {record_count} records)."
+        f"Decision-history validation passed ({document_count} documents, {record_count} records)."
     )
     print("References resolve; evidentiary claims were not content-verified.")
     return 0

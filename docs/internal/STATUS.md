@@ -358,6 +358,14 @@ compile, and live model/hardware experiments were intentionally not rerun. The
 full repository gate remains 1,268 passed, 304 skipped, with the same three
 warnings.
 
+The sixteenth Python-quality checkpoint adopts repository `scripts/`. Beyond
+dead imports, the pass fixed one real Python 3.10 compatibility issue by moving
+a multiline dictionary expression out of an f-string replacement field. Ruff
+mechanically formatted 26 files, bringing the shared gate to 525 files. All 60
+script tests passed, every script compiled under the available interpreter, and
+Ruff's `py310` parser accepts the full scope. The full repository gate remains
+1,268 passed, 304 skipped, with the same three warnings.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

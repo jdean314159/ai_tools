@@ -57,8 +57,7 @@ def _selection() -> dict:
         "selection_version": 1,
         "selection_policy": "test",
         "conversations": [
-            {"conversation_uuid": f"c{index}", "reason": "test"}
-            for index in range(10)
+            {"conversation_uuid": f"c{index}", "reason": "test"} for index in range(10)
         ],
     }
 

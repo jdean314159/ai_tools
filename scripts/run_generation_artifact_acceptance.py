@@ -67,14 +67,16 @@ def main() -> int:
     dump_artifact(recorded.artifact, args.output)
     loaded = load_artifact(args.output)
     print(summarize_artifact(loaded))
-    print({
-        "text": recorded.response.text,
-        "finish_reason": recorded.response.finish_reason,
-        "usage": recorded.response.usage.model_dump(mode="json"),
-        "backend": recorded.response.backend,
-        "model": recorded.response.model_name,
-        "raw_provider_payload_recorded": "raw_provider_payload" in loaded.body["response"],
-    })
+    print(
+        {
+            "text": recorded.response.text,
+            "finish_reason": recorded.response.finish_reason,
+            "usage": recorded.response.usage.model_dump(mode="json"),
+            "backend": recorded.response.backend,
+            "model": recorded.response.model_name,
+            "raw_provider_payload_recorded": "raw_provider_payload" in loaded.body["response"],
+        }
+    )
     return 0
 
 

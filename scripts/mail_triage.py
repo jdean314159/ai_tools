@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run MAIL-01 fixture-first local mail triage."""
+
 # ruff: noqa: E402 -- direct script execution bootstraps the repository import path.
 from __future__ import annotations
 
@@ -38,9 +39,15 @@ def _rules_error(result: RuleLoadResult) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run deterministic MAIL-01 triage.")
-    parser.add_argument("--profile", type=Path, help="Thunderbird profile or synthetic fixture root")
-    parser.add_argument("--index", type=Path, default=None, help="Optional mail_lib index database path")
-    parser.add_argument("--no-index", action="store_true", help="Do not persist processed-message state")
+    parser.add_argument(
+        "--profile", type=Path, help="Thunderbird profile or synthetic fixture root"
+    )
+    parser.add_argument(
+        "--index", type=Path, default=None, help="Optional mail_lib index database path"
+    )
+    parser.add_argument(
+        "--no-index", action="store_true", help="Do not persist processed-message state"
+    )
     parser.add_argument("--rules", type=Path, help="Personal-rule TOML path")
     parser.add_argument(
         "--validate-rules",

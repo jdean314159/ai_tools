@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Fail if archived or removed identifiers appear in tracked files."""
+
 from __future__ import annotations
 
 import subprocess
@@ -79,9 +80,7 @@ def main() -> int:
         if not path_allowlisted(relative_path):
             for pattern, reason in DENYLIST:
                 if pattern in relative_path:
-                    failures.append(
-                        f"{relative_path}: PATH contains {pattern!r} - {reason}"
-                    )
+                    failures.append(f"{relative_path}: PATH contains {pattern!r} - {reason}")
 
         if path_allowlisted(relative_path):
             continue

@@ -112,9 +112,7 @@ def test_validate_claims_normalizes_and_deduplicates() -> None:
     )
 
     assert len(validated) == 1
-    assert validated[0].statement == (
-        "Evaluation should use explicit tasks and failure criteria."
-    )
+    assert validated[0].statement == ("Evaluation should use explicit tasks and failure criteria.")
     assert validated[0].source_refs == ["r000001p001"]
 
 

@@ -128,6 +128,10 @@ The work progressed through evidence rather than assuming a design:
     tooling; recorded evidence was untouched and live experiments were not
     rerun. Ruff expanded compact statements across 16 files, all modules
     compiled, the shared gate covers 498 files, and the full gate remains green.
+32. Repository `scripts/` are now adopted. The cleanup restored Python 3.10
+    parse compatibility in the knowledge-review script, all 60 script tests
+    passed, Ruff's `py310` parser accepts the scope, the shared gate covers 525
+    files, and the full gate remains green.
 
 Key commits, oldest to newest:
 

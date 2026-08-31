@@ -41,9 +41,7 @@ def write_adr(path: Path, hypothesis: dict) -> None:
         "hypotheses": [hypothesis],
     }
     path.write_text(
-        "---\n"
-        + yaml.safe_dump(metadata, sort_keys=False)
-        + "---\n\n# ADR-999: Test\n",
+        "---\n" + yaml.safe_dump(metadata, sort_keys=False) + "---\n\n# ADR-999: Test\n",
         encoding="utf-8",
     )
 
@@ -101,10 +99,13 @@ def test_reference_requires_exact_heading_fragment(
     evidence.write_text("# Recorded Result\n", encoding="utf-8")
     monkeypatch.setattr(validator, "ROOT", root)
 
-    assert validator.resolve_reference(
-        "docs/evidence.md#recorded-result",
-        source=Path("adr/ADR-999-test.md"),
-    ) == []
+    assert (
+        validator.resolve_reference(
+            "docs/evidence.md#recorded-result",
+            source=Path("adr/ADR-999-test.md"),
+        )
+        == []
+    )
     errors = validator.resolve_reference(
         "docs/evidence.md#missing-result",
         source=Path("adr/ADR-999-test.md"),

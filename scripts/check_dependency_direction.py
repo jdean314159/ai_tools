@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Library packages must not link into teaching or course material."""
+
 from __future__ import annotations
 
 import re
@@ -36,9 +37,7 @@ def main() -> int:
                 target = match.group(1).strip()
                 if any(forbidden in target for forbidden in FORBIDDEN_TARGETS):
                     relative_file = markdown_file.relative_to(ROOT)
-                    failures.append(
-                        f"{relative_file}: links into course material -> {target}"
-                    )
+                    failures.append(f"{relative_file}: links into course material -> {target}")
 
     if failures:
         print("Dependency-direction check FAILED:\n" + "\n".join(failures))

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assert package README tiers match the root README package table."""
+
 from __future__ import annotations
 
 import re
@@ -40,10 +41,7 @@ def header_tier(package: str) -> str | None:
 
 def table_tiers() -> dict[str, str]:
     text = (ROOT / "README.md").read_text(encoding="utf-8")
-    return {
-        match.group(1): normalize_tier(match.group(2))
-        for match in TABLE_ROW.finditer(text)
-    }
+    return {match.group(1): normalize_tier(match.group(2)) for match in TABLE_ROW.finditer(text)}
 
 
 def main() -> int:
@@ -59,8 +57,7 @@ def main() -> int:
             failures.append(f"{package}: not found in root README Packages table")
         elif header != table_value:
             failures.append(
-                f"{package}: README header tier {header!r} "
-                f"!= root table tier {table_value!r}"
+                f"{package}: README header tier {header!r} != root table tier {table_value!r}"
             )
 
     if failures:

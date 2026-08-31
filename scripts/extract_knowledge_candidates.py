@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Extract provenance-linked knowledge candidates with a local LLM."""
+
 from __future__ import annotations
 
 import argparse
@@ -8,9 +9,9 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field
 
 
 MAX_SOURCE_UNIT_CHARS = 20_000
@@ -104,9 +105,7 @@ def load_corpus(corpus_path: Path, manifest_path: Path) -> tuple[list[dict], dic
     actual_hash = sha256_file(corpus_path)
     expected_hash = manifest.get("normalized_corpus_sha256")
     if actual_hash != expected_hash:
-        raise ValueError(
-            "Normalized corpus hash differs from CORPUS_MANIFEST.json"
-        )
+        raise ValueError("Normalized corpus hash differs from CORPUS_MANIFEST.json")
     records = [
         json.loads(line)
         for line in corpus_path.read_text(encoding="utf-8").splitlines()
@@ -120,10 +119,7 @@ def load_corpus(corpus_path: Path, manifest_path: Path) -> tuple[list[dict], dic
 def source_units(records: list[dict]) -> list[dict]:
     units: list[dict] = []
     for record_index, record in enumerate(records, start=1):
-        if (
-            record.get("source_kind") != "message_text"
-            or record.get("sender") != "assistant"
-        ):
+        if record.get("source_kind") != "message_text" or record.get("sender") != "assistant":
             continue
         text = record["normalized_text"]
         if not text:
@@ -201,8 +197,7 @@ def render_batch_prompt(batch: dict) -> str:
         rendered_units.append(
             "\n".join(
                 [
-                    f'<source unit_id="{unit["source_unit_id"]}" '
-                    f'kind="{unit["source_kind"]}">',
+                    f'<source unit_id="{unit["source_unit_id"]}" kind="{unit["source_kind"]}">',
                     unit["text"],
                     "</source>",
                 ]
@@ -228,9 +223,7 @@ def validate_claims(
         statement = " ".join(claim.statement.split())
         scope = " ".join(claim.scope.split())
         qualifications = [
-            " ".join(value.split())
-            for value in claim.qualifications
-            if value.strip()
+            " ".join(value.split()) for value in claim.qualifications if value.strip()
         ]
         source_refs = list(dict.fromkeys(claim.source_refs))
         if not source_refs or any(ref not in allowed_source_refs for ref in source_refs):
@@ -311,8 +304,7 @@ def _extract_one(engine: Any, batch: dict) -> tuple[list[dict], dict]:
             "Do not use fields named id, claim, applicability, evidence, "
             "confidence, or rationale. Use only statement, scope, evidence_kind, "
             "qualifications, and source_refs inside each claims item. "
-            "Return only the complete corrected JSON object.\n\n"
-            + FORMAT_GUIDE
+            "Return only the complete corrected JSON object.\n\n" + FORMAT_GUIDE
         )
         retry_request = GenerationRequest(
             messages=[
@@ -334,8 +326,7 @@ def _extract_one(engine: Any, batch: dict) -> tuple[list[dict], dict]:
         attempts = 2
     if not parsed_result.success or parsed_result.data is None:
         raise ValueError(
-            "Model output failed the candidate schema after correction: "
-            f"{parsed_result.error}"
+            f"Model output failed the candidate schema after correction: {parsed_result.error}"
         )
     parsed = parsed_result.data
     claims = validate_claims(
@@ -429,9 +420,7 @@ def run_extraction(
                     "candidates": candidates,
                     "diagnostics": diagnostics,
                 }
-                cache_file.write(
-                    json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
-                )
+                cache_file.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
                 cache_file.flush()
                 result_rows.append(row)
             except Exception as exc:
@@ -444,28 +433,16 @@ def run_extraction(
                     }
                 )
 
-    candidates = [
-        candidate
-        for row in result_rows
-        for candidate in row.get("candidates", [])
-    ]
+    candidates = [candidate for row in result_rows for candidate in row.get("candidates", [])]
     candidates.sort(key=lambda item: (item["batch_id"], item["candidate_id"]))
     candidates_path.parent.mkdir(parents=True, exist_ok=True)
     with candidates_path.open("w", encoding="utf-8", newline="\n") as handle:
         for candidate in candidates:
-            handle.write(
-                json.dumps(candidate, ensure_ascii=False, sort_keys=True) + "\n"
-            )
+            handle.write(json.dumps(candidate, ensure_ascii=False, sort_keys=True) + "\n")
 
     evidence_counts = Counter(item["evidence_kind"] for item in candidates)
-    candidates_by_conversation = Counter(
-        item["conversation_uuid"] for item in candidates
-    )
-    diagnostics = [
-        row.get("diagnostics", {})
-        for row in result_rows
-        if row.get("diagnostics")
-    ]
+    candidates_by_conversation = Counter(item["conversation_uuid"] for item in candidates)
+    diagnostics = [row.get("diagnostics", {}) for row in result_rows if row.get("diagnostics")]
     manifest = {
         "manifest_version": 1,
         **run_identity,
@@ -475,18 +452,10 @@ def run_extraction(
         "failed_batch_count": len(failures),
         "candidate_count": len(candidates),
         "evidence_kind_counts": dict(sorted(evidence_counts.items())),
-        "candidates_by_conversation": dict(
-            sorted(candidates_by_conversation.items())
-        ),
-        "correction_retry_count": sum(
-            int(item.get("attempts", 1)) - 1 for item in diagnostics
-        ),
-        "reported_input_tokens": sum(
-            int(item.get("input_tokens") or 0) for item in diagnostics
-        ),
-        "reported_output_tokens": sum(
-            int(item.get("output_tokens") or 0) for item in diagnostics
-        ),
+        "candidates_by_conversation": dict(sorted(candidates_by_conversation.items())),
+        "correction_retry_count": sum(int(item.get("attempts", 1)) - 1 for item in diagnostics),
+        "reported_input_tokens": sum(int(item.get("input_tokens") or 0) for item in diagnostics),
+        "reported_output_tokens": sum(int(item.get("output_tokens") or 0) for item in diagnostics),
         "reported_latency_ms": round(
             sum(float(item.get("latency_ms") or 0.0) for item in diagnostics),
             3,

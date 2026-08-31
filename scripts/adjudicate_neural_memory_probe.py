@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run the focused Phase 5B neural-memory adjudication probe."""
+
 from __future__ import annotations
 
 import argparse
@@ -112,17 +113,13 @@ def sha256_file(path: Path) -> str:
 
 def load_jsonl(path: Path) -> list[dict]:
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
 def load_case(case_path: Path, candidates_path: Path) -> tuple[dict, list[dict]]:
     case = json.loads(case_path.read_text(encoding="utf-8"))
-    candidates = {
-        item["candidate_id"]: item for item in load_jsonl(candidates_path)
-    }
+    candidates = {item["candidate_id"]: item for item in load_jsonl(candidates_path)}
     selected = []
     for claim in case.get("historical_claims", []):
         if not Path(claim["source_path"]).exists():
@@ -176,15 +173,14 @@ def render_prompt(case: dict, candidates: list[dict]) -> str:
         + json.dumps(evidence_payload, indent=2)
         + "\n\nFor every candidate, return one adjudication. Create explicit "
         "relations to relevant evidence. current_guidance must state the current "
-        "ai_tools decision without erasing historical claims.\n\n"
-        + FORMAT_GUIDE
+        "ai_tools decision without erasing historical claims.\n\n" + FORMAT_GUIDE
     )
 
 
 def validate_result(result: ProbeResult, case: dict) -> dict[str, Any]:
-    focal_order = [
-        item["claim_id"] for item in case.get("historical_claims", [])
-    ] + list(case["focal_candidate_ids"])
+    focal_order = [item["claim_id"] for item in case.get("historical_claims", [])] + list(
+        case["focal_candidate_ids"]
+    )
     focal = set(focal_order)
     evidence = {item["evidence_id"]: item for item in case["evidence"]}
     adjudications = {item.candidate_id: item for item in result.adjudications}
@@ -204,9 +200,7 @@ def validate_result(result: ProbeResult, case: dict) -> dict[str, Any]:
                 f"{candidate_id} expected {expected_status}, "
                 f"got {actual.status if actual else 'missing'}"
             )
-    for candidate_id, expected_review in case.get(
-        "expected_review_required", {}
-    ).items():
+    for candidate_id, expected_review in case.get("expected_review_required", {}).items():
         actual = adjudications.get(candidate_id)
         if actual is None or actual.review_required != expected_review:
             errors.append(
@@ -226,9 +220,7 @@ def validate_result(result: ProbeResult, case: dict) -> dict[str, Any]:
                 for evidence_id in item.controlling_evidence_ids
             ]
             if not ranks or max(ranks) < AUTHORITY_RANK["local_evaluation"]:
-                errors.append(
-                    f"{item.candidate_id} resolved against without controlling evidence"
-                )
+                errors.append(f"{item.candidate_id} resolved against without controlling evidence")
     guidance = result.current_guidance.casefold()
     required_guidance = ("re-ranking", "disabled", "parked", "default-off", "gate")
     for phrase in required_guidance:
@@ -311,8 +303,7 @@ def run_probe(
                         content=(
                             "Your response did not match the required schema. "
                             "Use only the exact fields and enum values below. "
-                            "Return the complete corrected JSON object.\n\n"
-                            + FORMAT_GUIDE
+                            "Return the complete corrected JSON object.\n\n" + FORMAT_GUIDE
                         ),
                     ),
                 ],
@@ -327,8 +318,7 @@ def run_probe(
         attempts = 2
     if not parsed.success or parsed.data is None:
         raise ValueError(
-            "Model output failed adjudication schema after correction: "
-            f"{parsed.error}"
+            f"Model output failed adjudication schema after correction: {parsed.error}"
         )
     result = parsed.data
     graph = validate_result(result, case)
@@ -396,8 +386,7 @@ def render_markdown(graph: dict, candidates: list[dict]) -> str:
         )
         for relation in claim["relations"]:
             lines.append(
-                f"- `{relation['relation']}` `{relation['evidence_id']}`: "
-                f"{relation['rationale']}"
+                f"- `{relation['relation']}` `{relation['evidence_id']}`: {relation['rationale']}"
             )
         lines.append("")
     if graph["errors"]:
@@ -432,10 +421,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         print(f"Adjudication probe failed: {exc}", file=sys.stderr)
         return 1
-    print(
-        f"Adjudication probe {manifest['probe_status']}: "
-        f"{manifest['error_count']} gate errors"
-    )
+    print(f"Adjudication probe {manifest['probe_status']}: {manifest['error_count']} gate errors")
     return 0 if manifest["probe_status"] == "pass" else 1
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Compare zero-shot, few-shot, policy-enforced, and deterministic adjudication."""
+
 from __future__ import annotations
 
 import argparse
@@ -72,8 +73,7 @@ def few_shot_messages(examples: dict[str, Any]) -> tuple[str, str]:
     }
     user = (
         "Here is an unrelated adjudication example. Apply its evidence-handling "
-        "pattern, not its domain facts.\n\n"
-        + json.dumps(example_input, indent=2)
+        "pattern, not its domain facts.\n\n" + json.dumps(example_input, indent=2)
     )
     assistant = json.dumps(examples["result"], indent=2)
     return user, assistant
@@ -97,9 +97,7 @@ def generate_proposal(
                 ChatMessage(role="assistant", content=example_assistant),
             ]
         )
-    messages.append(
-        ChatMessage(role="user", content=phase5b.render_prompt(case, candidates))
-    )
+    messages.append(ChatMessage(role="user", content=phase5b.render_prompt(case, candidates)))
     request = GenerationRequest(
         messages=messages,
         temperature=0.0,
@@ -163,9 +161,7 @@ def _policy_rationale(trait: str) -> str:
         "unsupported_numeric": (
             "No supplied evidence directly establishes the quantitative benefit."
         ),
-        "untested": (
-            "The supplied evidence does not test this distinct claim."
-        ),
+        "untested": ("The supplied evidence does not test this distinct claim."),
     }[trait]
 
 
@@ -176,17 +172,14 @@ def apply_policy(
 ) -> tuple[Any, list[dict[str, Any]]]:
     evidence_ids = {item["evidence_id"] for item in case["evidence"]}
     proposed_adjudications = (
-        {item.candidate_id: item for item in proposal.adjudications}
-        if proposal is not None
-        else {}
+        {item.candidate_id: item for item in proposal.adjudications} if proposal is not None else {}
     )
     valid_relations = []
     if proposal is not None:
         valid_relations = [
             relation.model_copy(deep=True)
             for relation in proposal.relations
-            if relation.candidate_id in policy["claims"]
-            and relation.evidence_id in evidence_ids
+            if relation.candidate_id in policy["claims"] and relation.evidence_id in evidence_ids
         ]
     adjudications = []
     corrections: list[dict[str, Any]] = []
@@ -216,15 +209,11 @@ def apply_policy(
             valid_relations = [
                 item
                 for item in valid_relations
-                if not (
-                    item.candidate_id == candidate_id
-                    and item.evidence_id == evidence_id
-                )
+                if not (item.candidate_id == candidate_id and item.evidence_id == evidence_id)
             ]
             relation = (
                 "supersedes"
-                if floor["status"] == "resolved_against"
-                and evidence_id.startswith("adr-")
+                if floor["status"] == "resolved_against" and evidence_id.startswith("adr-")
                 else floor["relation"]
             )
             valid_relations.append(
@@ -274,9 +263,7 @@ def arm_record(
         for candidate_id, rule in policy["claims"].items()
         for evidence_id in rule["evidence_ids"]
     }
-    actual_pairs = {
-        (item.candidate_id, item.evidence_id) for item in valid_relations
-    }
+    actual_pairs = {(item.candidate_id, item.evidence_id) for item in valid_relations}
     return {
         "arm": name,
         "status": graph["status"],
@@ -413,9 +400,7 @@ def run_comparison(
                 "policy_correction_count": arm["policy_correction_count"],
                 "valid_relation_count": arm["valid_relation_count"],
                 "claims_with_valid_relations": arm["claims_with_valid_relations"],
-                "matched_policy_relation_count": arm[
-                    "matched_policy_relation_count"
-                ],
+                "matched_policy_relation_count": arm["matched_policy_relation_count"],
                 "unsupported_relation_count": arm["unsupported_relation_count"],
             }
             for name, arm in arms.items()

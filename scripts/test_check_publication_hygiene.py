@@ -119,9 +119,7 @@ def test_language_tutor_example_is_caught_literal(hygiene_root: Path) -> None:
 
     findings = checker._classify_findings()
 
-    assert findings["untracked"] == {
-        ".language_tutor_example": [Path(".language_tutor_example")]
-    }
+    assert findings["untracked"] == {".language_tutor_example": [Path(".language_tutor_example")]}
 
 
 def test_clean_tree_passes_in_both_modes(
@@ -191,11 +189,7 @@ def test_banned_files_in_multiple_directories_are_all_found(hygiene_root: Path) 
     _write(hygiene_root / "three" / "c.orig")
 
     findings = checker._classify_findings()
-    found = sorted(
-        path
-        for paths in findings["untracked"].values()
-        for path in paths
-    )
+    found = sorted(path for paths in findings["untracked"].values() for path in paths)
 
     assert found == [
         Path("one/a.pyc"),
@@ -251,8 +245,7 @@ def test_referenced_fixture_directory_passes_with_tracked_descendant(
 ) -> None:
     _write(
         hygiene_root / "pkg" / "tests" / "test_corpus.py",
-        "from pathlib import Path\n"
-        "CORPUS = Path(__file__).parent / 'fixtures' / 'eval'\n",
+        "from pathlib import Path\nCORPUS = Path(__file__).parent / 'fixtures' / 'eval'\n",
     )
     fixture = _write(
         hygiene_root / "pkg" / "tests" / "fixtures" / "eval" / "case.json",
@@ -281,8 +274,7 @@ def test_direct_fixture_string_reference_must_be_tracked(
 ) -> None:
     _write(
         hygiene_root / "pkg" / "tests" / "test_logs.py",
-        "def test_log():\n"
-        "    assert open('fixtures/direct.log').read()\n",
+        "def test_log():\n    assert open('fixtures/direct.log').read()\n",
     )
     fixture = _write(hygiene_root / "pkg" / "tests" / "fixtures" / "direct.log", "warning\n")
     _track(monkeypatch, fixture)

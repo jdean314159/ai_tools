@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate publication hygiene for the ai_tools monorepo."""
+
 from __future__ import annotations
 
 import argparse
@@ -13,6 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
 
 def _git_tracked_files() -> set[Path]:
     result = subprocess.run(
@@ -336,9 +338,7 @@ def _license_metadata_problems() -> list[str]:
         data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
         project = data.get("project", {})
         if project.get("license") != EXPECTED_LICENSE_EXPRESSION:
-            problems.append(
-                f"{relative}: project.license must be {EXPECTED_LICENSE_EXPRESSION!r}"
-            )
+            problems.append(f"{relative}: project.license must be {EXPECTED_LICENSE_EXPRESSION!r}")
         if project.get("license-files") != ["LICENSE"]:
             problems.append(f"{relative}: project.license-files must be ['LICENSE']")
 

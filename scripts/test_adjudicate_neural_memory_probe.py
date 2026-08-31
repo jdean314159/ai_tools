@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import sys
 from pathlib import Path
 
@@ -84,15 +83,9 @@ def _result() -> probe.ProbeResult:
             probe.ProposedAdjudication(
                 candidate_id=candidate_id,
                 status=status,
-                current_statement=(
-                    "Current statement preserving historical context and scope."
-                ),
+                current_statement=("Current statement preserving historical context and scope."),
                 rationale="Evidence was evaluated according to authority and scope.",
-                controlling_evidence_ids=(
-                    ["eval", "adr"]
-                    if status == "resolved_against"
-                    else []
-                ),
+                controlling_evidence_ids=(["eval", "adr"] if status == "resolved_against" else []),
                 review_required=status in {"unresolved", "qualified"},
             )
             for candidate_id, status in statuses.items()
@@ -115,9 +108,7 @@ def test_valid_probe_passes() -> None:
 def test_architecture_description_cannot_be_resolved_against() -> None:
     result = _result()
     titans = next(
-        item
-        for item in result.adjudications
-        if item.candidate_id == "candidate-1daddd4ca13cf45a"
+        item for item in result.adjudications if item.candidate_id == "candidate-1daddd4ca13cf45a"
     )
     titans.status = "resolved_against"
     titans.controlling_evidence_ids = ["eval"]
@@ -153,9 +144,7 @@ def test_guidance_requires_operational_resolution() -> None:
 def test_synthesis_claim_requires_human_review() -> None:
     result = _result()
     synthesis = next(
-        item
-        for item in result.adjudications
-        if item.candidate_id == "candidate-738380e8de4da93d"
+        item for item in result.adjudications if item.candidate_id == "candidate-738380e8de4da93d"
     )
     synthesis.review_required = False
 

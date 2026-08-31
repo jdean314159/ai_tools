@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate that relative Markdown links resolve to real files."""
+
 from __future__ import annotations
 
 import re

@@ -97,18 +97,26 @@ def _get_probe_names_from_report(report_path: Path, backend: str, scenario: str)
     data = json.loads(report_path.read_text(encoding="utf-8"))
 
     if "results" in data:
-        scenario_name = scenario if scenario.endswith("_memory_quality") else f"{scenario}_memory_quality"
+        scenario_name = (
+            scenario if scenario.endswith("_memory_quality") else f"{scenario}_memory_quality"
+        )
         scenario_map = data["results"]
         if scenario_name not in scenario_map:
-            raise KeyError(f"Scenario '{scenario_name}' not found in report. Available: {', '.join(sorted(scenario_map))}")
+            raise KeyError(
+                f"Scenario '{scenario_name}' not found in report. Available: {', '.join(sorted(scenario_map))}"
+            )
         backend_data = scenario_map[scenario_name]["backends"][backend]
         return list(backend_data["summary"].get("failed_probes", []))
 
     if "backends" in data:
         report_scenario_name = data.get("scenario", {}).get("name")
-        scenario_name = scenario if scenario.endswith("_memory_quality") else f"{scenario}_memory_quality"
+        scenario_name = (
+            scenario if scenario.endswith("_memory_quality") else f"{scenario}_memory_quality"
+        )
         if report_scenario_name and scenario_name != report_scenario_name:
-            raise KeyError(f"Report contains scenario '{report_scenario_name}', not '{scenario_name}'")
+            raise KeyError(
+                f"Report contains scenario '{report_scenario_name}', not '{scenario_name}'"
+            )
         backend_data = data["backends"][backend]
         return list(backend_data["summary"].get("failed_probes", []))
 
@@ -193,7 +201,9 @@ def _direct_search_dump(memory: Any, probe: Any, limit: int) -> list[dict[str, A
     return rows
 
 
-def _run_diagnostic(repo_root: Path, backend: str, scenario: str, probe_names: list[str], dump_limit: int) -> dict[str, Any]:
+def _run_diagnostic(
+    repo_root: Path, backend: str, scenario: str, probe_names: list[str], dump_limit: int
+) -> dict[str, Any]:
     _add_repo_paths(repo_root)
     memory_eval = _load_memory_eval(repo_root)
     resolved_scenario = memory_eval._resolve_scenario(scenario)  # type: ignore[attr-defined]
@@ -202,7 +212,9 @@ def _run_diagnostic(repo_root: Path, backend: str, scenario: str, probe_names: l
         "engram": memory_eval.EngramAdapter,
     }
     if backend not in adapters:
-        raise KeyError(f"Unknown backend '{backend}'. Expected one of: {', '.join(sorted(adapters))}")
+        raise KeyError(
+            f"Unknown backend '{backend}'. Expected one of: {', '.join(sorted(adapters))}"
+        )
 
     adapter_cls = adapters[backend]
 
@@ -231,7 +243,9 @@ def _run_diagnostic(repo_root: Path, backend: str, scenario: str, probe_names: l
                 "cold_stats": _to_serializable(cold_stats),
                 "stored_memory": {
                     "episodic": _episodic_dump(memory, dump_limit) if memory is not None else [],
-                    "semantic": _semantic_dump(memory, dump_limit) if memory is not None else {"facts": [], "preferences": []},
+                    "semantic": _semantic_dump(memory, dump_limit)
+                    if memory is not None
+                    else {"facts": [], "preferences": []},
                 },
                 "probes": [],
             }
@@ -241,7 +255,9 @@ def _run_diagnostic(repo_root: Path, backend: str, scenario: str, probe_names: l
                 eval_result = memory_eval.evaluate_probe(cold_adapter, probe)  # type: ignore[attr-defined]
                 context = cold_adapter.get_context(probe.query)
                 layers = _layer_items(memory_eval, context)
-                prompt_result = cold_adapter.build_prompt(probe.question or "probe", query=probe.query)
+                prompt_result = cold_adapter.build_prompt(
+                    probe.question or "probe", query=probe.query
+                )
                 prompt_text = str(prompt_result.get("prompt", ""))
 
                 probe_entry = {
@@ -252,7 +268,9 @@ def _run_diagnostic(repo_root: Path, backend: str, scenario: str, probe_names: l
                     "notes": probe.notes,
                     "eval_result": _to_serializable(eval_result),
                     "retrieved_layers": layers,
-                    "direct_episode_search": _direct_search_dump(memory, probe, dump_limit) if memory is not None else [],
+                    "direct_episode_search": _direct_search_dump(memory, probe, dump_limit)
+                    if memory is not None
+                    else [],
                     "prompt_support": _score_probe(memory_eval, prompt_text, probe),
                     "prompt_result": {
                         "prompt_tokens": int(prompt_result.get("prompt_tokens", 0) or 0),
@@ -359,16 +377,25 @@ def main() -> int:
         "--report-json",
         help="Optional memory_eval_report.json. If provided and --probe is omitted, inspect the failed probes for the selected backend and scenario.",
     )
-    parser.add_argument("--dump-limit", type=int, default=10, help="Maximum stored/search items to dump per section.")
+    parser.add_argument(
+        "--dump-limit",
+        type=int,
+        default=10,
+        help="Maximum stored/search items to dump per section.",
+    )
     parser.add_argument("--json-out", default="memory_diagnostic.json", help="Output JSON file.")
-    parser.add_argument("--markdown-out", default="memory_diagnostic.md", help="Output Markdown file.")
+    parser.add_argument(
+        "--markdown-out", default="memory_diagnostic.md", help="Output Markdown file."
+    )
     args = parser.parse_args()
 
     repo_root = Path(args.repo_root).resolve()
     probe_names = list(args.probe)
 
     if not probe_names and args.report_json:
-        probe_names = _get_probe_names_from_report(Path(args.report_json).resolve(), args.backend, args.scenario)
+        probe_names = _get_probe_names_from_report(
+            Path(args.report_json).resolve(), args.backend, args.scenario
+        )
 
     if not probe_names:
         print(

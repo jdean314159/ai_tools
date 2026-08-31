@@ -8,6 +8,7 @@ IN SCOPE, NOT EXEMPT: any new capability built on the ai_tools libraries, even
 if it is an agent app modeled on a vendored template here. The exemption is by
 literal path prefix, not by category.
 """
+
 from __future__ import annotations
 
 

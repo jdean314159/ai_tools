@@ -32,11 +32,21 @@ def main() -> int:
         description="Run the ai_tools memory evaluation harness with real-model answer evaluation."
     )
     parser.add_argument("--repo-root", default=".", help="Path to the ai_tools repo root.")
-    parser.add_argument("--base-url", required=True, help="OpenAI-compatible server base URL, e.g. http://localhost:8080")
+    parser.add_argument(
+        "--base-url",
+        required=True,
+        help="OpenAI-compatible server base URL, e.g. http://localhost:8080",
+    )
     parser.add_argument("--model", required=True, help="Model name exposed by the server.")
     parser.add_argument("--api-key", default="", help="Optional API key for the server.")
-    parser.add_argument("--json-out", default="memory_eval_answer_report.json", help="Output JSON report path.")
-    parser.add_argument("--markdown-out", default="memory_eval_answer_report.md", help="Output Markdown report path.")
+    parser.add_argument(
+        "--json-out", default="memory_eval_answer_report.json", help="Output JSON report path."
+    )
+    parser.add_argument(
+        "--markdown-out",
+        default="memory_eval_answer_report.md",
+        help="Output Markdown report path.",
+    )
     args = parser.parse_args()
 
     repo_root = Path(args.repo_root).resolve()
@@ -52,7 +62,7 @@ def main() -> int:
     env["MEMORY_EVAL_MODEL"] = args.model
     if args.api_key:
         env["MEMORY_EVAL_OPENAI_API_KEY"] = args.api_key
-        
+
     cmd = [
         sys.executable,
         str(harness),

@@ -114,7 +114,8 @@ def test_materialize_uses_latest_decision(tmp_path: Path) -> None:
     manifest = tmp_path / "manifest.json"
     candidates.write_text(json.dumps(_candidate("candidate-1")) + "\n")
     decisions.write_text(
-        json.dumps(_decision("approve", ["candidate-1"]).model_dump()) + "\n"
+        json.dumps(_decision("approve", ["candidate-1"]).model_dump())
+        + "\n"
         + json.dumps(
             review.ReviewDecision(
                 event_id="event-reject-later",
@@ -208,10 +209,7 @@ def test_later_source_decision_supersedes_whole_consolidation(tmp_path: Path) ->
         rationale="The second source does not support consolidation.",
     )
     decisions.write_text(
-        json.dumps(consolidation.model_dump())
-        + "\n"
-        + json.dumps(later_reject.model_dump())
-        + "\n"
+        json.dumps(consolidation.model_dump()) + "\n" + json.dumps(later_reject.model_dump()) + "\n"
     )
     manifest.write_text(json.dumps({"candidate_count": 2}))
 
