@@ -179,6 +179,15 @@ were not controlled. Tool-selection, thinking-on, and long-context behavior
 remain separate gates. See
 `docs/projects/llm_engines/SPARK-QWEN38-FLASH-NEXT-CHARACTERIZATION-2026-08-30.md`.
 
+The unchanged four-case tool-decision campaign then passed 12/12 decisions with
+thinking off and 12/12 with thinking on. Required use, relevant-tool selection,
+avoiding unnecessary tools, and typed arguments each passed 3/3 in both
+conditions. Thinking increased median latency in every case without changing
+the exact outcomes; the off baseline was already at ceiling, so improvement was
+not measurable. Conditions were sequential and load was not independently
+controlled. See
+`docs/projects/llm_engines/SPARK-QWEN38-FLASH-NEXT-TOOL-DECISIONS-2026-08-31.md`.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

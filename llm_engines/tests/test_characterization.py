@@ -220,6 +220,10 @@ def test_committed_spark_artifacts_match_documented_bytes_and_privacy_boundary()
             "74d2c9695bc93b98129891bc224a15aff64328458dd65b3ce1ed2686445ceb73",
         "2026-08-29-spark-qwen-tool-decisions-thinking-on-v2.json":
             "422cc712db194094ef94c10711a80d374732a1849f00446d3bc49273d41ff8ed",
+        "2026-08-31-spark-qwen38-flash-next-tool-decisions-thinking-off-v2.json":
+            "75e080cf4cddf5e49d74dd015db1642d3e58f4b0a16382e50421b4c06fd0e7ab",
+        "2026-08-31-spark-qwen38-flash-next-tool-decisions-thinking-on-v2.json":
+            "dcb1bd67e6fd5b32e3bc61690b23067af9f106859de32edcbdb185780200d3e9",
     }
     forbidden = (
         "192.168.50.225",

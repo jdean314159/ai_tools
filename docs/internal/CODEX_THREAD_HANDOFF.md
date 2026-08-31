@@ -50,6 +50,9 @@ The work progressed through evidence rather than assuming a design:
 11. The Spark replacement model reported as `Qwen3.8-Flash-Next-UD-IQ4_XS`
     passed the unchanged five-run engine characterization profile in 5/5 runs
     for exact chat, structured output, tool calls, and token log probabilities.
+12. Its unchanged tool-decision campaign passed all four cases in three
+    repetitions with thinking off and on. Thinking increased median latency in
+    every case without changing exact outcomes from the ceiling baseline.
 
 Key commits, oldest to newest:
 
@@ -84,12 +87,12 @@ Do not extend the policy from this bounded matrix. Choose one next validation:
    unvalidated package capability one at a time.
 
 The Engram prompt-budget choice, first bounded `agent_lib` policy/trace
-characterization, and Flash-Next core engine characterization are complete. Do
-not generalize the agent result to OS/container isolation or the model result to
-tool-selection quality. The leading model-specific next gate is the unchanged
-four-case tool-decision campaign, thinking off first; thinking on should follow
-only as a separately disclosed paired condition. Other bounded candidates are
-`agent_lib` command isolation or Inspector/UI replay.
+characterization, and Flash-Next core/tool-decision characterizations are
+complete. Do not generalize the agent result to OS/container isolation or the
+model result to recovery after tool results. The leading model-specific next
+gate is a frozen valid tool-recovery baseline; do not reopen or tune the stopped
+version-4 development suite. Other bounded candidates are `agent_lib` command
+isolation or Inspector/UI replay.
 
 ## Verification posture
 
