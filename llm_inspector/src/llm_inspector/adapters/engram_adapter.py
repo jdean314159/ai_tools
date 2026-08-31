@@ -42,7 +42,11 @@ def _interop_events_to_evidence_flows(events: list[Any]) -> list[EvidenceFlow]:
         payload = dict(getattr(event, "payload", {}) or {})
         event_type = getattr(event, "event_type", None)
         if event_type == "memory_evidence_included":
-            metadata = dict(payload.get("metadata") or {}) if isinstance(payload.get("metadata"), dict) else {}
+            metadata = (
+                dict(payload.get("metadata") or {})
+                if isinstance(payload.get("metadata"), dict)
+                else {}
+            )
             before_text = (
                 metadata.get("raw_text")
                 or metadata.get("source_text")
@@ -64,7 +68,11 @@ def _interop_events_to_evidence_flows(events: list[Any]) -> list[EvidenceFlow]:
                 )
             )
         elif event_type == "memory_evidence_excluded":
-            metadata = dict(payload.get("metadata") or {}) if isinstance(payload.get("metadata"), dict) else {}
+            metadata = (
+                dict(payload.get("metadata") or {})
+                if isinstance(payload.get("metadata"), dict)
+                else {}
+            )
             before_text = payload.get("text") or metadata.get("raw_text") or ""
             flows.append(
                 EvidenceFlow(
@@ -76,7 +84,9 @@ def _interop_events_to_evidence_flows(events: list[Any]) -> list[EvidenceFlow]:
                     provenance=_event_provenance(payload),
                     transformations=_event_transformations(payload),
                     excluded=True,
-                    exclusion_reason=str(payload.get("reason") or payload.get("exclusion_reason") or "excluded"),
+                    exclusion_reason=str(
+                        payload.get("reason") or payload.get("exclusion_reason") or "excluded"
+                    ),
                     meta={"event_type": event_type, **metadata},
                 )
             )
@@ -246,7 +256,9 @@ class EngramAugmenter(ContextAugmenter):
                 "This adapter expects either build_prompt_interop(...) diagnostics['trace'] or "
                 "build_prompt(..., return_trace=True) to provide a PromptBuildTrace-compatible object."
             )
-        return _trace_to_inspector_trace(req, prompt_trace, prompt_tokens=result.get("prompt_tokens"))
+        return _trace_to_inspector_trace(
+            req, prompt_trace, prompt_tokens=result.get("prompt_tokens")
+        )
 
     def augment(self, req: AugmentRequest) -> Trace:
         pm = self._make_project_memory(req)

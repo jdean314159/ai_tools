@@ -6,6 +6,7 @@ import pytest
 def test_importing_llm_inspector_does_not_import_engram():
     sys.modules.pop("engram", None)
     import llm_inspector  # noqa: F401
+
     assert "engram" not in sys.modules
 
 

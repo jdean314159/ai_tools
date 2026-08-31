@@ -6,6 +6,7 @@ assembled sections, evidence items, and the trace as a whole. They are
 independent of any specific augmentation system, but can convert to the
 shared llm_harness_core interoperability types where appropriate.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

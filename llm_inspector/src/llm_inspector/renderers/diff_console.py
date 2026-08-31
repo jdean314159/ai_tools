@@ -12,11 +12,7 @@ def render_diff(report: DiffReport) -> str:
     lines.append("")
 
     # Flags (only if changed)
-    flag_lines = [
-        f"  - {k}: {va} -> {vb}"
-        for k, (va, vb) in report.flags.items()
-        if va != vb
-    ]
+    flag_lines = [f"  - {k}: {va} -> {vb}" for k, (va, vb) in report.flags.items() if va != vb]
     if flag_lines:
         lines.append("Flags:")
         lines.extend(flag_lines)
@@ -44,10 +40,7 @@ def render_diff(report: DiffReport) -> str:
         elif sd.change == "removed":
             lines.append(f"- {prefix} {sd.title} (tokens={sd.tokens_a})")
         else:
-            lines.append(
-                f"~ {prefix} {sd.title} "
-                f"(tokens={sd.tokens_a} -> {sd.tokens_b})"
-            )
+            lines.append(f"~ {prefix} {sd.title} (tokens={sd.tokens_a} -> {sd.tokens_b})")
             if sd.text_a and sd.text_b and sd.text_a != sd.text_b:
                 lines.append(f"  before: {sd.text_a[:120]}")
                 lines.append(f"  after:  {sd.text_b[:120]}")

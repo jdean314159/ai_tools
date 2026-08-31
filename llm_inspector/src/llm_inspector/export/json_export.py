@@ -18,4 +18,6 @@ def report_to_dict(report: ComparisonReport) -> Dict[str, Any]:
 
 
 def report_to_json(report: ComparisonReport, *, indent: int = 2, sort_keys: bool = True) -> str:
-    return json.dumps(report_to_dict(report), indent=indent, sort_keys=sort_keys, ensure_ascii=False)
+    return json.dumps(
+        report_to_dict(report), indent=indent, sort_keys=sort_keys, ensure_ascii=False
+    )

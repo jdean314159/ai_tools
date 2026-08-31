@@ -18,4 +18,6 @@ def bundle_to_dict(bundle: CompareBundle) -> Dict[str, Any]:
 
 
 def bundle_to_json(bundle: CompareBundle, *, indent: int = 2, sort_keys: bool = True) -> str:
-    return json.dumps(bundle_to_dict(bundle), indent=indent, sort_keys=sort_keys, ensure_ascii=False)
+    return json.dumps(
+        bundle_to_dict(bundle), indent=indent, sort_keys=sort_keys, ensure_ascii=False
+    )

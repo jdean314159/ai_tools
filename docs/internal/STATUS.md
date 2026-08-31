@@ -261,6 +261,15 @@ The agent/public-API set passed 172 tests; the added export regression brings th
 full repository gate to 1,268 passed, 304 skipped, with the same three warnings.
 `llm_inspector` is the next staged package.
 
+The fifth Python-quality checkpoint adopts all of `llm_inspector`. Its 25 lint
+findings were unused imports, imports following CLI logger setup or test markers,
+one duplicate test import, and dynamic `__all__` construction that obscured
+intentional re-exports. The package-local Ruff policy now explicitly matches the
+root baseline, and Ruff mechanically formatted 31 files. The shared gate covers
+201 files. Inspector plus targeted integration tests passed 77 with 9 skips;
+the full repository gate remains 1,268 passed, 304 skipped, with the same three
+warnings. `rag_lib` is the next staged package.
+
 ### Active project — RUN-RECORD-00
 
 The next project is a versioned, cross-package run-artifact surface. The key

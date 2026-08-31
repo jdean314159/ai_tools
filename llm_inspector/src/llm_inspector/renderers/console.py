@@ -70,4 +70,3 @@ def render_comparison(report: ComparisonReport) -> str:
         lines.append("")
 
     return "\n".join(lines)
-

@@ -23,6 +23,7 @@ Usage:
     results = inspector.query_all("What is the project status?")
     inspector.print_comparison(results)
 """
+
 from __future__ import annotations
 
 import time
@@ -33,8 +34,7 @@ try:
     from llm_engines.contracts import Chunk, RAGPipeline, RAGResult
 except ImportError as _exc:
     raise ImportError(
-        "llm_inspector.rag requires llm_engines. "
-        "Install with: pip install 'llm_inspector[rag]'"
+        "llm_inspector.rag requires llm_engines. Install with: pip install 'llm_inspector[rag]'"
     ) from _exc
 
 try:
@@ -48,6 +48,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # RAGInspector
 # ---------------------------------------------------------------------------
+
 
 class RAGInspector:
     """
@@ -111,7 +112,9 @@ class RAGInspector:
                     trace = pipeline.inspect_query(query)
                     self._last_traces[(name, query)] = trace
                 except Exception as exc:
-                    logger.warning("Pipeline '%s' inspect_query failed on query '%s': %s", name, query, exc)
+                    logger.warning(
+                        "Pipeline '%s' inspect_query failed on query '%s': %s", name, query, exc
+                    )
             if trace is not None:
                 chunks = [
                     Chunk(
@@ -128,9 +131,7 @@ class RAGInspector:
                 prompt = pipeline.assemble_prompt(query, chunks)
             response = pipeline.generate(prompt)
             latency_ms = (time.perf_counter() - t0) * 1000
-            token_count = sum(
-                len((c.content or "").split()) for c in chunks
-            )
+            token_count = sum(len((c.content or "").split()) for c in chunks)
             return RAGResult(
                 pipeline_name=name,
                 query=query,
@@ -169,18 +170,20 @@ class RAGInspector:
                 diagnostics = {}
         flows = []
         for raw in diagnostics.get("evidence_flows", []):
-            flows.append(EvidenceFlow(
-                source=str(raw.get("source", "rag")),
-                before_text=str(raw.get("before_text", "")),
-                after_text=str(raw.get("after_text", raw.get("before_text", ""))),
-                stage=str(raw.get("stage", "retrieved")),
-                score=raw.get("score"),
-                provenance=dict(raw.get("provenance", {})),
-                transformations=tuple(raw.get("transformations", [])),
-                excluded=bool(raw.get("excluded", False)),
-                exclusion_reason=raw.get("exclusion_reason"),
-                meta=dict(raw.get("meta", {})),
-            ))
+            flows.append(
+                EvidenceFlow(
+                    source=str(raw.get("source", "rag")),
+                    before_text=str(raw.get("before_text", "")),
+                    after_text=str(raw.get("after_text", raw.get("before_text", ""))),
+                    stage=str(raw.get("stage", "retrieved")),
+                    score=raw.get("score"),
+                    provenance=dict(raw.get("provenance", {})),
+                    transformations=tuple(raw.get("transformations", [])),
+                    excluded=bool(raw.get("excluded", False)),
+                    exclusion_reason=raw.get("exclusion_reason"),
+                    meta=dict(raw.get("meta", {})),
+                )
+            )
         return flows
 
     def print_comparison(self, results: list[RAGResult]) -> None:
@@ -190,16 +193,18 @@ class RAGInspector:
             return
 
         query = results[0].query
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"Query: {query}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         for result in results:
             status = "ERROR" if result.error else "OK"
-            print(f"\n[{result.pipeline_name}]  {status}  "
-                  f"latency={result.latency_ms:.0f}ms  "
-                  f"chunks={len(result.chunks)}  "
-                  f"~tokens={result.token_count}")
+            print(
+                f"\n[{result.pipeline_name}]  {status}  "
+                f"latency={result.latency_ms:.0f}ms  "
+                f"chunks={len(result.chunks)}  "
+                f"~tokens={result.token_count}"
+            )
 
             if result.error:
                 print(f"  Error: {result.error}")
@@ -228,7 +233,7 @@ class RAGInspector:
                 if len(result.response) > 200:
                     print(f"            ... [{len(result.response)} chars total]")
 
-        print(f"\n{'-'*70}")
+        print(f"\n{'-' * 70}")
         # Summary line
         ok = [r for r in results if not r.error]
         if ok:
@@ -242,6 +247,7 @@ class RAGInspector:
 # ---------------------------------------------------------------------------
 # Adapters
 # ---------------------------------------------------------------------------
+
 
 class EngramRAGAdapter:
     """
@@ -280,22 +286,26 @@ class EngramRAGAdapter:
                 # Episodic results
                 for ep in getattr(raw_results, "episodic", []):
                     text = getattr(ep, "text", "") or str(ep)
-                    chunks.append(Chunk(
-                        content=text,
-                        source_id=str(getattr(ep, "id", "")),
-                        score=float(getattr(ep, "importance", 0.5) or 0.5),
-                        metadata={"layer": "episodic"},
-                    ))
+                    chunks.append(
+                        Chunk(
+                            content=text,
+                            source_id=str(getattr(ep, "id", "")),
+                            score=float(getattr(ep, "importance", 0.5) or 0.5),
+                            metadata={"layer": "episodic"},
+                        )
+                    )
                 # Semantic results
                 for row in getattr(raw_results, "semantic", []):
                     text = str(row.get("content") or row.get("text") or row)
-                    chunks.append(Chunk(
-                        content=text,
-                        source_id=str(row.get("id", "")),
-                        score=float(row.get("match_score", 0.5)),
-                        metadata={"layer": "semantic", "type": row.get("type", "")},
-                    ))
-                return chunks[:self.max_results]
+                    chunks.append(
+                        Chunk(
+                            content=text,
+                            source_id=str(row.get("id", "")),
+                            score=float(row.get("match_score", 0.5)),
+                            metadata={"layer": "semantic", "type": row.get("type", "")},
+                        )
+                    )
+                return chunks[: self.max_results]
 
             # Fallback: EngramMemory.query_episodic
             if hasattr(self.memory, "query_episodic"):
@@ -316,7 +326,7 @@ class EngramRAGAdapter:
     def assemble_prompt(self, query: str, chunks: list[Chunk]) -> str:
         if not chunks:
             return f"Question: {query}\n\nAnswer:"
-        context_parts = [f"[{i+1}] {c.content}" for i, c in enumerate(chunks)]
+        context_parts = [f"[{i + 1}] {c.content}" for i, c in enumerate(chunks)]
         context = "\n\n".join(context_parts)
         return (
             f"Use the following context to answer the question.\n\n"
@@ -328,13 +338,13 @@ class EngramRAGAdapter:
         engine = self._engine
         if engine is None:
             # Try to get engine from the memory object
-            engine = getattr(self.memory, "engine", None) or \
-                     getattr(self.memory, "_engine", None)
+            engine = getattr(self.memory, "engine", None) or getattr(self.memory, "_engine", None)
         if engine is None:
             return "[No engine configured for generation]"
 
         try:
             from llm_engines.contracts import ChatMessage, GenerationRequest
+
             request = GenerationRequest(
                 messages=[ChatMessage(role="user", content=prompt)],
                 max_tokens=512,
@@ -394,12 +404,14 @@ class ChromaDBRAGAdapter:
             for doc, doc_id, dist, meta in zip(docs, ids, distances, metadatas):
                 # ChromaDB returns L2 distance; convert to a [0,1] score
                 score = max(0.0, 1.0 - float(dist))
-                chunks.append(Chunk(
-                    content=doc,
-                    source_id=str(doc_id),
-                    score=score,
-                    metadata=meta or {},
-                ))
+                chunks.append(
+                    Chunk(
+                        content=doc,
+                        source_id=str(doc_id),
+                        score=score,
+                        metadata=meta or {},
+                    )
+                )
             return chunks
         except Exception as e:
             logger.warning("ChromaDBRAGAdapter.retrieve failed: %s", e)
@@ -408,15 +420,13 @@ class ChromaDBRAGAdapter:
     def assemble_prompt(self, query: str, chunks: list[Chunk]) -> str:
         if not chunks:
             return f"Question: {query}\n\nAnswer:"
-        context = "\n\n".join(f"[{i+1}] {c.content}" for i, c in enumerate(chunks))
-        return (
-            f"Context:\n{context}\n\n"
-            f"Question: {query}\n\nAnswer:"
-        )
+        context = "\n\n".join(f"[{i + 1}] {c.content}" for i, c in enumerate(chunks))
+        return f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"
 
     def generate(self, prompt: str) -> str:
         try:
             from llm_engines.contracts import ChatMessage, GenerationRequest
+
             request = GenerationRequest(
                 messages=[ChatMessage(role="user", content=prompt)],
                 max_tokens=512,

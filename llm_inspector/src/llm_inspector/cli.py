@@ -6,9 +6,6 @@ import json
 from collections import Counter
 from pathlib import Path
 import logging
-logging.getLogger("engram").setLevel(logging.WARNING)
-logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
-logging.getLogger("chromadb").setLevel(logging.WARNING)
 
 from llm_inspector.adapters import AdapterRegistry, AdapterSpec
 from llm_inspector.export import bundle_to_json, diff_to_json, report_to_json
@@ -26,6 +23,10 @@ from llm_inspector.artifacts import (
     render_artifact_inspection,
 )
 
+logging.getLogger("engram").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("chromadb").setLevel(logging.WARNING)
+
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="llm-inspect")
@@ -34,9 +35,13 @@ def _build_parser() -> argparse.ArgumentParser:
     # --- compare ---
     cmp_p = sub.add_parser("compare", help="Compare context assembly across augmenters.")
     cmp_p.add_argument("query", help="User query / prompt text.")
-    cmp_p.add_argument("--adapter", default="baseline", help="Augmenter adapter to use (default: baseline).")
+    cmp_p.add_argument(
+        "--adapter", default="baseline", help="Augmenter adapter to use (default: baseline)."
+    )
     cmp_p.add_argument("--json-out", type=str, default="", help="Write report JSON to this path.")
-    cmp_p.add_argument("--text-out", type=str, default="", help="Write console report to this path.")
+    cmp_p.add_argument(
+        "--text-out", type=str, default="", help="Write console report to this path."
+    )
     cmp_p.add_argument("--no-print", action="store_true", help="Do not print console output.")
     cmp_p.add_argument("--engram-base-dir", default="~/.engram/projects/default")
     cmp_p.add_argument("--engram-profile", default="default_local")
@@ -46,7 +51,9 @@ def _build_parser() -> argparse.ArgumentParser:
     diff_p = sub.add_parser("diff", help="Diff two adapters on the same query.")
     diff_p.add_argument("query", help="User query / prompt text.")
     diff_p.add_argument("--adapter-a", default="baseline", help="Left adapter (default: baseline).")
-    diff_p.add_argument("--adapter-b", default="baseline", help="Right adapter (default: baseline).")
+    diff_p.add_argument(
+        "--adapter-b", default="baseline", help="Right adapter (default: baseline)."
+    )
     diff_p.add_argument("--json-out", type=str, default="", help="Write diff JSON to this path.")
     diff_p.add_argument("--text-out", type=str, default="", help="Write diff text to this path.")
     diff_p.add_argument("--no-print", action="store_true", help="Do not print diff output.")
@@ -55,14 +62,18 @@ def _build_parser() -> argparse.ArgumentParser:
     diff_p.add_argument("--engram-project-type", default="programming_assistant")
 
     # --- bundle ---
-    bun_p = sub.add_parser("bundle", help="Compare multiple adapters and emit a bundle JSON (report + pairwise diffs).")
+    bun_p = sub.add_parser(
+        "bundle", help="Compare multiple adapters and emit a bundle JSON (report + pairwise diffs)."
+    )
     bun_p.add_argument("query", help="User query / prompt text.")
     bun_p.add_argument(
         "--adapters",
         default="baseline",
         help="Comma-separated adapter list, e.g. 'baseline,engram' or 'baseline,baseline'.",
     )
-    bun_p.add_argument("--json-out", type=str, required=True, help="Write bundle JSON to this path.")
+    bun_p.add_argument(
+        "--json-out", type=str, required=True, help="Write bundle JSON to this path."
+    )
     bun_p.add_argument("--no-print", action="store_true", help="Do not print console output.")
     bun_p.add_argument("--engram-base-dir", default="~/.engram/projects/default")
     bun_p.add_argument("--engram-profile", default="default_local")
@@ -74,7 +85,9 @@ def _build_parser() -> argparse.ArgumentParser:
     artifact_show = artifact_sub.add_parser("show", help="Validate and summarize one artifact.")
     artifact_show.add_argument("path", type=Path)
     artifact_show.add_argument("--format", choices=("text", "json"), default="text")
-    artifact_compare = artifact_sub.add_parser("compare", help="Compare defensible common artifact facts.")
+    artifact_compare = artifact_sub.add_parser(
+        "compare", help="Compare defensible common artifact facts."
+    )
     artifact_compare.add_argument("left", type=Path)
     artifact_compare.add_argument("right", type=Path)
     artifact_compare.add_argument("--format", choices=("text", "json"), default="text")
@@ -92,7 +105,9 @@ def _build_registry() -> AdapterRegistry:
 
 def _mk_adapter(reg: AdapterRegistry, adapter_name: str, *, instance_name: str, args) -> object:
     if adapter_name not in reg.available():
-        raise SystemExit(f"Unknown adapter '{adapter_name}'. Available: {', '.join(reg.available())}")
+        raise SystemExit(
+            f"Unknown adapter '{adapter_name}'. Available: {', '.join(reg.available())}"
+        )
 
     kwargs = {"_name": instance_name}
     if adapter_name == "engram":

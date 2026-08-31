@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from llm_harness_core import CapabilityKind
 
-from llm_inspector import describe_inspector, report_to_operation_result, trace_to_interop_events, trace_to_memory_records, trace_to_operation_result
+from llm_inspector import (
+    describe_inspector,
+    report_to_operation_result,
+    trace_to_interop_events,
+    trace_to_memory_records,
+    trace_to_operation_result,
+)
 from llm_inspector.augmenters import BaselineAugmenter
 from llm_inspector.core import EvidenceItem, TraceEvent, Turn
 from llm_inspector.inspectors import ContextInspector
@@ -16,7 +22,9 @@ def test_turn_and_evidence_convert_to_interop_objects() -> None:
     assert msg.content == "hello"
     assert msg.metadata["session_id"] == "s1"
 
-    evidence = EvidenceItem(text="prefers Spanish", source="episodic", score=0.9, meta={"title": "Preference"})
+    evidence = EvidenceItem(
+        text="prefers Spanish", source="episodic", score=0.9, meta={"title": "Preference"}
+    )
     record = evidence.to_memory_record()
     doc = evidence.to_retrieved_document()
     assert record.source == "episodic"
@@ -58,7 +66,9 @@ def test_inspector_interop_helpers() -> None:
 
 
 def test_augment_request_exposes_interop_message() -> None:
-    req = AugmentRequest(turn=Turn(role="user", text="hello", session_id="s2"), query="hello", session_id="s2")
+    req = AugmentRequest(
+        turn=Turn(role="user", text="hello", session_id="s2"), query="hello", session_id="s2"
+    )
     msg = req.to_interop_message()
     assert msg.role == "user"
     assert msg.metadata["session_id"] == "s2"

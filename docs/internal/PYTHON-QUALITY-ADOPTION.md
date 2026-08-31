@@ -6,7 +6,7 @@ The repository root owns the shared Ruff baseline. Adoption is deliberately
 staged so formatting changes remain reviewable and are not mixed with behavioral
 refactors. `make quality-python` is the enforced gate; its default scope is
 `llm_harness_core`, both loop-guard packages, `mail_lib`, `llm_inspector_ui`,
-and `agent_lib`.
+`agent_lib`, and `llm_inspector`.
 
 The initial policy uses Ruff's conservative `E4`, `E7`, `E9`, and `F` rules,
 100-character lines, and a Python 3.10 syntax target. Python 3.10 remains the
@@ -40,7 +40,7 @@ configuration.
 | `examples/diagnostics_agent` | 0 | 22 |
 | `llm_inspector_ui` | 0 | 0 (adopted) |
 | `agent_lib` | 0 | 0 (adopted) |
-| `llm_inspector` | 25 | 33 |
+| `llm_inspector` | 0 | 0 (adopted) |
 | `rag_lib` | 28 | 30 |
 | `llm_engines` | 53 | 58 |
 | `engram` | 55 | 51 |
@@ -60,8 +60,8 @@ may need an explicit exclusion rather than automatic rewriting.
 2. Loop guards and `mail_lib` — adopted and enforced in CI.
 3. `llm_inspector_ui` — adopted and enforced in CI.
 4. `agent_lib` — adopted and enforced in CI.
-5. `llm_inspector` — next active package; review its 25 lint findings.
-6. `rag_lib` — review after Inspector because it consumes Inspector contracts.
+5. `llm_inspector` — adopted and enforced in CI.
+6. `rag_lib` — next; review its 28 lint findings.
 7. `llm_engines` and `engram` — largest active-library cleanup sets.
 8. Examples, scripts, and root integration tests — classify generated and
    historical files before adoption.

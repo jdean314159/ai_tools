@@ -57,7 +57,9 @@ def test_engram_trace_sections_order_golden(tmp_path: Path):
     if not _engram_runtime_available():
         pytest.skip("engram not importable with its runtime dependencies")
 
-    aug = EngramAugmenter(base_dir=tmp_path, project_id="default", project_type="programming_assistant")
+    aug = EngramAugmenter(
+        base_dir=tmp_path, project_id="default", project_type="programming_assistant"
+    )
 
     req = AugmentRequest(turn=Turn(role="user", text="hello world"), session_id="s1")
     trace = aug.augment(req)

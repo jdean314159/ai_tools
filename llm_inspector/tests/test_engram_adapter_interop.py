@@ -3,14 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
-
-pytestmark = pytest.mark.engram
-
 from llm_inspector.adapters.engram_adapter import EngramAugmenter
 from llm_inspector.core import Trace
 from llm_inspector.protocols import AugmentRequest
 from llm_inspector.core import Turn
+
+pytestmark = pytest.mark.engram
 
 
 class FakeEngine:
@@ -24,7 +22,9 @@ class FakeEngine:
         return "test reply"
 
 
-def test_engram_adapter_prefers_shared_interop_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_engram_adapter_prefers_shared_interop_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     from engram import ProjectType
     from engram.project_memory import ProjectMemory
 
@@ -57,7 +57,11 @@ def test_engram_adapter_prefers_shared_interop_path(tmp_path: Path, monkeypatch:
         project_id="adapter-test",
         project_type=ProjectType.GENERAL_ASSISTANT.value,
     )
-    req = AugmentRequest(turn=Turn(role="user", text="Remember that I prefer Python.", session_id="s1"), query="preferred language", session_id="s1")
+    req = AugmentRequest(
+        turn=Turn(role="user", text="Remember that I prefer Python.", session_id="s1"),
+        query="preferred language",
+        session_id="s1",
+    )
 
     trace = augmenter.augment(req)
 
@@ -70,7 +74,9 @@ def test_engram_adapter_prefers_shared_interop_path(tmp_path: Path, monkeypatch:
     assert calls["legacy"] >= 1
 
 
-def test_engram_adapter_returns_trace_from_shared_diagnostics(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_engram_adapter_returns_trace_from_shared_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     from engram.project_memory import ProjectMemory
 
     original_init = ProjectMemory.__init__
@@ -86,7 +92,11 @@ def test_engram_adapter_returns_trace_from_shared_diagnostics(tmp_path: Path, mo
         project_id="adapter-test-2",
         project_type="general_assistant",
     )
-    req = AugmentRequest(turn=Turn(role="user", text="Use DuckDB for analytics.", session_id="s2"), query="analytics database", session_id="s2")
+    req = AugmentRequest(
+        turn=Turn(role="user", text="Use DuckDB for analytics.", session_id="s2"),
+        query="analytics database",
+        session_id="s2",
+    )
 
     trace = augmenter.augment(req)
 
@@ -96,7 +106,9 @@ def test_engram_adapter_returns_trace_from_shared_diagnostics(tmp_path: Path, mo
     assert trace.events
 
 
-def test_engram_adapter_interop_events_include_provenance_and_transformations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_engram_adapter_interop_events_include_provenance_and_transformations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     from engram.project_memory import ProjectMemory
 
     original_init = ProjectMemory.__init__
@@ -112,7 +124,11 @@ def test_engram_adapter_interop_events_include_provenance_and_transformations(tm
         project_id="adapter-test-3",
         project_type="general_assistant",
     )
-    req = AugmentRequest(turn=Turn(role="user", text="Keep docs in Markdown in the repo.", session_id="s3"), query="docs policy", session_id="s3")
+    req = AugmentRequest(
+        turn=Turn(role="user", text="Keep docs in Markdown in the repo.", session_id="s3"),
+        query="docs policy",
+        session_id="s3",
+    )
 
     trace = augmenter.augment(req)
 
@@ -122,8 +138,9 @@ def test_engram_adapter_interop_events_include_provenance_and_transformations(tm
     assert any("transformations" in event.payload for event in included)
 
 
-
-def test_engram_adapter_end_to_end_uses_shared_trace_events_for_serialization_and_rendering(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_engram_adapter_end_to_end_uses_shared_trace_events_for_serialization_and_rendering(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     from engram.project_memory import ProjectMemory
     from engram.inspection import PromptBuildTrace
     from llm_inspector.core.serialize import to_json
@@ -139,9 +156,13 @@ def test_engram_adapter_end_to_end_uses_shared_trace_events_for_serialization_an
     monkeypatch.setattr(ProjectMemory, "__init__", patched_init)
 
     def explode_if_legacy_reconstruction_used(self):
-        raise AssertionError("adapter attempted legacy PromptBuildTrace.to_interop_events reconstruction")
+        raise AssertionError(
+            "adapter attempted legacy PromptBuildTrace.to_interop_events reconstruction"
+        )
 
-    monkeypatch.setattr(PromptBuildTrace, "to_interop_events", explode_if_legacy_reconstruction_used)
+    monkeypatch.setattr(
+        PromptBuildTrace, "to_interop_events", explode_if_legacy_reconstruction_used
+    )
 
     augmenter = EngramAugmenter(
         base_dir=tmp_path,
@@ -160,6 +181,6 @@ def test_engram_adapter_end_to_end_uses_shared_trace_events_for_serialization_an
     assert '"event_type": "memory_evidence_included"' in payload
     assert '"provenance"' in payload
     assert '"transformations"' in payload
-    assert '=== engram ===' in rendered
-    assert 'Sections:' in rendered
-    assert 'Evidence:' in rendered
+    assert "=== engram ===" in rendered
+    assert "Sections:" in rendered
+    assert "Evidence:" in rendered

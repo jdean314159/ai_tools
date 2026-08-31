@@ -111,9 +111,7 @@ def _common(artifact: RunArtifact) -> dict[str, Any]:
                 for relationship in envelope.relationships
             ],
             "privacy": {
-                "declared_content_categories": list(
-                    envelope.privacy.declared_content_categories
-                ),
+                "declared_content_categories": list(envelope.privacy.declared_content_categories),
                 "body_bytes_sensitivity": envelope.privacy.body_bytes_sensitivity,
                 "validation_status": envelope.privacy.validation.status,
                 "validation_scope": list(envelope.privacy.validation.scope),
@@ -140,9 +138,7 @@ def _common(artifact: RunArtifact) -> dict[str, Any]:
 def _generation_summary(body: Mapping[str, Any]) -> dict[str, Any]:
     response = body.get("response") if isinstance(body.get("response"), Mapping) else {}
     model_identity = (
-        body.get("model_identity")
-        if isinstance(body.get("model_identity"), Mapping)
-        else {}
+        body.get("model_identity") if isinstance(body.get("model_identity"), Mapping) else {}
     )
     usage = response.get("usage") if isinstance(response.get("usage"), Mapping) else {}
     message = response.get("message") if isinstance(response.get("message"), Mapping) else {}
@@ -216,9 +212,7 @@ def _experiment_summary(artifact: RunArtifact) -> dict[str, Any]:
         }
     if artifact.envelope.profile == "llm_engines.tool_decision_campaign":
         aggregates = (
-            body.get("case_aggregates")
-            if isinstance(body.get("case_aggregates"), Mapping)
-            else {}
+            body.get("case_aggregates") if isinstance(body.get("case_aggregates"), Mapping) else {}
         )
         return {
             "record_type": "tool_decision_campaign",
@@ -382,7 +376,11 @@ def inspect_artifact_path(path: str | Path) -> ArtifactInspection:
             if attachment.logical_role != "child_run_artifact":
                 continue
             resolution = resolutions.get(attachment.attachment_id)
-            if resolution is None or resolution.status != "resolved" or not resolution.resolved_path:
+            if (
+                resolution is None
+                or resolution.status != "resolved"
+                or not resolution.resolved_path
+            ):
                 continue
             try:
                 child = inspect_artifact(load_artifact(resolution.resolved_path))
@@ -438,15 +436,17 @@ def compare_artifacts(left: RunArtifact, right: RunArtifact) -> ArtifactComparis
     right_inspection = inspect_artifact(right)
     left_labels = _model_labels(left_inspection)
     right_labels = _model_labels(right_inspection)
-    labels_comparable = (
-        any(left_labels[key] is not None for key in ("requested", "reported"))
-        and any(right_labels[key] is not None for key in ("requested", "reported"))
-    )
+    labels_comparable = any(
+        left_labels[key] is not None for key in ("requested", "reported")
+    ) and any(right_labels[key] is not None for key in ("requested", "reported"))
     labels_equal = labels_comparable and left_labels == right_labels
     notices = [
         "model label equality is not model identity; digest, quantization, runtime, tokenizer, and template facts must be checked separately"
     ]
-    if left_inspection.body_support == "unsupported" or right_inspection.body_support == "unsupported":
+    if (
+        left_inspection.body_support == "unsupported"
+        or right_inspection.body_support == "unsupported"
+    ):
         notices.append("one or more bodies are unsupported; comparison is envelope-only")
     common_facts = {
         "same_kind": left.envelope.kind == right.envelope.kind,
@@ -495,9 +495,7 @@ def compare_artifacts(left: RunArtifact, right: RunArtifact) -> ArtifactComparis
     ):
         left_aggregates = left_summary.get("probe_aggregates") or {}
         right_aggregates = right_summary.get("probe_aggregates") or {}
-        common_facts["comparable_probe_ids"] = sorted(
-            set(left_aggregates) & set(right_aggregates)
-        )
+        common_facts["comparable_probe_ids"] = sorted(set(left_aggregates) & set(right_aggregates))
         common_facts["campaign_aggregates_equal"] = left_aggregates == right_aggregates
         notices.append(
             "campaign aggregate differences are descriptive; this comparison does not test statistical significance"
@@ -508,16 +506,13 @@ def compare_artifacts(left: RunArtifact, right: RunArtifact) -> ArtifactComparis
     ):
         left_aggregates = left_summary.get("case_aggregates") or {}
         right_aggregates = right_summary.get("case_aggregates") or {}
-        common_facts["comparable_case_ids"] = sorted(
-            set(left_aggregates) & set(right_aggregates)
-        )
+        common_facts["comparable_case_ids"] = sorted(set(left_aggregates) & set(right_aggregates))
         common_facts["case_aggregates_equal"] = left_aggregates == right_aggregates
         common_facts["thinking_requested"] = {
             "left": left_summary.get("thinking_requested"),
             "right": right_summary.get("thinking_requested"),
             "equal": (
-                left_summary.get("thinking_requested")
-                == right_summary.get("thinking_requested")
+                left_summary.get("thinking_requested") == right_summary.get("thinking_requested")
             ),
         }
         notices.append(

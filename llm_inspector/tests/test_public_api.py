@@ -43,7 +43,12 @@ def test_top_level_public_api_exposes_core_workflow():
     assert isinstance(report_to_json(report), str)
     assert isinstance(bundle_to_json(bundle), str)
     assert isinstance(render_comparison(report), str)
-    assert isinstance(render_diff(diff_traces(report.traces[0].trace, report.traces[0].trace, name_a="a", name_b="b")), str)
+    assert isinstance(
+        render_diff(
+            diff_traces(report.traces[0].trace, report.traces[0].trace, name_a="a", name_b="b")
+        ),
+        str,
+    )
 
 
 def test_top_level_types_are_importable():

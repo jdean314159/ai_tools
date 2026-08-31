@@ -3,15 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
-
-pytestmark = pytest.mark.engram
-
 from llm_inspector.adapters.engram_adapter import EngramAugmenter
 from llm_inspector.core import EvidenceFlow, Turn
 from llm_inspector.inspectors import ContextInspector
 from llm_inspector.protocols import AugmentRequest
 from llm_inspector.renderers import render_comparison
+
+pytestmark = pytest.mark.engram
 
 
 class FakeEngine:
@@ -25,7 +23,9 @@ class FakeEngine:
         return "test reply"
 
 
-def test_engram_adapter_builds_evidence_flows_with_provenance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_engram_adapter_builds_evidence_flows_with_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     from engram.project_memory import ProjectMemory
 
     original_init = ProjectMemory.__init__
@@ -36,8 +36,14 @@ def test_engram_adapter_builds_evidence_flows_with_provenance(tmp_path: Path, mo
 
     monkeypatch.setattr(ProjectMemory, "__init__", patched_init)
 
-    augmenter = EngramAugmenter(base_dir=tmp_path, project_id="flows-test", project_type="general_assistant")
-    req = AugmentRequest(turn=Turn(role="user", text="Keep docs in Markdown in the repo.", session_id="s1"), query="docs policy", session_id="s1")
+    augmenter = EngramAugmenter(
+        base_dir=tmp_path, project_id="flows-test", project_type="general_assistant"
+    )
+    req = AugmentRequest(
+        turn=Turn(role="user", text="Keep docs in Markdown in the repo.", session_id="s1"),
+        query="docs policy",
+        session_id="s1",
+    )
 
     trace = augmenter.augment(req)
 
@@ -51,7 +57,9 @@ def test_engram_adapter_builds_evidence_flows_with_provenance(tmp_path: Path, mo
     assert flow.transformations
 
 
-def test_render_comparison_includes_evidence_flow_section(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_render_comparison_includes_evidence_flow_section(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     from engram.project_memory import ProjectMemory
 
     original_init = ProjectMemory.__init__
@@ -62,7 +70,9 @@ def test_render_comparison_includes_evidence_flow_section(tmp_path: Path, monkey
 
     monkeypatch.setattr(ProjectMemory, "__init__", patched_init)
 
-    augmenter = EngramAugmenter(base_dir=tmp_path, project_id="flows-render", project_type="general_assistant")
+    augmenter = EngramAugmenter(
+        base_dir=tmp_path, project_id="flows-render", project_type="general_assistant"
+    )
     report = ContextInspector([augmenter]).run("store docs in markdown", session_id="s2")
 
     rendered = render_comparison(report)

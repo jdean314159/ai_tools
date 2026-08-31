@@ -15,6 +15,7 @@ def _approx_tokens(text: str) -> int:
 @dataclass
 class BaselineAugmenter(ContextAugmenter):
     """Minimal augmenter: system + user only. Useful as a test double and baseline."""
+
     system_prompt: str = "You are a helpful assistant."
     target_tokens: Optional[int] = 2048
     _name: str = "baseline"

@@ -54,7 +54,9 @@ class DiffReport:
     section_deltas: List[SectionDelta] = field(default_factory=list)
     evidence_deltas: List[EvidenceDelta] = field(default_factory=list)
     token_deltas: List[TokenDelta] = field(default_factory=list)
-    flags: Dict[str, Tuple[object, object]] = field(default_factory=dict)  # e.g. compressed/truncated
+    flags: Dict[str, Tuple[object, object]] = field(
+        default_factory=dict
+    )  # e.g. compressed/truncated
 
 
 def diff_traces(a: Trace, b: Trace, *, name_a: str = "A", name_b: str = "B") -> DiffReport:
@@ -69,11 +71,23 @@ def diff_traces(a: Trace, b: Trace, *, name_a: str = "A", name_b: str = "B") -> 
         sb = map_b.get(k)
         if sa is None:
             section_deltas.append(
-                SectionDelta(origin=sb.origin, title=sb.title, change="added", tokens_b=sb.tokens, text_b=_norm_text(sb.text, limit=240))
+                SectionDelta(
+                    origin=sb.origin,
+                    title=sb.title,
+                    change="added",
+                    tokens_b=sb.tokens,
+                    text_b=_norm_text(sb.text, limit=240),
+                )
             )
         elif sb is None:
             section_deltas.append(
-                SectionDelta(origin=sa.origin, title=sa.title, change="removed", tokens_a=sa.tokens, text_a=_norm_text(sa.text, limit=240))
+                SectionDelta(
+                    origin=sa.origin,
+                    title=sa.title,
+                    change="removed",
+                    tokens_a=sa.tokens,
+                    text_a=_norm_text(sa.text, limit=240),
+                )
             )
         else:
             ta = _norm_text(sa.text, limit=240)
@@ -109,14 +123,25 @@ def diff_traces(a: Trace, b: Trace, *, name_a: str = "A", name_b: str = "B") -> 
     used_a = a.context.token_accounting.per_origin_used or {}
     used_b = b.context.token_accounting.per_origin_used or {}
     origins = sorted(set(used_a) | set(used_b))
-    token_deltas = [TokenDelta(origin=o, used_a=used_a.get(o), used_b=used_b.get(o)) for o in origins]
+    token_deltas = [
+        TokenDelta(origin=o, used_a=used_a.get(o), used_b=used_b.get(o)) for o in origins
+    ]
 
     # Flags
     flags = {
-        "compressed": (a.context.token_accounting.compressed, b.context.token_accounting.compressed),
+        "compressed": (
+            a.context.token_accounting.compressed,
+            b.context.token_accounting.compressed,
+        ),
         "truncated": (a.context.token_accounting.truncated, b.context.token_accounting.truncated),
-        "total_tokens": (a.context.token_accounting.total_tokens, b.context.token_accounting.total_tokens),
-        "target_tokens": (a.context.token_accounting.target_tokens, b.context.token_accounting.target_tokens),
+        "total_tokens": (
+            a.context.token_accounting.total_tokens,
+            b.context.token_accounting.total_tokens,
+        ),
+        "target_tokens": (
+            a.context.token_accounting.target_tokens,
+            b.context.token_accounting.target_tokens,
+        ),
     }
 
     return DiffReport(

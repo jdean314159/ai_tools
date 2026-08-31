@@ -11,6 +11,7 @@ from llm_inspector.inspectors.diff import DiffReport, diff_traces
 @dataclass(frozen=True)
 class CompareBundle:
     """A compare result plus all pairwise diffs for UI rendering and regression."""
+
     report: ComparisonReport
     diffs: List[DiffReport] = field(default_factory=list)
 

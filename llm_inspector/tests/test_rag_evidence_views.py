@@ -23,9 +23,19 @@ class _FakeRetriever:
             "diagnostics": {"dense_count": 1, "bm25_count": 1, "fused_count": 1},
         }
 
-    def assemble_prompt_with_selection(self, query: str, chunks, max_context_tokens=None, system_prompt: str = ""):
+    def assemble_prompt_with_selection(
+        self, query: str, chunks, max_context_tokens=None, system_prompt: str = ""
+    ):
         prompt = f"{system_prompt}\n\nContext:\n{chunks[0].context_text}\n\nQuestion: {query}\n\nAnswer:".strip()
-        return prompt, list(chunks), {"selected_count": len(chunks), "budget": max_context_tokens, "selected_chunk_ids": [c.chunk_id for c in chunks]}
+        return (
+            prompt,
+            list(chunks),
+            {
+                "selected_count": len(chunks),
+                "budget": max_context_tokens,
+                "selected_chunk_ids": [c.chunk_id for c in chunks],
+            },
+        )
 
 
 class _FakeReranker:

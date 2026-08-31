@@ -11,12 +11,12 @@ from llm_inspector.inspectors import ContextInspector
 from llm_inspector.inspectors.context_inspector import NamedTrace, ComparisonReport
 from llm_inspector.core.trace import ContextResult, Trace, TokenAccounting, RunMetrics
 from llm_inspector.core.types import Section, Turn
-from llm_inspector.core.types import Section
 from llm_inspector.renderers import render_comparison
 from llm_inspector.renderers.origins import console_prefix
 
 
 # ── console_prefix unit tests ─────────────────────────────────────────────────
+
 
 def test_synthesis_prefix_is_rul():
     assert console_prefix("synthesis") == "[RUL]"
@@ -33,6 +33,7 @@ def test_user_prefix_is_usr():
 
 
 # ── Integration with render_comparison ────────────────────────────────────────
+
 
 def _baseline_report():
     a = BaselineAugmenter(system_prompt="You are helpful.", _name="test_aug")

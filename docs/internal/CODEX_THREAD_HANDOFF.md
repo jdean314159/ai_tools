@@ -81,6 +81,10 @@ The work progressed through evidence rather than assuming a design:
     Its compatibility adapter and two scenario helpers were added to their
     existing `__all__` surfaces and locked by a public-API regression test. The
     full gate now reports 1,268 passed; `llm_inspector` is next.
+21. `llm_inspector` is now lint-clean, formatted, and included in the shared
+    gate. Dynamic re-export lists were replaced by explicit `__all__` literals,
+    and its local Ruff policy now matches the root baseline. Inspector and
+    targeted integration tests passed; `rag_lib` is next.
 
 Key commits, oldest to newest:
 
@@ -123,7 +127,7 @@ arbitrary failures, or the 32K retention result to the advertised maximum.
 Further model testing should require a new concrete question rather than
 extending these ceiling profiles. Inspector/UI single-artifact replay is now
 complete. The active maintenance sequence is Python-quality adoption, next
-through `llm_inspector`. A deeper
+through `rag_lib`. A deeper
 command-sandbox project would first need
 a new concrete question around the still-missing resource limits,
 `no-new-privileges`, capabilities, or seccomp controls.

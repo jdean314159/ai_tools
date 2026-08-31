@@ -14,17 +14,18 @@ Author: Jeffrey Dean
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List
 
 
 @dataclass(frozen=True)
 class OriginMeta:
     """Display metadata for one prompt-section origin."""
-    label: str              # Short display label
-    description: str        # One-line explanation for beginner/teaching mode
-    ui_color: str           # Streamlit / CSS colour for badges and charts
-    console_prefix: str     # ASCII prefix for plain-text console output
+
+    label: str  # Short display label
+    description: str  # One-line explanation for beginner/teaching mode
+    ui_color: str  # Streamlit / CSS colour for badges and charts
+    console_prefix: str  # ASCII prefix for plain-text console output
     is_memory: bool = True  # False for structural sections (system, user)
 
 
@@ -35,32 +36,32 @@ ORIGIN_META: Dict[str, OriginMeta] = {
     "system": OriginMeta(
         label="System",
         description="Instructions injected before the conversation to shape model behaviour.",
-        ui_color="#6c757d",       # muted grey
+        ui_color="#6c757d",  # muted grey
         console_prefix="[SYS]",
         is_memory=False,
     ),
     "working": OriginMeta(
         label="Working memory",
         description="The recent conversation turns held in fast, short-term memory.",
-        ui_color="#0d6efd",       # blue
+        ui_color="#0d6efd",  # blue
         console_prefix="[WRK]",
     ),
     "episodic": OriginMeta(
         label="Episodic memory",
         description="Relevant past episodes retrieved by semantic similarity to the query.",
-        ui_color="#198754",       # green
+        ui_color="#198754",  # green
         console_prefix="[EPI]",
     ),
     "semantic": OriginMeta(
         label="Semantic memory",
         description="Structured facts and preferences extracted from past conversations.",
-        ui_color="#0dcaf0",       # cyan
+        ui_color="#0dcaf0",  # cyan
         console_prefix="[SEM]",
     ),
     "cold": OriginMeta(
         label="Cold storage",
         description="Older archived episodes retrieved by keyword matching as a fallback.",
-        ui_color="#6f42c1",       # purple
+        ui_color="#6f42c1",  # purple
         console_prefix="[CLD]",
     ),
     "synthesis": OriginMeta(
@@ -69,13 +70,13 @@ ORIGIN_META: Dict[str, OriginMeta] = {
             "Generalizable rules extracted from past sessions — 'when X, do Y' patterns "
             "that apply across many conversations."
         ),
-        ui_color="#fd7e14",       # orange — visually distinct from all memory tiers
+        ui_color="#fd7e14",  # orange — visually distinct from all memory tiers
         console_prefix="[RUL]",
     ),
     "user": OriginMeta(
         label="User",
         description="The current user message.",
-        ui_color="#adb5bd",       # light grey
+        ui_color="#adb5bd",  # light grey
         console_prefix="[USR]",
         is_memory=False,
     ),
@@ -96,6 +97,7 @@ ORIGIN_ORDER: List[str] = [
 # ---------------------------------------------------------------------------
 # Public helpers
 # ---------------------------------------------------------------------------
+
 
 def get_meta(origin: str) -> OriginMeta:
     """Return OriginMeta for a known origin, or a sensible default."""
@@ -146,4 +148,6 @@ def sorted_origins(origins) -> List[str]:
 
 def memory_origins() -> List[str]:
     """Return all origins marked is_memory=True, in display order."""
-    return [o for o in ORIGIN_ORDER if ORIGIN_META.get(o, OriginMeta("","","","", False)).is_memory]
+    return [
+        o for o in ORIGIN_ORDER if ORIGIN_META.get(o, OriginMeta("", "", "", "", False)).is_memory
+    ]

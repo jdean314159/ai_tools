@@ -164,9 +164,7 @@ def _tool_decision_campaign(*, thinking: bool) -> RunArtifact:
             "repetitions": 2,
             "cases_per_run": 1,
             "thinking_requested": thinking,
-            "case_aggregates": {
-                "required_single_tool": {"runs": 2, "passed": 2, "pass_rate": 1.0}
-            },
+            "case_aggregates": {"required_single_tool": {"runs": 2, "passed": 2, "pass_rate": 1.0}},
             "interpretation_limit": "observable decisions only",
         },
     )
@@ -313,7 +311,9 @@ def test_unsupported_profile_keeps_envelope_and_refuses_body_interpretation() ->
 
 def test_unvalidated_privacy_and_omissions_are_visible() -> None:
     artifact = _generation()
-    privacy = replace(artifact.envelope.privacy, validation=PrivacyValidation(status="not_validated"))
+    privacy = replace(
+        artifact.envelope.privacy, validation=PrivacyValidation(status="not_validated")
+    )
     artifact = replace(artifact, envelope=replace(artifact.envelope, privacy=privacy))
 
     inspection = inspect_artifact(artifact)
@@ -361,7 +361,7 @@ def test_artifact_cli_show_and_compare(tmp_path: Path, capsys) -> None:
     assert main(["artifact", "compare", str(left), str(right)]) == 0
     compared = capsys.readouterr().out
     assert "same_kind: false" in compared
-    assert "model_identity_equal: \"not_determined\"" in compared
+    assert 'model_identity_equal: "not_determined"' in compared
 
 
 def _bundled_experiment(data: bytes) -> RunArtifact:

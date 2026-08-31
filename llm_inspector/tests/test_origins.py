@@ -19,19 +19,20 @@ import pytest
 CANONICAL = ["system", "working", "episodic", "semantic", "cold", "synthesis", "user"]
 
 EXPECTED_PREFIXES = {
-    "system":    "[SYS]",
-    "working":   "[WRK]",
-    "episodic":  "[EPI]",
-    "semantic":  "[SEM]",
-    "cold":      "[CLD]",
+    "system": "[SYS]",
+    "working": "[WRK]",
+    "episodic": "[EPI]",
+    "semantic": "[SEM]",
+    "cold": "[CLD]",
     "synthesis": "[RUL]",
-    "user":      "[USR]",
+    "user": "[USR]",
 }
 
 
 @pytest.fixture
 def origins_mod():
     from llm_inspector.renderers import origins
+
     return origins
 
 
@@ -45,9 +46,7 @@ def test_console_prefixes_correct(origins_mod):
     """console_prefix() returns the expected bracket tag for each origin."""
     for origin, expected in EXPECTED_PREFIXES.items():
         result = origins_mod.console_prefix(origin)
-        assert result == expected, (
-            f"console_prefix({origin!r}) = {result!r}, expected {expected!r}"
-        )
+        assert result == expected, f"console_prefix({origin!r}) = {result!r}, expected {expected!r}"
 
 
 def test_label_returns_nonempty_string(origins_mod):
@@ -112,12 +111,11 @@ def test_memory_origins_includes_synthesis(origins_mod):
 def test_ui_color_returns_hex_string(origins_mod):
     """ui_color() returns a CSS hex string for all canonical origins."""
     import re
+
     hex_re = re.compile(r"^#[0-9a-fA-F]{6}$")
     for o in CANONICAL:
         color = origins_mod.ui_color(o)
-        assert hex_re.match(color), (
-            f"ui_color({o!r}) = {color!r} is not a valid hex colour"
-        )
+        assert hex_re.match(color), f"ui_color({o!r}) = {color!r} is not a valid hex colour"
 
 
 def test_description_returns_nonempty_string(origins_mod):

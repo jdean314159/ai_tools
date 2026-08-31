@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from llm_harness_core import CapabilityDescriptor, CapabilityKind, MemoryRecord, OperationResult, TraceEvent
+from llm_harness_core import (
+    CapabilityDescriptor,
+    CapabilityKind,
+    MemoryRecord,
+    OperationResult,
+    TraceEvent,
+)
 
 from .inspectors import ComparisonReport
 
