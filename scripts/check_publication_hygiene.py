@@ -17,12 +17,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _git_tracked_files() -> set[Path]:
-    result = subprocess.run(
-        ["git", "ls-files"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["git", "ls-files"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+    except OSError as exc:
+        raise RuntimeError("git ls-files is unavailable") from exc
+    if result.returncode != 0:
+        raise RuntimeError(f"git ls-files failed with exit status {result.returncode}")
     return {ROOT / line.strip() for line in result.stdout.splitlines() if line.strip()}
 
 
@@ -419,6 +424,13 @@ def main(argv: list[str] | None = None) -> int:
         help="Fail only on tracked banned artifacts; report untracked artifacts as warnings.",
     )
     args = parser.parse_args(argv)
+
+    try:
+        _git_tracked_files()
+    except RuntimeError as exc:
+        print("Publication hygiene check failed:")
+        print(f"Tracked-file inventory is unavailable: {exc}")
+        return 1
 
     problems: list[str] = []
     warnings: list[str] = []

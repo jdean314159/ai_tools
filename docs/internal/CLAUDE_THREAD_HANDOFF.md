@@ -31,7 +31,7 @@ start by reading the historical sections of `history/SESSION_HANDOFF.md`.
 The 2026-09-01 cleanup checkpoint is complete. The duplicate tutor and
 `reasoning_loop_guard` were retired, root governance/documentation was
 consolidated, and publication hygiene now covers tracked content across every
-setuptools distribution without a suffix allowlist. The offline gate is 1,252
+setuptools distribution without a suffix allowlist. The offline gate is 1,253
 passed and 305 skipped. No further broad cleanup pass is queued.
 
 RUN-RECORD-00 Phase 7 is complete under accepted ADR-021 and ADR-022. The next

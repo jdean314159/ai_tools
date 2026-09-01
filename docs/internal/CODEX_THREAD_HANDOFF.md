@@ -22,7 +22,7 @@ Do not read `history/SESSION_HANDOFF.md` end to end; it is a historical log.
 
 Commits `da15c32` through `54865d0` complete the structural cleanup, root-doc
 consolidation, private-endpoint correction, and distribution-wide privacy gate.
-The offline gate is 1,252 passed and 305 skipped. Claude independently closed
+The offline gate is 1,253 passed and 305 skipped. Claude independently closed
 the endpoint/root cleanup and re-verified the three post-reformat behavioral
 closures. No broad cleanup campaign is active; require a concrete burden or
 failing consumer before further structural work.

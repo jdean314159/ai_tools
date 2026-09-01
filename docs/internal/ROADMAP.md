@@ -63,6 +63,8 @@ Prevent local development artifacts from entering release snapshots or GitHub.
 - Derive every setuptools distribution content root and reject private
   deployment markers in every tracked file beneath it without a suffix
   allowlist.
+- Fail closed when Git cannot provide the tracked-file inventory; an exported
+  archive must not pass by scanning an empty set.
 - Maintain the publication-hygiene CI gate.
 
 ### Done when

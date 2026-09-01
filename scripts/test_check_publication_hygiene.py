@@ -181,6 +181,26 @@ def test_tool_only_pyproject_is_not_treated_as_distribution(hygiene_root: Path) 
     assert checker.main([]) == 0
 
 
+def test_missing_git_metadata_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(checker, "ROOT", _clean_root(tmp_path))
+    monkeypatch.setattr(
+        checker.subprocess,
+        "run",
+        lambda *args, **kwargs: checker.subprocess.CompletedProcess(
+            args=["git", "ls-files"], returncode=128, stdout="", stderr="not a repository"
+        ),
+    )
+
+    assert checker.main([]) == 1
+    output = capsys.readouterr().out
+    assert "Tracked-file inventory is unavailable:" in output
+    assert "exit status 128" in output
+
+
 def test_private_details_in_any_distribution_content_suffix_fail(
     hygiene_root: Path,
     monkeypatch: pytest.MonkeyPatch,
