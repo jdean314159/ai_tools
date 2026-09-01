@@ -28,7 +28,10 @@ def _git_tracked_files() -> set[Path]:
         raise RuntimeError("git ls-files is unavailable") from exc
     if result.returncode != 0:
         raise RuntimeError(f"git ls-files failed with exit status {result.returncode}")
-    return {ROOT / line.strip() for line in result.stdout.splitlines() if line.strip()}
+    tracked = {ROOT / line.strip() for line in result.stdout.splitlines() if line.strip()}
+    if not tracked:
+        raise RuntimeError("git ls-files returned an empty tracked-file inventory")
+    return tracked
 
 
 REQUIRED_ROOT_DOCS = [

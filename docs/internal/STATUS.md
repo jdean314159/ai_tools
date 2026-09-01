@@ -34,14 +34,16 @@ or moved under `docs/internal`.
 Post-cleanup live checks exercised Spark-hosted chat, structured output,
 logprobs, tool decisions and recovery, Engram/Inspector composition, read-only
 repository navigation, the surviving tutor adapter, and Inspector UI
-orchestration. The offline repository gate is 1,253 passed and 305 skipped.
+orchestration. The offline repository gate is 1,254 passed and 305 skipped.
 
 Private deployment data was removed from packaged defaults. Publication hygiene
 now derives content roots from every setuptools distribution and scans every
 tracked file beneath them as bytes, rather than relying on a package or suffix
 allowlist. It fails closed when Git cannot supply the tracked-file inventory,
-including in an unpacked archive without repository metadata. Claude
-independently verified the endpoint fix, negative control,
+including when Git reports success with an empty inventory. Strict publication
+hygiene is therefore a checkout claim; an unpacked Git archive fails closed and
+requires separate archive-byte/digest verification. Claude independently
+verified the endpoint fix, negative control,
 root cleanup and link integrity; re-verified `not_declared` scoping, thinking
 tri-state plumbing, and raw-provider-payload omission semantics; and reproduced
 all 12 committed artifact record IDs. The supplied archive was subsequently
@@ -844,7 +846,7 @@ Historical validation records remain; typed action-loop detection remains a
 separate experimental concern under `action_trajectory_loop_guard`. Its removal
 reduced canonical collection by ten tests. The later navigation ground-truth
 split, cleanup regression coverage, and distribution-hygiene gate bring the
-verified baseline to 1,253 passed and 305 skipped.
+verified baseline to 1,254 passed and 305 skipped.
 
 The overlapping-contract review is complete. `agent_lib` runtime tool contracts
 remain separate from `llm_engines` provider/replay contracts because their IDs,

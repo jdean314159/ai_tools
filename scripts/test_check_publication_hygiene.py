@@ -201,6 +201,26 @@ def test_missing_git_metadata_fails_closed(
     assert "exit status 128" in output
 
 
+def test_empty_git_inventory_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(checker, "ROOT", _clean_root(tmp_path))
+    monkeypatch.setattr(
+        checker.subprocess,
+        "run",
+        lambda *args, **kwargs: checker.subprocess.CompletedProcess(
+            args=["git", "ls-files"], returncode=0, stdout="", stderr=""
+        ),
+    )
+
+    assert checker.main([]) == 1
+    output = capsys.readouterr().out
+    assert "Tracked-file inventory is unavailable:" in output
+    assert "empty tracked-file inventory" in output
+
+
 def test_private_details_in_any_distribution_content_suffix_fail(
     hygiene_root: Path,
     monkeypatch: pytest.MonkeyPatch,

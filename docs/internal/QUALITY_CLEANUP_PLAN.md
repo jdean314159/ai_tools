@@ -85,8 +85,9 @@ added.
 - Historical handoff and repo-state verification material live under
   `docs/internal` rather than at repository root.
 - Distribution privacy hygiene covers every tracked file under every configured
-  setuptools content root and fails closed without a Git tracked-file inventory.
-- The verified offline baseline is 1,253 passed and 305 skipped.
+  setuptools content root and explicitly rejects a missing or empty Git
+  tracked-file inventory. Archive bytes require separate digest/content review.
+- The verified offline baseline is 1,254 passed and 305 skipped.
 
 The repository-wide Ruff sweep was larger than its behavioral value justified
 and invalidated prior independent review. Do not repeat that pattern: isolate

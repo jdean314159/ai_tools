@@ -65,6 +65,8 @@ Prevent local development artifacts from entering release snapshots or GitHub.
   allowlist.
 - Fail closed when Git cannot provide the tracked-file inventory; an exported
   archive must not pass by scanning an empty set.
+- Keep checkout hygiene and archive-byte verification as separate claims; the
+  checkout gate deliberately fails without repository metadata.
 - Maintain the publication-hygiene CI gate.
 
 ### Done when
