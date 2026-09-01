@@ -24,7 +24,7 @@ repository as authoritative; chat summaries are secondary.
    - `docs/projects/agent_lib/NAV-VERIFIABLE-CAMPAIGN-V1.md`
 
 Read package READMEs only for the package involved in the next task. Do not
-start by reading the historical sections of `SESSION_HANDOFF.md`.
+start by reading the historical sections of `history/SESSION_HANDOFF.md`.
 
 ## Current posture
 

@@ -166,6 +166,13 @@ Or for a command-line session:
 - deterministic integration tests with fake engines
 - a realistic app surface that exposes where library contracts help or hurt
 
+### Shared API boundary
+
+The retired smaller tutor required no surviving public API additions. This
+reference application composes the existing public `engram`, `llm_engines`,
+and `llm_harness_core` contracts; application-specific adaptation remains
+inside the tutor package.
+
 ---
 
 ## What is still in transition

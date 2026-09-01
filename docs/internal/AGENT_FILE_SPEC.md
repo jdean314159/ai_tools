@@ -27,14 +27,11 @@ It should not duplicate the entire repo architecture. Root documents already cov
 
 ## Scope and precedence
 
-### Root `AGENT.md`
+### Root instructions
 
-A root-level `AGENT.md` should summarize repo-wide operating rules and point to the canonical repo docs:
-
-- `docs/design/VISION.md`
-- `docs/internal/STATUS.md`
-- `docs/internal/ROADMAP.md`
-- `ADR_INDEX.md`
+`AGENTS.md` is the single source of repository-wide operating rules. The
+root-level `AGENT.md` is a compatibility pointer for tools that discover the
+singular filename; it must not duplicate or add normative rules.
 
 ### Package-local `AGENT.md`
 
@@ -51,7 +48,7 @@ Examples:
 When guidance differs:
 
 1. safety and policy constraints always win
-2. root architecture documents define repo-wide intent
+2. root `AGENTS.md` and architecture documents define repo-wide intent
 3. the nearest relevant local `AGENT.md` defines local operating rules
 4. transient chat instructions are not a replacement for repo artifacts
 
@@ -146,7 +143,6 @@ Create package-local `AGENT.md` files first for the packages where local guidanc
 3. `rag_lib`
 4. `llm_inspector_ui`
 5. `language_tutor`
-6. `engram`
 
 ---
 

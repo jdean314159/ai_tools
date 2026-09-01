@@ -96,7 +96,8 @@ The repo should treat the following as first-class engineering artifacts:
   - `docs/internal/CLAUDE_THREAD_HANDOFF.md`
   - `docs/internal/CODEX_THREAD_HANDOFF.md`
   - `ADR_INDEX.md`
-- repo-local and package-local `AGENT.md` files
+- canonical repo-local `AGENTS.md`, its `AGENT.md` compatibility pointer, and
+  package-local `AGENT.md` files
 - JSON task/progress manifests that agents and humans can both read
 - append-only or otherwise durable trace/event logs where long-running agent work requires recovery or auditability
 - versioned run and experiment artifacts that preserve provenance while keeping

@@ -16,7 +16,7 @@
 8. `docs/projects/ENGRAM-TRUST-AVAILABILITY-2026-08-30.md`
 9. `docs/projects/ENGRAM-TRUST-REVIEW-WORKFLOW-2026-08-30.md`
 
-Do not read `SESSION_HANDOFF.md` end to end; it is a historical log.
+Do not read `history/SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## Completed Engram sequence
 

@@ -5,7 +5,7 @@
 (agent-execution-isolation, with "open questions deferred to first ASC run"),
 `docs/internal/MEMBERSHIP.md` (ASC is an example built with `agent_lib`; gated on
 `agent_lib` reaching beta — and the first pass is the probe that drives it there).
-**Discipline:** REPO_STATE_VERIFICATION.md — a filename/class name is a lead, not a fact.
+**Discipline:** `docs/internal/REPO_STATE_VERIFICATION.md` — a filename/class name is a lead, not a fact.
 Resolve every "exists/absent" claim by READ + TEST, never by name-grep.
 
 ---

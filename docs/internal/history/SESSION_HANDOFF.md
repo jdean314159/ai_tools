@@ -494,7 +494,7 @@ SPEC-NETFLOW-00 through 05 now live in `../netflow_behavior_lab/specs/`, results
 ## Open / queued:
 
 SPEC-NETFLOW-06 (NPS real-network) — extracted to `../netflow_behavior_lab/specs/`; operating under the §2a conservative fallback (NPS internal ranges + VPN-partner subnets not authoritatively known). Hard gates before ranking: internal-range list, adjudication authorization, NAT confirmation. Outside-firewall capture identified NPS public space (205.155.65.x, 204.102.229.x); blocked_fraction from the firewall-policy dataset folded in as an adjudication evidence line, not a ranking input.
-REPO_STATE_VERIFICATION.md — checklist queued, not executed. First task flagged: the turboquant.py path discrepancy (asserted built, failed ls in the snapshot — resolve real-absence vs stale-copy first).
+`../REPO_STATE_VERIFICATION.md` — checklist queued, not executed. First task flagged: the turboquant.py path discrepancy (asserted built, failed ls in the snapshot — resolve real-absence vs stale-copy first).
 
 Two unverified facts the next thread must not inherit as settled:
 

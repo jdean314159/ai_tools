@@ -3,7 +3,7 @@
 **Status:** v0 implemented, committed, and validated against the maintainer's real Thunderbird mail.
 Three triage patches applied post-run. This note records what the live run changed and what it taught.
 **Successor:** MAIL-01 deterministic personal rules are implemented and maintainer-live-validated;
-see `SPEC-MAIL-01-personal-rules.md` and the newest `SESSION_HANDOFF.md` update. Digest traceability
+see `SPEC-MAIL-01-personal-rules.md` and `../../internal/history/SESSION_HANDOFF.md`. Digest traceability
 is the next queued thin follow-on. The planning action at the end of this v0.1 record is historical.
 **Predecessors:** `mail_lib_scoping_note.md` (scope/intent + corrections), `SPEC-MAIL-00-triage.md`
 (the v0 build spec), both authoritative for their domains. This note is the *post-live-run* record.

@@ -4,13 +4,13 @@ Last updated: 2026-05-27
 
 > **Superseded on 2026-06-27.** This file preserves the historical handoff that
 > initiated the project-campaign phase. It is not current work direction. Read
-> `STATUS.md` and the newest `SESSION_HANDOFF.md` update for current state and
+> `STATUS.md` and the newest `history/SESSION_HANDOFF.md` update for current state and
 > next actions.
 
 ## Read these first
 
 1. `docs/internal/STATUS.md` — current repo state (single source of truth).
-2. `../../SESSION_HANDOFF.md` — the current session handoff and next action.
+2. `history/SESSION_HANDOFF.md` — the historical session log; use only when current handoffs need context.
 
 ## Where we are
 

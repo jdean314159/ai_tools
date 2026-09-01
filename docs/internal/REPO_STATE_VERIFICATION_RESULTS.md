@@ -1,6 +1,6 @@
 # Repo-State Verification — Results (2026-06-22)
 
-Companion to `REPO_STATE_VERIFICATION.md`. Records the verdict for each item.
+Companion to [`REPO_STATE_VERIFICATION.md`](./REPO_STATE_VERIFICATION.md). Records the verdict for each item.
 
 **Scope limit (read first):** this pass was run against an uploaded repo *snapshot*, applying steps 1–3 of the
 method (NAME grep, CONCEPT grep, READ). **Step 4 (run the tests) was NOT executed** — no working venv/deps in
