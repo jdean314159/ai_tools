@@ -6,7 +6,6 @@ import math
 import re
 import time
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
@@ -32,6 +31,7 @@ from .memory import (
 from .prompting.builder import build_prompt_from_context, count_text_tokens
 from .telemetry import Telemetry
 from .trust import MemoryTrustPolicy
+from .types import TokenBudget
 from .utils.tokens import get_token_counter
 
 if TYPE_CHECKING:
@@ -40,9 +40,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class PromptBudget:
-    total_prompt_tokens: int = 4096
+PromptBudget = TokenBudget
 
 
 class ProjectMemory:
@@ -101,7 +99,7 @@ class ProjectMemory:
         self.llm_engine = llm_engine
         self.extra_config = dict(kwargs)
 
-        self.budget = PromptBudget(total_prompt_tokens=int(total_prompt_tokens))
+        self.budget = TokenBudget(total_prompt_tokens=int(total_prompt_tokens))
         self.telemetry = telemetry or Telemetry()
         self.trust_policy = trust_policy
         self._trust_audit: list[dict[str, Any]] = []
@@ -175,7 +173,7 @@ class ProjectMemory:
                 current = schema_mgr.get_version()
                 logger.warning(
                     f"Project schema {current} differs from engram {SCHEMA_VERSION}. "
-                    f"Consider running: engram-lite-migrate {self._storage_root}"
+                    f"Consider running: engram-migrate {self._storage_root}"
                 )
 
         # Embedder + ChromaDB
@@ -219,7 +217,7 @@ class ProjectMemory:
                         logger.warning(
                             f"ChromaDB count ({chroma_count}) differs significantly from "
                             f"JSONL count ({jsonl_count}). "
-                            f"Run: engram-lite-reconcile <project_dir>"
+                            f"Run: engram-reconcile <project_dir>"
                         )
 
         # Pairing config
@@ -241,7 +239,7 @@ class ProjectMemory:
             except ImportError:
                 logger.warning(
                     "networkx is not installed — semantic graph disabled. "
-                    "Install it with: pip install 'engram-lite[graph]'"
+                    "Install it with: pip install 'engram[graph]'"
                 )
                 SemanticGraph = None  # type: ignore[assignment,misc]
 
@@ -398,7 +396,7 @@ class ProjectMemory:
         if malformed > 0:
             logger.warning(
                 f"Loaded {len(self._episodes)} episodes, skipped {malformed} malformed rows. "
-                f"Consider running: engram-lite-reconcile <project_dir>"
+                f"Consider running: engram-reconcile <project_dir>"
             )
             self._rewrite_jsonl(self._episodes_path, self._episodes)
 

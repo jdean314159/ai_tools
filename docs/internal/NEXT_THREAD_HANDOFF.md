@@ -15,7 +15,7 @@ Last updated: 2026-05-27
 ## Where we are
 
 Foundation phase is complete: all seven packages have a defined public API,
-two reference examples exist (`examples/language_tutor`,
+two reference examples exist (`examples/language_tutor_reference_app`,
 `examples/agent_coordination_teaching`), and design guidance for deferred work
 is captured (`AGENT_BUILD_NOTES.md`, `INFERENCE_OPTIMIZATION.md`, ADR-011).
 

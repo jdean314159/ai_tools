@@ -5,6 +5,8 @@ import copy
 from pathlib import Path
 
 import pytest
+from engram import __all__ as ENGRAM_PUBLIC
+from llm_engines import __all__ as ENGINES_PUBLIC
 from llm_harness_core import CapabilityDescriptor, MemoryRecord, OperationResult, TraceEvent
 
 from language_tutor.hardware_strategy import STRATEGIES
@@ -77,6 +79,16 @@ def _build_session(
         session_id=f"interop_{memory_backend or 'default'}",
         memory_backend=memory_backend,
     )
+
+
+def test_reference_app_dependencies_are_public_package_exports() -> None:
+    assert "ProjectMemory" in ENGRAM_PUBLIC
+    assert {
+        "ChatMessage",
+        "GenerationRequest",
+        "StructuredOutputHandler",
+        "count_tokens",
+    } <= set(ENGINES_PUBLIC)
 
 
 def test_capability_descriptor_is_shared_contract(

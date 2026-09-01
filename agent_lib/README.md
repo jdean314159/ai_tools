@@ -270,12 +270,12 @@ the navigation root. It verifies the server's context window and chat template b
 sends `cache_prompt=false` on every native completion, rejects any response reporting cached prompt
 tokens or truncation, and writes all artifacts only to the external result directory.
 
-The experimental `reasoning_loop_guard` text detector is not integrated into
+The retired `reasoning_loop_guard` text detector was never integrated into
 this evaluation. Replay against the recorded NAV runs produced a false positive
 on the successful control because the model emitted repeated JSON actions with
 thinking disabled. A future NAV guard must inspect typed action/tool trajectory
 events here in `agent_lib`; adding reasoning-block events to `llm_engines`
-would not expose a signal these runs contain. See
+would not expose a signal these runs contain. The historical result remains in
 [`NAV-TEST-00-LOOP-GUARD-VALIDATION.md`](../docs/projects/agent_lib/NAV-TEST-00-LOOP-GUARD-VALIDATION.md).
 
 The superseding `action_trajectory_loop_guard` consumes the typed `AgentStep`

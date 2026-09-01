@@ -10,12 +10,13 @@ import agent_lib
 import agent_lib.examples
 import engram
 import pytest
+from engram.project_memory import PromptBudget
+from engram.types import TokenBudget
 
 
 PACKAGES = [
     "llm_harness_core",
     "llm_engines",
-    "reasoning_loop_guard",
     "action_trajectory_loop_guard",
     "engram",
     "rag_lib",
@@ -61,6 +62,8 @@ def test_expected_engram_public_names_are_exported() -> None:
         "EmbeddingService",
     }
     assert expected <= set(engram.__all__)
+    assert engram.TokenBudget is TokenBudget
+    assert PromptBudget is TokenBudget
 
 
 def test_expected_agent_compatibility_and_example_names_are_exported() -> None:

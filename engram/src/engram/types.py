@@ -1,6 +1,12 @@
 from __future__ import annotations
+
+from dataclasses import dataclass
 from enum import Enum
-from .project_memory import PromptBudget
+
+
+@dataclass
+class TokenBudget:
+    total_prompt_tokens: int = 4096
 
 
 class ProjectType(str, Enum):
@@ -11,6 +17,3 @@ class ProjectType(str, Enum):
     GENERAL_ASSISTANT = "general_assistant"
     LANGUAGE_TUTOR = "language_tutor"
     PROGRAMMING_ASSISTANT = "programming_assistant"
-
-
-TokenBudget = PromptBudget

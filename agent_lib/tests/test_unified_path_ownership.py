@@ -14,7 +14,41 @@ from agent_lib import (
     WorkspacePolicy,
     build_managed_coordination,
 )
-from agent_lib.programming import ProgrammingToolRuntime, WorkspaceIsolationManager
+from agent_lib.programming import (
+    FailurePolicy,
+    PlanStep,
+    ProgrammingStateTracker,
+    ProgrammingTask,
+    ProgrammingTaskState,
+    ProgrammingTaskStateStore,
+    ProgrammingToolRuntime,
+    WorkspaceIsolationManager,
+)
+from agent_lib.programming_contracts import (
+    FailurePolicy as FailurePolicyOwner,
+    PlanStep as PlanStepOwner,
+    ProgrammingTask as ProgrammingTaskOwner,
+)
+from agent_lib.programming_state import (
+    ProgrammingStateTracker as ProgrammingStateTrackerOwner,
+    ProgrammingTaskState as ProgrammingTaskStateOwner,
+    ProgrammingTaskStateStore as ProgrammingTaskStateStoreOwner,
+)
+from agent_lib.programming_workspace import (
+    WorkspaceIsolationManager as WorkspaceIsolationManagerOwner,
+    WorkspacePolicy as WorkspacePolicyOwner,
+)
+
+
+def test_programming_workspace_compatibility_exports_preserve_identity() -> None:
+    assert WorkspacePolicy is WorkspacePolicyOwner
+    assert WorkspaceIsolationManager is WorkspaceIsolationManagerOwner
+    assert FailurePolicy is FailurePolicyOwner
+    assert PlanStep is PlanStepOwner
+    assert ProgrammingTask is ProgrammingTaskOwner
+    assert ProgrammingStateTracker is ProgrammingStateTrackerOwner
+    assert ProgrammingTaskState is ProgrammingTaskStateOwner
+    assert ProgrammingTaskStateStore is ProgrammingTaskStateStoreOwner
 
 
 def _race_for_lease(state_root: str, owner_id: str, queue) -> None:

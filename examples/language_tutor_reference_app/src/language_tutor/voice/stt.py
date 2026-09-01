@@ -42,8 +42,10 @@ class STTService:
         compute_type: Optional[str] = None,
     ) -> None:
         self.model_name = model_name or WHISPER_CONFIG["model"]
-        self.device = device or WHISPER_CONFIG["device"]
-        self.compute_type = compute_type or WHISPER_CONFIG["compute_type"]
+        self.device = device or os.environ.get("WHISPER_DEVICE") or WHISPER_CONFIG["device"]
+        self.compute_type = (
+            compute_type or os.environ.get("WHISPER_COMPUTE_TYPE") or WHISPER_CONFIG["compute_type"]
+        )
 
         # Language resolution:
         #   1. WHISPER_LANGUAGE env var (set to "auto" for auto-detection)

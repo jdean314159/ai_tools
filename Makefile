@@ -38,14 +38,13 @@ venv:
 install: venv
 	$(PIP) install -e './llm_harness_core[dev]'
 	$(PIP) install -e './llm_engines[dev]'
-	$(PIP) install -e './reasoning_loop_guard[dev]'
 	$(PIP) install -e './action_trajectory_loop_guard[dev]'
 	$(PIP) install -e './engram[dev]'
 	$(PIP) install -e './llm_inspector[dev]'
 	$(PIP) install -e './rag_lib[dev]'
 	$(PIP) install -e './mail_lib[dev]'
 	$(PIP) install -e './llm_inspector_ui[dev]'
-	$(PIP) install -e './examples/language_tutor[dev]'   
+	$(PIP) install -e './examples/language_tutor_reference_app[dev]'
 	$(PIP) install -e './examples/diagnostics_agent[dev]'
 	$(PIP) install -e './examples/mail_assistant[dev]'
 	$(PIP) install -e './agent_lib[dev]'
@@ -74,7 +73,6 @@ test-libraries:
 	cd llm_engines && $(TEST_PYTHON) -m pytest tests/ \
 		-m "not ollama and not anthropic and not openai and not vllm and not slow" \
 		-v
-	cd reasoning_loop_guard && $(TEST_PYTHON) -m pytest tests/ -v
 	cd action_trajectory_loop_guard && $(TEST_PYTHON) -m pytest tests/ -v
 	$(TEST_PYTHON) -m pytest engram/tests/ -v
 	cd llm_inspector && $(TEST_PYTHON) -m pytest tests/ -v
@@ -107,7 +105,7 @@ test-mail:
 
 .PHONY: test-tutor
 test-tutor:
-	cd examples/language_tutor && $(TEST_PYTHON) -m pytest test_language_tutor.py -v
+	$(TEST_PYTHON) -m pytest examples/language_tutor_reference_app/tests -v
 
 .PHONY: test-diagnostics
 test-diagnostics:

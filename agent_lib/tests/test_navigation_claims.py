@@ -5,7 +5,54 @@ from agent_lib.eval.navigation_claims import (
     NavigationClaim,
     validate_navigation_claims,
 )
-from agent_lib.eval.repo_navigation import GroundTruthRegion
+from agent_lib.eval.navigation_ground_truth import GroundTruthRegion as GroundTruthRegionOwner
+from agent_lib.eval.navigation_contracts import NavigationConfigurationError as ErrorOwner
+from agent_lib.eval.navigation_model_transport import LlamaServerClient as LlamaServerClientOwner
+from agent_lib.eval.navigation_planner import (
+    BudgetedNavigationPlanner as PlannerOwner,
+    NavigationBudget as BudgetOwner,
+    NavigationRunHook as RunHookOwner,
+    PlannerUsage as PlannerUsageOwner,
+)
+from agent_lib.eval.navigation_context import NoWriteContextBuilder as ContextBuilderOwner
+from agent_lib.eval.navigation_artifacts import (
+    build_environment_manifest as EnvironmentManifestOwner,
+    render_run_record as RunRecordOwner,
+    tree_content_digest as TreeDigestOwner,
+)
+from agent_lib.eval.navigation_scoring import score_navigation_run as ScoringOwner
+from agent_lib.eval.navigation_workspace import NavigationWorkspace as WorkspaceOwner
+from agent_lib.eval.repo_navigation import (
+    GroundTruthRegion,
+    BudgetedNavigationPlanner,
+    build_environment_manifest,
+    LlamaServerClient,
+    NavigationBudget,
+    NavigationConfigurationError,
+    NavigationRunHook,
+    NavigationWorkspace,
+    NoWriteContextBuilder,
+    PlannerUsage,
+    render_run_record,
+    score_navigation_run,
+    tree_content_digest,
+)
+
+
+def test_ground_truth_region_compatibility_export_preserves_identity() -> None:
+    assert GroundTruthRegion is GroundTruthRegionOwner
+    assert NavigationConfigurationError is ErrorOwner
+    assert LlamaServerClient is LlamaServerClientOwner
+    assert NavigationWorkspace is WorkspaceOwner
+    assert NoWriteContextBuilder is ContextBuilderOwner
+    assert BudgetedNavigationPlanner is PlannerOwner
+    assert NavigationBudget is BudgetOwner
+    assert NavigationRunHook is RunHookOwner
+    assert PlannerUsage is PlannerUsageOwner
+    assert build_environment_manifest is EnvironmentManifestOwner
+    assert render_run_record is RunRecordOwner
+    assert score_navigation_run is ScoringOwner
+    assert tree_content_digest is TreeDigestOwner
 
 
 def _telemetry() -> list[dict]:

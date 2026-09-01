@@ -20,3 +20,13 @@ class TraceEvent:
     parent_span_id: str | None = None
     ts: float | None = None
     tags: tuple[str, ...] = ()
+
+    @property
+    def kind(self) -> str:
+        """Compatibility name used by early Inspector consumers."""
+        return self.event_type
+
+    @property
+    def fields(self) -> dict[str, Any]:
+        """Compatibility name used by early Inspector consumers."""
+        return self.payload

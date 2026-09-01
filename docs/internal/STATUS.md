@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-08-30
+Last updated: 2026-09-01
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -384,6 +384,22 @@ normalization. The ordered candidates and their evidence boundaries are frozen
 in `docs/internal/STRUCTURAL_CLEANUP_PRIORITIES.md`. The first assignment is
 generated build/cache cleanup followed by a read-only language-tutor overlap
 assessment; no application consolidation has been selected or implemented yet.
+
+The first structural-cleanup checkpoint removed only ignored package
+build/cache/editable-install artifacts while preserving the virtualenv and
+recorded evidence. Strict publication hygiene now passes; its license check was
+corrected not to treat the root tool-only `pyproject.toml` as a distribution.
+Canonical import provenance passes. After tutor consolidation, the
+canonical-source gate is 1,250 passed,
+305 skipped, and three existing warnings; the separately invoked integration
+tree is 48 passed and one skipped. The former 1,268 result included 14 tests
+collected from ignored build copies. A grounded language-tutor keep/move/delete
+proposal is now recorded in
+`docs/internal/LANGUAGE_TUTOR_OVERLAP_ASSESSMENT.md`. The selected outcome is
+now implemented: the small duplicate, stale embedded generator, and redundant
+task tracker were retired; the full reference app is the sole tutor. Its engine
+adapter now imports the public `llm_engines` surface directly, and public-export
+coverage moved into the surviving test suite.
 
 ### Active project — RUN-RECORD-00
 
@@ -793,8 +809,74 @@ anything.
     rag_lib/src/rag_lib
     llm_engines/src/llm_engines
     examples/diagnostics_agent
-    examples/language_tutor
+    examples/language_tutor_reference_app/src/language_tutor
     examples/agent_coordination_teaching
+
+The unintegrated `reasoning_loop_guard` package was retired during structural
+cleanup. Its NAV validation had produced a false positive on the successful
+control, and no reliable within-call reasoning-stream target was established.
+Historical validation records remain; typed action-loop detection remains a
+separate experimental concern under `action_trajectory_loop_guard`. Its removal
+reduced canonical collection by ten tests. The later navigation ground-truth
+split and subsequent cleanup regression coverage bring the verified baseline
+to 1,250 passed and 305 skipped.
+
+The overlapping-contract review is complete. `agent_lib` runtime tool contracts
+remain separate from `llm_engines` provider/replay contracts because their IDs,
+status, timing, and policy metadata serve different call paths. Inspector's
+`TraceEvent` subclass was genuine duplication: compatibility aliases moved to
+`llm_harness_core.TraceEvent`, and Inspector now exports that exact shared class
+without rebuilding events. See `docs/internal/CONTRACT_BOUNDARY_ASSESSMENT.md`.
+
+The first oversized-module split is complete. Navigation ground-truth region
+contracts, answer-key loading, and snapshot validation now live in
+`agent_lib.eval.navigation_ground_truth`; `repo_navigation` retains compatible
+re-exports with identical class/function identity. Scoring remains with runtime
+telemetry and budgets rather than introducing a circular or artificial seam.
+The second split moves model tokenization and the native llama-server client to
+`agent_lib.eval.navigation_model_transport`. The shared navigation
+configuration exception now lives in neutral `navigation_contracts`, preventing
+transport from depending on ground-truth validation. Existing public imports
+retain identical class objects through `repo_navigation` re-exports.
+The third navigation split separates confined workspace/tool execution and
+telemetry into `agent_lib.eval.navigation_workspace`, while no-write context
+truncation and history compaction live in `agent_lib.eval.navigation_context`.
+Both are one-way dependencies below planning and harness assembly; compatibility
+exports remain unchanged.
+The fourth navigation split moves prompts/action schemas, budget accounting,
+planner behavior, constrained finalization, and planner-run metadata into
+`agent_lib.eval.navigation_planner`. `repo_navigation` continues to export the
+same planner, budget, usage, hook, schema, and prompt objects for compatibility.
+The fifth navigation split places structured-claim evaluation in
+`agent_lib.eval.navigation_scoring` and manifest/digest/run-record construction
+in `agent_lib.eval.navigation_artifacts`. The original module now owns harness
+assembly and compatibility exports rather than unrelated evaluation machinery.
+The initial Pythonic-simplification pass is recorded in
+`docs/internal/PYTHONIC_SIMPLIFICATION_ASSESSMENT.md`. It removes Engram's
+duplicate custom test runner and consolidates repeated navigation-planner
+history and usage-accounting paths. Larger source concentrations are documented
+as candidates rather than mechanically rewritten.
+Workspace policy, command-isolation helpers, allocation records, atomic state
+persistence, and patch leases now live in `agent_lib.programming_workspace`.
+`agent_lib.programming` retains identity-preserving exports and consumes the
+new lower-level module; persisted workspace and lease formats are unchanged.
+Programming plan/failure/task value objects now live in
+`agent_lib.programming_contracts`, and durable task JSON plus lifecycle tracking
+live in `agent_lib.programming_state`. The runtime facade preserves exact import
+identities and the prior serialized field contract.
+The first `ProjectMemory` state-access review found no safe large extraction.
+One inverted dependency was removed instead: `engram.types` now owns
+`TokenBudget`, with `project_memory.PromptBudget` retained as the same object.
+Live migration, reconciliation, and optional-extra guidance uses current Engram
+names.
+Direct `engram/tests` selection is deterministic again: the centralized pytest
+bootstrap now anchors `engram` to `engram/src/engram`, matching the existing
+import-provenance contract. The explicitly enabled Engram subset passes 241
+tests with seven skips.
+UI submission readiness is now pure service logic in
+`llm_inspector_ui.services.submission`; readiness display and chat submission
+live in `panels.submission_panel`. Direct tests cover all readiness outcomes,
+and `app.py` remains the composition root.
 
 ## Decision rules
 

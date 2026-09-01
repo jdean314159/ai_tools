@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from llm_harness_core import OperationResult, TraceEvent as InteropTraceEvent
+from llm_harness_core import OperationResult, TraceEvent
 
 from .types import EvidenceFlow, EvidenceItem, Section, Turn
 
@@ -94,37 +94,6 @@ class ContextResult:
 
 
 @dataclass(frozen=True)
-class TraceEvent(InteropTraceEvent):
-    """Shared interop event with compatibility aliases for older inspector code."""
-
-    @property
-    def kind(self) -> str:
-        return self.event_type
-
-    @property
-    def fields(self) -> dict[str, Any]:
-        return self.payload
-
-    @classmethod
-    def from_interop(cls, event: InteropTraceEvent) -> "TraceEvent":
-        if isinstance(event, cls):
-            return event
-        return cls(
-            event_type=event.event_type,
-            source_package=event.source_package,
-            source_component=event.source_component,
-            payload=dict(event.payload),
-            severity=event.severity,
-            message=event.message,
-            event_id=event.event_id,
-            span_id=event.span_id,
-            parent_span_id=event.parent_span_id,
-            ts=event.ts,
-            tags=tuple(event.tags),
-        )
-
-
-@dataclass(frozen=True)
 class Trace:
     """One end-to-end trace for a turn/run."""
 
@@ -156,5 +125,5 @@ class Trace:
         merged.update(diagnostics)
         return OperationResult.success(context_result.value or {}, diagnostics=merged)
 
-    def to_interop_events(self) -> list[InteropTraceEvent]:
-        return [TraceEvent.from_interop(event) for event in self.events]
+    def to_interop_events(self) -> list[TraceEvent]:
+        return list(self.events)

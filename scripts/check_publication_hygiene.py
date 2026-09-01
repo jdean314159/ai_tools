@@ -336,7 +336,9 @@ def _license_metadata_problems() -> list[str]:
             continue
         relative = pyproject.relative_to(ROOT)
         data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-        project = data.get("project", {})
+        project = data.get("project")
+        if project is None:
+            continue
         if project.get("license") != EXPECTED_LICENSE_EXPRESSION:
             problems.append(f"{relative}: project.license must be {EXPECTED_LICENSE_EXPRESSION!r}")
         if project.get("license-files") != ["LICENSE"]:

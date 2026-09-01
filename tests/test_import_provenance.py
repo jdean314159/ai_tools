@@ -15,12 +15,15 @@ PACKAGE_EXPECTATIONS = {
     "agent_lib": REPO_ROOT / "agent_lib" / "src" / "agent_lib",
     "engram": REPO_ROOT / "engram" / "src" / "engram",
     "llm_engines": REPO_ROOT / "llm_engines" / "src" / "llm_engines",
-    "reasoning_loop_guard": REPO_ROOT / "reasoning_loop_guard" / "src" / "reasoning_loop_guard",
     "action_trajectory_loop_guard": REPO_ROOT
     / "action_trajectory_loop_guard"
     / "src"
     / "action_trajectory_loop_guard",
-    "examples.language_tutor": REPO_ROOT / "examples" / "language_tutor",
+    "language_tutor": REPO_ROOT
+    / "examples"
+    / "language_tutor_reference_app"
+    / "src"
+    / "language_tutor",
     "mail_lib": REPO_ROOT / "mail_lib",
 }
 

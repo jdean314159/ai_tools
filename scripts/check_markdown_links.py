@@ -26,7 +26,7 @@ def tracked_markdown() -> list[Path]:
         text=True,
         check=True,
     )
-    return [ROOT / path for path in result.stdout.splitlines() if path]
+    return [ROOT / path for path in result.stdout.splitlines() if path and (ROOT / path).is_file()]
 
 
 def is_external(target: str) -> bool:

@@ -1,6 +1,6 @@
 # Fresh Codex thread handoff
 
-- Prepared: 2026-08-30
+- Prepared: 2026-08-31
 - Repository: `/home/cybernaif/repos/ai_tools`
 - Current focus: Engram reliability and trust-boundary work complete
 
@@ -167,14 +167,56 @@ Key commits, oldest to newest:
 
 ## Recommended next assignment
 
-Repository-wide style normalization is complete. Continue with the structural
-cleanup sequence in `docs/internal/STRUCTURAL_CLEANUP_PRIORITIES.md`:
-
-1. remove only ignored build/cache artifacts and verify import provenance plus
-   the full repository gate;
-2. perform a read-only overlap assessment of the small and reference
-   language-tutor examples, producing an exact keep/move/delete proposal before
-   changing either application.
+Repository-wide style normalization and generated-artifact cleanup are
+complete. The read-only language-tutor overlap assessment is recorded in
+`docs/internal/LANGUAGE_TUTOR_OVERLAP_ASSESSMENT.md`. The selected consolidation
+is complete: the small duplicate and stale embedded generator are retired, and
+`examples/language_tutor_reference_app` is the sole tutor implementation. The
+unreliable, unintegrated `reasoning_loop_guard` experiment was retired. Contract
+ownership is now documented in `docs/internal/CONTRACT_BOUNDARY_ASSESSMENT.md`;
+Inspector's duplicate trace-event subclass was removed, while agent and engine
+tool contracts remain distinct. The next structural candidate is priority 6:
+split an oversized module only along proven responsibilities. Its first bounded
+step is complete: navigation ground-truth loading and snapshot validation now
+live in `agent_lib.eval.navigation_ground_truth`, with compatibility re-exports
+from `repo_navigation`. The second bounded split is also complete: tokenizer
+and native llama-server transport classes live in
+`agent_lib.eval.navigation_model_transport`, and the shared configuration
+exception lives in `agent_lib.eval.navigation_contracts`. Compatibility exports
+remain unchanged. Assess the next cluster independently before moving it.
+The third split is complete: workspace confinement/tools/telemetry live in
+`navigation_workspace`, while no-write history compaction lives independently
+in `navigation_context`. `repo_navigation` remains the compatibility facade.
+The fourth split is also complete: prompt/schema construction, budget state,
+planner behavior, constrained finalization, and the planner lifecycle hook live
+in `navigation_planner`, with identity-preserving facade exports.
+The fifth split is complete as well: scoring lives in `navigation_scoring`, and
+environment manifests, tree digests, and run-record serialization live in
+`navigation_artifacts`. `repo_navigation` now retains harness assembly and the
+compatibility facade.
+The Pythonic-simplification assessment is in
+`docs/internal/PYTHONIC_SIMPLIFICATION_ASSESSMENT.md`. Engram's redundant custom
+test runner is gone, and navigation planner history/usage duplication is
+consolidated. The next grounded candidate is workspace/lease ownership inside
+`agent_lib.programming`; do not split its persisted contracts casually. That
+extraction is now complete in `agent_lib.programming_workspace`, with
+compatibility exports and focused identity tests. The next possible programming
+seam is durable task state and lifecycle tracking.
+That follow-up is complete: value objects are in `programming_contracts`, and
+durable state plus lifecycle tracking are in `programming_state`. The old module
+re-exports identical objects, and focused tests cover the facade identities.
+The first `ProjectMemory` state map did not justify a large split because its
+persistence and retrieval clusters share mutable episode state. A narrow cleanup
+moved canonical `TokenBudget` ownership to `engram.types`, retained
+`PromptBudget` as an identity alias, and corrected obsolete live `engram-lite`
+command and extra guidance.
+The direct Engram pytest shadowing issue is also fixed: root `conftest.py` now
+anchors `engram` to its src-layout package. A direct `engram/tests` run with
+`--run-engram` passes 241 tests with seven skips.
+The first UI split is complete: submission readiness policy lives in
+`services.submission`, and readiness/submission rendering lives in
+`panels.submission_panel`. `app.py` imports those functions unchanged and keeps
+application composition.
 
 Do not combine this maintenance work with command-isolation experiments or
 model characterization.
@@ -208,11 +250,17 @@ project still needs an explicitly selected question around resource limits,
 
 ## Verification posture
 
-The latest repository gate passed with 1,268 tests, 304 skips, and three existing
-multiprocessing/fork deprecation warnings. Focused trust, temporal, security, and
-availability tests also pass. Use the root invocation documented in `AGENTS.md`
-with explicit source paths and plugin autoload disabled when reproducing this
-environment.
+After ignored build copies were removed, the canonical-source repository gate
+passed with 1,250 tests, 305 skips, and three existing multiprocessing/fork
+deprecation warnings. The explicitly excluded integration tree passed 48 tests
+with one skip. The former 1,268 count included 14 tests collected from ignored
+build copies and must not be used as the canonical baseline. The one-test
+reduction from the interim 1,254 baseline was the net result of
+retiring the small tutor's three tests and adding public-export and voice-config
+tests to the canonical app. Retiring `reasoning_loop_guard` then removed ten
+package/public-surface tests from collection, and the navigation ground-truth
+split and later cleanup coverage added seven tests. Focused trust, temporal,
+security, and availability tests also pass.
 
 ## Working-tree posture
 

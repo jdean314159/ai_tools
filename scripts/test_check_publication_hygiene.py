@@ -175,6 +175,12 @@ def test_distribution_license_alignment_passes(hygiene_root: Path) -> None:
     assert checker.main([]) == 0
 
 
+def test_tool_only_pyproject_is_not_treated_as_distribution(hygiene_root: Path) -> None:
+    _write(hygiene_root / "pyproject.toml", '[tool.ruff]\ntarget-version = "py310"\n')
+
+    assert checker.main([]) == 0
+
+
 def test_skip_dirs_are_not_descended(hygiene_root: Path) -> None:
     _write(hygiene_root / ".venv" / "lib" / "ignored.pyc")
 

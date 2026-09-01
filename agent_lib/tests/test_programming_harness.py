@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 import agent_lib.programming as programming_module
+import agent_lib.programming_workspace as programming_workspace_module
 
 from agent_lib import (
     ToolCall,
@@ -135,7 +136,7 @@ def test_execute_workspace_command_uses_docker_backend_when_configured(
     )
 
     monkeypatch.setattr(
-        programming_module.shutil,
+        programming_workspace_module.shutil,
         "which",
         lambda name: "/usr/bin/docker" if name == "docker" else None,
     )
@@ -165,7 +166,7 @@ def test_execute_workspace_command_reports_unavailable_explicit_sandbox(
         command_isolation_fallback_to_host=False,
     )
 
-    monkeypatch.setattr(programming_module.shutil, "which", lambda name: None)
+    monkeypatch.setattr(programming_workspace_module.shutil, "which", lambda name: None)
 
     result = execute_workspace_command(tmp_path, command, workspace_policy=policy)
 
@@ -185,7 +186,7 @@ def test_execute_workspace_command_can_fallback_to_host_when_requested(
         command_isolation_fallback_to_host=True,
     )
 
-    monkeypatch.setattr(programming_module.shutil, "which", lambda name: None)
+    monkeypatch.setattr(programming_workspace_module.shutil, "which", lambda name: None)
 
     result = execute_workspace_command(tmp_path, command, workspace_policy=policy)
 

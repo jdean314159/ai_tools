@@ -156,7 +156,7 @@ def _trace_to_inspector_trace(
         error=None,
     )
 
-    events = [TraceEvent.from_interop(event) for event in raw_events]
+    events = list(raw_events)
     if not events:
         events = [
             TraceEvent(

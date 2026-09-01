@@ -48,7 +48,7 @@ class ChromaDBStore:
                     f"Embedder dimension mismatch for collection '{collection_name}': "
                     f"existing collection uses {stored_dim}-dim vectors, "
                     f"but current embedder produces {embedding_dimension}-dim vectors. "
-                    f"Run: engram-lite-migrate <project_dir> to rebuild with new embedder."
+                    f"Run: engram-migrate <project_dir> to rebuild with new embedder."
                 )
 
         # Use cosine distance (deterministic similarity = 1 - distance).

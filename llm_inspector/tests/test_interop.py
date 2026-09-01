@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from llm_harness_core import CapabilityKind
+from llm_harness_core import CapabilityKind, TraceEvent as SharedTraceEvent
 
 from llm_inspector import (
     describe_inspector,
@@ -32,6 +32,7 @@ def test_turn_and_evidence_convert_to_interop_objects() -> None:
 
 
 def test_trace_event_compatibility_aliases() -> None:
+    assert TraceEvent is SharedTraceEvent
     event = TraceEvent(
         event_type="memory_evidence_included",
         source_package="engram",

@@ -143,7 +143,7 @@ def test_programming_tool_runtime_invoke_interop_surfaces_blocked_command() -> N
 def test_execute_workspace_command_interop_surfaces_degraded_fallback(
     tmp_path, monkeypatch
 ) -> None:
-    import agent_lib.programming as programming_module
+    import agent_lib.programming_workspace as programming_workspace_module
 
     command = f"{sys.executable} -c 'print(\"fallback\")'"
     policy = WorkspacePolicy(
@@ -152,7 +152,7 @@ def test_execute_workspace_command_interop_surfaces_degraded_fallback(
         command_isolation_backend="auto",
         command_isolation_fallback_to_host=True,
     )
-    monkeypatch.setattr(programming_module.shutil, "which", lambda name: None)
+    monkeypatch.setattr(programming_workspace_module.shutil, "which", lambda name: None)
     tool_result = execute_workspace_command(tmp_path, command, workspace_policy=policy)
     interop = tool_result_to_operation_result(
         tool_result, call=ToolCall(name="run_command", arguments={"command": command})

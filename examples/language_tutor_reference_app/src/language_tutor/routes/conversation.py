@@ -622,7 +622,7 @@ async def score_pronunciation(
         raise HTTPException(
             status_code=503,
             detail="Pronunciation scoring requires faster-whisper: "
-            "pip install faster-whisper --break-system-packages",
+            "python -m pip install -e '.[web,voice]'",
         )
     except HTTPException:
         raise

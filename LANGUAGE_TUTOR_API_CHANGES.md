@@ -1,14 +1,15 @@
 # Language Tutor API Changes
 
-This file records public API changes needed while rebuilding the language tutor
-capability as an `examples/` consumer.
+This file records public API findings from building the language tutor. The
+former small consumer has been retired; the surviving implementation is
+`examples/language_tutor_reference_app`.
 
 ## Current pass
 
-No new `ai_tools` public API changes were required for
-`examples/language_tutor`.
+No new `ai_tools` public API changes are required by the surviving reference
+application.
 
-The example is intentionally built from existing public surfaces:
+Its shared boundary is built from existing public surfaces:
 
 - `engram.ProjectMemory`
 - `llm_engines.ChatModel`

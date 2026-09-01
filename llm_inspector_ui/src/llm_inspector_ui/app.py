@@ -6,10 +6,16 @@ from pathlib import Path
 import streamlit as st
 
 from llm_inspector_ui.panels.compare_panel import render_compare_panel
+from llm_inspector_ui.panels.submission_panel import (
+    render_run_readiness_banner,
+    render_submission_readiness_banner,
+    submit_input,
+)
+from llm_inspector_ui.services.submission import compute_submission_readiness
 from llm_inspector_ui.services.augmenter_service import AugmenterService
 from llm_inspector_ui.services.engine_service import EngineService
 from llm_inspector_ui.services.inspector_service import InspectorService
-from llm_inspector_ui.services.orchestrator import RunPlan, WorkbenchOrchestrator
+from llm_inspector_ui.services.orchestrator import WorkbenchOrchestrator
 from llm_inspector_ui.services.profile_service import ProfileService
 from llm_inspector_ui.state.models import WorkbenchProfile
 from llm_inspector_ui.state.session_store import SessionStore
@@ -508,26 +514,11 @@ def sidebar_controls():
     controls["run_readiness"] = run_readiness
     controls["submission_readiness"] = compute_submission_readiness(
         controls,
-        engine_service=engine_service,
         augmenter_service=augmenter_service,
     )
 
     st.session_state.current_controls = controls
     return controls
-
-
-def render_run_readiness_banner(readiness) -> None:
-    if readiness.can_run:
-        st.caption(f"Run readiness: {readiness.message}")
-        return
-
-    if readiness.severity == "warning":
-        st.warning(readiness.message)
-    else:
-        st.error(readiness.message)
-
-    with st.expander("Run readiness details", expanded=False):
-        st.json(readiness.details or {})
 
 
 def render_transcript():
@@ -801,118 +792,6 @@ def _safe_jsonable(value):
         return value
     except Exception:
         return str(value)
-
-
-def compute_submission_readiness(
-    controls: dict[str, object], engine_service, augmenter_service
-) -> dict[str, object]:
-    engine_readiness = controls["run_readiness"]
-    augmenter_ids = list(controls["augmenter_ids"])
-    augmenter_options = dict(controls.get("augmenter_options", {}))
-
-    branch_readiness = [
-        augmenter_service.get_augmenter_readiness(
-            augmenter_id,
-            options=augmenter_options.get(augmenter_id, {}),
-        )
-        for augmenter_id in augmenter_ids
-    ]
-
-    if not engine_readiness.can_run:
-        return {
-            "can_submit": False,
-            "severity": engine_readiness.severity,
-            "message": engine_readiness.message,
-            "engine_readiness": engine_readiness,
-            "branch_readiness": branch_readiness,
-        }
-
-    runnable_branches = [r for r in branch_readiness if r.can_run]
-    if not runnable_branches:
-        return {
-            "can_submit": False,
-            "severity": "error",
-            "message": "No selected augmenter branches are runnable.",
-            "engine_readiness": engine_readiness,
-            "branch_readiness": branch_readiness,
-        }
-
-    skipped = [r for r in branch_readiness if not r.can_run]
-    if skipped:
-        return {
-            "can_submit": True,
-            "severity": "warning",
-            "message": f"{len(skipped)} branch(es) will be skipped; {len(runnable_branches)} branch(es) will run.",
-            "engine_readiness": engine_readiness,
-            "branch_readiness": branch_readiness,
-        }
-
-    return {
-        "can_submit": True,
-        "severity": "ok",
-        "message": "All selected branches are runnable.",
-        "engine_readiness": engine_readiness,
-        "branch_readiness": branch_readiness,
-    }
-
-
-def render_submission_readiness_banner(submission_readiness: dict[str, object]) -> None:
-    message = str(submission_readiness.get("message", ""))
-    severity = submission_readiness.get("severity", "ok")
-
-    if severity == "ok":
-        st.caption(f"Submission readiness: {message}")
-    elif severity == "warning":
-        st.warning(message)
-    else:
-        st.error(message)
-
-    branch_readiness = submission_readiness.get("branch_readiness", [])
-    if branch_readiness:
-        with st.expander("Branch readiness", expanded=False):
-            st.json(
-                [
-                    {
-                        "augmenter_id": item.augmenter_id,
-                        "can_run": item.can_run,
-                        "severity": item.severity,
-                        "message": item.message,
-                        "details": item.details,
-                    }
-                    for item in branch_readiness
-                ]
-            )
-
-
-def submit_input(controls: dict[str, object]):
-    submission_readiness = controls.get("submission_readiness", {})
-    disabled = not bool(submission_readiness.get("can_submit", False))
-
-    prompt = st.chat_input("Send a message", disabled=disabled)
-    if not prompt:
-        return
-
-    submission_readiness = controls.get("submission_readiness", {})
-    if not submission_readiness.get("can_submit", False):
-        st.error(str(submission_readiness.get("message", "Submission is blocked.")))
-        return
-
-    plan = RunPlan(
-        session_id=st.session_state.current_session_id,
-        user_text=prompt,
-        engine_id=controls["engine_id"],
-        model_id=controls["model_id"],
-        augmenter_ids=list(controls["augmenter_ids"]),
-        engine_config=dict(controls["engine_config"]),
-        engine_settings=dict(controls["engine_settings"]),
-        max_prompt_tokens=controls["max_prompt_tokens"],
-        reserve_output_tokens=controls["reserve_output_tokens"],
-        augmenter_options=dict(controls["augmenter_options"]),
-    )
-
-    with st.spinner("Running..."):
-        st.session_state.orchestrator.run(plan)
-    st.rerun()
 
 
 def main():

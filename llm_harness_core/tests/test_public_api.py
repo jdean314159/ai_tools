@@ -37,6 +37,8 @@ def test_core_public_api_smoke() -> None:
         source_package="engram",
         source_component="ProjectMemory",
     )
+    assert event.kind == event.event_type
+    assert event.fields is event.payload
     doc = RetrievedDocument(text="hello", source="rag")
     record = MemoryRecord(text="remember this", source="episodic")
 

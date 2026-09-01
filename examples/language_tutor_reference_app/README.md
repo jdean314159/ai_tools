@@ -149,6 +149,8 @@ Or for a command-line session:
 | `ANTHROPIC_API_KEY` | — | Required for cloud strategies |
 | `PIPER_MODEL_PATH` | auto-detect | Path to `.onnx` voice model |
 | `WHISPER_LANGUAGE` | profile default | Override STT language (`""` = auto-detect) |
+| `WHISPER_DEVICE` | `cuda` | faster-whisper device; use `cpu` on a CPU-only host |
+| `WHISPER_COMPUTE_TYPE` | `int8` | CTranslate2 compute type appropriate for the selected device |
 | `CORS_ORIGINS` | `http://localhost:8080` | Comma-separated allowed origins |
 | `LANGUAGE_TUTOR_STRATEGY` | auto-detect | Override hardware strategy |
 | `LANGUAGE_TUTOR_DEBUG_EXCEPTIONS` | `0` | Return traceback details in HTTP responses only when explicitly enabled |
@@ -232,20 +234,36 @@ LANGUAGE_TUTOR_LIVE_OLLAMA=1 python -m pytest -q \
 
 ## Voice setup
 
-**STT**
+Install the web and speech-recognition dependencies into the project
+environment:
 
 ```bash
-pip install faster-whisper --break-system-packages
+python -m pip install -e '.[web,voice]'
 ```
 
-**TTS**
+For a CPU-only host, configure faster-whisper before startup:
 
 ```bash
-# Download piper and a voice model, then set:
+export WHISPER_DEVICE=cpu
+export WHISPER_COMPUTE_TYPE=int8
+```
+
+The first transcription must have access to the configured faster-whisper
+model, or the model must already be present in its local cache. Set
+`WHISPER_LANGUAGE=auto` to use automatic language detection, which can be more
+useful than forcing Latin.
+
+Speech output additionally requires the `piper` executable on `PATH` and a
+compatible Piper `.onnx` voice model:
+
+```bash
 export PIPER_MODEL_PATH=/path/to/model.onnx
 ```
 
-Voice support is optional and should be treated as an application extension path, not a prerequisite for understanding the core stack integration.
+Run `./start.sh --preflight` to check the Python dependency, Piper executable,
+and voice-model path. Browser recording also requires microphone permission and
+a secure browser context (localhost is acceptable). Voice support remains
+optional and is not required for the text tutor.
 
 ---
 
@@ -278,6 +296,19 @@ The most important future work for `language_tutor` is:
 - strengthen its observability path into `llm_inspector` / `llm_inspector_ui`
 - decide whether and how `rag_lib` should support explanations or curriculum retrieval
 - keep it current as the canonical example of how the suite is meant to be composed
+
+## Future work
+
+The old task tracker was retired after phases 1–3 were completed. Remaining
+ideas are deliberately non-commitments:
+
+- improve Classical Latin pronunciation with a real G2P pipeline;
+- evaluate an XTTS or another maintained voice-cloning backend before adding a
+  second TTS implementation;
+- consider persistent shared session state only if multi-worker deployment
+  becomes a supported use case;
+- add retrieval-backed curriculum or explanations only through a separately
+  scoped `rag_lib` project.
 
 ---
 
