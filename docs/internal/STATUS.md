@@ -22,6 +22,29 @@ For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
 
+### Latest completed work — repository simplification and hygiene
+
+The 2026-09-01 cleanup retired the duplicate small tutor and unreliable
+`reasoning_loop_guard`, consolidated shared trace ownership, decomposed proven
+navigation/programming/UI responsibility clusters behind compatible facades,
+and removed redundant test infrastructure. Root governance now has one
+authority (`AGENTS.md`); point-in-time documents were folded into current docs
+or moved under `docs/internal`.
+
+Post-cleanup live checks exercised Spark-hosted chat, structured output,
+logprobs, tool decisions and recovery, Engram/Inspector composition, read-only
+repository navigation, the surviving tutor adapter, and Inspector UI
+orchestration. The offline repository gate is 1,252 passed and 305 skipped.
+
+Private deployment data was removed from packaged defaults. Publication hygiene
+now derives content roots from every setuptools distribution and scans every
+tracked file beneath them as bytes, rather than relying on a package or suffix
+allowlist. Claude independently verified the endpoint fix, negative control,
+root cleanup and link integrity; re-verified `not_declared` scoping, thinking
+tri-state plumbing, and raw-provider-payload omission semantics; and reproduced
+all 12 committed artifact record IDs. The supplied archive was subsequently
+tied to commit `e0e9959b89237e90c97d3b56ade8b18131275824`.
+
 ### Latest completed work — remote local-model characterization
 
 `llm_engines` now supports a remote OpenAI-compatible llama.cpp server as a
@@ -818,8 +841,8 @@ control, and no reliable within-call reasoning-stream target was established.
 Historical validation records remain; typed action-loop detection remains a
 separate experimental concern under `action_trajectory_loop_guard`. Its removal
 reduced canonical collection by ten tests. The later navigation ground-truth
-split and subsequent cleanup regression coverage bring the verified baseline
-to 1,250 passed and 305 skipped.
+split, cleanup regression coverage, and distribution-hygiene gate bring the
+verified baseline to 1,252 passed and 305 skipped.
 
 The overlapping-contract review is complete. `agent_lib` runtime tool contracts
 remain separate from `llm_engines` provider/replay contracts because their IDs,

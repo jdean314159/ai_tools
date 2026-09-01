@@ -8,6 +8,12 @@ behavioral refactors. `make quality-python` now enforces the entire tracked
 repository; Git-ignored generated evidence plus the configured virtualenv and
 build-output exclusions remain outside the gate.
 
+Retrospective: although commits were staged, the aggregate sweep touched 429
+files for no intended behavioral change and invalidated earlier independent
+verification. Formatting consistency is not itself structural cleanliness.
+Future mechanical adoption must be separated from behavior changes and scoped
+to a concrete maintenance or compatibility need.
+
 The initial policy uses Ruff's conservative `E4`, `E7`, `E9`, and `F` rules,
 100-character lines, and a Python 3.10 syntax target. Python 3.10 remains the
 target while supported packages still advertise `requires-python = ">=3.10"`.
@@ -35,7 +41,6 @@ configuration.
 |---|---:|---:|
 | `llm_harness_core` | 1 | 8 |
 | `action_trajectory_loop_guard` | 0 | 0 (adopted) |
-| `reasoning_loop_guard` | 0 | 0 (adopted) |
 | `mail_lib` | 0 | 0 (adopted) |
 | `examples/diagnostics_agent` | 0 | 0 (adopted) |
 | `llm_inspector_ui` | 0 | 0 (adopted) |
@@ -44,7 +49,6 @@ configuration.
 | `rag_lib` | 0 | 0 (adopted) |
 | `llm_engines` | 0 | 0 (adopted) |
 | `engram` | 0 | 0 (adopted) |
-| `examples/language_tutor` | 0 | 0 (adopted) |
 | `examples/language_tutor_reference_app` | 0 | 0 (adopted) |
 | `examples/mail_assistant` | 0 | 0 (adopted) |
 | `examples/agent_coordination_teaching` | 0 | 0 (adopted after classification) |
@@ -68,15 +72,14 @@ may need an explicit exclusion rather than automatic rewriting.
 7. `llm_engines` — adopted and enforced in CI.
 8. `engram` — adopted and enforced in CI.
 9. `examples/diagnostics_agent` — adopted and enforced in CI.
-10. `examples/language_tutor` — adopted and enforced in CI.
-11. `examples/mail_assistant` — adopted and enforced in CI.
-12. `examples/agent_coordination_teaching` — adopted and enforced in CI.
-13. `examples/language_tutor_reference_app` — adopted and enforced in CI.
-14. `examples/asc_probe` harness — adopted; generated `runs/` evidence remains excluded.
-15. Top-level example probes — adopted; compilation verified without rerunning live experiments.
-16. Repository scripts — adopted and enforced in CI.
-17. Root unit and integration tests — adopted and enforced in CI.
-18. Root configuration and whole-repository scope — adopted. The staged path
+10. `examples/mail_assistant` — adopted and enforced in CI.
+11. `examples/agent_coordination_teaching` — adopted and enforced in CI.
+12. `examples/language_tutor_reference_app` — adopted and enforced in CI.
+13. `examples/asc_probe` harness — adopted; generated `runs/` evidence remains excluded.
+14. Top-level example probes — adopted; compilation verified without rerunning live experiments.
+15. Repository scripts — adopted and enforced in CI.
+16. Root unit and integration tests — adopted and enforced in CI.
+17. Root configuration and whole-repository scope — adopted. The staged path
     list is consolidated to `.` after verifying the full tracked tree.
 
 Each adoption commit must run that package's tests plus the repository gate.

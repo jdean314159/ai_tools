@@ -1,8 +1,8 @@
 # Fresh Codex thread handoff
 
-- Prepared: 2026-08-31
+- Prepared: 2026-09-01
 - Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
-- Current focus: Engram reliability and trust-boundary work complete
+- Current focus: repository simplification and post-cleanup verification complete
 
 ## Read order
 
@@ -17,6 +17,15 @@
 9. `docs/projects/ENGRAM-TRUST-REVIEW-WORKFLOW-2026-08-30.md`
 
 Do not read `history/SESSION_HANDOFF.md` end to end; it is a historical log.
+
+## Current cleanup checkpoint
+
+Commits `da15c32` through `54865d0` complete the structural cleanup, root-doc
+consolidation, private-endpoint correction, and distribution-wide privacy gate.
+The offline gate is 1,252 passed and 305 skipped. Claude independently closed
+the endpoint/root cleanup and re-verified the three post-reformat behavioral
+closures. No broad cleanup campaign is active; require a concrete burden or
+failing consumer before further structural work.
 
 ## Completed Engram sequence
 
@@ -150,6 +159,10 @@ Key commits, oldest to newest:
 - `aebd394` — availability/false-positive characterization
 - `b7f7cda` — audited trust-review workflow
 - `619c4fe` — repository-wide Ruff adoption complete
+- `da15c32` — structural simplification checkpoint
+- `d8776f9` — packaged private-endpoint correction
+- `e0e9959` — root governance and document consolidation
+- `54865d0` — distribution-wide privacy hygiene
 
 ## Current evidence boundary
 
@@ -165,7 +178,7 @@ Key commits, oldest to newest:
   requires a protected external telemetry/audit sink.
 - Working-session turns remain outside the persistent-memory trust policy.
 
-## Recommended next assignment
+## Completed structural cleanup sequence
 
 Repository-wide style normalization and generated-artifact cleanup are
 complete. The read-only language-tutor overlap assessment is recorded in
@@ -217,6 +230,9 @@ The first UI split is complete: submission readiness policy lives in
 `services.submission`, and readiness/submission rendering lives in
 `panels.submission_panel`. `app.py` imports those functions unchanged and keeps
 application composition.
+
+No further structural split is queued. Select future work from a concrete
+failure or maintenance burden rather than continuing cleanup by momentum.
 
 Do not combine this maintenance work with command-isolation experiments or
 model characterization.

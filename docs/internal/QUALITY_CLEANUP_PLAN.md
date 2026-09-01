@@ -1,12 +1,13 @@
 # Quality Cleanup Plan
 
-Last updated: 2026-06-01
+Last updated: 2026-09-01
 
 ## Status
 
-The original cleanup phases are complete. The latest work focused on GitHub
-publication recovery, Makefile/virtualenv reliability, optional ML dependency
-boundaries, and Engram import hygiene.
+The original cleanup phases and the 2026-09-01 structural simplification are
+complete. The latest bounded work consolidated root governance and historical
+documents, retired unused experiments, and extended privacy hygiene across all
+configured distributions.
 
 Use `STATUS.md` as the current source of truth. Historical broad-gate counts
 from before the packaging changes should not be treated as the current baseline
@@ -21,8 +22,9 @@ warnings were addressed in the earlier stabilization pass.
 
 ### Phase 2 - Import-path cleanup - DONE
 
-Most packages use `src/` layout. `llm_engines` remains on intentional direct
-layout. Import provenance should be validated by `tests/test_import_provenance.py`.
+Active library layouts are intentional and tested. Most use `src/`; `mail_lib`
+retains its package-root layout through explicit setuptools `package-dir`
+configuration. Import provenance is validated by `tests/test_import_provenance.py`.
 
 ### Phase 3 - Root package API simplification - DONE
 
@@ -74,6 +76,22 @@ added.
 - Old import-shadowing top-level package files should stay deleted.
 - Lightweight episode data type lives in `engram.memory.episode_types`.
 - `result_types.py` must not import `episodic_memory.py`.
+
+### Phase 12 - Structural and documentary simplification - DONE
+
+- The duplicate small tutor and unintegrated `reasoning_loop_guard` are gone.
+- `AGENTS.md` is the sole root governance authority; `AGENT.md` is a
+  compatibility pointer.
+- Historical handoff and repo-state verification material live under
+  `docs/internal` rather than at repository root.
+- Distribution privacy hygiene covers every tracked file under every configured
+  setuptools content root.
+- The verified offline baseline is 1,252 passed and 305 skipped.
+
+The repository-wide Ruff sweep was larger than its behavioral value justified
+and invalidated prior independent review. Do not repeat that pattern: isolate
+mechanical formatting from behavioral or structural changes, and require a
+specific maintenance burden for future cleanup.
 
 ## Next quality gates
 

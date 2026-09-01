@@ -60,6 +60,9 @@ Prevent local development artifacts from entering release snapshots or GitHub.
 
 - Strengthen `scripts/check_publication_hygiene.py`.
 - Fail on `.pytest_cache`, `*.egg-info`, `*.bak`, `*.orig`, `*.rej`, ad hoc patches, local DBs, and cache files unless explicitly allowed.
+- Derive every setuptools distribution content root and reject private
+  deployment markers in every tracked file beneath it without a suffix
+  allowlist.
 - Maintain the publication-hygiene CI gate.
 
 ### Done when

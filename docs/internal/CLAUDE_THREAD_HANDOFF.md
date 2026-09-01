@@ -1,10 +1,10 @@
 # Fresh Claude thread handoff
 
-- Prepared: 2026-08-13
+- Prepared: 2026-09-01
 - Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
 - Branch: `main`
-- Current repository checkpoint: inspect `git log -1`; RUN-RECORD-00 Phase 2
-  is complete and included in the latest cleanup checkpoint.
+- Current repository checkpoint: inspect `git log -1`; repository cleanup and
+  distribution-wide privacy hygiene are complete.
 
 This is the shortest reliable entry point for a fresh Claude thread. Treat the
 repository as authoritative; chat summaries are secondary.
@@ -27,6 +27,12 @@ Read package READMEs only for the package involved in the next task. Do not
 start by reading the historical sections of `history/SESSION_HANDOFF.md`.
 
 ## Current posture
+
+The 2026-09-01 cleanup checkpoint is complete. The duplicate tutor and
+`reasoning_loop_guard` were retired, root governance/documentation was
+consolidated, and publication hygiene now covers tracked content across every
+setuptools distribution without a suffix allowlist. The offline gate is 1,252
+passed and 305 skipped. No further broad cleanup pass is queued.
 
 RUN-RECORD-00 Phase 7 is complete under accepted ADR-021 and ADR-022. The next
 bounded consumer slice is unselected. The most recent completed
