@@ -76,7 +76,9 @@ engines:
   spark_qwen:
     type: openai
     model: Qwen3.8-Flash-Next-UD-IQ4_XS
-    base_url: http://192.168.50.225:8080/v1
+    # Replace in ~/.engram/llm_engines.yaml or a config selected with
+    # LLM_ENGINES_CONFIG; never commit a private deployment address here.
+    base_url: http://inference-host:8080/v1
     api_key: dummy
     is_cloud: false
 

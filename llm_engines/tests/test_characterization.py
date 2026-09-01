@@ -237,3 +237,19 @@ def test_readme_uses_placeholder_endpoint_and_model_path():
     assert "http://inference-host:8080/v1" in readme
     assert "192.168.50.225" not in readme
     assert "/home/cybernaif" not in readme
+
+
+def test_shipped_package_contains_no_private_deployment_details():
+    package_root = Path(__file__).resolve().parents[1] / "src" / "llm_engines"
+    forbidden = ("192.168.50.225", "/home/cybernaif")
+    text_suffixes = {".json", ".md", ".py", ".toml", ".txt", ".yaml", ".yml"}
+
+    leaks = []
+    for path in package_root.rglob("*"):
+        if path.is_file() and path.suffix.lower() in text_suffixes:
+            decoded = path.read_text(encoding="utf-8")
+            for value in forbidden:
+                if value in decoded:
+                    leaks.append(f"{path.relative_to(package_root)}: {value}")
+
+    assert not leaks, "private deployment details found in shipped package:\n" + "\n".join(leaks)
