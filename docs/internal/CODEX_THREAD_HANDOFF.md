@@ -1,7 +1,7 @@
 # Fresh Codex thread handoff
 
 - Prepared: 2026-08-31
-- Repository: `/home/cybernaif/repos/ai_tools`
+- Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
 - Current focus: Engram reliability and trust-boundary work complete
 
 ## Read order

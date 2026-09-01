@@ -36,6 +36,11 @@ REQUIRED_ROOT_DOCS = [
 
 EXPECTED_LICENSE_EXPRESSION = "Apache-2.0"
 
+PRIVATE_DEPLOYMENT_MARKERS = (
+    b"192.168.50.225",
+    b"/home/cybernaif",
+)
+
 LEGACY_BASENAMES = {
     "README_engram_lite.legacy.md",
     "README_llm_inspector.legacy.md",
@@ -352,6 +357,51 @@ def _license_metadata_problems() -> list[str]:
     return problems
 
 
+def _distribution_content_roots() -> list[Path]:
+    """Return configured setuptools package roots for every distribution."""
+    roots: set[Path] = set()
+    for pyproject in sorted(ROOT.rglob("pyproject.toml")):
+        if _is_under_skipped_dir(pyproject):
+            continue
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        if data.get("project") is None:
+            continue
+
+        setuptools = (data.get("tool") or {}).get("setuptools") or {}
+        package_dir = setuptools.get("package-dir") or {}
+        packages = setuptools.get("packages") or {}
+        find = (packages.get("find") or {}) if isinstance(packages, dict) else {}
+        configured = [*find.get("where", []), *package_dir.values()]
+        if not configured:
+            configured = ["."]
+
+        for relative in configured:
+            candidate = (pyproject.parent / str(relative)).resolve()
+            if candidate.is_dir():
+                roots.add(candidate)
+    return sorted(roots)
+
+
+def _private_deployment_problems() -> list[str]:
+    """Find private deployment markers in tracked distribution content."""
+    tracked = {path.resolve() for path in _git_tracked_files()}
+    roots = _distribution_content_roots()
+    problems: list[str] = []
+
+    for path in sorted(tracked):
+        if not path.is_file() or not any(
+            root == path.parent or root in path.parents for root in roots
+        ):
+            continue
+        content = path.read_bytes()
+        for marker in PRIVATE_DEPLOYMENT_MARKERS:
+            if marker in content:
+                problems.append(
+                    f"{path.relative_to(ROOT)}: {marker.decode('ascii', errors='replace')}"
+                )
+    return problems
+
+
 def _fixture_path_is_tracked(fixture_path: Path, tracked: set[Path]) -> bool:
     resolved = fixture_path.resolve()
     if resolved in tracked:
@@ -414,6 +464,11 @@ def main(argv: list[str] | None = None) -> int:
         problems.append("Distribution license metadata must match the root license:")
         problems.extend(f"- {problem}" for problem in license_problems)
 
+    private_deployment_problems = _private_deployment_problems()
+    if private_deployment_problems:
+        problems.append("Distribution content must not contain private deployment details:")
+        problems.extend(f"- {problem}" for problem in private_deployment_problems)
+
     if warnings:
         print("Publication hygiene warnings:")
         for warning in warnings:
@@ -436,6 +491,7 @@ def main(argv: list[str] | None = None) -> int:
     print("Legacy package READMEs are confined to docs/history/.")
     print("Referenced fixture files are tracked.")
     print("Distribution license metadata and files match the root license.")
+    print("Distribution content contains no private deployment details.")
     return 0
 
 

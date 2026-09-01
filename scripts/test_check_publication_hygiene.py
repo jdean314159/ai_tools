@@ -181,6 +181,41 @@ def test_tool_only_pyproject_is_not_treated_as_distribution(hygiene_root: Path) 
     assert checker.main([]) == 0
 
 
+def test_private_details_in_any_distribution_content_suffix_fail(
+    hygiene_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    package = hygiene_root / "pkg"
+    _write(
+        package / "pyproject.toml",
+        '[project]\nname = "pkg"\nversion = "0.1.0"\n'
+        'license = "Apache-2.0"\nlicense-files = ["LICENSE"]\n'
+        '[tool.setuptools.packages.find]\nwhere = ["src"]\n',
+    )
+    _write(package / "LICENSE", (hygiene_root / "LICENSE").read_text(encoding="utf-8"))
+    leaked = _write(package / "src" / "pkg" / "deployment.cfg", "host=192.168.50.225\n")
+    _track(monkeypatch, leaked)
+
+    assert checker.main([]) == 1
+    output = capsys.readouterr().out
+    assert "Distribution content must not contain private deployment details:" in output
+    assert "pkg/src/pkg/deployment.cfg: 192.168.50.225" in output
+
+
+def test_private_details_outside_distribution_content_are_not_rewritten(
+    hygiene_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provenance = _write(
+        hygiene_root / "docs" / "historical-record.md",
+        "Observed endpoint 192.168.50.225 during the frozen run.\n",
+    )
+    _track(monkeypatch, provenance)
+
+    assert checker.main([]) == 0
+
+
 def test_skip_dirs_are_not_descended(hygiene_root: Path) -> None:
     _write(hygiene_root / ".venv" / "lib" / "ignored.pyc")
 

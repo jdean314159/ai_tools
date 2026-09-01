@@ -1,7 +1,7 @@
 # Fresh Claude thread handoff
 
 - Prepared: 2026-08-13
-- Repository: `/home/cybernaif/repos/ai_tools`
+- Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
 - Branch: `main`
 - Current repository checkpoint: inspect `git log -1`; RUN-RECORD-00 Phase 2
   is complete and included in the latest cleanup checkpoint.
