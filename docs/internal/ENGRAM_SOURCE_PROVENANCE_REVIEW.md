@@ -59,7 +59,7 @@ cannot.
 ### 2. Recovered neural subsystem
 
 All four current neural implementation files first entered `ai_tools` in
-recovery commit `58e07a042e5030c78a57f4b3fa1b59bcc315e07e`. Comparison with
+recovery commit `4ddf31e8f12f768cd6ef2d6e2d9a9de182c97f9a`. Comparison with
 the archived repository at commit
 `5696ce49752d895a703d68203951f6c8c12c61d3` shows direct lineage:
 
@@ -156,4 +156,3 @@ The review found evidence-quality issues, but none is evidence of copied code:
 - TITANS paper: <https://arxiv.org/abs/2501.00663>
 - Miras paper: <https://arxiv.org/abs/2504.13173>
 - Archived owner repository: <https://github.com/jdean314159/engram>
-

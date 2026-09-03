@@ -29,7 +29,7 @@ state and is retained as historical evidence:
 | `rag-lib` | `rag_lib/` | MIT |
 | `reasoning-loop-guard` | `reasoning_loop_guard/` | MIT |
 
-At that point the root `LICENSE` was MIT. Commit `db81d51` changed four package metadata
+At that point the root `LICENSE` was MIT. Commit `5e5da55` changed four package metadata
 declarations from Apache-2.0 to MIT to match that root, but did not record the
 license-direction decision in an ADR.
 
@@ -97,7 +97,7 @@ Current source explicitly identifies these predecessor relationships:
 - `examples/language_tutor_reference_app/` contains files ported or adapted
   from the standalone `spanish_tutor` project;
 - `engram/neural/core.py` implements Dean (1994) subgrouped RTRL and was
-  introduced by recovery commit `58e07a0`; the handoff describes the neural
+  introduced by recovery commit `4ddf31e`; the handoff describes the neural
   core as vendored/reintroduced;
 - `engram/neural/surprise_filter.py` cites TITANS papers as design sources.
 

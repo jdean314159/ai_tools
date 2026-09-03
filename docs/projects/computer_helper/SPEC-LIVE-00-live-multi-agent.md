@@ -3,7 +3,7 @@
 **Status:** Ready to implement as revision-and-rebase (v8 — sixth review: conformance, evidence provenance, pinned policy).
 **Covers:** First live (model-in-loop) exercise of the COORD control plane through a probe-local orchestrator.
 Opens the LIVE campaign.
-**Depends on:** SPEC-COORD-01 (4a5c671), SPEC-COORD-02 / ADR-018 (unified ownership). All four COORD gaps closed.
+**Depends on:** SPEC-COORD-01 (ae377bc), SPEC-COORD-02 / ADR-018 (unified ownership). All four COORD gaps closed.
 **Mode:** LIVE with deterministic REPLAY. `--live` drives a real local model and records a normalized event
 transcript; `--replay` (test default) deterministically re-executes recorded events — no GPU, no model.
 **Discipline:** Probe lands in `~/repos/computer_helper` ONLY. This run adds NOTHING to `agent_lib`. Any
@@ -20,7 +20,7 @@ to §8.2. The updated probe and this spec MUST land as coordinated commits in th
 cross-referencing the other commit; neither change is complete without the other. This prevents the earlier drift,
 where the spec advanced while the probe sat frozen on the unmerged branch.
 **Implementation reference:** the v8-conforming probe is `computer_helper` commit `7cb5192`
-(`feat(probe): conform LIVE-00 harness to v8`), whose commit message references this spec commit (`14ac320`).
+(`feat(probe): conform LIVE-00 harness to v8`), whose commit message references this spec commit (`6c22fc5`).
 **Live confirmation:** `computer_helper` commit `7e40b36` records a fresh `qwen3:8b` v8 run. The authoritative
 done-check became satisfied at step 4; the coordinator issued four further `replace_text` routes, and the run
 ended at `step_cap` on step 12. Finding 1 is therefore CONFIRMED in-tree.

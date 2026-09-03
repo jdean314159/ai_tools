@@ -62,7 +62,7 @@ must load a third-party pickle checkpoint), that is a new ADR with its own forci
 
 ## Enforcement
 
-- **Commit (BM25 cache):** `011d049` (`fix(rag_lib): replace pickle BM25 cache with JSON`)
+- **Commit (BM25 cache):** `18c763a` (`fix(rag_lib): replace pickle BM25 cache with JSON`)
   converts the `rag_lib` BM25 cache from pickle to data-only JSON with live rebuild of
   `BM25Okapi` on load; removes the dead `import pickle` from `storage/chroma.py`; and reaps
   both `.json` and legacy `.pkl` caches on collection deletion. Verified:

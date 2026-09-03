@@ -291,7 +291,7 @@ no-silent-loss posture of ADR-016 / the curation findings.)
 
 ### 6.1 The problem v0's flat floor created
 
-v0's self-mail rule (`a80c45c`) is sticky-last and demotes **all** self-mail to `low`. That fix was
+v0's self-mail rule (`5e95695`) is sticky-last and demotes **all** self-mail to `low`. That fix was
 correct for one population — platform-transfer mail the maintainer moves between accounts and does
 not read — but self-mail is **two populations with opposite value**. The maintainer also emails
 themselves **links to articles** seen on a phone to read later on the workstation. Both are sent
@@ -309,7 +309,7 @@ layer (the personal layer is still pure post-processing per §3.1). The self-mai
 - self-mail **AND** body is **bare-link-shaped** (§6.3) → `Priority.NORMAL`, reason
   `"Self-addressed mail carrying a link (likely a saved article)."`, rule token
   `self-mail:link`.
-- self-mail **AND** not bare-link-shaped → `Priority.LOW` (unchanged `a80c45c` behavior), rule token
+- self-mail **AND** not bare-link-shaped → `Priority.LOW` (unchanged `5e95695` behavior), rule token
   `self-mail`.
 
 Linkless transfer mail keeps the hard `low` floor. Article-stash mail surfaces at `normal` with **no
@@ -450,7 +450,7 @@ All against synthetic fixtures and synthetic rule files. Required cases:
     an `<a href>` (short anchor text) is detected as bare-link after the §6.3 reader change. **This
     is the case the pre-change reader silently missed; it must be a distinct fixture.**
 12. **Linkless / prose-heavy self-mail → `low`** — no URL, and URL-with-prose-over-threshold, both
-    stay `low` with token `self-mail` (`a80c45c` preserved).
+    stay `low` with token `self-mail` (`5e95695` preserved).
 13. **Bare-link detector edges** — empty body → not bare-link; `mailto:`/`tel:` href (plain **and**
     entity-encoded, e.g. `&#109;ailto:`) → not a link (excluded); multiple URLs + near-zero prose →
     bare-link; threshold boundary at `SELFMAIL_LINK_MAX_PROSE_CHARS` exactly and ±1.

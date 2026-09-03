@@ -34,7 +34,7 @@ working-tree warning, test record, and pasteable opening prompt are in
 
 ## Current cleanup checkpoint
 
-Commits `2e51683` through `32f32a7` complete the structural cleanup, root-doc
+Commits `7d37920` through `0d0b0c3` complete the structural cleanup, root-doc
 consolidation, private-endpoint correction, and distribution-wide privacy gate.
 The offline gate is 1,254 passed and 305 skipped. Claude independently closed
 the endpoint/root cleanup and re-verified the three post-reformat behavioral
@@ -165,18 +165,18 @@ The work progressed through evidence rather than assuming a design:
 
 Key commits, oldest to newest:
 
-- `f0f1e6e` — temporal memory reliability tooling
-- `0c478b1` — clean packaging validation
-- `253069c` — persistent-memory trust-boundary characterization
-- `7a8013a` — trust-policy enforcement
-- `5410204` — paired DGX trust-policy validation and citation correction
-- `a95b5cb` — availability/false-positive characterization
-- `24100ff` — audited trust-review workflow
-- `4a7f26e` — repository-wide Ruff adoption complete
-- `2e51683` — structural simplification checkpoint
-- `7a6e0d1` — packaged private-endpoint correction
-- `9ea8d28` — root governance and document consolidation
-- `32f32a7` — distribution-wide privacy hygiene
+- `c0cf400` — temporal memory reliability tooling
+- `987d743` — clean packaging validation
+- `38a6099` — persistent-memory trust-boundary characterization
+- `22d7c14` — trust-policy enforcement
+- `2307988` — paired DGX trust-policy validation and citation correction
+- `4122f45` — availability/false-positive characterization
+- `60c1df2` — audited trust-review workflow
+- `d4c4aec` — repository-wide Ruff adoption complete
+- `7d37920` — structural simplification checkpoint
+- `cda69ca` — packaged private-endpoint correction
+- `b3d2abe` — root governance and document consolidation
+- `0d0b0c3` — distribution-wide privacy hygiene
 
 ## Current evidence boundary
 
@@ -296,5 +296,5 @@ security, and availability tests also pass.
 
 At handoff preparation, the Engram commits above were complete. The separate
 `llm_engines` tool-recovery version-4 change set was validated and committed as
-`a616670`. The final documentation checkpoint should leave the tracked worktree
+`31cfdb0`. The final documentation checkpoint should leave the tracked worktree
 clean; inspect `git status` before starting new work.

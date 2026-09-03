@@ -95,7 +95,7 @@ verified the endpoint fix, negative control,
 root cleanup and link integrity; re-verified `not_declared` scoping, thinking
 tri-state plumbing, and raw-provider-payload omission semantics; and reproduced
 all 12 committed artifact record IDs. The supplied archive was subsequently
-tied to commit `9ea8d28a2cfb9a04c796368bfba3694067bdce5b`.
+tied to commit `b3d2abe59bf3b47550851e938facfec3bc98f2e0`.
 
 ### Latest completed work — remote local-model characterization
 
@@ -529,7 +529,7 @@ See `docs/projects/RUN-RECORD-00-PHASE-8-COURSE-PORTABILITY.md`.
 
 ### Latest completed work — NAV-VERIFIABLE-00
 
-The repository-navigation control investigation is closed at `f151893`.
+The repository-navigation control investigation is closed at `4ec3932`.
 Wrapper-level text repetition, duplicate-action, and observable-saturation
 signals did not provide a reliable model-independent stopping criterion. The
 investigation moved the missing information into an explicit task-goal ledger
@@ -550,7 +550,7 @@ relation-correct ledger answers over-cited evidence. Do not alter the frozen
 rule or scorer post hoc. See
 `docs/projects/agent_lib/NAV-VERIFIABLE-00-VALIDATION.md`.
 
-Current `agent_lib` checkpoint: `150 passed` at `f151893`. This is a recorded
+Current `agent_lib` checkpoint: `150 passed` at `4ec3932`. This is a recorded
 checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
@@ -560,19 +560,19 @@ split is complete locally at `../llm-failure-lab`; package publication is
 deferred. Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
-reader and rules-layer triage at `9f9125f`, after spec ratification at `72caded`. The reader iterates
+reader and rules-layer triage at `f9451b2`, after spec ratification at `17211fe`. The reader iterates
 extensionless mbox files as the source of truth, joins Gloda metadata by bracket-stripped
 `Message-ID`, treats Gloda as lagging enrichment, and remains read-only against the Thunderbird
 profile. A private maintainer-only
-live run forced three corrections: self-mail demotion (`a80c45c`), recent user-star-only urgency
-(`2191e09`, 183 days), and calendar recency gating (`c7f2d89`, 31 days).
+live run forced three corrections: self-mail demotion (`5e95695`), recent user-star-only urgency
+(`b5e911d`, 183 days), and calendar recency gating (`8d36243`, 31 days).
 
-MAIL-01 then shipped deterministic file-backed personal rules at `d5b795c`. It adds strict TOML
+MAIL-01 then shipped deterministic file-backed personal rules at `25c4ff0`. It adds strict TOML
 validation, most-specific/file-order rule selection, explicit precedence over built-in heuristics,
 `--rules` and mail-free `--validate-rules` CLI modes, and a graduated built-in self-mail floor for
 link-bearing saved-article messages.
 
-MAIL-02 shipped the ratified localhost mail-assistant MVP at `77c6a86`: prioritized unread/all
+MAIL-02 shipped the ratified localhost mail-assistant MVP at `6bdd44c`: prioritized unread/all
 views, app-owned read and summary state, bounded local-model section summaries, and reviewed,
 conflict-detecting personal-rule commits that preserve the hand-authored TOML prefix. The combined
 mail/app/import/public-API gate passed at the MVP checkpoint (`75 passed`). Post-MVP work through
@@ -634,7 +634,7 @@ Engram exposes the additive `MemoryLayer` extension seam from NEURAL-01; the
 four core layers (working/SQLite, episodic/ChromaDB, semantic/SQLite,
 cold/FTS5) remain authoritative and untouched.
 
-NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `1c288d6` as a
+NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `e95498e` as a
 confined, read-only Qwen3.6 repository-navigation evaluation with external
 ground truth and result storage.
 

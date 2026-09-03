@@ -7,8 +7,8 @@ see `SPEC-MAIL-01-personal-rules.md` and `../../internal/history/SESSION_HANDOFF
 is the next queued thin follow-on. The planning action at the end of this v0.1 record is historical.
 **Predecessors:** `mail_lib_scoping_note.md` (scope/intent + corrections), `SPEC-MAIL-00-triage.md`
 (the v0 build spec), both authoritative for their domains. This note is the *post-live-run* record.
-**Implementation commits:** `9f9125f` (v0), `a80c45c` (self-mail), `2191e09` (star recency),
-`c7f2d89` (calendar recency). Current mail_lib tests: `10 passed`; root-adjacent mail/import/public
+**Implementation commits:** `f9451b2` (v0), `5e95695` (self-mail), `b5e911d` (star recency),
+`8d36243` (calendar recency). Current mail_lib tests: `10 passed`; root-adjacent mail/import/public
 API gate: `20 passed`.
 
 ---
@@ -17,7 +17,7 @@ API gate: `20 passed`.
 
 Script-first `mail_lib/` (importable, not yet a package): `thunderbird.py` (reader), `indexer.py`,
 `triage.py` (rules layer), `digest.py`, driven by `scripts/mail_triage.py`. Synthetic fixtures only
-for Codex/Claude; real data is the maintainer's alone. Spec ratified at `72caded`; implementation
+for Codex/Claude; real data is the maintainer's alone. Spec ratified at `17211fe`; implementation
 and live-run corrections are listed above, on `codex-cleanup-pass`.
 
 ## What the live run produced — three patches

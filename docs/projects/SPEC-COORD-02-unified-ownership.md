@@ -3,7 +3,7 @@
 **Status:** Draft for Codex (v3 — incorporates the atomicity + wiring review).
 **Replaces:** the withdrawn bridge spec `SPEC-COORD-02-enforced-reservations.md` (mark it withdrawn, do not delete).
 **Covers:** Ledger gap 3, via UNIFICATION with atomic acquisition. Closes the COORD ledger.
-**Depends on:** SPEC-COORD-01 (4a5c671), ADR-018 (promoted to unify).
+**Depends on:** SPEC-COORD-01 (ae377bc), ADR-018 (promoted to unify).
 **Mode:** Deterministic, probe-first. No live model.
 **Discipline:** Touches BOTH repos. `agent_lib` + ADR-018 + ADR_INDEX in `~/repos/ai_tools`. Probe in
 `~/repos/computer_helper`. Separate commits. READ confirmed facts before coding.
