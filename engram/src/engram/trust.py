@@ -88,6 +88,11 @@ class MemoryTrustPolicy:
             reasons.append("quarantined")
         return TrustDecision("filter" if reasons else "accept", tuple(reasons))
 
+    def authorizes_tenant(self, metadata: Mapping[str, Any] | None) -> bool:
+        """Return whether metadata belongs to this policy's tenant boundary."""
+        tenant = str((metadata or {}).get("tenant") or "").strip()
+        return tenant in {self.tenant_id, *self.tenant_aliases}
+
     def _boundary_reasons(self, meta: Mapping[str, Any], minimum: TrustLevel) -> list[str]:
         reasons: list[str] = []
         authorized_tenants = {self.tenant_id, *self.tenant_aliases}

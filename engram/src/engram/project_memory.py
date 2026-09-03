@@ -311,15 +311,42 @@ class ProjectMemory:
     def _compute_storage_root(self) -> Path | None:
         if self.base_dir is None:
             return None
-        safe = str(self.project_id or "default").strip() or "default"
+        safe = self._safe_storage_component(self.project_id, label="project_id")
         return self.base_dir / safe
+
+    @staticmethod
+    def _safe_storage_component(value: Any, *, label: str) -> str:
+        component = str(value or "default").strip() or "default"
+        if (
+            component in {".", ".."}
+            or Path(component).name != component
+            or "\\" in component
+            or "\x00" in component
+        ):
+            raise ValueError(f"{label} must be a single path component")
+        return component
+
+    @staticmethod
+    def _secure_storage_path(path: Path, mode: int) -> None:
+        try:
+            path.chmod(mode)
+        except OSError as exc:
+            logger.warning("Could not secure memory storage path %s: %s", path, exc)
 
     def _ensure_storage_dirs(self) -> None:
         if self._storage_root is None:
             return
         self._storage_root.mkdir(parents=True, exist_ok=True)
+        self._secure_storage_path(self._storage_root, 0o700)
         if self._sessions_dir is not None:
             self._sessions_dir.mkdir(parents=True, exist_ok=True)
+            self._secure_storage_path(self._sessions_dir, 0o700)
+        for path in (self._episodes_path,):
+            if path is not None and path.exists():
+                self._secure_storage_path(path, 0o600)
+        if self._sessions_dir is not None:
+            for path in self._sessions_dir.glob("*.jsonl"):
+                self._secure_storage_path(path, 0o600)
 
     def _read_jsonl(self, path: Path | None) -> list[dict[str, Any]]:
         if path is None or not path.exists():
@@ -342,6 +369,7 @@ class ProjectMemory:
         self._ensure_storage_dirs()
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        self._secure_storage_path(path, 0o600)
 
     def _rewrite_jsonl(self, path: Path | None, rows: list[dict[str, Any]]) -> None:
         if path is None:
@@ -350,11 +378,12 @@ class ProjectMemory:
         with path.open("w", encoding="utf-8") as handle:
             for row in rows:
                 handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+        self._secure_storage_path(path, 0o600)
 
     def _session_path(self, session_id: str) -> Path | None:
         if self._sessions_dir is None:
             return None
-        safe = str(session_id).strip() or "default"
+        safe = self._safe_storage_component(session_id, label="session_id")
         return self._sessions_dir / f"{safe}.jsonl"
 
     def _load_session(self, session_id: str) -> None:
@@ -807,6 +836,7 @@ class ProjectMemory:
                 policy=self._quality,
             )
             if decision.should_store_episode:
+                audit_count = len(self._trust_audit)
                 episode_id = self.store_episode(
                     str(text),
                     metadata={**auto_metadata, "ingestion_reasons": list(decision.reasons)},
@@ -820,6 +850,21 @@ class ProjectMemory:
                     if self.extractor and self.semantic:
                         self._extract_and_store_facts(
                             str(text), normalized_role, session_id, episode_id
+                        )
+                elif len(self._trust_audit) > audit_count:
+                    trust_audit = self._trust_audit[-1]
+                    if trust_audit.get("action") == "reject":
+                        logger.warning(
+                            "Auto-ingest rejected by memory trust policy for session %s: %s",
+                            session_id,
+                            ", ".join(trust_audit.get("reasons", [])),
+                        )
+                        self.telemetry.emit(
+                            "memory_turn_auto_ingest_blocked",
+                            {
+                                "session_id": session_id,
+                                "reasons": list(trust_audit.get("reasons", [])),
+                            },
                         )
             return
 
@@ -1996,11 +2041,24 @@ class ProjectMemory:
         Returns:
             True if found and deleted, False if not found.
         """
-        original_count = len(self._episodes)
-        self._episodes = [ep for ep in self._episodes if ep.get("id") != episode_id]
+        episode = next((ep for ep in self._episodes if ep.get("id") == episode_id), None)
+        if episode is None:
+            return False
+        if self.trust_policy is not None and not self.trust_policy.authorizes_tenant(
+            episode.get("metadata")
+        ):
+            audit = {
+                "stage": "deletion",
+                "action": "reject",
+                "reasons": ["tenant_mismatch"],
+                "episode_id": episode_id,
+            }
+            self._trust_audit.append(audit)
+            self.telemetry.emit("memory_trust_deletion_blocked", audit)
+            logger.warning("Episode deletion rejected by memory trust policy: %s", episode_id)
+            return False
 
-        if len(self._episodes) == original_count:
-            return False  # Not found
+        self._episodes = [ep for ep in self._episodes if ep.get("id") != episode_id]
 
         # Rewrite JSONL
         self._rewrite_jsonl(self._episodes_path, self._episodes)
@@ -2026,6 +2084,34 @@ class ProjectMemory:
         Returns:
             {"turns_removed": N, "episodes_removed": M}
         """
+        # A session turn has no independent tenant metadata. Under an enabled
+        # trust policy, authorize the destructive operation through every
+        # episode associated with the session and fail closed for an
+        # unclassified session.
+        session_episodes = [
+            ep
+            for ep in self._episodes
+            if str((ep.get("metadata") or {}).get("session_id", "")) == session_id
+        ]
+        if self.trust_policy is not None and (
+            not session_episodes
+            or any(
+                not self.trust_policy.authorizes_tenant(ep.get("metadata"))
+                for ep in session_episodes
+            )
+        ):
+            audit = {
+                "stage": "deletion",
+                "action": "reject",
+                "operation": "forget_session",
+                "reasons": ["tenant_mismatch" if session_episodes else "tenant_unclassified"],
+                "session_id": session_id,
+            }
+            self._trust_audit.append(audit)
+            self.telemetry.emit("memory_trust_deletion_blocked", audit)
+            logger.warning("Session deletion rejected by memory trust policy: %s", session_id)
+            return {"turns_removed": 0, "episodes_removed": 0, "blocked": True}
+
         # Remove episodes that originated from this session
         episodes_before = len(self._episodes)
         self._episodes = [
@@ -2077,6 +2163,27 @@ class ProjectMemory:
             Summary of what was removed.
         """
         import shutil
+
+        if self.trust_policy is not None and (
+            not self._episodes
+            or any(
+                not self.trust_policy.authorizes_tenant(ep.get("metadata")) for ep in self._episodes
+            )
+        ):
+            audit = {
+                "stage": "deletion",
+                "action": "reject",
+                "operation": "forget_user_data",
+                "reasons": ["tenant_mismatch" if self._episodes else "tenant_unclassified"],
+            }
+            self._trust_audit.append(audit)
+            self.telemetry.emit("memory_trust_deletion_blocked", audit)
+            logger.warning("Project data deletion rejected by memory trust policy")
+            return {
+                "episodes_removed": 0,
+                "sessions_removed": 0,
+                "blocked": True,
+            }
 
         stats = {
             "episodes_removed": len(self._episodes),

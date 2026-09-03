@@ -151,6 +151,56 @@ def test_explicit_tenant_alias_is_authorized(tmp_path):
     assert memory.search_episodes("Legacy alias", n=5)[0].episode_id == episode_id
 
 
+def test_cross_tenant_episode_deletion_is_rejected_and_audited(tmp_path):
+    unguarded = ProjectMemory(base_dir=tmp_path, project_id="p")
+    episode_id = unguarded.store_episode(
+        "Other tenant fact",
+        metadata=metadata(tenant="other"),
+        bypass_filter=True,
+    )
+    unguarded.close()
+
+    guarded = ProjectMemory(base_dir=tmp_path, project_id="p", trust_policy=policy())
+    assert guarded.delete_episode(episode_id) is False
+    assert any(ep["id"] == episode_id for ep in guarded._episodes)
+    assert guarded.get_trust_audit()[-1] == {
+        "stage": "deletion",
+        "action": "reject",
+        "reasons": ["tenant_mismatch"],
+        "episode_id": episode_id,
+    }
+
+
+def test_trust_rejected_auto_ingest_logs_a_warning(tmp_path, caplog):
+    memory = ProjectMemory(base_dir=tmp_path, project_id="p", trust_policy=policy())
+    with caplog.at_level("WARNING"):
+        memory.add_turn("user", "Remember that Atlas is in the west", "s1")
+    assert "Auto-ingest rejected by memory trust policy" in caplog.text
+    assert memory.get_stats()["episodic"]["quality"]["auto_ingested"] == 0
+
+
+def test_cross_tenant_bulk_deletion_is_rejected(tmp_path):
+    unguarded = ProjectMemory(base_dir=tmp_path, project_id="p")
+    unguarded.add_turn("user", "Remember the other tenant fact", "shared")
+    assert unguarded._episodes
+    unguarded._episodes[0]["metadata"].update(metadata(tenant="other"))
+    unguarded._rewrite_jsonl(unguarded._episodes_path, unguarded._episodes)
+    unguarded.close()
+
+    guarded = ProjectMemory(base_dir=tmp_path, project_id="p", trust_policy=policy())
+    assert guarded.forget_session("shared") == {
+        "turns_removed": 0,
+        "episodes_removed": 0,
+        "blocked": True,
+    }
+    assert guarded.forget_user_data() == {
+        "episodes_removed": 0,
+        "sessions_removed": 0,
+        "blocked": True,
+    }
+    assert len(guarded._episodes) == 1
+
+
 def test_review_classifies_legacy_episode_and_persists_audit(tmp_path):
     unguarded = ProjectMemory(base_dir=tmp_path, project_id="p")
     episode_id = unguarded.store_episode("Legacy Atlas region west", bypass_filter=True)

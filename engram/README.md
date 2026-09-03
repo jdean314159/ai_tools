@@ -8,6 +8,10 @@ Lightweight project memory for LLM applications. Stores conversation turns,
 retrieves relevant prior context, and assembles memory-augmented prompts.
 Does not run inference — it enriches prompts that other packages execute.
 
+Persistent project and session identifiers must be single path components.
+Engram creates project/session directories with owner-only access and persistent
+JSON metadata with owner-only read/write permissions on POSIX systems.
+
 Internal storage layers (JSONL, ChromaDB, semantic graph) are implementation
 details. The primary public API is `ProjectMemory`.
 
@@ -111,6 +115,13 @@ but enabled policies fail closed for missing trust or tenant metadata. Engram
 does not infer trust from content. Exact-ID review supports audited legacy
 classification and explicit quarantine release; reviewer authorization remains
 the application's responsibility. See [Memory trust policy](docs/trust_policy.md).
+
+When a policy rejects automatic turn ingestion, Engram emits a warning, a
+`memory_turn_auto_ingest_blocked` telemetry event, and a trust-audit record.
+Destructive episode, session, and project-data operations enforce the configured
+tenant boundary and emit `memory_trust_deletion_blocked` when denied. Bulk
+deletion fails closed when stored data cannot be assigned to the configured
+tenant.
 
 Prompt results now include `budget_diagnostics` and `retrieval_diagnostics`.
 Evidence traces retain structured episode provenance, including `episode_id`

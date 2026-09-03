@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 from typing import Optional
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,16 @@ class SchemaManager:
             "metadata": metadata or {},
         }
         self.project_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.project_dir.chmod(0o700)
+        except OSError as exc:
+            logger.warning("Could not secure schema directory %s: %s", self.project_dir, exc)
         with self.schema_path.open("w") as f:
             json.dump(data, f, indent=2)
+        try:
+            os.chmod(self.schema_path, 0o600)
+        except OSError as exc:
+            logger.warning("Could not secure schema file %s: %s", self.schema_path, exc)
         logger.info(f"Set schema version to {version}")
 
     def needs_migration(self, current_version: str) -> bool:
