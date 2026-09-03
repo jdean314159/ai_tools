@@ -207,11 +207,9 @@ clean-all: clean
 	find . -type d -name ".idea" -exec rm -rf {} + 2>/dev/null || true
 
 .PHONY: clean-review
-clean-review: clean-all
-	find . -type d -name ".git" -prune -exec rm -rf {} + 2>/dev/null || true
-	find . -type f \( -name "*.db" -o -name "*.sqlite" -o -name "*.sqlite3" -o -name "*.db-*" -o -name "*.sqlite-*" -o -name "*.sqlite3-*" -o -name "*.bak" \) -delete 2>/dev/null || true
-	rm -rf models engram/data/memory llm_inspector_ui/data 2>/dev/null || true
-	@echo "Review bundle workspace cleaned."
+clean-review:
+	@test -n "$(REVIEW_ROOT)" || (echo "Set REVIEW_ROOT to an explicit disposable ai_tools checkout." >&2; exit 2)
+	$(VENV_PYTHON) scripts/clean_review_bundle.py "$(REVIEW_ROOT)"
 
 .PHONY: check-hygiene
 check-hygiene: clean
@@ -258,5 +256,6 @@ help:
 	@echo "  make check-decisions  Validate ADR decision-history metadata"
 	@echo "  make clean            Remove build artifacts"
 	@echo "  make clean-all        Remove build artifacts + IDE files"
-	@echo "  make clean-review     Remove caches, dbs, local data, and VCS residue for review bundles"
+	@echo "  make clean-review REVIEW_ROOT=/path/to/copy"
+	@echo "                        Clean an explicit disposable review checkout"
 	@echo ""
