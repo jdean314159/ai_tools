@@ -1045,42 +1045,18 @@ class ProjectMemory:
 
     def store_episodes_batch(self, episodes: List[dict]) -> dict:
         stats = {"stored": 0, "indexed": 0}
-        texts = [ep.get("text", "") for ep in episodes]
-
-        embeddings = None
-        if self.embedder and self.chromadb:
-            try:
-                batch_result = self.embedder.embed_batch(texts)
-                embeddings = batch_result.embeddings
-            except Exception as e:
-                logger.warning(f"Batch embedding failed: {e}")
-
-        episode_ids = []
-        metadatas = []
-        for i, ep in enumerate(episodes):
+        for ep in episodes:
             eid = self.store_episode(
                 ep.get("text", ""),
                 metadata=ep.get("metadata", {}),
                 importance=ep.get("importance", 0.5),
             )
             if eid:
-                episode_ids.append(eid)
-                metadatas.append(
-                    {**ep.get("metadata", {}), "importance": ep.get("importance", 0.5)}
-                )
                 stats["stored"] += 1
-
-        if embeddings and self.chromadb and episode_ids:
-            try:
-                self.chromadb.add_batch(
-                    episode_ids=episode_ids,
-                    texts=[episodes[i]["text"] for i in range(len(episode_ids))],
-                    embeddings=embeddings[: len(episode_ids)],
-                    metadatas=metadatas,
-                )
-                stats["indexed"] = len(episode_ids)
-            except Exception as e:
-                logger.warning(f"Batch ChromaDB indexing failed: {e}")
+                if eid in self._episode_embeddings:
+                    # store_episode records the cache entry only after the
+                    # corresponding ChromaDB add succeeds.
+                    stats["indexed"] += 1
 
         return stats
 
@@ -1228,7 +1204,6 @@ class ProjectMemory:
             try:
                 emb = self.embedder.embed(cleaned_text).embedding
                 episode_embedding = tuple(float(value) for value in emb)
-                self._episode_embeddings[episode_id] = episode_embedding
                 self.chromadb.add(
                     episode_id=episode_id,
                     text=cleaned_text,
@@ -1239,6 +1214,7 @@ class ProjectMemory:
                         "created_at": created_at,
                     },
                 )
+                self._episode_embeddings[episode_id] = episode_embedding
             except Exception as e:
                 logger.debug(f"ChromaDB indexing failed (JSONL is source of truth): {e}")
 
