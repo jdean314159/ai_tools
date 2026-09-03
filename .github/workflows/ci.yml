@@ -33,7 +33,7 @@ jobs:
           python -m pip install build
       - name: Install lint tooling
         run: |
-          python -m pip install mypy ruff
+          python -m pip install mypy 'ruff>=0.15,<0.16'
           python -m pip install -e ./llm_harness_core
           python -m pip install -e ./llm_engines[dev]
       - name: Compile all tracked Python packages
