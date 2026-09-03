@@ -9,18 +9,6 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
-def _pid_is_alive(pid: int) -> bool:
-    """Check if a PID is alive using signal 0. Returns False if dead or permission denied."""
-    try:
-        os.kill(pid, 0)
-        return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        # Process exists but we can't signal it — treat as alive
-        return True
-
-
 def _read_lock_pid(lock_path: Path) -> Optional[int]:
     """Read PID from lock file. Returns None if missing, empty, or non-numeric."""
     try:
@@ -35,8 +23,9 @@ def _read_lock_pid(lock_path: Path) -> Optional[int]:
 class WriterLock:
     """Single-writer file lock using flock().
 
-    Handles stale locks: if the lock file contains a PID that is no longer
-    alive, the lock is considered stale and is forcibly acquired.
+    The lock pathname is persistent. Stale PID text is informational only and
+    is overwritten after the kernel lock becomes available; unlinking a locked
+    pathname could let two writers lock different inodes.
     """
 
     LOCK_FILE = ".writer.lock"
@@ -60,10 +49,8 @@ class WriterLock:
         """
         self.project_dir.mkdir(parents=True, exist_ok=True)
 
-        # Check for stale lock before opening
-        self._clear_stale_lock()
-
         self._fd = os.open(str(self.lock_path), os.O_CREAT | os.O_WRONLY, 0o600)
+        os.fchmod(self._fd, 0o600)
         deadline = time.monotonic() + timeout
 
         while True:
@@ -77,19 +64,10 @@ class WriterLock:
                 return True
 
             except BlockingIOError:
-                # Another process has the flock — check if it's alive
+                # The kernel lock is authoritative. PID contents can be stale,
+                # incomplete, or replaced while another writer still owns the
+                # flock, so they are used only to improve the timeout message.
                 holder_pid = _read_lock_pid(self.lock_path)
-
-                if holder_pid is not None and not _pid_is_alive(holder_pid):
-                    # Stale lock from dead process
-                    logger.warning(
-                        f"Stale writer lock from dead PID {holder_pid}. Clearing and retrying."
-                    )
-                    os.close(self._fd)
-                    self._fd = None
-                    self._force_clear_lock()
-                    return self.acquire(timeout=timeout)
-
                 if time.monotonic() > deadline:
                     holder = holder_pid or "unknown"
                     os.close(self._fd)
@@ -112,26 +90,6 @@ class WriterLock:
             finally:
                 self._fd = None
             logger.debug(f"Writer lock released: {self.lock_path}")
-
-    def _clear_stale_lock(self):
-        """Remove lock file if PID inside is dead or file is unreadable."""
-        if not self.lock_path.exists():
-            return
-        pid = _read_lock_pid(self.lock_path)
-        if pid is None:
-            # Empty or unreadable — treat as stale
-            logger.warning(f"Unreadable lock file at {self.lock_path}, clearing.")
-            self._force_clear_lock()
-        elif not _pid_is_alive(pid):
-            logger.warning(f"Stale lock from dead PID {pid} at {self.lock_path}, clearing.")
-            self._force_clear_lock()
-
-    def _force_clear_lock(self):
-        """Remove lock file unconditionally."""
-        try:
-            self.lock_path.unlink(missing_ok=True)
-        except OSError as e:
-            logger.debug(f"Could not remove lock file: {e}")
 
     def __enter__(self):
         self.acquire()
