@@ -38,7 +38,7 @@ jobs:
           python -m pip install -e ./llm_engines[dev]
       - name: Compile all tracked Python packages
         run: |
-          python -m compileall -q agent_lib engram examples/diagnostics_agent examples/language_tutor examples/mail_assistant mail_lib tests/integration_tests llm_engines llm_harness_core llm_inspector llm_inspector_ui rag_lib
+          python -m compileall -q agent_lib engram examples/diagnostics_agent examples/language_tutor_reference_app examples/mail_assistant mail_lib tests/integration_tests llm_engines llm_harness_core llm_inspector llm_inspector_ui rag_lib
       - name: Lint (mypy)
         run: |
           python -m mypy llm_engines/src/llm_engines/ \
@@ -50,7 +50,7 @@ jobs:
         # examples/ applications are integration vehicles, not published packages.
         # Wheel builds for examples are intentionally omitted.
         run: |
-          for pkg in llm_harness_core llm_engines engram rag_lib mail_lib llm_inspector llm_inspector_ui agent_lib; do
+          for pkg in llm_harness_core llm_engines action_trajectory_loop_guard engram rag_lib mail_lib llm_inspector llm_inspector_ui agent_lib; do
             (cd "$pkg" && python -m build --wheel)
           done
 
@@ -72,6 +72,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ./llm_harness_core[dev]
           python -m pip install -e ./llm_engines[dev]
+          python -m pip install -e ./action_trajectory_loop_guard[dev]
           python -m pip install -e ./engram[dev]
           python -m pip install -e ./llm_inspector[dev]
           python -m pip install -e ./rag_lib[dev]
@@ -83,6 +84,7 @@ jobs:
         run: |
           cd llm_harness_core && python -m pytest -q tests
           cd ../llm_engines && python -m pytest -q tests
+          cd ../action_trajectory_loop_guard && python -m pytest -q tests
           cd ../engram && python -m pytest -q tests
           cd ../llm_inspector && python -m pytest -q tests
           cd ../agent_lib && python -m pytest -q tests
@@ -148,12 +150,12 @@ jobs:
           python -m pip install -e ./llm_harness_core[dev]
           python -m pip install -e ./llm_engines[dev]
           python -m pip install -e ./engram
-          python -m pip install -e './examples/language_tutor[dev]'
+          python -m pip install -e './examples/language_tutor_reference_app[dev]'
       - name: Run tutor tests
-        run: cd examples/language_tutor && python -m pytest -q test_language_tutor.py
+        run: python -m pytest -q examples/language_tutor_reference_app/tests
 
-  teaching:
-    name: Teaching artifacts
+  governance:
+    name: Repository governance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,9 +174,6 @@ jobs:
           python -m pip install -e ./rag_lib[dev]
           python -m pip install -e ./engram[dev]
           python -m pip install -e ./agent_lib[dev]
-          python -m pip install -e './examples/language_tutor[dev]'
-      - name: Validate teaching artifacts
-        run: python scripts/check_teaching_artifacts.py
       - name: Ghost-reference check
         run: python scripts/check_ghost_references.py
       - name: Markdown link check

@@ -30,6 +30,7 @@ from llm_engines.contracts import (
     EmbeddingResponse,
     EngineCapabilities,
     EngineConfigError,
+    FinishReason,
     GenerationError,
     GenerationRequest,
     GenerationResponse,
@@ -56,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 BACKEND = "openai"
 
-_FINISH_MAP = {
+_FINISH_MAP: dict[str, FinishReason] = {
     "stop": "stop",
     "length": "length",
     "tool_calls": "tool_call",
@@ -64,7 +65,7 @@ _FINISH_MAP = {
 }
 
 
-def _map_finish(raw: str | None) -> str:
+def _map_finish(raw: str | None) -> FinishReason:
     if raw is None:
         return "unknown"
     return _FINISH_MAP.get(raw, "unknown")
@@ -285,7 +286,7 @@ class OpenAIEngine:
                 content=content,
                 tool_calls=tool_calls,
             ),
-            finish_reason=finish_reason,  # type: ignore[arg-type]
+            finish_reason=finish_reason,
             usage=usage,
             model_name=getattr(raw, "model", self.model),
             backend=BACKEND,
