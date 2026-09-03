@@ -239,7 +239,7 @@ class ProjectMemory:
             except ImportError:
                 logger.warning(
                     "networkx is not installed — semantic graph disabled. "
-                    "Install it with: pip install 'engram[graph]'"
+                    "Reinstall engram to restore its required dependencies."
                 )
                 SemanticGraph = None  # type: ignore[assignment,misc]
 

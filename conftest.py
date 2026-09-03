@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -107,18 +107,33 @@ def _drop_package(name: str) -> None:
             sys.modules.pop(module_name, None)
 
 
-def _anchor_source_packages() -> None:
-    # Temporary protection against repo-root namespace shadowing during
-    # pytest collection. This is centralized and should be removable
-    # after all packages use src layout and package-local import hacks
-    # are gone.
+def _source_spec_location(package_name: str) -> Path | None:
+    """Resolve a package without executing its ``__init__`` module."""
+    spec = importlib.util.find_spec(package_name)
+    if spec is None:
+        return None
+    if spec.origin and spec.origin not in {"built-in", "frozen"}:
+        return Path(spec.origin).resolve()
+    if spec.submodule_search_locations:
+        locations = list(spec.submodule_search_locations)
+        if locations:
+            return Path(locations[0]).resolve()
+    return None
+
+
+def _verify_source_package_resolution() -> None:
+    # Protect against repo-root namespace shadowing without importing every
+    # package. Eager imports make isolated package jobs require unrelated
+    # optional/runtime dependencies merely to load pytest's root conftest.
     for package_name, expected_dir in SOURCE_PACKAGE_EXPECTATIONS.items():
         loaded = sys.modules.get(package_name)
         if loaded is not None and not _location_is_under(_module_location(loaded), expected_dir):
             _drop_package(package_name)
 
-        module = importlib.import_module(package_name)
-        location = _module_location(module)
+        loaded = sys.modules.get(package_name)
+        location = (
+            _module_location(loaded) if loaded is not None else _source_spec_location(package_name)
+        )
 
         if not _location_is_under(location, expected_dir):
             raise ImportError(
@@ -127,7 +142,7 @@ def _anchor_source_packages() -> None:
 
 
 _install_test_source_paths()
-_anchor_source_packages()
+_verify_source_package_resolution()
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

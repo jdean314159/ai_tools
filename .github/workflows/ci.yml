@@ -131,6 +131,7 @@ jobs:
           python -m pip install -e ./engram[dev]
           python -m pip install -e ./llm_inspector[dev]
           python -m pip install -e ./rag_lib[dev]
+          python -m pip install -e ./action_trajectory_loop_guard[dev]
           python -m pip install -e ./agent_lib[dev]
       - name: Run agent tests
         run: cd agent_lib && python -m pytest -q tests
@@ -173,6 +174,7 @@ jobs:
           python -m pip install -e ./llm_inspector[dev]
           python -m pip install -e ./rag_lib[dev]
           python -m pip install -e ./engram[dev]
+          python -m pip install -e ./action_trajectory_loop_guard[dev]
           python -m pip install -e ./agent_lib[dev]
       - name: Ghost-reference check
         run: python scripts/check_ghost_references.py

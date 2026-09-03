@@ -18,10 +18,8 @@ class SemanticGraph:
     def __init__(self, persist_path: Optional[Path] = None):
         try:
             import networkx as nx
-        except ImportError:
-            raise ImportError("networkx not installed: pip install networkx")
-
-        import networkx as nx
+        except ImportError as exc:
+            raise ImportError("networkx is a required engram dependency; reinstall engram") from exc
 
         self.graph: nx.DiGraph = nx.DiGraph()
         self.persist_path = Path(persist_path) if persist_path else None

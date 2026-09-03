@@ -192,7 +192,9 @@ class vLLMEngine:
         """
         try:
             models = self._client.models.list()
-            ids = [m.id for m in models.data]
+            # The OpenAI SDK response is dynamically typed at this boundary.
+            # Normalize IDs once so this method's return contract stays ``str``.
+            ids = [str(model.id) for model in models.data]
             if not ids:
                 return self.model
             # Exact match
