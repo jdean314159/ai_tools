@@ -171,6 +171,20 @@ class TestMessageRoute:
         assert "new_vocabulary" in body
         assert "metadata" in body
 
+    def test_internal_failure_does_not_disclose_exception_text(self, client, session, monkeypatch):
+        async def fail(_message):
+            raise RuntimeError("SECRET-SENTINEL at /private/provider/path")
+
+        monkeypatch.setattr(session, "handle_text", fail)
+        response = client.post(
+            "/api/conversation/message",
+            json={"session_id": session.session_id, "message": "Hola"},
+        )
+
+        assert response.status_code == 500
+        assert response.json() == {"detail": "Internal server error"}
+        assert "SECRET-SENTINEL" not in response.text
+
 
 # ---------------------------------------------------------------------------
 # POST /api/conversation/explain

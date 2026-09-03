@@ -19,9 +19,20 @@ from language_tutor.reference_stack import build_reference_stack
 
 router = APIRouter()
 
+
+class ActiveSessionRegistry(dict):
+    """In-memory sessions that refresh activity whenever a route resolves one."""
+
+    def get(self, key, default=None):
+        session = super().get(key, default)
+        if session is not None:
+            session.last_activity = time.time()
+        return session
+
+
 # Global session storage (in-memory).
 # Cleaned up by _reaper_thread when sessions are idle > SESSION_IDLE_TIMEOUT_S.
-active_sessions = {}
+active_sessions = ActiveSessionRegistry()
 _sessions_lock = threading.Lock()
 
 SESSION_IDLE_TIMEOUT_S = 2 * 60 * 60  # 2 hours
@@ -38,7 +49,7 @@ def _reap_idle_sessions():
         to_close = []
         with _sessions_lock:
             for sid, session in list(active_sessions.items()):
-                idle = now - getattr(session, "start_time", now)
+                idle = now - getattr(session, "last_activity", now)
                 if idle > SESSION_IDLE_TIMEOUT_S:
                     to_close.append((sid, session))
             for sid, _ in to_close:
@@ -165,11 +176,13 @@ async def start_session(request: StartSessionRequest):
             voice_enabled=voice_enabled,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
 
         traceback.print_exc()  # add this line
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/end", response_model=EndSessionResponse)
@@ -201,8 +214,10 @@ async def end_session(request: EndSessionRequest):
             statistics=summary_result["statistics"],
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/status/{session_id}", response_model=SessionStatusResponse)
@@ -221,8 +236,10 @@ async def get_session_status(session_id: str):
             active=session.state.value not in ["completed", "error"],
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/reference-stack", response_model=ReferenceStackResponse)
@@ -306,7 +323,7 @@ async def get_session_history(language: str, limit: int = Query(default=10, ge=1
         sessions = store.get_session_history(language, limit=limit)
         return {"language": language, "sessions": sessions}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/stats/{language}")
@@ -317,7 +334,7 @@ async def get_session_stats(language: str):
         stats = store.get_user_stats(language)
         return {"language": language, "stats": stats}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/memory/{session_id}")
@@ -428,5 +445,7 @@ async def get_memory_snapshot(session_id: str):
             "due_words": due_words,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e

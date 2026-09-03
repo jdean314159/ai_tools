@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
 import traceback
+import logging
 
 # Import routes
 from language_tutor.routes import session, conversation
@@ -20,6 +21,8 @@ app = FastAPI(
     description="AI-powered language learning with voice interaction",
     version="0.1.0",
 )
+
+logger = logging.getLogger(__name__)
 
 
 # CORS origins: localhost variants by default; extend via CORS_ORIGINS env var.
@@ -89,7 +92,7 @@ def main() -> None:
 
     uvicorn.run(
         "language_tutor.app:app",
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=8080,
         log_level="info",
     )
@@ -106,8 +109,11 @@ DEBUG_EXCEPTIONS = os.getenv("LANGUAGE_TUTOR_DEBUG_EXCEPTIONS", "0") == "1"
 async def debug_exception_handler(request: Request, exc: Exception):
     from fastapi.responses import JSONResponse
 
-    content = {"error": str(exc)}
+    del request
+    logger.exception("Unhandled language tutor request failure", exc_info=exc)
+    content = {"error": "Internal server error"}
     if DEBUG_EXCEPTIONS:
+        content["error"] = str(exc)
         content["traceback"] = traceback.format_exc()
 
     return JSONResponse(status_code=500, content=content)

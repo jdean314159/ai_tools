@@ -76,7 +76,7 @@ async def send_message(request: MessageRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.websocket("/ws/{session_id}")
@@ -127,7 +127,7 @@ async def websocket_conversation(websocket: WebSocket, session_id: str):
 
     except Exception as e:
         print(f"WebSocket error: {e}")
-        await websocket.send_json({"error": str(e)})
+        await websocket.send_json({"error": "Internal server error"})
         await websocket.close()
 
 
@@ -160,7 +160,7 @@ async def get_conversation_history(session_id: str, limit: int = 50):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/metrics/{session_id}")
@@ -174,7 +174,7 @@ async def get_session_metrics(session_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # ---------------------------------------------------------------------------
@@ -202,7 +202,7 @@ async def explain_grammar(request: ExplainRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 class LookupRequest(BaseModel):
@@ -279,7 +279,7 @@ async def lookup_word(request: LookupRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 class CheckRequest(BaseModel):
@@ -339,7 +339,7 @@ async def check_input(request: CheckRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # ---------------------------------------------------------------------------
@@ -394,7 +394,7 @@ async def get_drill_question(request: DrillRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/drill/check")
@@ -416,7 +416,7 @@ async def check_drill_answer(request: DrillCheckRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/drill/types")
@@ -530,14 +530,14 @@ async def send_audio(
     try:
         audio_bytes = await audio.read()
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not read audio: {e}")
+        raise HTTPException(status_code=400, detail="Could not read audio") from e
 
     # STT
     try:
         stt = _get_stt(session.language)
         transcription = await stt.transcribe_bytes(audio_bytes)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+        raise HTTPException(status_code=500, detail="Transcription failed") from e
 
     if not transcription or transcription.startswith("[transcription error"):
         raise HTTPException(
@@ -551,7 +551,7 @@ async def send_audio(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
     # TTS (best-effort — skip silently if piper not configured)
     audio_response: Optional[str] = None
@@ -613,7 +613,7 @@ async def score_pronunciation(
     try:
         audio_bytes = await audio.read()
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not read audio: {e}")
+        raise HTTPException(status_code=400, detail="Could not read audio") from e
 
     try:
         scorer = _get_scorer(session.language)
@@ -627,7 +627,7 @@ async def score_pronunciation(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
     # Log poor pronunciation as a mistake for future drill weighting
     if result["score"] < 60 and session is not None:
@@ -800,4 +800,4 @@ async def import_vocabulary(request: ImportRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error") from e

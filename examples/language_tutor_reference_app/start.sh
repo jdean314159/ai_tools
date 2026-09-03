@@ -65,9 +65,6 @@ setup_wizard()
     echo "Starting Language Tutor web server on http://localhost:8080"
     echo "Press Ctrl+C to stop."
     echo ""
-    python3 -m uvicorn language_tutor.app:app \
-      --host 0.0.0.0 \
-      --port 8080 \
-      --log-level info
+    python3 -m language_tutor.app
     ;;
 esac

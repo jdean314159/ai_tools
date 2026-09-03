@@ -133,6 +133,9 @@ That endpoint describes the current engine layer, memory layer, observability co
 ./start.sh
 ```
 
+The web server binds to `127.0.0.1` only. The reference app has no remote-user
+authentication boundary and must not be exposed on a LAN or public interface.
+
 Or for a command-line session:
 
 ```bash
@@ -153,7 +156,7 @@ Or for a command-line session:
 | `WHISPER_COMPUTE_TYPE` | `int8` | CTranslate2 compute type appropriate for the selected device |
 | `CORS_ORIGINS` | `http://localhost:8080` | Comma-separated allowed origins |
 | `LANGUAGE_TUTOR_STRATEGY` | auto-detect | Override hardware strategy |
-| `LANGUAGE_TUTOR_DEBUG_EXCEPTIONS` | `0` | Return traceback details in HTTP responses only when explicitly enabled |
+| `LANGUAGE_TUTOR_DEBUG_EXCEPTIONS` | `0` | Return exception and traceback details in HTTP responses only when explicitly enabled |
 | `LANGUAGE_TUTOR_ALLOW_LEGACY_ENGINE_FALLBACK` | `1` | Allow fallback from modern `llm_engines` wiring to legacy engine path |
 
 ---

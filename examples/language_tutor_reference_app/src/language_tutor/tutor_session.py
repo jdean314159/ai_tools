@@ -115,6 +115,7 @@ class TutorSession:
         self.state = SessionState.IDLE
         self.current_plan: Optional[Dict] = None
         self.start_time = time.time()
+        self.last_activity = self.start_time
         self.exchange_count = 0
         # Eval metrics
         self.corrections_count = 0

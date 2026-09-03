@@ -32,7 +32,7 @@ def test_exception_handler_hides_traceback_by_default(monkeypatch):
     app_module = _reload_app_module(monkeypatch, debug=False)
     response = asyncio.run(app_module.debug_exception_handler(None, RuntimeError("boom")))
     payload = json.loads(response.body.decode("utf-8"))
-    assert payload == {"error": "boom"}
+    assert payload == {"error": "Internal server error"}
 
 
 def test_exception_handler_shows_traceback_in_debug(monkeypatch):
@@ -41,3 +41,13 @@ def test_exception_handler_shows_traceback_in_debug(monkeypatch):
     payload = json.loads(response.body.decode("utf-8"))
     assert payload["error"] == "boom"
     assert "traceback" in payload
+
+
+def test_server_entry_point_binds_only_to_loopback(monkeypatch):
+    app_module = _reload_app_module(monkeypatch, debug=False)
+    calls = []
+    monkeypatch.setattr("uvicorn.run", lambda *args, **kwargs: calls.append((args, kwargs)))
+
+    app_module.main()
+
+    assert calls[0][1]["host"] == "127.0.0.1"
