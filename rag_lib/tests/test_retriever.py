@@ -132,13 +132,13 @@ class TestBM25Persistence:
 
     def test_bm25_loads_from_disk(self, mock_embedder, tmp_dir):
         pytest.importorskip("rank_bm25")
-        store = _make_mock_store()
+        chunks = [_make_chunk("NetFlow traffic anomaly", "c1")]
+        store = _make_mock_store(chunks)
         retriever1 = HybridRetriever(
             store=store,
             embedder=mock_embedder,
             bm25_path=str(tmp_dir / "bm25"),
         )
-        chunks = [_make_chunk("NetFlow traffic anomaly", "c1")]
         retriever1.build_bm25_index(chunks, collection="test")
 
         # New retriever instance should load from disk
@@ -150,6 +150,50 @@ class TestBM25Persistence:
         index, ids = retriever2._get_bm25_index("test")
         assert index is not None
         assert "c1" in ids
+
+    def test_in_memory_bm25_rebuilds_after_same_count_store_update(
+        self, mock_embedder, tmp_dir, monkeypatch
+    ):
+        pytest.importorskip("rank_bm25")
+        old_chunk = _make_chunk("old content", "old")
+        new_chunk = _make_chunk("new content", "new")
+        store = _make_mock_store([new_chunk])
+        store.collection_metadata.return_value = {"updated_at": 20.0}
+        retriever = HybridRetriever(
+            store=store,
+            embedder=mock_embedder,
+            bm25_path=str(tmp_dir / "bm25"),
+        )
+        timestamps = iter([10.0, 30.0])
+        monkeypatch.setattr("rag_lib.retrieval.retriever.time.time", lambda: next(timestamps))
+        retriever.build_bm25_index([old_chunk], collection="test")
+
+        _index, ids = retriever._get_bm25_index("test")
+
+        assert ids == ["new"]
+        assert store.search.called
+
+    def test_disk_bm25_rebuilds_after_same_count_store_update(self, mock_embedder, tmp_dir):
+        pytest.importorskip("rank_bm25")
+        new_chunk = _make_chunk("new content", "new")
+        store = _make_mock_store([new_chunk])
+        store.collection_metadata.return_value = {"updated_at": 20.0}
+        cache_dir = tmp_dir / "bm25"
+        cache_dir.mkdir()
+        (cache_dir / "test.json").write_text(
+            json.dumps({"corpus": ["old content"], "ids": ["old"], "built_at": 10.0}),
+            encoding="utf-8",
+        )
+        retriever = HybridRetriever(
+            store=store,
+            embedder=mock_embedder,
+            bm25_path=str(cache_dir),
+        )
+
+        _index, ids = retriever._get_bm25_index("test")
+
+        assert ids == ["new"]
+        assert store.search.called
 
 
 # ------------------------------------------------------------------
@@ -164,6 +208,7 @@ def _make_mock_store(chunks=None):
     store = MagicMock()
     store.search.return_value = chunks or []
     store.count.return_value = len(chunks) if chunks else 0
+    store.collection_metadata.return_value = {}
     return store
 
 

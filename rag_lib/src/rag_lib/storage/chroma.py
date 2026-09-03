@@ -12,7 +12,10 @@ D16: threading.Lock serializes all writes.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
+import os
 import threading
 import time
 from pathlib import Path
@@ -97,6 +100,7 @@ class ChromaStorage:
 
         _CHROMA_MAX_BATCH = 5000  # ChromaDB hard limit is ~5461; use 5000 for safety
         with self._lock:
+            self._mark_collection_updating(collection)
             for i in range(0, len(ids), _CHROMA_MAX_BATCH):
                 coll.upsert(
                     ids=ids[i : i + _CHROMA_MAX_BATCH],
@@ -188,6 +192,7 @@ class ChromaStorage:
 
         if ids_to_delete:
             with self._lock:
+                self._mark_collection_updating(collection)
                 coll.delete(ids=ids_to_delete)
             logger.debug("Deleted %d chunks from '%s'", len(ids_to_delete), file_path)
 
@@ -207,13 +212,16 @@ class ChromaStorage:
             try:
                 self._client.delete_collection(full_name)
                 self._collections.pop(collection, None)
+                self._mutation_marker_path(collection).unlink(missing_ok=True)
                 logger.info("Deleted collection '%s'", collection)
             except Exception as exc:
                 raise StorageError(f"Cannot delete collection '{collection}': {exc}") from exc
 
     def collection_metadata(self, collection: str) -> dict[str, Any]:
         coll = self._get_or_create_collection(collection)
-        return coll.metadata or {}
+        metadata = dict(coll.metadata or {})
+        metadata.update(self._read_collection_marker(collection))
+        return metadata
 
     def count(self, collection: str = "default") -> int:
         try:
@@ -275,6 +283,7 @@ class ChromaStorage:
 
         if ids_to_delete:
             with self._lock:
+                self._mark_collection_updating(collection)
                 for i in range(0, len(ids_to_delete), 5000):
                     try:
                         coll.delete(ids=ids_to_delete[i : i + 5000])
@@ -287,6 +296,43 @@ class ChromaStorage:
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
+
+    def _mutation_marker_path(self, collection: str) -> Path:
+        full_name = f"{self._prefix}{collection}"
+        digest = hashlib.sha256(full_name.encode("utf-8")).hexdigest()[:16]
+        return self._path / f".collection-{digest}.revision.json"
+
+    def _read_collection_marker(self, collection: str) -> dict[str, Any]:
+        path = self._mutation_marker_path(collection)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            return {}
+        if not isinstance(data, dict):
+            return {}
+        return {key: data[key] for key in ("revision", "updated_at") if key in data}
+
+    def _write_collection_marker(self, collection: str, marker: dict[str, Any]) -> None:
+        path = self._mutation_marker_path(collection)
+        tmp_path = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+        tmp_path.write_text(json.dumps(marker, sort_keys=True), encoding="utf-8")
+        tmp_path.replace(path)
+
+    def _mark_collection_updating(self, collection: str) -> None:
+        """Advance the persisted mutation marker before changing collection data.
+
+        Marking first can cause an unnecessary BM25 rebuild after a failed
+        mutation, but it cannot leave a successfully changed collection looking
+        older than its lexical cache.
+        """
+        current = self._read_collection_marker(collection)
+        self._write_collection_marker(
+            collection,
+            {
+                "updated_at": time.time(),
+                "revision": int(current.get("revision", 0)) + 1,
+            },
+        )
 
     def _make_client(self) -> Any:
         try:
@@ -321,10 +367,11 @@ class ChromaStorage:
                 )
         else:
             # D13: always create with cosine distance
+            created_at = time.time()
             meta: dict[str, Any] = {
                 "hnsw:space": "cosine",
                 "embed_model": self._embed_model,
-                "created_at": time.time(),
+                "created_at": created_at,
             }
             if self._embed_dimensions is not None:
                 meta["embed_dimensions"] = self._embed_dimensions
@@ -332,6 +379,10 @@ class ChromaStorage:
             coll = self._client.create_collection(
                 name=full_name,
                 metadata=meta,
+            )
+            self._write_collection_marker(
+                name,
+                {"updated_at": created_at, "revision": 0},
             )
             logger.info(
                 "Created collection '%s' (model=%s, cosine distance)",

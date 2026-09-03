@@ -100,6 +100,24 @@ class TestD14ContentAddressedIds:
 
         assert count_before == count_after == 1
 
+    def test_same_id_upsert_advances_collection_revision(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="test-model",
+            embed_dimensions=768,
+        )
+        chunk = _make_chunk("test content", "doc.txt", 0)
+        embedding = [_fake_embedding("test content")]
+
+        store.add([chunk], embedding, collection="default")
+        first = store.collection_metadata("default")
+        store.add([chunk], embedding, collection="default")
+        second = store.collection_metadata("default")
+
+        assert first["revision"] == 1
+        assert second["revision"] == 2
+        assert second["updated_at"] >= first["updated_at"]
+
 
 class TestAddAndSearch:
     def test_add_and_retrieve(self, tmp_dir):

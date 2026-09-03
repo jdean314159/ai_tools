@@ -12,6 +12,7 @@ D12: BM25 index persisted to disk; rebuilt only when ChromaDB is newer.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import json
 import logging
 import time
@@ -62,6 +63,7 @@ class HybridRetriever:
         self._bm25_indexes: dict[str, Any] = {}
         self._bm25_corpus: dict[str, list[str]] = {}
         self._bm25_ids: dict[str, list[str]] = {}
+        self._bm25_built_at: dict[str, float] = {}
 
     def _bm25_results_to_chunks(
         self,
@@ -255,10 +257,12 @@ class HybridRetriever:
         # the corpus, so we cache corpus+ids as JSON and rebuild the index on
         # load. This removes the arbitrary-code-execution surface exposed by
         # executable deserialization if the cache file is ever attacker-writable.
+        built_at = time.time()
+        self._bm25_built_at[collection] = built_at
         json_path = self._bm25_path / f"{collection}.json"
         tmp_path = json_path.with_suffix(".json.tmp")
         with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump({"corpus": corpus, "ids": ids, "built_at": time.time()}, f)
+            json.dump({"corpus": corpus, "ids": ids, "built_at": built_at}, f)
         tmp_path.replace(json_path)
         logger.debug("BM25 index persisted for collection '%s' (%d docs)", collection, len(corpus))
 
@@ -268,7 +272,14 @@ class HybridRetriever:
     def _get_bm25_index(self, collection: str) -> tuple[Any, list[str]]:
         """Load BM25 index from cache or disk; rebuild from ChromaDB if stale."""
         if collection in self._bm25_indexes:
-            return self._bm25_indexes[collection], self._bm25_ids.get(collection, [])
+            ids = self._bm25_ids.get(collection, [])
+            if not self._bm25_cache_is_stale(
+                collection,
+                ids=ids,
+                built_at=self._bm25_built_at.get(collection),
+            ):
+                return self._bm25_indexes[collection], ids
+            self._discard_bm25_memory_cache(collection)
 
         json_path = self._bm25_path / f"{collection}.json"
         if json_path.exists():
@@ -279,13 +290,19 @@ class HybridRetriever:
                     data = json.load(f)
                 corpus = data["corpus"]
                 ids = data["ids"]
-                tokenized = [doc.lower().split() for doc in corpus]
-                index = BM25Okapi(tokenized)
-                self._bm25_indexes[collection] = index
-                self._bm25_corpus[collection] = corpus
-                self._bm25_ids[collection] = ids
-                logger.debug("BM25 index loaded (rebuilt from JSON) for '%s'", collection)
-                return index, ids
+                built_at = data.get("built_at")
+                if self._bm25_cache_is_stale(collection, ids=ids, built_at=built_at):
+                    logger.info("BM25 cache stale for '%s'; rebuilding.", collection)
+                else:
+                    tokenized = [doc.lower().split() for doc in corpus]
+                    index = BM25Okapi(tokenized)
+                    self._bm25_indexes[collection] = index
+                    self._bm25_corpus[collection] = corpus
+                    self._bm25_ids[collection] = ids
+                    if built_at is not None:
+                        self._bm25_built_at[collection] = float(built_at)
+                    logger.debug("BM25 index loaded (rebuilt from JSON) for '%s'", collection)
+                    return index, ids
             except Exception as exc:
                 logger.warning("BM25 cache unreadable for '%s': %s. Rebuilding.", collection, exc)
 
@@ -299,6 +316,47 @@ class HybridRetriever:
         # Empty collection — return a null index
         logger.debug("Collection '%s' is empty; BM25 not built.", collection)
         return None, []
+
+    def _discard_bm25_memory_cache(self, collection: str) -> None:
+        self._bm25_indexes.pop(collection, None)
+        self._bm25_corpus.pop(collection, None)
+        self._bm25_ids.pop(collection, None)
+        self._bm25_built_at.pop(collection, None)
+
+    def _bm25_cache_is_stale(
+        self,
+        collection: str,
+        *,
+        ids: list[str],
+        built_at: Any,
+    ) -> bool:
+        """Compare a lexical cache with persisted vector-store mutation state."""
+        try:
+            store_count = self._store.count(collection)
+        except Exception as exc:
+            logger.warning("Cannot validate BM25 count for '%s': %s", collection, exc)
+        else:
+            if isinstance(store_count, int) and store_count != len(ids):
+                return True
+
+        try:
+            metadata = self._store.collection_metadata(collection)
+        except Exception as exc:
+            logger.warning("Cannot validate BM25 timestamp for '%s': %s", collection, exc)
+            return False
+        if not isinstance(metadata, Mapping):
+            return False
+
+        updated_at = metadata.get("updated_at")
+        if updated_at is None:
+            return False
+        if built_at is None:
+            return True
+        try:
+            return float(updated_at) > float(built_at)
+        except (TypeError, ValueError):
+            logger.warning("Invalid BM25/store timestamps for '%s'; rebuilding.", collection)
+            return True
 
     def _load_all_chunks_from_store(self, collection: str) -> list[StoredChunk]:
         """Retrieve all chunks from ChromaDB for BM25 index building."""
