@@ -67,13 +67,13 @@ calibration.
 
 ## Live enforcement smoke test — failed
 
-The first live deterministic seed-0 validation against candidate `c6c726a`
+The first live deterministic seed-0 validation against candidate `9668ec8`
 did not reproduce the historical trajectory. The guard did not fire and the
 run exhausted its budget at 116,227 tokens with 11/12 evidence recall and no
 answer. The loop returned to earlier reads outside the detector's trailing
 12-action comparison window.
 
-A follow-up candidate (`f7b9cf7`) treated a failed whole-file read followed by
+A follow-up candidate (`869c46d`) treated a failed whole-file read followed by
 a bounded line-1 retry as a near-duplicate. It fired at step 11 and finalized at
 32,526 tokens, but this was a false positive on legitimate result-size recovery:
 only 7/12 evidence regions had surfaced, evidence recall was 0.583, and answer
@@ -81,7 +81,7 @@ correctness was 0.667 (8/12), below the predeclared 11/12 floor. Its supposedly
 truncated finalization prompt was also 96 tokens larger after context rebuilding
 (`5302` versus `5206`), exposing that step truncation does not guarantee prompt
 token savings under the current compaction policy. That detector change was
-reverted in `8d66406`.
+reverted in `3981e40`.
 
 The remaining sampled enforcement runs were not launched after the smoke gate
 failed. Active enforcement is therefore not validated and must remain opt-in.
@@ -108,8 +108,8 @@ token savings can be claimed.
 
 ### Captured-input shadow result
 
-A deterministic seed0 shadow run at `fe06e04` reached the same live outcome as
-the earlier `c6c726a` smoke run: 20 tool calls, 116,227 cumulative tokens,
+A deterministic seed0 shadow run at `9badf67` reached the same live outcome as
+the earlier `9668ec8` smoke run: 20 tool calls, 116,227 cumulative tokens,
 11/12 evidence regions, no final answer, and no detector intervention. Direct
 replay reproduced all 20 detector decisions, and reconstruction from the
 general run-record steps reproduced all 20 captured canonical actions.
@@ -131,7 +131,7 @@ predict detector behavior on a newly generated trajectory, even with the same
 decoding seed. Calibration data must come from live shadow runs captured under
 the code and environment being evaluated.
 
-Two additional seed0 shadow runs on the exact same `b201b6c` commit and pinned
+Two additional seed0 shadow runs on the exact same `fdac861` commit and pinned
 server configuration produced identical canonical action streams, semantic
 planner outputs, per-call input/output token counts, final outputs, and guard
 decisions. Only latency metadata differed. Under this configuration, seed0 does

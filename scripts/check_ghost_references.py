@@ -37,7 +37,6 @@ ALLOWLIST_PATHS = {
     "docs/projects/diagnostics_agent/SPEC_multi_backend_engine_v2.md",
     "docs/internal/ENGRAM_SOURCE_PROVENANCE_REVIEW.md",
     "docs/projects/RUN-RECORD-00-PHASE-8-COURSE-PORTABILITY.md",
-    "Qwen_findings.md",
 }
 
 # Path prefixes where denylisted identifiers are legitimate history, not drift.

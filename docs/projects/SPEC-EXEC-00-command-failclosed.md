@@ -15,7 +15,7 @@ closure addendum.
 
 ## 0. Confirmed enforcement model (the basis for this change)
 
-All line numbers are against `agent_lib/src/agent_lib/programming.py` at HEAD `ccc50c6` unless noted.
+All line numbers are against `agent_lib/src/agent_lib/programming.py` at HEAD `4fc8493` unless noted.
 
 **The gated path is correct — do not touch its logic.**
 `EnforcingToolRuntime.invoke()` handles `run_command` at line 538: it reads the `command`

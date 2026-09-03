@@ -59,7 +59,7 @@ cannot.
 ### 2. Recovered neural subsystem
 
 All four current neural implementation files first entered `ai_tools` in
-recovery commit `3dceb3e87e18f75fe20aa94025ffc3a06e99f14e`. Comparison with
+recovery commit `58e07a042e5030c78a57f4b3fa1b59bcc315e07e`. Comparison with
 the archived repository at commit
 `5696ce49752d895a703d68203951f6c8c12c61d3` shows direct lineage:
 

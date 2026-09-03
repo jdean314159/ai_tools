@@ -15,7 +15,7 @@ The teaching material was extracted from `ai_tools` into
   remixed by students and instructors.
 
 The former monorepo used a root MIT license while four package metadata files
-had previously declared Apache-2.0. Commit `50eb4a2` aligned those metadata
+had previously declared Apache-2.0. Commit `db81d51` aligned those metadata
 files to MIT without recording why MIT was selected over Apache-2.0.
 
 ## Decision

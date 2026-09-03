@@ -5,7 +5,7 @@
 
 **Status:** Draft for Codex.
 **Covers:** Ledger gap 3 (advisory reservations → enforced). Closes the COORD ledger.
-**Depends on:** SPEC-COORD-01 (control plane, ed73f04), ADR-018 (ownership target + debt).
+**Depends on:** SPEC-COORD-01 (control plane, 4a5c671), ADR-018 (ownership target + debt).
 **Mode:** Deterministic, two phases — demonstrate the gap, then close it.
 **Discipline:** Touches BOTH repos. `agent_lib` change + ADR-018 land in `~/repos/ai_tools`. Probe
 lands in `~/repos/computer_helper`. Separate commits. READ the confirmed facts below before coding.

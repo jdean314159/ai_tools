@@ -16,7 +16,7 @@ independently re-verified by Claude except where noted below.
 
 Last tree Claude actually held and inspected:
 
-- **`ai_tools` commit `fe4ba3416c04d2e6e460a759cd295d48feb7ba18`**
+- **`ai_tools` commit `7a4a27354290f1174f3f4fb1e1707239176d9e66`**
   archive SHA-256 `78dd869926b3b581f8ef7bffbc2962b5aa589e83a3e73a860d1cf4ce45b9e93e`
 
 Everything after that commit is **reported, not verified**.
@@ -33,30 +33,30 @@ independently checked), `OPEN`.
 
 | Item | Scope of verification |
 |---|---|
-| Spark endpoint in shipped YAML (`d8776f9`) | Placeholder present; in-place override guidance names `~/.engram/llm_engines.yaml` and `LLM_ENGINES_CONFIG` |
-| Recursive hygiene test (`d8776f9`) | Traversal reimplemented independently; negative control confirmed it **fires** on a planted leak |
-| Root cleanup (`e0e9959`) | `AGENT.md` reduced to pointer with no independent rules; every relative markdown link in the repo resolved — zero dangling |
+| Spark endpoint in shipped YAML (`7a6e0d1`) | Placeholder present; in-place override guidance names `~/.engram/llm_engines.yaml` and `LLM_ENGINES_CONFIG` |
+| Recursive hygiene test (`7a6e0d1`) | Traversal reimplemented independently; negative control confirmed it **fires** on a planted leak |
+| Root cleanup (`9ea8d28`) | `AGENT.md` reduced to pointer with no independent rules; every relative markdown link in the repo resolved — zero dangling |
 | `not_declared` scoping | Gated on declared capability **and** protocol support (`isinstance(engine, ToolCallingModel)` / `LogprobModel`); one literal, one site; exceptions record type only |
 | Thinking tri-state at call sites | `None` omits `extra_body` entirely — OpenAI backend 6 call sites, vLLM 5; verified at the helper, not the parser |
 | Raw-payload omission | Three-way: included / `intentionally_not_recorded` / `not_reported_by_backend` |
 | 12 artifact `record_id` digests | Reproduced from committed bytes with from-scratch canonicalization; survived the Ruff sweep and two cleanups |
-| Fail-closed publication gate (`fe4ba34`) | Four conditions **executed**: no `.git` → 128; git returns non-zero → 127; git binary absent (`FileNotFoundError` injected) → `unavailable`; empty tracked set → fails. All return 1 |
-| Dynamic distribution discovery (`fe4ba34`) | Derived from every `pyproject.toml` with a `[project]` table — **12 roots** found, not the 9 reported. Nothing enumerated |
-| Byte scan, no suffix allowlist (`fe4ba34`) | Planted `.cfg` inside a distribution root — caught. Identical file in `docs/` — correctly ignored |
-| Handoff generalization / provenance preservation (`fe4ba34`) | Both handoffs use `git rev-parse --show-toplevel`; frozen records retain machine paths (5 occurrences in NAV-VERIFIABLE, 1 in engram temporal) |
+| Fail-closed publication gate (`7a4a273`) | Four conditions **executed**: no `.git` → 128; git returns non-zero → 127; git binary absent (`FileNotFoundError` injected) → `unavailable`; empty tracked set → fails. All return 1 |
+| Dynamic distribution discovery (`7a4a273`) | Derived from every `pyproject.toml` with a `[project]` table — **12 roots** found, not the 9 reported. Nothing enumerated |
+| Byte scan, no suffix allowlist (`7a4a273`) | Planted `.cfg` inside a distribution root — caught. Identical file in `docs/` — correctly ignored |
+| Handoff generalization / provenance preservation (`7a4a273`) | Both handoffs use `git rev-parse --show-toplevel`; frozen records retain machine paths (5 occurrences in NAV-VERIFIABLE, 1 in engram temporal) |
 
 ### REPORTED — not independently verified
 
 | Item | Note |
 |---|---|
-| `54865d0` — centralized publication gate | Superseded by `fe4ba34`, which Claude did verify |
-| `ce36be74` — explicit empty-inventory rejection, scope documentation | Tree never received |
+| `32f32a7` — centralized publication gate | Superseded by `7a4a273`, which Claude did verify |
+| `cb5ad2a2` — explicit empty-inventory rejection, scope documentation | Tree never received |
 | All test counts, Ruff, mypy, `git diff --check` | No network in Claude's container — pytest, pydantic, ruff, mypy unavailable throughout. **Every Claude finding in this thread is from reading code and computing digests, never from running the test suite** |
 
 ### OPEN — engram, unaddressed as of the last tree inspected
 
 Both on the semantic layer. Source under `engram/src/` was byte-identical
-between the standalone engram archive and `ai_tools-61995f9`.
+between the standalone engram archive and `ai_tools-2e0597a`.
 
 1. **`get_facts()` bypasses the recall policy entirely.** Public method, calls
    `self.semantic.query_facts()` directly — no `recall_decision`, no tenant
@@ -156,9 +156,9 @@ to work.
 
 - **The publication gate cannot run on the artifact under review.** It fails
   closed without `.git`, which is correct — but it means "strict hygiene passed"
-  is a claim about a checkout, never about the shipped bytes. `ce36be74`
+  is a claim about a checkout, never about the shipped bytes. `cb5ad2a2`
   reportedly documents this.
-- **The empty-tracked-set rejection was incidental before `ce36be74`** — it
+- **The empty-tracked-set rejection was incidental before `cb5ad2a2`** — it
   failed because fixture references stopped resolving, not because emptiness was
   asserted. Confirm the new guard is explicit and its test targets that branch.
 - **The gate's AST fixture resolver has a soft edge.** A reference it fails to
@@ -213,7 +213,7 @@ Two facts worth carrying:
 
 ## 7. Recommended next steps
 
-1. **Send the `ce36be74` tree** (`git archive`, with digest *and* commit hash) if
+1. **Send the `cb5ad2a2` tree** (`git archive`, with digest *and* commit hash) if
    independent closure of the last three items matters. Check: the empty-set
    rejection is an explicit guard rather than a side effect; the new test targets
    that specific branch; scope documentation sits where someone running `make`
@@ -252,8 +252,8 @@ Two facts worth carrying:
 
 This addendum is **reported by Codex, not independently verified by Claude**.
 
-- Current commit before adding this handoff: `ce36be74fa5766c1d0dc21a2f40cc123550f5f17`.
-- `ce36be74` explicitly rejects a successful-but-empty `git ls-files` result;
+- Current commit before adding this handoff: `cb5ad2a2a21ffabe2bee814fdc4a91342dbe21b1`.
+- `cb5ad2a2` explicitly rejects a successful-but-empty `git ls-files` result;
   its direct negative test targets that branch rather than relying on fixture
   tracking to fail incidentally.
 - The standing docs distinguish checkout publication hygiene from separate

@@ -25,7 +25,7 @@ Planned artifact:
 
 ## Pre-execution dependency failure
 
-The first invocation used `/home/cybernaif/.venv`, which does not contain
+The first invocation used `<maintainer-home>/.venv`, which does not contain
 `sentence-transformers`. Initialization failed before any case, storage write,
 or artifact creation. The unchanged cases and checks will run using the copied
 repository-local `.venv`, which reports `sentence-transformers` 6.0.0 and

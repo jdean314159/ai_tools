@@ -46,7 +46,7 @@ is itself a command-line program.
 
 ## Update — 2026-07-24 (NAV campaign closed)
 
-NAV-VERIFIABLE-00 is complete at `abcc2f0`. Its frozen verdict is
+NAV-VERIFIABLE-00 is complete at `f151893`. Its frozen verdict is
 `inconclusive`: the task-goal ledger improved exploratory termination from 0/6
 to 3/6 and relation correctness from 0/6 to 2/6 while reducing aggregate
 tokens, but exact correctness remained 0/6 in both arms. Over-citation was the
@@ -173,12 +173,12 @@ content remains private and is not recorded in this repository. The post-run sta
 `docs/projects/mail_lib/mail_lib_status_v0.1.md`; the longer-term dependency order and settled
 parameters are in `docs/projects/mail_lib/mail_lib_system_parameters.md`.
 
-Three post-run corrections landed after `8ee955b`:
+Three post-run corrections landed after `9f9125f`:
 
-- `553c49e` — self-addressed mail demotes to `low`;
-- `175352e` — only the Gloda star flag, not Gmail folder membership, can promote, and only within
+- `a80c45c` — self-addressed mail demotes to `low`;
+- `2191e09` — only the Gloda star flag, not Gmail folder membership, can promote, and only within
   `URGENT_MAX_AGE_DAYS=183`;
-- `f56e19c` — calendar/appointment subjects promote only within
+- `c7f2d89` — calendar/appointment subjects promote only within
   `CALENDAR_MAX_AGE_DAYS=31`.
 
 Current validation: `tests/test_mail_lib.py` passes (`10 passed`); the combined mail_lib,
@@ -231,11 +231,11 @@ focused programming/interop tests passed (`30 passed`); full `agent_lib` tests p
 ## Update — 2026-06-25 (ADR-020 data-only artifact loading)
 
 **Repository state at handoff:** `ai_tools` is clean on `codex-cleanup-pass` at
-`5692881` (`fix(rag_lib): replace pickle BM25 cache with JSON`).
+`011d049` (`fix(rag_lib): replace pickle BM25 cache with JSON`).
 
 **ADR-020 is accepted and enforced.** The real exposure was the `rag_lib` BM25
 cache: `pickle.load` on a cache path would become arbitrary code execution if a
-future multi-agent workflow made that path attacker-writable. Commit `5692881`
+future multi-agent workflow made that path attacker-writable. Commit `011d049`
 replaces the BM25 cache with data-only JSON (`corpus` + `ids`) and rebuilds
 `BM25Okapi` on load, removes the dead `storage/chroma.py` pickle import, and
 deletes both current `.json` and legacy `.pkl` cache files on collection deletion.
@@ -274,19 +274,19 @@ the sole termination authority; model `{"done": true}` is informational only. A 
 terminated `done` at step 4 with no trailing routes. Evidence is committed under
 `runs/live_01_termination_20260624/`.
 
-**ADR-019 v1 is implemented.** `ai_tools` commit `f809360` exposes the owned, idempotent
+**ADR-019 v1 is implemented.** `ai_tools` commit `f8fd116` exposes the owned, idempotent
 `release_patch_lease` action and records `released_at`; `computer_helper` FX-RELEASE now proves
 no-op holder → explicit release → contender progress. Owner-death detection, TTL, and automatic
 reclaim remain backlog triggers, not work in progress.
 
 ## Update — 2026-06-22 (LIVE-00 planning complete; implementation pending)
 
-`SPEC-LIVE-00` v8 is canonical at `74bf4bc` (`docs: revise LIVE-00 multi-agent probe spec`). It is a
+`SPEC-LIVE-00` v8 is canonical at `14ac320` (`docs: revise LIVE-00 multi-agent probe spec`). It is a
 revision-and-rebase specification: `computer_helper` branch `codex/live-00` is pre-v7 and non-conforming, so it
 must be updated rather than merged unchanged. The required implementation work is targeted worker routing,
 FX-CONTENTION, the full predicate-D deadlock classifier, semantic replay comparisons with fresh isolated state,
 and explicitly pinned workspace policy. The eventual `computer_helper` implementation commit MUST reference
-`74bf4bc`; this spec requires the reciprocal cross-reference before either change is considered complete.
+`14ac320`; this spec requires the reciprocal cross-reference before either change is considered complete.
 
 **Cross-repository delivery rule:** a spec in `ai_tools` and its probe in `computer_helper` cannot share an atomic
 Git commit. Land them as coordinated commits in their respective repositories, each cross-referencing the other
@@ -297,18 +297,18 @@ fixtures, assertions, and observations reference that source rather than restati
 discipline prevents the contradiction drift that affected early LIVE-00 revisions. Preserve it in SPEC-LIVE-01
 and later campaigns.
 
-The durable evidence/planning policy is committed in `9070a28` (`docs: add specification evidence policy`).
+The durable evidence/planning policy is committed in `ee5b14a` (`docs: add specification evidence policy`).
 
 ## Update — 2026-06-21 (COORD campaign closed; checkout workflow)
 
 **Repository state at handoff:** `ai_tools` is clean on `codex-cleanup-pass` at
-`3dceb3e` (`WIP: accumulated multi-thread work pre-curation`), following:
+`58e07a0` (`WIP: accumulated multi-thread work pre-curation`), following:
 
-- `ed73f04` — coordination control plane;
-- `a057e76` — unified atomic path ownership; and
-- `3dceb3e` — deliberate multi-thread WIP consolidation.
+- `4a5c671` — coordination control plane;
+- `e71c9b0` — unified atomic path ownership; and
+- `58e07a0` — deliberate multi-thread WIP consolidation.
 
-`backup/pre-curation-20260621` anchors `a057e76`. Nothing in this campaign has
+`backup/pre-curation-20260621` anchors `e71c9b0`. Nothing in this campaign has
 been pushed. `computer_helper` contains the matching probe commits, including
 `c0a416e` (`test(probe): verify unified path ownership`), but its worktree still
 has pre-existing staged/untracked probe-state changes; inspect it before making
@@ -327,7 +327,7 @@ library and probe commits are separate. Targeted `agent_lib` tests (73) and
 - Neural evaluation now has a tracked digest in
   `docs/projects/engram/NEURAL-07-RTRL-OUTPUT-EVALUATION.md`; raw run artifacts
   remain intentionally ignored.
-- The thematic curation of `3dceb3e` is intentionally deferred unless a future
+- The thematic curation of `58e07a0` is intentionally deferred unless a future
   bisect or revert needs it.
 - A deterministic control plane and unified ownership now make a live
   multi-agent run the natural next campaign. It remains out of scope until a
@@ -523,12 +523,12 @@ Everything in the repo-state assessment is lead-not-fact until the verification 
 - ADR-016 is the neural layer's decision record AND the decision-history schema
   proof case. Both threads converge there.
 - Recovery bundles (if needed): neural subsystem + eval harness were recovered
-  from git history at `84f4f86~1`. Live repo contains the adapted versions.
+  from git history at `345f3bd~1`. Live repo contains the adapted versions.
 
 ## Update — 2026-06-22 (cont.) — SPEC-LIVE-01 fork scoped; OPCOM sibling-system lessons captured
 
 Continues the same-day LIVE-00 update below. No `ai_tools` code changed this session; one doc added
-(`docs/internal/LESSONS_FROM_OPCOM.md`, committed as `597c60b`).
+(`docs/internal/LESSONS_FROM_OPCOM.md`, committed as `832591a`).
 
 **Finding 1 status (termination contract):** **CONFIRMED** by the fresh v8 `qwen3:8b` run in `computer_helper`
 commit `7e40b36`: retrieval succeeded at step 2; `config.toml` was updated at step 4 with `done_check` satisfied;
@@ -579,7 +579,7 @@ form of Finding 1; wake-on-event vs a scheduler loop). Lesson 5: capsules ≈ `e
 **Next action (new thread / Codex):** unchanged execution path — rebase `codex/live-00` to v8 (targeted routing,
 FX-CONTENTION, full predicate-D classifier, semantic replay comparison with fresh isolated state, pinned
 workspace policy), re-run the live probe to bring Finding 1 in-tree, and land the probe commit cross-referencing
-`74bf4bc`. Probe-first sequencing for the borrow: that same v8 rebase is what forces the lease-reclaim deadlock
+`14ac320`. Probe-first sequencing for the borrow: that same v8 rebase is what forces the lease-reclaim deadlock
 in-tree (FX-CONTENTION) — once it does, open the lease-lifecycle ADR with `LESSONS_FROM_OPCOM.md` Lesson 1 as
 design input. Do NOT pre-build the lease lifecycle on the sibling-system precedent alone.
 

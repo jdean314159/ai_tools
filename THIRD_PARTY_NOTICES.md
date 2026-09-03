@@ -27,19 +27,12 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
-## Historical source imports
+## Historical source import
 
-Commit `3d7ee71` imported snapshots under `asc/mcp_agent_mail/` and
-`asc/super-claude-kit/`. Commit `3dceb3e` subsequently removed those trees.
-Their blobs remain available in Git history and retain the following notices.
-
-### MCP Agent Mail
-
-Upstream project: `Dicklesworthstone/mcp_agent_mail`
-
-License in the imported snapshot: MIT
-
-Copyright (c) 2025 Jeffrey Emanuel
+An earlier commit imported a snapshot under `asc/super-claude-kit/`; a later
+commit removed that tree. Its blobs remain available in Git history and retain
+the following notice. The unrelated `asc/mcp_agent_mail/` snapshot was removed
+from the publication history before the repository was republished.
 
 ### Super Claude Kit
 
@@ -55,7 +48,7 @@ The snapshot did not contain the `LICENSE` file referenced by its README. This
 notice preserves the declaration and copyright attribution without claiming
 that the missing upstream file was present.
 
-### MIT License text applicable to the notices above
+### MIT License text applicable to the notice above
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

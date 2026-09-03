@@ -7,11 +7,12 @@ Apache-2.0. This is an engineering provenance audit, not legal advice.
 
 ## Scope
 
-The audit covers the entire tracked publication tree, not only the seven core
-LLM packages. Fourteen tracked `pyproject.toml` files currently define
-distribution candidates:
+The audit covered the entire tracked publication tree, not only the seven core
+LLM packages. At the opening of the audit, fourteen tracked `pyproject.toml`
+files defined distribution candidates. The table records their pre-relicensing
+state and is retained as historical evidence:
 
-| Distribution | Path | Current license metadata |
+| Distribution | Path | Pre-relicensing metadata |
 |---|---|---|
 | `action-trajectory-loop-guard` | `action_trajectory_loop_guard/` | MIT |
 | `agent-lib` | `agent_lib/` | MIT |
@@ -28,9 +29,13 @@ distribution candidates:
 | `rag-lib` | `rag_lib/` | MIT |
 | `reasoning-loop-guard` | `reasoning_loop_guard/` | MIT |
 
-The root `LICENSE` is MIT. Commit `50eb4a2` changed four package metadata
+At that point the root `LICENSE` was MIT. Commit `db81d51` changed four package metadata
 declarations from Apache-2.0 to MIT to match that root, but did not record the
 license-direction decision in an ADR.
+
+The current tree has twelve distribution candidates: the small tutor and
+`reasoning-loop-guard` rows above were subsequently retired. All twelve current
+`pyproject.toml` files and license files declare Apache-2.0.
 
 ## Repository-grounded findings
 
@@ -69,10 +74,11 @@ generated test data, not an imported mail corpus.
 
 ### Historical third-party source
 
-Commit `3d7ee71` imported `asc/mcp_agent_mail/` and
-`asc/super-claude-kit/`; commit `3dceb3e` removed them. They remain reachable
-in Git history but are absent from the current tree and current wheels. Their
-MIT attributions are preserved in `THIRD_PARTY_NOTICES.md`.
+An earlier commit imported `asc/super-claude-kit/`; a later commit removed it.
+That snapshot remains reachable in Git history but is absent from the current
+tree and current wheels. Its MIT attribution is preserved in
+`THIRD_PARTY_NOTICES.md`. The unrelated `asc/mcp_agent_mail/` snapshot was
+removed from the publication history before the repository was republished.
 
 A prior comparison recorded in `THIRD_PARTY_NOTICES.md` found no nonempty
 exact-file or normalized six-line-block match between the current tree and the
@@ -91,7 +97,7 @@ Current source explicitly identifies these predecessor relationships:
 - `examples/language_tutor_reference_app/` contains files ported or adapted
   from the standalone `spanish_tutor` project;
 - `engram/neural/core.py` implements Dean (1994) subgrouped RTRL and was
-  introduced by recovery commit `3dceb3e`; the handoff describes the neural
+  introduced by recovery commit `58e07a0`; the handoff describes the neural
   core as vendored/reintroduced;
 - `engram/neural/surprise_filter.py` cites TITANS papers as design sources.
 

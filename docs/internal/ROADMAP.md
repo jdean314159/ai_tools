@@ -154,6 +154,16 @@ into one schema shape.
   notebook 07 extraction path.
 - Next gate: make the pinned distributions independently available before
   repository creation.
+- Selected bounded extension: define `repository-assessment/v1` as a
+  producer-owned body profile over the existing common envelope. Version 1 is
+  limited to three evidence layers (model claim, model-gathered evidence, and
+  independent adjudication), natural/forced completion, the model/run/repository
+  fingerprint needed to reproduce the GLM/Qwen comparison, and its small
+  outcome metric set. A naturally incomplete run remains an `aborted` envelope
+  even when a forced report is later captured in the same body. Claude drafts
+  the profile; Codex validates existing surfaces and implements the recorder.
+  Defer checkpoint writing, a general metrics framework, and a separate
+  comparison profile until another concrete run requires them.
 
 ### Done when
 

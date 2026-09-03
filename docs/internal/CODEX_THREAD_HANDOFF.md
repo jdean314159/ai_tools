@@ -1,8 +1,8 @@
 # Fresh Codex thread handoff
 
-- Prepared: 2026-09-01
+- Prepared: 2026-09-03
 - Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
-- Current focus: repository simplification and post-cleanup verification complete
+- Current focus: specify and record repository-assessment model comparisons
 
 ## Read order
 
@@ -10,17 +10,31 @@
 2. `docs/design/VISION.md`
 3. `docs/internal/STATUS.md`
 4. `docs/internal/ROADMAP.md`
-5. `docs/projects/ENGRAM-TEMPORAL-AND-MEMORY-EVAL-2026-08-30.md`
-6. `docs/projects/ENGRAM-MEMORY-SECURITY-2026-08-30.md`
-7. `docs/projects/ENGRAM-TRUST-POLICY-LIVE-VALIDATION-2026-08-30.md`
-8. `docs/projects/ENGRAM-TRUST-AVAILABILITY-2026-08-30.md`
-9. `docs/projects/ENGRAM-TRUST-REVIEW-WORKFLOW-2026-08-30.md`
+5. `docs/internal/REPOSITORY_ASSESSMENT_HANDOFF_2026-09-02.md`
+6. `llm_harness_core/README.md`
+7. `docs/projects/RUN-RECORD-00-unified-run-artifacts.md`
 
 Do not read `history/SESSION_HANDOFF.md` end to end; it is a historical log.
 
+## Current selected task
+
+The next thread should implement no schema until Claude supplies the initial
+`repository-assessment/v1` profile. Once supplied, validate every reuse claim
+against `llm_harness_core.run_artifacts`, identify fields or adapters that do
+not exist, and implement the smallest recorder/backfill slice. Preserve the
+resolved rule that a run which did not submit naturally remains
+`lifecycle="aborted"`; `completion_mode` in the producer body records whether
+the retained report was natural or forced. Do not create a separate forced-run
+artifact.
+
+Checkpoint writing, a general evaluation metrics framework, and a distinct
+comparison profile are explicitly deferred. The detailed evidence, current
+working-tree warning, test record, and pasteable opening prompt are in
+`docs/internal/REPOSITORY_ASSESSMENT_HANDOFF_2026-09-02.md`.
+
 ## Current cleanup checkpoint
 
-Commits `da15c32` through `54865d0` complete the structural cleanup, root-doc
+Commits `2e51683` through `32f32a7` complete the structural cleanup, root-doc
 consolidation, private-endpoint correction, and distribution-wide privacy gate.
 The offline gate is 1,254 passed and 305 skipped. Claude independently closed
 the endpoint/root cleanup and re-verified the three post-reformat behavioral
@@ -151,18 +165,18 @@ The work progressed through evidence rather than assuming a design:
 
 Key commits, oldest to newest:
 
-- `6ae80ff` — temporal memory reliability tooling
-- `1b9ec11` — clean packaging validation
-- `d58a7cb` — persistent-memory trust-boundary characterization
-- `493cfde` — trust-policy enforcement
-- `728d766` — paired DGX trust-policy validation and citation correction
-- `aebd394` — availability/false-positive characterization
-- `b7f7cda` — audited trust-review workflow
-- `619c4fe` — repository-wide Ruff adoption complete
-- `da15c32` — structural simplification checkpoint
-- `d8776f9` — packaged private-endpoint correction
-- `e0e9959` — root governance and document consolidation
-- `54865d0` — distribution-wide privacy hygiene
+- `f0f1e6e` — temporal memory reliability tooling
+- `0c478b1` — clean packaging validation
+- `253069c` — persistent-memory trust-boundary characterization
+- `7a8013a` — trust-policy enforcement
+- `5410204` — paired DGX trust-policy validation and citation correction
+- `a95b5cb` — availability/false-positive characterization
+- `24100ff` — audited trust-review workflow
+- `4a7f26e` — repository-wide Ruff adoption complete
+- `2e51683` — structural simplification checkpoint
+- `7a6e0d1` — packaged private-endpoint correction
+- `9ea8d28` — root governance and document consolidation
+- `32f32a7` — distribution-wide privacy hygiene
 
 ## Current evidence boundary
 
@@ -282,5 +296,5 @@ security, and availability tests also pass.
 
 At handoff preparation, the Engram commits above were complete. The separate
 `llm_engines` tool-recovery version-4 change set was validated and committed as
-`d3dba83`. The final documentation checkpoint should leave the tracked worktree
+`a616670`. The final documentation checkpoint should leave the tracked worktree
 clean; inspect `git status` before starting new work.

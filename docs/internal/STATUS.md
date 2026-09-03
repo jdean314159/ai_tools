@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-09-01
+Last updated: 2026-09-03
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -21,6 +21,54 @@ selected.**
 For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
+
+### Latest completed work — repository-assessment model comparison
+
+A controlled, read-only repository-assessment comparison was run against two
+Spark-hosted llama.cpp models: GLM-4.7-Flash Q8 and Qwen3.8-27B Q4_K_M. Both
+received the same focused prompt, shell policy, seed, 45-turn budget, and forced
+report-only continuation after neither model submitted naturally. Raw
+transcripts and reports remain local under `/tmp`; they are not durable run
+artifacts and must not be treated as complete provenance records.
+
+GLM completed 45 shell inspections and used 6,798 completion/reasoning tokens.
+It primarily inventoried the repository, later repeated inspections, and
+produced no independently validated new defect. Qwen completed 55 shell
+inspections and used 20,620 completion/reasoning tokens. It ran four broad test
+commands totaling 1,147 passed and 47 skipped, traced candidate defects through
+their call paths, executed two reproducers, and explicitly downgraded a
+ChromaDB corruption hypothesis when the installed version's duplicate-add
+behavior disproved active corruption.
+
+The Qwen run produced four grounded follow-ups, all corrected on 2026-09-03:
+
+- `ProjectMemory.store_episodes_batch()` now delegates each candidate to
+  `store_episode()` once, reports only successful ChromaDB indexing, and no
+  longer positionally slices embeddings after a rejection.
+- `WriterLock` now treats `flock` as the sole authority and leaves the lock inode
+  in place; stale PID text is overwritten only after acquiring that inode.
+- Chroma-backed collection mutations now advance a persistent sidecar marker,
+  and `HybridRetriever` compares both marker time and collection count before
+  accepting an in-memory or disk BM25 cache.
+- `scripts/clean_review_bundle.py` now rejects the live checkout, its parents,
+  and every path inside it, including package roots with their own
+  `pyproject.toml`.
+
+Focused regression gates passed: 242 Engram tests with seven optional/live
+skips, 113 RAG tests, and three review-cleaner tests.
+
+The next selected documentation task is a minimal
+`repository-assessment/v1` producer profile over the existing `RunArtifact`
+envelope. The resolved lifecycle rule is: a run that fails to submit naturally
+remains `lifecycle="aborted"`; its body records
+`completion_mode: "natural" | "forced"`. Raw model claims, model-gathered
+evidence, and independent adjudication remain separate evidence layers. Claude
+should draft this profile first; Codex should then verify every reuse claim
+against the current call path and implement only the recorder and backfill
+needed for these two runs. Checkpoint writing, a full metrics surface, and a
+separate comparison profile remain deferred until a later run demonstrates the
+need. See
+`docs/internal/REPOSITORY_ASSESSMENT_HANDOFF_2026-09-02.md`.
 
 ### Latest completed work — repository simplification and hygiene
 
@@ -47,7 +95,7 @@ verified the endpoint fix, negative control,
 root cleanup and link integrity; re-verified `not_declared` scoping, thinking
 tri-state plumbing, and raw-provider-payload omission semantics; and reproduced
 all 12 committed artifact record IDs. The supplied archive was subsequently
-tied to commit `e0e9959b89237e90c97d3b56ade8b18131275824`.
+tied to commit `9ea8d28a2cfb9a04c796368bfba3694067bdce5b`.
 
 ### Latest completed work — remote local-model characterization
 
@@ -481,7 +529,7 @@ See `docs/projects/RUN-RECORD-00-PHASE-8-COURSE-PORTABILITY.md`.
 
 ### Latest completed work — NAV-VERIFIABLE-00
 
-The repository-navigation control investigation is closed at `abcc2f0`.
+The repository-navigation control investigation is closed at `f151893`.
 Wrapper-level text repetition, duplicate-action, and observable-saturation
 signals did not provide a reliable model-independent stopping criterion. The
 investigation moved the missing information into an explicit task-goal ledger
@@ -502,7 +550,7 @@ relation-correct ledger answers over-cited evidence. Do not alter the frozen
 rule or scorer post hoc. See
 `docs/projects/agent_lib/NAV-VERIFIABLE-00-VALIDATION.md`.
 
-Current `agent_lib` checkpoint: `150 passed` at `abcc2f0`. This is a recorded
+Current `agent_lib` checkpoint: `150 passed` at `f151893`. This is a recorded
 checkpoint, not a claim about later untested edits.
 
 ### Current project boundary
@@ -512,19 +560,19 @@ split is complete locally at `../llm-failure-lab`; package publication is
 deferred. Do not continue NAV-VERIFIABLE-00 as an unfrozen tuning campaign.
 
 **mail_lib — completed project / harvested example.** MAIL-00 shipped a script-first, deterministic Thunderbird
-reader and rules-layer triage at `8ee955b`, after spec ratification at `786de7d`. The reader iterates
+reader and rules-layer triage at `9f9125f`, after spec ratification at `72caded`. The reader iterates
 extensionless mbox files as the source of truth, joins Gloda metadata by bracket-stripped
 `Message-ID`, treats Gloda as lagging enrichment, and remains read-only against the Thunderbird
 profile. A private maintainer-only
-live run forced three corrections: self-mail demotion (`553c49e`), recent user-star-only urgency
-(`175352e`, 183 days), and calendar recency gating (`f56e19c`, 31 days).
+live run forced three corrections: self-mail demotion (`a80c45c`), recent user-star-only urgency
+(`2191e09`, 183 days), and calendar recency gating (`c7f2d89`, 31 days).
 
-MAIL-01 then shipped deterministic file-backed personal rules at `72bea66`. It adds strict TOML
+MAIL-01 then shipped deterministic file-backed personal rules at `d5b795c`. It adds strict TOML
 validation, most-specific/file-order rule selection, explicit precedence over built-in heuristics,
 `--rules` and mail-free `--validate-rules` CLI modes, and a graduated built-in self-mail floor for
 link-bearing saved-article messages.
 
-MAIL-02 shipped the ratified localhost mail-assistant MVP at `cb4f11e`: prioritized unread/all
+MAIL-02 shipped the ratified localhost mail-assistant MVP at `77c6a86`: prioritized unread/all
 views, app-owned read and summary state, bounded local-model section summaries, and reviewed,
 conflict-detecting personal-rule commits that preserve the hand-authored TOML prefix. The combined
 mail/app/import/public-API gate passed at the MVP checkpoint (`75 passed`). Post-MVP work through
@@ -586,7 +634,7 @@ Engram exposes the additive `MemoryLayer` extension seam from NEURAL-01; the
 four core layers (working/SQLite, episodic/ChromaDB, semantic/SQLite,
 cold/FTS5) remain authoritative and untouched.
 
-NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `c95b8ab` as a
+NAV-TEST-00 is implemented in `agent_lib.eval.repo_navigation` at `1c288d6` as a
 confined, read-only Qwen3.6 repository-navigation evaluation with external
 ground truth and result storage.
 

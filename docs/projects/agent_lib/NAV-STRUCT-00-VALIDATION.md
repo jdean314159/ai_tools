@@ -46,7 +46,7 @@ action-loop guard. The combined package/contract gate passed (`135 passed`).
 
 ## Live seed2 control
 
-Pinned candidate `d32ce53`, Qwen3.6-27B-Q4_K_M, seed 2, temperature 0.6:
+Pinned candidate `1265f92`, Qwen3.6-27B-Q4_K_M, seed 2, temperature 0.6:
 
 - completed at 76,179 cumulative tokens;
 - 13 tool calls / 14 steps;

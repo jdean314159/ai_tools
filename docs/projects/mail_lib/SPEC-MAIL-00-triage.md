@@ -48,12 +48,12 @@ it: model output is advisory, no automated deletion/archiving until a rule is ma
 
 ## 2. HEAD grounding
 
-Citations below are confirmed against live HEAD **`7b8ee9e`** (`fix(agent_lib): fail closed on
+Citations below are confirmed against live HEAD **`1d7a057`** (`fix(agent_lib): fail closed on
 unpolicied command execution`) on `codex-cleanup-pass`, verified directly from the repo's git
 history. Line numbers are current as of that commit; re-confirm only if HEAD has advanced before
 implementation.
 
-## 3. Confirmed reuse surface (verified at HEAD `7b8ee9e`)
+## 3. Confirmed reuse surface (verified at HEAD `1d7a057`)
 
 v0 uses **stdlib only** — the items below are cited for v1+ accuracy and to prevent rebuilding, not
 because v0 calls them.

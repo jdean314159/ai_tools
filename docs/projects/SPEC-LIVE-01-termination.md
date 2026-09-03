@@ -4,7 +4,7 @@
 **Covers:** Closing Finding 1 from SPEC-LIVE-00 — the run overran to `step_cap` after the
 authoritative done-check was already satisfied, because termination depended on the model
 volunteering `{"done": true}` rather than on the predicate.
-**Depends on:** SPEC-LIVE-00 (v8, `74bf4bc`); Finding 1 confirmed in-tree on the v8 harness
+**Depends on:** SPEC-LIVE-00 (v8, `14ac320`); Finding 1 confirmed in-tree on the v8 harness
 (`computer_helper` `7e40b36`, run `runs/live_00_v8_20260624/`).
 **Mode:** LIVE with deterministic REPLAY, same as LIVE-00. The fix is verified by deterministic
 fixtures; a live re-run confirms the model path still reaches done and now terminates on it.
@@ -12,7 +12,7 @@ fixtures; a live re-run confirms the model path still reaches done and now termi
 `agent_lib`. The library's lack of an execution loop / termination contract is recorded as a
 standing gap, not closed here (see "Why probe-side").
 **Implementation:** `computer_helper` commit `7c0aa60` (`feat(probe): add release lifecycle and
-predicate stop`) implements this probe-side fix and references this decision commit (`e6e6f9c`).
+predicate stop`) implements this probe-side fix and references this decision commit (`9fa29c1`).
 **Live confirmation:** `computer_helper` commit `fb033f8` records a fresh `qwen3:8b` run that
 retrieved at step 2, satisfied the authoritative predicate at step 4, and terminated `done` at that
 same step with no trailing routes.

@@ -3,13 +3,13 @@
 **Status:** Implemented (narrow v1: release lifecycle integration only; owner-death reclaim is a
 recorded backlog trigger, not built and not pinned by a test).
 **Date:** 2026-06.
-**Context spec:** SPEC-LIVE-00 (v8, `74bf4bc`); in-tree forcing evidence is the FX-CONTENTION
+**Context spec:** SPEC-LIVE-00 (v8, `14ac320`); in-tree forcing evidence is the FX-CONTENTION
 fixture in `computer_helper` (`7cb5192`, run artifacts under `runs/live_00_v8_20260624/`).
 **Builds on:** ADR-018 (unified path ownership). This is ADR-018 promotion-trigger #3 firing
 (lease scope requirements — recovery/TTL — growing beyond what the current flat lease expresses).
 **Design input:** `docs/internal/LESSONS_FROM_OPCOM.md` Lesson 1 (lease lifecycle, cross-system).
-**Implementation:** `ai_tools` commit `f809360` (`feat(agent-lib): expose patch lease release action`)
-implements this v1 contract and references this decision commit (`e6e6f9c`).
+**Implementation:** `ai_tools` commit `f8fd116` (`feat(agent-lib): expose patch lease release action`)
+implements this v1 contract and references this decision commit (`9fa29c1`).
 **Supersedes:** nothing. **Superseded by:** nothing yet.
 
 ---

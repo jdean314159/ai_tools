@@ -76,9 +76,9 @@ replay below resolved the representation question.
 Artifacts:
 
 - initial protocol:
-  `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-20260723.json`;
+  `<external-eval-repo>/nav-verifiable-schema-probe-20260723.json`;
 - corrected protocol:
-  `/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-corrected-20260723.json`.
+  `<external-eval-repo>/nav-verifiable-schema-probe-corrected-20260723.json`.
 
 ## Frozen canonicalization and offline replay
 
@@ -106,7 +106,7 @@ not an overstated 3/3. Formatter feasibility remains established; minimal
 evidence precision remains unproven under live navigation.
 
 Replay artifact:
-`/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-canonical-v1-replay-20260723.json`.
+`<external-eval-repo>/nav-verifiable-schema-probe-canonical-v1-replay-20260723.json`.
 
 ## Metric decomposition and admission gate
 
@@ -135,7 +135,7 @@ classification uses only these source-derived values. Autonomous run cost may
 identify a calibration miss but cannot reclassify or remove a task.
 
 Decomposed replay artifact:
-`/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-schema-probe-decomposed-v1-replay-20260723.json`.
+`<external-eval-repo>/nav-verifiable-schema-probe-decomposed-v1-replay-20260723.json`.
 
 ## Campaign policy gate
 
@@ -256,7 +256,7 @@ correctly preserved the outcome as `inconclusive`; it must not be reinterpreted
 post hoc as support.
 
 External result directory:
-`/home/cybernaif/repos/repo_agent_eval/repo_agent/nav-verifiable-campaign-v1-smoke-contract-20260723`.
+`<external-eval-repo>/nav-verifiable-campaign-v1-smoke-contract-20260723`.
 
 Result hashes:
 
