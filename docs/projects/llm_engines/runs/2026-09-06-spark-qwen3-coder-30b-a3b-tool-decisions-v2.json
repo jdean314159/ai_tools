@@ -1,0 +1,347 @@
+{
+  "body": {
+    "backend": "openai",
+    "case_aggregates": {
+      "avoid_unnecessary_tool": {
+        "errors": 0,
+        "failed": 0,
+        "latency_ms": {
+          "maximum": 82.71,
+          "median": 66.624,
+          "minimum": 66.029,
+          "samples": 3
+        },
+        "pass_rate": 1.0,
+        "passed": 3,
+        "runs": 3,
+        "status_stable": true
+      },
+      "choose_relevant_tool": {
+        "errors": 0,
+        "failed": 0,
+        "latency_ms": {
+          "maximum": 522.632,
+          "median": 422.822,
+          "minimum": 422.809,
+          "samples": 3
+        },
+        "pass_rate": 1.0,
+        "passed": 3,
+        "runs": 3,
+        "status_stable": true
+      },
+      "required_single_tool": {
+        "errors": 0,
+        "failed": 0,
+        "latency_ms": {
+          "maximum": 582.884,
+          "median": 310.485,
+          "minimum": 308.461,
+          "samples": 3
+        },
+        "pass_rate": 1.0,
+        "passed": 3,
+        "runs": 3,
+        "status_stable": true
+      },
+      "typed_arguments": {
+        "errors": 0,
+        "failed": 0,
+        "latency_ms": {
+          "maximum": 518.103,
+          "median": 385.104,
+          "minimum": 383.425,
+          "samples": 3
+        },
+        "pass_rate": 1.0,
+        "passed": 3,
+        "runs": 3,
+        "status_stable": true
+      }
+    },
+    "cases_per_run": 4,
+    "finished_at": "2026-09-06T18:50:57.525613Z",
+    "interpretation_limit": "Measures observable tool selection and argument construction on fixed synthetic cases; it does not reveal hidden reasoning or predict application reliability.",
+    "model_label": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+    "profile": "llm_engines.tool_decision_campaign",
+    "profile_version": 2,
+    "repetitions": 3,
+    "results": [
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "required_single_tool",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "lookup_record",
+        "finish_reason": "tool_call",
+        "latency_ms": 582.884,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_record",
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "choose_relevant_tool",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "add_numbers",
+        "finish_reason": "tool_call",
+        "latency_ms": 522.632,
+        "observed_action": "call_tool",
+        "observed_tool": "add_numbers",
+        "status": "passed"
+      },
+      {
+        "arguments_match": null,
+        "call_count": 0,
+        "case_id": "avoid_unnecessary_tool",
+        "direct_answer_match": true,
+        "error_type": null,
+        "expected_action": "answer_directly",
+        "expected_tool": null,
+        "finish_reason": "stop",
+        "latency_ms": 82.71,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "typed_arguments",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "set_flag",
+        "finish_reason": "tool_call",
+        "latency_ms": 518.103,
+        "observed_action": "call_tool",
+        "observed_tool": "set_flag",
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "required_single_tool",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "lookup_record",
+        "finish_reason": "tool_call",
+        "latency_ms": 310.485,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_record",
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "choose_relevant_tool",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "add_numbers",
+        "finish_reason": "tool_call",
+        "latency_ms": 422.822,
+        "observed_action": "call_tool",
+        "observed_tool": "add_numbers",
+        "status": "passed"
+      },
+      {
+        "arguments_match": null,
+        "call_count": 0,
+        "case_id": "avoid_unnecessary_tool",
+        "direct_answer_match": true,
+        "error_type": null,
+        "expected_action": "answer_directly",
+        "expected_tool": null,
+        "finish_reason": "stop",
+        "latency_ms": 66.624,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "typed_arguments",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "set_flag",
+        "finish_reason": "tool_call",
+        "latency_ms": 385.104,
+        "observed_action": "call_tool",
+        "observed_tool": "set_flag",
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "required_single_tool",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "lookup_record",
+        "finish_reason": "tool_call",
+        "latency_ms": 308.461,
+        "observed_action": "call_tool",
+        "observed_tool": "lookup_record",
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "choose_relevant_tool",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "add_numbers",
+        "finish_reason": "tool_call",
+        "latency_ms": 422.809,
+        "observed_action": "call_tool",
+        "observed_tool": "add_numbers",
+        "status": "passed"
+      },
+      {
+        "arguments_match": null,
+        "call_count": 0,
+        "case_id": "avoid_unnecessary_tool",
+        "direct_answer_match": true,
+        "error_type": null,
+        "expected_action": "answer_directly",
+        "expected_tool": null,
+        "finish_reason": "stop",
+        "latency_ms": 66.029,
+        "observed_action": "answer_directly",
+        "observed_tool": null,
+        "status": "passed"
+      },
+      {
+        "arguments_match": true,
+        "call_count": 1,
+        "case_id": "typed_arguments",
+        "direct_answer_match": null,
+        "error_type": null,
+        "expected_action": "call_tool",
+        "expected_tool": "set_flag",
+        "finish_reason": "tool_call",
+        "latency_ms": 383.425,
+        "observed_action": "call_tool",
+        "observed_tool": "set_flag",
+        "status": "passed"
+      }
+    ],
+    "schema_version": 2,
+    "started_at": "2026-09-06T18:50:53.452661Z",
+    "thinking_requested": false
+  },
+  "envelope": {
+    "actors": [
+      {
+        "actor_id": "tool-decision-runner",
+        "name": "llm_engines.tool_process_probe",
+        "role": "recorder",
+        "version": "1"
+      }
+    ],
+    "attachments": [],
+    "body_version": 1,
+    "capabilities": [
+      {
+        "determinism": {
+          "claim": "best_effort",
+          "conditions": [
+            "temperature=0",
+            "fixed synthetic prompts",
+            "tools not executed"
+          ],
+          "evidence_basis": "exercised"
+        },
+        "effect_class": "read_only",
+        "execution_mode": "live_external",
+        "implementation_version": "1",
+        "operation": "tool_decision_characterization",
+        "requirements": [
+          {
+            "ref": "model_endpoint",
+            "type": "external_service"
+          },
+          {
+            "ref": "llm_engines.tool_decision_campaign",
+            "type": "implementation"
+          }
+        ]
+      }
+    ],
+    "envelope_schema_version": 1,
+    "execution_environment": {
+      "backend": "openai",
+      "model_label": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf"
+    },
+    "kind": "experiment",
+    "lifecycle": "final",
+    "omissions": [],
+    "privacy": {
+      "body_bytes_sensitivity": "low; raw prompts and model responses are not retained",
+      "declared_content_categories": [
+        "synthetic_prompt",
+        "model_configuration"
+      ],
+      "reference_sensitivity": {},
+      "transformations_applied": [
+        {
+          "operation": "omit_raw_case_content",
+          "version": "1"
+        },
+        {
+          "operation": "omit_exception_messages",
+          "version": "1"
+        },
+        {
+          "operation": "model_label_basename_only",
+          "version": "1"
+        }
+      ],
+      "validation": {
+        "policy_id": "synthetic-tool-decisions-no-raw-content",
+        "policy_version": "1",
+        "scope": [
+          "body contains no raw prompt, response, or exception message"
+        ],
+        "status": "validated",
+        "validated_at": "2026-09-06T18:50:57.525613Z",
+        "validator": "llm_engines.tool_process_probe"
+      }
+    },
+    "profile": "llm_engines.tool_decision_campaign",
+    "profile_version": 2,
+    "record_id": "td_3b715ffc2d06b01d1f2badff08227a4e",
+    "relationships": [],
+    "time": {
+      "adapted_at": null,
+      "artifact_created_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-09-06T18:50:57.525613Z"
+      },
+      "execution_finished_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-09-06T18:50:57.525613Z"
+      },
+      "execution_started_at": {
+        "precision": null,
+        "source": "runner",
+        "status": "value",
+        "value": "2026-09-06T18:50:53.452661Z"
+      }
+    }
+  }
+}
