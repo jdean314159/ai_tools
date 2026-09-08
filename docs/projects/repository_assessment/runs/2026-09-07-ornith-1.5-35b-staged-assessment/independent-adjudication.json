@@ -1,0 +1,235 @@
+{
+  "schema": "temporary-ornith-staged-repository-assessment-adjudication/v1",
+  "adjudicated_at": "2026-09-07",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "corrected_head_commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+  "primary_scoring_rule": "Only critic-accepted findings are final findings. A known defect counts only when a final finding identifies both the affected behavior and relevant symbol or call path.",
+  "known_defects": [
+    {
+      "id": "engram_batch_indexing",
+      "symbol": "ProjectMemory.store_episodes_batch",
+      "behavior": "redundant batch embedding and Chroma insertion after per-episode storage"
+    },
+    {
+      "id": "writer_lock_inode_replacement",
+      "symbol": "WriterLock",
+      "behavior": "dead PID text causes replacement of a pathname whose inode is actively flocked"
+    },
+    {
+      "id": "rag_bm25_stale_same_count_cache",
+      "symbol": "HybridRetriever._get_bm25_index",
+      "behavior": "a persisted same-count BM25 cache is accepted despite a newer collection mutation marker"
+    }
+  ],
+  "grader": {
+    "path": "docs/projects/repository_assessment/tools/test_known_defects_at_83e1d09.py",
+    "execution_copy": "/tmp/test_staged_known_defects.py",
+    "target_import_roots": [
+      "/tmp/ai-tools-ornith-assessment-83e1d09/engram/src",
+      "/tmp/ai-tools-ornith-assessment-83e1d09/rag_lib/src"
+    ],
+    "target_result": {
+      "passed": 0,
+      "failed": 3
+    },
+    "corrected_head_result": {
+      "passed": 3,
+      "failed": 0
+    }
+  },
+  "candidate_adjudication": [
+    {
+      "seed": 47,
+      "scope": "mail_lib",
+      "claim": "load_message_bodies returns normalized keys rather than caller-supplied Message-ID keys",
+      "pipeline_disposition": "verifier_rejected",
+      "independent_disposition": "not_a_defect",
+      "rationale": "The implementation maps normalized IDs to the original caller inputs and writes found[original]. The claimed normalized return key contradicts the quoted code and no failing caller or contract was shown."
+    },
+    {
+      "seed": 47,
+      "scope": "llm_inspector_ui",
+      "claim": "artifact_to_operation_result must accept every JSON-serializable non-dict trace",
+      "pipeline_disposition": "verifier_confirmed_then_critic_rejected",
+      "independent_disposition": "not_a_defect",
+      "rationale": "The function's return type is OperationResult[dict[str, Any]], the UI artifact test supplies a dict trace, and no repository contract establishes non-dict traces as valid. The expected behavior was invented by the candidate."
+    }
+  ],
+  "coverage_adjudication": {
+    "definition": "A scope is covered after a successful content read of production source plus a distinct test, caller, README, or package contract. File listings and wc output alone do not count as source reads.",
+    "scores": [
+      {
+        "seed": 17,
+        "harness_recorded": 7,
+        "independently_scored": 7,
+        "covered_packages": [
+          "action_trajectory_loop_guard",
+          "engram",
+          "llm_engines",
+          "llm_harness_core",
+          "llm_inspector_ui",
+          "mail_lib",
+          "rag_lib"
+        ]
+      },
+      {
+        "seed": 31,
+        "harness_recorded": 6,
+        "independently_scored": 6,
+        "covered_packages": [
+          "agent_lib",
+          "engram",
+          "llm_engines",
+          "llm_inspector_ui",
+          "mail_lib",
+          "rag_lib"
+        ]
+      },
+      {
+        "seed": 47,
+        "harness_recorded": 8,
+        "independently_scored": 8,
+        "covered_packages": [
+          "action_trajectory_loop_guard",
+          "engram",
+          "llm_engines",
+          "llm_harness_core",
+          "llm_inspector",
+          "llm_inspector_ui",
+          "mail_lib",
+          "rag_lib"
+        ]
+      }
+    ]
+  },
+  "runs": [
+    {
+      "run": "01-staged-seed17",
+      "seed": 17,
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 7,
+      "shell_calls": 27,
+      "max_package_concentration_percent": 11.1,
+      "scouts_structured": 9,
+      "scouts_structured_before_forcing": 0,
+      "candidates": 0,
+      "verifiers_structured": 0,
+      "critic_calls": 0,
+      "accepted_findings": 0,
+      "final_precision": null,
+      "synthesis": "structured",
+      "remaining_uncertainty": "high",
+      "input_tokens": 80241,
+      "output_tokens": 5362,
+      "model_calls": 33,
+      "elapsed_seconds": 98.333,
+      "protocol_violations": [
+        "one fourth shell call was attempted and rejected after the action_trajectory_loop_guard scout had used its three-call budget"
+      ]
+    },
+    {
+      "run": "02-staged-seed31",
+      "seed": 31,
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 6,
+      "shell_calls": 27,
+      "max_package_concentration_percent": 11.1,
+      "scouts_structured": 9,
+      "scouts_structured_before_forcing": 0,
+      "candidates": 0,
+      "verifiers_structured": 0,
+      "critic_calls": 0,
+      "accepted_findings": 0,
+      "final_precision": null,
+      "synthesis": "structured",
+      "remaining_uncertainty": "high",
+      "input_tokens": 89359,
+      "output_tokens": 5943,
+      "model_calls": 34,
+      "elapsed_seconds": 109.532,
+      "protocol_violations": []
+    },
+    {
+      "run": "03-staged-seed47",
+      "seed": 47,
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 8,
+      "shell_calls": 33,
+      "max_package_concentration_percent": 18.2,
+      "scouts_structured": 9,
+      "scouts_structured_before_forcing": 0,
+      "candidates": 2,
+      "verifiers_structured": 2,
+      "verifiers_structured_before_forcing": 0,
+      "critic_calls": 1,
+      "accepted_findings": 0,
+      "final_precision": null,
+      "synthesis": "controller_fallback_after_unstructured_model_response",
+      "remaining_uncertainty": "medium",
+      "input_tokens": 114674,
+      "output_tokens": 8574,
+      "model_calls": 43,
+      "elapsed_seconds": 159.222,
+      "protocol_violations": [
+        "the synthesizer did not call submit_synthesis; the deterministic controller report was used"
+      ]
+    }
+  ],
+  "summary": {
+    "recall_scores": [
+      0,
+      0,
+      0
+    ],
+    "median_recall": 0,
+    "coverage_scores": [
+      7,
+      6,
+      8
+    ],
+    "median_coverage": 7,
+    "baseline_median_coverage": 1,
+    "shell_call_counts": [
+      27,
+      27,
+      33
+    ],
+    "median_shell_calls": 27,
+    "shell_call_cap_bound": 0,
+    "median_max_package_concentration_percent": 11.1,
+    "structured_scout_results": 27,
+    "scouts_structured_before_forcing": 0,
+    "selected_candidates": 2,
+    "structured_verifier_results": 2,
+    "verifiers_structured_before_forcing": 0,
+    "critic_calls": 1,
+    "accepted_findings": 0,
+    "final_precision": null,
+    "structured_syntheses": 2,
+    "controller_fallback_syntheses": 1,
+    "median_input_tokens": 89359,
+    "baseline_median_input_tokens": 1648791,
+    "median_input_reduction_percent": 94.6,
+    "median_output_tokens": 5943,
+    "median_model_calls": 34,
+    "median_elapsed_seconds": 109.532,
+    "overconfidence_events": 0
+  },
+  "prediction_decisions": {
+    "median_hidden_defect_recall_remains_zero": "supported",
+    "median_coverage_at_least_eight_of_nine": "contradicted",
+    "frozen_completion_and_concentration_rule": "supported",
+    "median_input_tokens_below_half_baseline": "supported",
+    "precision_and_calibration_direction": "descriptive_only_no_threshold"
+  },
+  "interpretation": {
+    "recall": "The staged treatment changed search allocation but did not improve hidden-defect recall: no accepted finding mapped to any frozen grader behavior.",
+    "coverage": "Median coverage rose from 1/9 to 7/9 and concentration fell from 62.2% to 11.1%, but coverage missed the preregistered 8/9 median threshold.",
+    "judgment": "Broad exposure did not create defect judgment. Twenty-seven forced scout summaries yielded only two candidates; both were non-defects and the verifier/critic pipeline removed both.",
+    "efficiency": "Fresh contexts reduced median cumulative input from 1,648,791 to 89,359 tokens while preserving a 45-shell-call ceiling.",
+    "completion": "The frozen completion rule passed, but every scout and verifier used its full shell budget before a forced structured-summary request, and one of three final syntheses required a deterministic fallback. This is controlled stopping, not improved autonomous stopping."
+  }
+}

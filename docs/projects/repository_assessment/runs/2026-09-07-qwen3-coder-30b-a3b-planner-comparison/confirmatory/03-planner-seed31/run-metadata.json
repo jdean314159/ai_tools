@@ -1,0 +1,323 @@
+{
+  "base_url_retained": false,
+  "completion_mode": "forced",
+  "condition": "planner",
+  "coverage": {
+    "covered": 0,
+    "current_scope": "mail_lib",
+    "exposed": 7,
+    "order": [
+      "engram",
+      "llm_harness_core",
+      "rag_lib",
+      "llm_inspector_ui",
+      "llm_engines",
+      "llm_inspector",
+      "mail_lib",
+      "action_trajectory_loop_guard",
+      "agent_lib"
+    ],
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exhausted": false,
+        "exposed": false,
+        "production_reads": [],
+        "shell_calls": 0
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exhausted": false,
+        "exposed": false,
+        "production_reads": [],
+        "shell_calls": 0
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/README.md"
+        ],
+        "covered": false,
+        "exhausted": true,
+        "exposed": true,
+        "production_reads": [],
+        "shell_calls": 5
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/README.md",
+          "/workspace/llm_engines/pyproject.toml"
+        ],
+        "covered": false,
+        "exhausted": true,
+        "exposed": true,
+        "production_reads": [],
+        "shell_calls": 5
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/README.md",
+          "/workspace/llm_harness_core/pyproject.toml"
+        ],
+        "covered": false,
+        "exhausted": true,
+        "exposed": true,
+        "production_reads": [],
+        "shell_calls": 5
+      },
+      "llm_inspector": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector/README.md",
+          "/workspace/llm_inspector/pyproject.toml"
+        ],
+        "covered": false,
+        "exhausted": true,
+        "exposed": true,
+        "production_reads": [],
+        "shell_calls": 5
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector_ui/README.md",
+          "/workspace/llm_inspector_ui/pyproject.toml"
+        ],
+        "covered": false,
+        "exhausted": true,
+        "exposed": true,
+        "production_reads": [],
+        "shell_calls": 5
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/README.md",
+          "/workspace/mail_lib/pyproject.toml"
+        ],
+        "covered": false,
+        "exhausted": false,
+        "exposed": true,
+        "production_reads": [],
+        "shell_calls": 3
+      },
+      "rag_lib": {
+        "corroborating_reads": [
+          "/workspace/rag_lib/README.md",
+          "/workspace/rag_lib/pyproject.toml"
+        ],
+        "covered": false,
+        "exhausted": true,
+        "exposed": true,
+        "production_reads": [],
+        "shell_calls": 5
+      }
+    }
+  },
+  "critic": {
+    "calls": 1,
+    "input_tokens": 218,
+    "output_tokens": 183,
+    "records": [
+      {
+        "at": "2026-09-07T13:59:24.793890Z",
+        "decision": "insufficient_evidence",
+        "event": "critic",
+        "finding_sha256": "6f1e8f9ba13574b7dfd2a9aba86993af066268073b3fed23c31bc9edb5218ecb",
+        "rationale": "The evidence provided does not contain sufficient proof of the claimed memory persistence data corruption vulnerability. While the evidence describes a potential issue with file locking mechanisms and race conditions during concurrent writes to JSON metadata files, it does not provide concrete evidence of actual data corruption occurring. Specifically, the evidence lacks:\n\n1. Actual demonstration of the race condition causing data corruption\n2. Evidence of malformed JSON data or overwrites in the actual implementation\n3. Specific proof that the file locking mechanism fails in practice\n4. Concrete examples of the vulnerability manifesting in the code at lines 120-140 of `/workspace/engram/src/engram/project_memory.py`\n\nThe evidence only states the vulnerability exists in theory but does not provide the actual observed behavior or impact that would validate the critical severity claim.",
+        "seed_status": "accepted",
+        "usage": {
+          "input_tokens": 218,
+          "latency_ms": 2456.283,
+          "output_tokens": 183,
+          "total_tokens": 401
+        }
+      }
+    ]
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch command"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 17659361280,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 30532122624,
+      "n_vocab": 151936,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable."
+    ],
+    "recorded_at": "2026-09-07T13:31:46Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": false
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-07T13:59:24.794141Z",
+  "investigator_usage": {
+    "input_tokens": 734313,
+    "output_tokens": 2613
+  },
+  "lifecycle": "aborted",
+  "model": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+  "prompt_sha256": "061a04a30f4620082cf0d4ff134cec0369dd8ec77f14b34abe30d682556769cc",
+  "protocol_violations": [
+    "forced report contains critic-unaccepted findings"
+  ],
+  "rejected_tool_calls": 12,
+  "remaining_uncertainty": "high",
+  "report_sha256": "9f15f4df46b82aa135011d26b5e2d0101115767245063e69fc3b56e085d48202",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "observations": {
+        "imports_under_workspace": true,
+        "module_origins": {
+          "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+          "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+          "engram": "/workspace/engram/src/engram/__init__.py",
+          "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+          "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+          "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+          "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "mail_lib": "/workspace/mail_lib/__init__.py",
+          "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+        },
+        "network_interfaces": [
+          "lo"
+        ],
+        "network_unshared": true,
+        "private_tmp_writable": true,
+        "repository_read_only": true
+      },
+      "returncode": 0,
+      "stderr": "",
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-planner-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 0,
+    "agent_lib": 0,
+    "cross_repository": 5,
+    "engram": 5,
+    "llm_engines": 5,
+    "llm_harness_core": 5,
+    "llm_inspector": 5,
+    "llm_inspector_ui": 0,
+    "mail_lib": 3,
+    "rag_lib": 5
+  },
+  "seed": 31,
+  "shell_tool_calls": 33,
+  "started_at": "2026-09-07T13:57:55.239086Z",
+  "substantive_coverage": {
+    "covered": 0,
+    "exposed": 7,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/README.md"
+        ],
+        "covered": false,
+        "exposed": true,
+        "production_reads": []
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/README.md",
+          "/workspace/llm_engines/pyproject.toml"
+        ],
+        "covered": false,
+        "exposed": true,
+        "production_reads": []
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/README.md",
+          "/workspace/llm_harness_core/pyproject.toml"
+        ],
+        "covered": false,
+        "exposed": true,
+        "production_reads": []
+      },
+      "llm_inspector": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector/README.md",
+          "/workspace/llm_inspector/pyproject.toml"
+        ],
+        "covered": false,
+        "exposed": true,
+        "production_reads": []
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector_ui/README.md",
+          "/workspace/llm_inspector_ui/pyproject.toml"
+        ],
+        "covered": false,
+        "exposed": true,
+        "production_reads": []
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/README.md",
+          "/workspace/mail_lib/pyproject.toml"
+        ],
+        "covered": false,
+        "exposed": true,
+        "production_reads": []
+      },
+      "rag_lib": {
+        "corroborating_reads": [
+          "/workspace/rag_lib/README.md",
+          "/workspace/rag_lib/pyproject.toml"
+        ],
+        "covered": false,
+        "exposed": true,
+        "production_reads": []
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "48ed5f77a6f67ce2f3604a4ae3723741a70a99cce8d8dde13082b175538a7646",
+  "turn_budget": 45,
+  "turn_cap_bound": true,
+  "turns_used": 45
+}

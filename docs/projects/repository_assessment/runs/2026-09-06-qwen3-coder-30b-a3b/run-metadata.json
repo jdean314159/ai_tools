@@ -1,0 +1,29 @@
+{
+  "base_url_retained": false,
+  "completion_mode": "forced",
+  "finished_at": "2026-09-06T19:01:12.338655Z",
+  "input_tokens": 775164,
+  "lifecycle": "aborted",
+  "model": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+  "output_tokens": 9130,
+  "prompt_sha256": "061a04a30f4620082cf0d4ff134cec0369dd8ec77f14b34abe30d682556769cc",
+  "rejected_tool_calls": 0,
+  "report_sha256": "d8ff2e4cf594a4a600fc3198fa4ad163e621a89ea2f5d1201bd3b6b20cefecac",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true
+  },
+  "schema": "temporary-repository-assessment-run/v1",
+  "seed": 7,
+  "shell_tool_calls": 45,
+  "started_at": "2026-09-06T18:56:52.943455Z",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "target_root": "/tmp/ai-tools-qwen3-coder-assessment.LxOJqx",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "a83dc4ee98211b9b0c6613afc7da528c5d837ae07eee33ad28c1d6ccf3eca92c",
+  "turn_budget": 45
+}

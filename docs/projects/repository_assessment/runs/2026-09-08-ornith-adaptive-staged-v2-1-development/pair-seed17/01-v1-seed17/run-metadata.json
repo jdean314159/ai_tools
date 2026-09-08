@@ -1,0 +1,360 @@
+{
+  "accepted_findings": [],
+  "base_url_retained": false,
+  "candidate_selection": {
+    "limit": 6,
+    "rule": "first six candidates in seeded scope order",
+    "selected": 0
+  },
+  "completion_mode": "structured",
+  "condition": "staged_scout_verifier_critic_synthesis",
+  "critic": {
+    "calls": 0,
+    "records": []
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-08T03:49:11.565518Z",
+  "lifecycle": "final",
+  "max_scope_concentration": 0.1111111111111111,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "prompt_sha256": {
+    "scout": "cf172ae87df99a5a4627ff9755ae909ee3f4dd8260d5aeb152c9d43eb9769515",
+    "synthesis": "fe48bcdddf0d091344219e8f2a57e060a0e1e6bfa092cd88483240195b324779",
+    "verifier": "4adeb0217c704665741090b130c4e7deec461340a7ae51bc6b62c4c1108352a6"
+  },
+  "protocol_violations": [],
+  "remaining_uncertainty": "medium",
+  "report_sha256": "c8fda12c191a235e2563f48bfbf406be340c2cd26ef8361b260984f713f91b7e",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-staged-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 3,
+    "agent_lib": 3,
+    "engram": 3,
+    "llm_engines": 3,
+    "llm_harness_core": 3,
+    "llm_inspector": 3,
+    "llm_inspector_ui": 3,
+    "mail_lib": 3,
+    "rag_lib": 3
+  },
+  "scope_order": [
+    "llm_inspector",
+    "llm_engines",
+    "agent_lib",
+    "engram",
+    "rag_lib",
+    "llm_harness_core",
+    "action_trajectory_loop_guard",
+    "llm_inspector_ui",
+    "mail_lib"
+  ],
+  "scouts": {
+    "expected": 9,
+    "results": [
+      {
+        "disconfirmation_attempt": "Shell budget exhausted before tracing specific code paths; no hypothesis could be actively falsified.",
+        "disposition": "no_candidate",
+        "evidence": "Initial review of README.md and pyproject.toml shows a beta-tier observability package. Further code-level tracing was not possible due to shell budget exhaustion.",
+        "expected_behavior": "The package normalizes LLM traces, augments context, compares runs, and exports reports in a consistent manner per its documented public API.",
+        "scope": "llm_inspector",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Insufficient evidence of a specific, actionable defect in correctness, data integrity, security, persistence, concurrency, packaging, or public contract after initial inspection.",
+        "symbols": "llm_inspector package (src/llm_inspector, tests/)"
+      },
+      {
+        "disconfirmation_attempt": "Shell budget was exhausted before a full end-to-end trace of any candidate code path could be performed, so no hypothesis could be actively falsified or confirmed.",
+        "disposition": "no_candidate",
+        "evidence": "Inspection was limited to package listing, README, pyproject.toml, and __init__.py due to shell budget exhaustion. No production source path was fully traced to confirm a defect.",
+        "expected_behavior": "The llm_engines package provides a unified interface over multiple LLM backends (Ollama, Anthropic, OpenAI, vLLM, llama.cpp) with explicit capability discovery, normalized generation responses, failover support, structured output, and durable generation artifacts.",
+        "scope": "llm_engines",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No single defect was confirmed within the available inspection budget. The package is large (backends, contracts, tools, strategies, optimizations, interop, artifacts, characterization). I inspected the public API surface and README contract but did not complete a full end-to-end trace of any single code path to confirm a falsifiable violation.",
+        "symbols": "/workspace/llm_engines/src/llm_engines/__init__.py (public API), /workspace/llm_engines/pyproject.toml, /workspace/llm_engines/README.md"
+      },
+      {
+        "disconfirmation_attempt": "Limited to reviewing package structure and public exports; insufficient remaining budget to trace a specific code path to a falsifiable failure. No candidate survived.",
+        "disposition": "no_candidate",
+        "evidence": "Only the package layout, pyproject.toml, and __init__.py exports were inspected. No single module path was traced end-to-end to a failing assertion or observable incorrect behavior before the shell budget was exhausted.",
+        "expected_behavior": "The agent_lib package exposes a coherent public API (contracts, runtime, coordination, memory, planners, tools, interop) with an explicit experimental disclaimer; public symbols are exported and re-exported consistently.",
+        "scope": "agent_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No concrete defect in a public contract, data integrity, security boundary, persistence, or concurrency was identified within the shell budget. The package is large (10k+ lines across many modules) and the initial inspection did not surface a currently actionable, falsifiable violation that survived a disconfirmation attempt.",
+        "symbols": "/workspace/agent_lib/src/agent_lib/__init__.py, contracts.py, runtime.py, coordination.py, interop.py, tools.py, memory.py, planners.py, llm_engines_adapter.py"
+      },
+      {
+        "disconfirmation_attempt": "Insufficient shell budget remained to trace a specific hypothesis end-to-end; no candidate was strong enough to warrant further investigation, so none was submitted.",
+        "disposition": "no_candidate",
+        "evidence": "README documents known limitations (blunt cosine threshold, no procedural memory, no audit facility) as intentional design trade-offs, not defects. Version/schema migration logic appears documented. Public API surface (ProjectMemory, MemoryTrustPolicy, etc.) is coherent. No evidence of an actionable defect survived inspection within the limited shell budget.",
+        "expected_behavior": "ProjectMemory stores conversation turns and retrieves relevant prior context to build augmented prompts, with documented, opt-in trust enforcement and temporal memory semantics.",
+        "scope": "engram",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No surviving defect candidate. The package is large and beta-tier with many documented limitations; I could not identify a single currently actionable correctness, data-integrity, security, persistence, concurrency, or public-contract violation from the available inspection.",
+        "symbols": "/workspace/engram/src/engram/project_memory.py, /workspace/engram/src/engram/version.py, /workspace/engram/src/engram/__init__.py"
+      },
+      {
+        "disconfirmation_attempt": "Insufficient \u2014 ran out of shell budget before completing the trace.",
+        "disposition": "no_candidate",
+        "evidence": "Insufficient \u2014 ran out of shell budget before tracing a specific path to a falsifiable conclusion.",
+        "expected_behavior": "Ingesting a document stores its chunks; re-ingesting a modified file deletes old chunks first (D14) and stores fresh ones.",
+        "scope": "rag_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Inconclusive \u2014 insufficient evidence of a concrete defect after initial review.",
+        "symbols": "rag_lib.pipeline.RAGPipeline"
+      },
+      {
+        "disconfirmation_attempt": "Could not perform any disconfirmation because the shell budget was exhausted before inspecting production source files.",
+        "disposition": "no_candidate",
+        "evidence": "Only inspected README.md, pyproject.toml, and __init__.py. The shell budget was exhausted before I could trace the security-sensitive implementation paths in run_artifacts.py, synthetic_data.py, or memory_evaluation.py.",
+        "expected_behavior": "The package provides shared interoperability contracts (messages, results, memory records, trace events, evaluators, and durable run artifacts). Security-sensitive functions like write_artifact_bundle must refuse path escape and overwrite, and verify SHA-256 over attachment bytes.",
+        "scope": "llm_harness_core",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Insufficient to evaluate without inspecting run_artifacts.py implementation. No concrete defect was identified in the code reviewed.",
+        "symbols": "llm_harness_core (src/llm_harness_core/)"
+      },
+      {
+        "disconfirmation_attempt": "No disconfirmation possible: the detector logic, canonicalization, near-duplicate comparison, novelty measurement, and round-trip serialization were never examined.",
+        "disposition": "no_candidate",
+        "evidence": "No production source was read. Only README.md, pyproject.toml, and __init__.py were inspected.",
+        "expected_behavior": "The detector should identify low-novelty near-duplicate actions after an eight-tool warmup and produce a JSON-safe, round-trippable action stream for assess_trajectory().",
+        "scope": "action_trajectory_loop_guard",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Unable to assess \u2014 insufficient inspection. I only read README, pyproject.toml, and __init__.py; the detector implementation, test file, and call paths were never traced, so no falsifiable hypothesis could be formed or disproven.",
+        "symbols": "src/action_trajectory_loop_guard/detector.py (not inspected), tests/test_detector.py (not inspected)"
+      },
+      {
+        "disconfirmation_attempt": "Inspected the interop module and __init__ to verify the public contract. The artifact_to_operation_result correctly distinguishes between artifacts with serialized traces (success) and without (failure with missing_trace code). No evidence of a defect in the exposed public contract was found within the shell budget available.",
+        "disposition": "no_candidate",
+        "evidence": "The interop.py file implements describe_ui() returning a CapabilityDescriptor and artifact_to_operation_result() which checks for a trace dict on the artifact and returns success/failure OperationResults. The __init__.py exposes exactly these two helpers as the documented public API.",
+        "expected_behavior": "The interop helpers `describe_ui` and `artifact_to_operation_result` should correctly expose the package's public contract and convert run artifacts to OperationResult.",
+        "scope": "llm_inspector_ui",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No concrete defect identified in the interop layer or public contract after inspection. The interop helpers appear to correctly handle the documented artifact-to-operation-result conversion.",
+        "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py\n/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py"
+      },
+      {
+        "disconfirmation_attempt": "Traced the full path: discover_mbox_files -> load_msf_read_states -> mailbox.mbox iteration -> _message_from_mbox -> _merge_messages. Verified Message-ID normalization consistency, read-state filtering, and merge logic. No data integrity, security, or contract violation survived this check.",
+        "disposition": "no_candidate",
+        "evidence": "iter_messages keys messages by normalized header Message-ID and merges duplicates via _merge_messages. Read-state filtering (msf_read_by_id) and merging logic are consistent. Gloda opened with mode=ro&immutable=1 guarantees no writes.",
+        "expected_behavior": "iter_messages should yield deduplicated mbox messages enriched with Gloda metadata, filtering by Message-ID matching and read-state, without mutating the source files.",
+        "scope": "mail_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No surviving defect candidate. The read-only Gloda access uses immutable mode, deduplication is keyed by normalized Message-ID, and read-state filtering is consistent between filtering and merging.",
+        "symbols": "mail_lib/thunderbird.py: iter_messages, _merge_messages, load_gloda_metadata, load_msf_read_states"
+      }
+    ],
+    "structured": 9
+  },
+  "seed": 17,
+  "shell_call_cap_bound": false,
+  "shell_call_ceiling": 45,
+  "shell_tool_calls": 27,
+  "started_at": "2026-09-08T03:47:31.016200Z",
+  "substantive_coverage": {
+    "covered": 8,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [
+          "/workspace/action_trajectory_loop_guard/README.md",
+          "/workspace/action_trajectory_loop_guard/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [
+          "/workspace/agent_lib/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/*.py",
+          "/workspace/agent_lib/src/agent_lib/__init__.py",
+          "/workspace/agent_lib/src/agent_lib/eval/*.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/engram/src/engram/__init__.py",
+          "/workspace/engram/src/engram/project_memory.py",
+          "/workspace/engram/src/engram/version.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/README.md",
+          "/workspace/llm_engines/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/__init__.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/README.md",
+          "/workspace/llm_harness_core/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/__init__.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector/README.md",
+          "/workspace/llm_inspector/pyproject.toml"
+        ],
+        "covered": false,
+        "production_reads": []
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector_ui/README.md",
+          "/workspace/llm_inspector_ui/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/mail_lib/__init__.py",
+          "/workspace/mail_lib/thunderbird.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [
+          "/workspace/rag_lib/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/__init__.py",
+          "/workspace/rag_lib/src/rag_lib/pipeline.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "ff84a5e68b41b6412d32305fa2b6db1190805bf4941c84bbb4f90047146c124e",
+  "usage": {
+    "input_tokens": 93809,
+    "model_calls": 34,
+    "output_tokens": 4816
+  },
+  "verifiers": {
+    "expected": 0,
+    "results": [],
+    "structured": 0
+  }
+}

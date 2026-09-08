@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-09-03
+Last updated: 2026-09-08
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -16,20 +16,197 @@ navigation failure. Mail-assistant adoption is closed, and neural memory
 remains parked and output-isolated. Engram temporal reliability, persistent
 memory trust enforcement, live security/availability characterization, and the
 audited review workflow are complete; the next Engram experiment is not yet
-selected.**
+selected. A Qwen3-Coder 30B-A3B repository-assessment pilot now has a frozen
+target and an objective three-defect grader. Its preregistered three-seed
+planner comparison is complete: planning improved uncertainty calibration but
+not recall, substantive coverage, or natural termination. A matched Q4_0 versus
+Q8_0 KV-cache comparison is also complete: Q8_0 changed all three search
+trajectories but left recall at 0/3 and added one false positive. Ornith 1.5 35B
+then passed the prerequisite suites 44/44 but recalled 0/3 frozen defects in
+all three repository seeds and required forced completion in 3/3. It did
+independently reproduce two explicitly disclosed OPEN Engram trust defects,
+both still present on current HEAD. A preregistered staged Ornith treatment
+then raised median package coverage from 1/9 to 7/9, reduced median input by
+94.6%, and eliminated package fixation, but hidden recall remained 0/3.**
+
+The completed adaptive-v2.2 development comparison passed every frozen
+mechanical gate but regressed against fresh paired staged-v1 controls: median
+coverage fell from 7/9 to 3/9, median concentration rose from 20.0% to 28.9%,
+and median input grew 3.26 times to 376,075 tokens. Recall remained 0/3 and no
+finding was accepted in either condition. The known target is closed to
+further tuning; Phase 2 requires independently prepared blinded targets.
 
 For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
 
-### Latest completed work — repository-assessment model comparison
+### Latest completed work — adaptive staged Ornith v2.2
 
-A controlled, read-only repository-assessment comparison was run against two
+The six-run paired development campaign is complete under the frozen v2,
+v2.1, and v2.2 preregistrations. Two earlier full-campaign restarts are
+retained as invalid mechanical-development evidence: the original tool schema
+required backend call IDs hidden by the endpoint's Jinja template, and v2.1
+made an exact model repetition of a controller-owned binding abortive. V2.2
+fixed only those interfaces and restarted all pairs.
+
+All three valid v2.2 runs passed independent dossier, selection, evidence,
+budget, verifier, deterministic-report, endpoint, coverage, and external-grader
+checks. Nevertheless, paired staged-v1 versus v2.2 medians were coverage 7/9
+versus 3/9, maximum package concentration 20.0% versus 28.9%, shell calls 30
+versus 38, and input 115,521 versus 376,075 tokens. Both conditions recalled
+0/3 known defects in every seed and accepted no final findings. V2.2 still used
+77.2% fewer median input tokens than the original autonomous baseline, meeting
+that preregistered threshold, but the direct paired comparison is negative.
+
+The model made 27/27 valid first-attempt selections but selected the same one
+of nine symbols for every package in all three seeds. Only 6/35 submitted
+evidence records survived independent exact-quote replay; conservative
+downgrades and two critic insufficient-evidence decisions prevented unsupported acceptance. All 27
+scouts required a forcing request, while five of eight verifiers completed
+naturally. This is a mechanically reliable controller exposing a deterministic
+search tunnel and weak evidence grounding, not improved defect judgment.
+
+The target was known during design, so recall is descriptive only. Under the
+frozen stop rule it must not be tuned again on `83e1d09`. An unchanged v2.2
+confirmation requires independently prepared blinded targets and a new
+preregistration; none is currently retained. Reliability-lab export is also
+closed until these artifacts have stable commit identities, disclosure review,
+independent packet verification, and an authorized teaching-placement
+decision. Exact results are in
+`docs/projects/repository_assessment/ORNITH-ADAPTIVE-STAGED-V2-2-ASSESSMENT-2026-09-08.md`.
+A post-result component-ablation recommendation is recorded for Claude review
+at
+`docs/projects/repository_assessment/ORNITH-POST-V2-2-NEXT-ROUND-RECOMMENDATION-2026-09-08.md`;
+it is a draft, not selected work.
+
+### Earlier completed work — staged Ornith repository assessment
+
+The preregistered treatment split the same frozen target into nine
+fresh-context package scouts, at most six fresh verifiers, a no-shell critic,
+and constrained synthesis. Historical internal/project documents were masked,
+while the target remained read-only and network-isolated. The model endpoint,
+seeds 17/31/47, and 45-shell-call ceiling matched the completed Ornith
+baseline.
+
+Coverage scores were 7/9, 6/9, and 8/9 versus 1/9, 2/9, and 1/9 at baseline;
+median maximum concentration fell from 62.2% to 11.1%. Median cumulative input
+fell from 1,648,791 to 89,359 tokens. No run exhausted 45 calls. Nevertheless,
+all three runs again recalled 0/3 frozen defects. Only seed 47 proposed
+candidates; its verifier rejected one false mail claim and its critic rejected
+one invented UI contract. No finding was accepted, so final precision is
+undefined.
+
+All scouts and verifiers used their entire three-call scope before a forced
+structured-summary request, and one synthesis required the controller
+fallback. The treatment improved externally enforced allocation, stopping,
+and calibration rather than autonomous judgment. Exact preregistration,
+transcripts, reports, adjudication, grader results, and interpretation are
+under `docs/projects/repository_assessment/`.
+
+The follow-on adaptive-v2 design and completed paired development result are
+recorded separately under `docs/projects/repository_assessment/`.
+
+### Latest completed work — Ornith 1.5 35B assessment
+
+The Spark-hosted `Ornith-1.5-35B-Q4_K_M.gguf` endpoint passed the unchanged
+basic characterization 20/20, single-turn tool decisions 12/12, and multi-turn
+recovery 12/12 with zero fabricated-success flags. Slot records confirmed
+active draft MTP despite `/props` exposing only a non-speculative default.
+
+The preregistered repository campaign then ran baseline seeds 17/31/47 against
+the same frozen `83e1d09` target and three-defect grader used for Qwen3-Coder.
+Every seed scored 0/3 known-defect recall and bound the 45-turn cap. Corrected
+substantive coverage was 1/9, 2/9, and 1/9; median concentration was 62.2%, and
+median cumulative input was 1,648,791 tokens. The predictions of median 0/3
+recall and 1/9 coverage were supported; the prediction of 3/3 natural
+completion was contradicted at 0/3.
+
+Seeds 17 and 47 read a target handoff that explicitly named two OPEN Engram
+trust-policy defects, then reproduced them. Independent execution confirms
+that `ProjectMemory.get_facts()` returns a cross-tenant semantic fact without
+applying the recall policy and `_extract_and_store_facts()` omits trust,
+tenant, source, and writer metadata. Both behaviors remain present on current
+HEAD. They are useful verification of supplied leads, not hidden-defect recall
+or new discovery. Exact results, transcripts, adjudication, and the reproducer
+are under `docs/projects/repository_assessment/`.
+
+### Latest completed work — planner repository-assessment comparison
+
+The preregistered Qwen3-Coder comparison completed three new baseline and three
+planner runs against the same frozen `83e1d09` target. Both conditions had
+median known-defect recall 0/3. Independently corrected substantive coverage
+was baseline 1/9 versus planner 0/9. Baselines submitted naturally in 3/3 runs;
+the planner did so in 1/3, with the other two binding the 45-turn cap. The
+coverage and termination predictions were contradicted; the prediction of
+unchanged 0/3 median recall was supported.
+
+The baseline emitted two independently rejected defect claims, for aggregate
+precision 0/2. The planner produced no critic-accepted finding, so its
+precision is undefined. Its one defect-shaped candidate was rejected for
+insufficient evidence. The uncertainty gate did eliminate low-uncertainty
+reports below 8/9 coverage, while two baselines produced such overconfidence
+events. This was calibration without task success: two planner runs executed
+only five shell calls after repeated assigned-scope violations.
+
+The harness's passive coverage field undercounted two baselines because it did
+not recognize relevant root-level tests/callers allowed by the preregistration;
+the correction is explicit in the independent adjudication. All six
+transcripts, reports, run metadata, server fingerprint, invalid
+development attempts, external adjudication, and the maintained harness are
+durable under `docs/projects/repository_assessment/`. The independent grader was
+rerun after the campaign and still failed 3/3 on the target and passed 3/3 on
+corrected HEAD. Q4_0 key/value caches were held fixed, so the campaign makes no
+causal claim about KV-cache effects. Production `repository-assessment/v1`
+schema work remains deferred pending the requested explicit Claude profile.
+
+### Latest completed work — KV-cache comparison
+
+The bounded comparison changed only the reported llama.cpp K/V cache precision
+from Q4_0 to Q8_0, reusing all three completed baseline seeds 17/31/47 as the
+Q4_0 control. Both conditions scored 0/3 known-defect recall in every seed and
+had corrected median coverage 1/9. All six runs terminated naturally. Q8_0
+generated three false positives versus two under Q4_0, so it did not meet the
+predeclared material-improvement threshold and regressed by one false-positive
+claim.
+
+Every Q8_0 transcript differed and all three runs concentrated on Engram,
+whereas Q4_0 concentrated on RAG, Engram, and Inspector. Q8_0 read the Engram
+files containing two graded defects but still missed both behaviors. This is
+behavioral sensitivity without measured task improvement. Median whole-run
+time was effectively unchanged, but differing prompt volumes make this an
+invalid throughput benchmark. The cache field is user-reported because the
+HTTP endpoint does not expose it, and blocked order plus server restart limit
+causal attribution. Exact evidence and adjudication are under
+`docs/projects/repository_assessment/`.
+
+### Earlier work — objective repository-assessment baseline
+
+A Spark-hosted Qwen3-Coder 30B-A3B pilot ran against frozen commit `83e1d09`
+inside a read-only bubblewrap boundary with private temporary storage, no
+network, and no host fallback. An independent regression grader fails 3/3 on
+that target and passes 3/3 on corrected HEAD, establishing an objective
+known-defect recall denominator.
+
+The model used all 45 investigation turns, concentrated 42 of 45 shell calls
+on `llm_inspector`, did not submit naturally, and scored 0/3 known-defect
+recall. Its forced report contained no validated findings and claimed no
+significant remaining uncertainty. With zero reported findings its
+false-positive count is zero and precision is undefined. This is one run with
+a binding turn cap, not a general model-quality result.
+
+The exact transcript, raw report, temporary harness, metadata, hashes, and
+three-test grader are durable under `docs/projects/repository_assessment/`.
+The subsequent six-run paired planner comparison is reported there separately.
+
+### Earlier work — local repository-assessment model comparison
+
+A paired, read-only repository-assessment comparison was run against two
 Spark-hosted llama.cpp models: GLM-4.7-Flash Q8 and Qwen3.8-27B Q4_K_M. Both
 received the same focused prompt, shell policy, seed, 45-turn budget, and forced
 report-only continuation after neither model submitted naturally. Raw
-transcripts and reports remain local under `/tmp`; they are not durable run
-artifacts and must not be treated as complete provenance records.
+transcripts and reports were not made durable and are no longer present. The
+exact prompt and dirty-tree fingerprint were not retained, so this result must
+not be presented as a controlled comparison with the frozen Qwen3-Coder pilot.
 
 GLM completed 45 shell inspections and used 6,798 completion/reasoning tokens.
 It primarily inventoried the repository, later repeated inspections, and

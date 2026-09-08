@@ -1,0 +1,184 @@
+{
+  "base_url_retained": false,
+  "completion_mode": "forced",
+  "condition": "baseline",
+  "coverage": null,
+  "critic": {
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "records": []
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-07T19:34:15.689625Z",
+  "investigator_usage": {
+    "input_tokens": 1801811,
+    "output_tokens": 4651
+  },
+  "lifecycle": "aborted",
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "prompt_sha256": "061a04a30f4620082cf0d4ff134cec0369dd8ec77f14b34abe30d682556769cc",
+  "protocol_violations": [],
+  "rejected_tool_calls": 0,
+  "remaining_uncertainty": "low",
+  "report_sha256": "bf3df8b0c4ab7ff6e51d24fde4977ac0542a3882d03c9c36692e885cb47e8dac",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "observations": {
+        "imports_under_workspace": true,
+        "module_origins": {
+          "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+          "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+          "engram": "/workspace/engram/src/engram/__init__.py",
+          "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+          "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+          "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+          "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "mail_lib": "/workspace/mail_lib/__init__.py",
+          "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+        },
+        "network_interfaces": [
+          "lo"
+        ],
+        "network_unshared": true,
+        "private_tmp_writable": true,
+        "repository_read_only": true
+      },
+      "returncode": 0,
+      "stderr": "",
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-planner-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 0,
+    "agent_lib": 0,
+    "cross_repository": 45,
+    "engram": 0,
+    "llm_engines": 0,
+    "llm_harness_core": 0,
+    "llm_inspector": 0,
+    "llm_inspector_ui": 0,
+    "mail_lib": 0,
+    "rag_lib": 0
+  },
+  "seed": 31,
+  "shell_tool_calls": 45,
+  "started_at": "2026-09-07T19:30:54.644919Z",
+  "substantive_coverage": {
+    "covered": 0,
+    "exposed": 0,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "engram": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_engines": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_inspector": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "mail_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "rag_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "3bc391303d40b8f0b093316487370f6ad70fdf9a3afa678461aef0b6abe505a5",
+  "turn_budget": 45,
+  "turn_cap_bound": true,
+  "turns_used": 45
+}

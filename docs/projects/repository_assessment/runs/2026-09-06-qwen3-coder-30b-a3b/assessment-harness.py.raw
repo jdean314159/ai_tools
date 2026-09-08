@@ -1,0 +1,438 @@
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import time
+from typing import Any
+
+from llm_engines.backends.openai import OpenAIEngine
+from llm_engines.contracts import (
+    ChatMessage,
+    GenerationRequest,
+    ToolParameterSchema,
+    ToolSpec,
+)
+
+
+SYSTEM_PROMPT = """You are performing a rigorous, read-only assessment of a Python repository.
+
+Your goal is to identify real, currently actionable defects in correctness, data integrity,
+security boundaries, persistence, concurrency, packaging, or public contracts. Prefer a few
+high-confidence findings over a long speculative list.
+
+Work empirically:
+- inspect the relevant call path end to end;
+- distinguish current code from historical documentation;
+- run focused tests or non-destructive reproducers when useful;
+- actively try to disprove each suspected defect;
+- downgrade or discard claims contradicted by evidence;
+- do not report style preferences, speculative features, or already-documented limitations as defects.
+
+The shell runs inside an isolated environment. /workspace is the repository root and is read-only.
+The sandbox has no network. /tmp is private and writable for test/reproducer scratch data. Do not
+attempt to modify source files. Use shell for inspection and tests. Do not use shell to submit the
+answer.
+
+When the assessment is complete, call submit_report exactly once. The report must include:
+1. an executive verdict;
+2. each validated finding with severity, exact file/line or symbol, impact, evidence, and a minimal
+   remediation direction;
+3. rejected or downgraded hypotheses and why;
+4. commands/tests actually run and their outcomes;
+5. remaining uncertainty and uninspected areas.
+
+If no new validated defect remains, say so explicitly rather than manufacturing one.
+"""
+
+
+SHELL_TOOL = ToolSpec(
+    name="shell",
+    description=(
+        "Run one non-interactive shell command inside the isolated read-only repository. "
+        "The repository is /workspace; /tmp is writable; network is unavailable."
+    ),
+    parameters={
+        "command": ToolParameterSchema(
+            type="string",
+            description="A non-interactive shell command for inspection, tests, or a /tmp reproducer.",
+        )
+    },
+    required_params=["command"],
+)
+
+REPORT_TOOL = ToolSpec(
+    name="submit_report",
+    description="Submit the final repository assessment as Markdown and end the run.",
+    parameters={
+        "report": ToolParameterSchema(
+            type="string",
+            description="Complete self-contained Markdown assessment report.",
+        )
+    },
+    required_params=["report"],
+)
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def append_jsonl(path: Path, payload: dict[str, Any]) -> None:
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, sort_keys=True, ensure_ascii=False) + "\n")
+
+
+def clipped(text: str, limit: int = 24_000) -> tuple[str, bool, int]:
+    value = str(text or "")
+    length = len(value)
+    if length <= limit:
+        return value, False, length
+    head = 15_000
+    tail = limit - head
+    return (
+        value[:head] + "\n...[output clipped by harness]...\n" + value[-tail:],
+        True,
+        length,
+    )
+
+
+def sandbox_argv(root: Path, venv: Path, rg_path: Path, command: str) -> list[str]:
+    pythonpath = ":".join(
+        f"/workspace/{entry}/src"
+        for entry in (
+            "agent_lib",
+            "llm_engines",
+            "llm_harness_core",
+            "llm_inspector",
+            "engram",
+            "rag_lib",
+            "llm_inspector_ui",
+        )
+    )
+    return [
+        "bwrap",
+        "--unshare-all",
+        "--die-with-parent",
+        "--new-session",
+        "--ro-bind",
+        "/usr",
+        "/usr",
+        "--ro-bind",
+        "/bin",
+        "/bin",
+        "--ro-bind",
+        "/lib",
+        "/lib",
+        "--ro-bind",
+        "/lib64",
+        "/lib64",
+        "--ro-bind",
+        str(venv),
+        "/venv",
+        "--dir",
+        "/tools",
+        "--ro-bind",
+        str(rg_path),
+        "/tools/rg",
+        "--ro-bind",
+        str(root),
+        "/workspace",
+        "--tmpfs",
+        "/tmp",
+        "--proc",
+        "/proc",
+        "--dev",
+        "/dev",
+        "--setenv",
+        "PATH",
+        "/venv/bin:/tools:/usr/bin:/bin",
+        "--setenv",
+        "PYTHONPATH",
+        pythonpath,
+        "--setenv",
+        "PYTHONDONTWRITEBYTECODE",
+        "1",
+        "--setenv",
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD",
+        "1",
+        "--setenv",
+        "PYTEST_ADDOPTS",
+        "-p no:cacheprovider",
+        "--setenv",
+        "HOME",
+        "/tmp/home",
+        "--chdir",
+        "/workspace",
+        "/bin/bash",
+        "--noprofile",
+        "--norc",
+        "-c",
+        command,
+    ]
+
+
+def run_shell(root: Path, venv: Path, rg_path: Path, command: str) -> dict[str, Any]:
+    started = time.perf_counter()
+    proc = subprocess.Popen(
+        sandbox_argv(root, venv, rg_path, command),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    timed_out = False
+    try:
+        stdout, stderr = proc.communicate(timeout=120)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        os.killpg(proc.pid, signal.SIGKILL)
+        stdout, stderr = proc.communicate()
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    stdout_value, stdout_clipped, stdout_length = clipped(stdout)
+    stderr_value, stderr_clipped, stderr_length = clipped(stderr)
+    payload = {
+        "command": command,
+        "returncode": None if timed_out else proc.returncode,
+        "timed_out": timed_out,
+        "elapsed_ms": round(elapsed_ms, 3),
+        "stdout": stdout_value,
+        "stderr": stderr_value,
+        "stdout_clipped": stdout_clipped,
+        "stderr_clipped": stderr_clipped,
+        "stdout_length": stdout_length,
+        "stderr_length": stderr_length,
+    }
+    return payload
+
+
+def tool_output(result: dict[str, Any]) -> str:
+    return json.dumps(result, sort_keys=True, ensure_ascii=False)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--venv", type=Path, required=True)
+    parser.add_argument("--rg", type=Path, required=True)
+    parser.add_argument("--base-url", required=True)
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--transcript", type=Path, required=True)
+    parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--metadata", type=Path, required=True)
+    parser.add_argument("--turn-budget", type=int, default=45)
+    parser.add_argument("--seed", type=int, default=7)
+    args = parser.parse_args()
+
+    for path in (args.transcript, args.report, args.metadata):
+        if path.exists():
+            parser.error(f"refusing to overwrite {path}")
+    if not args.root.is_dir() or not args.venv.is_dir() or not args.rg.is_file():
+        parser.error("root, venv, or rg path is invalid")
+
+    prompt_digest = hashlib.sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest()
+    metadata: dict[str, Any] = {
+        "schema": "temporary-repository-assessment-run/v1",
+        "started_at": utc_now(),
+        "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+        "target_root": str(args.root),
+        "model": Path(args.model).name,
+        "base_url_retained": False,
+        "thinking": False,
+        "temperature": 0,
+        "seed": args.seed,
+        "turn_budget": args.turn_budget,
+        "prompt_sha256": prompt_digest,
+        "sandbox": {
+            "engine": "bubblewrap",
+            "repository_read_only": True,
+            "network_unshared": True,
+            "private_tmp": True,
+            "host_fallback": False,
+        },
+    }
+
+    engine = OpenAIEngine(
+        model=args.model,
+        api_key="not-required",
+        base_url=args.base_url,
+        is_cloud=False,
+        timeout=180,
+    )
+    messages: list[ChatMessage] = [
+        ChatMessage(role="system", content=SYSTEM_PROMPT),
+        ChatMessage(
+            role="user",
+            content=(
+                "Assess the repository in /workspace. Begin by reading its agent instructions and "
+                "current architecture/status documents, then investigate the implementation."
+            ),
+        ),
+    ]
+    total_input = 0
+    total_output = 0
+    shell_calls = 0
+    rejected_calls = 0
+    completion_mode = "none"
+    final_report: str | None = None
+
+    for turn in range(1, args.turn_budget + 1):
+        response = engine.generate_with_tools(
+            GenerationRequest(
+                messages=messages,
+                max_tokens=2048,
+                temperature=0,
+                thinking=False,
+                seed=args.seed,
+            ),
+            [SHELL_TOOL, REPORT_TOOL],
+        )
+        total_input += response.usage.input_tokens or 0
+        total_output += response.usage.output_tokens or 0
+        calls = response.message.tool_calls
+        append_jsonl(
+            args.transcript,
+            {
+                "at": utc_now(),
+                "event": "assistant",
+                "turn": turn,
+                "content": response.text,
+                "finish_reason": response.finish_reason,
+                "seed_status": response.seed_status,
+                "usage": response.usage.model_dump(mode="json"),
+                "tool_calls": [call.model_dump(mode="json") for call in calls],
+            },
+        )
+        messages.append(response.message)
+
+        report_calls = [call for call in calls if call.name == "submit_report"]
+        if report_calls:
+            candidate = report_calls[0].arguments.get("report")
+            if isinstance(candidate, str) and candidate.strip():
+                final_report = candidate.strip() + "\n"
+                completion_mode = "natural"
+                break
+            rejected_calls += 1
+
+        if not calls:
+            messages.append(
+                ChatMessage(
+                    role="user",
+                    content="Continue investigating with shell, or call submit_report when complete.",
+                )
+            )
+            continue
+
+        for call in calls:
+            if call.name == "shell":
+                command = call.arguments.get("command")
+                if not isinstance(command, str) or not command.strip():
+                    result = {"error": "shell requires a non-empty command"}
+                    rejected_calls += 1
+                else:
+                    shell_calls += 1
+                    result = run_shell(args.root, args.venv, args.rg, command)
+                append_jsonl(
+                    args.transcript,
+                    {
+                        "at": utc_now(),
+                        "event": "tool",
+                        "turn": turn,
+                        "tool": "shell",
+                        "call_id": call.call_id,
+                        "result": result,
+                    },
+                )
+                messages.append(
+                    ChatMessage(
+                        role="tool",
+                        name="shell",
+                        tool_call_id=call.call_id,
+                        content=tool_output(result),
+                    )
+                )
+            elif call.name != "submit_report":
+                rejected_calls += 1
+                result = {"error": f"unknown tool {call.name!r}"}
+                messages.append(
+                    ChatMessage(
+                        role="tool",
+                        name=call.name,
+                        tool_call_id=call.call_id,
+                        content=tool_output(result),
+                    )
+                )
+
+    if final_report is None:
+        response = engine.generate_with_tools(
+            GenerationRequest(
+                messages=messages
+                + [
+                    ChatMessage(
+                        role="user",
+                        content=(
+                            "The investigation turn budget is exhausted. Do not inspect further. "
+                            "Submit the complete report now using submit_report."
+                        ),
+                    )
+                ],
+                max_tokens=4096,
+                temperature=0,
+                thinking=False,
+                seed=args.seed,
+            ),
+            [REPORT_TOOL],
+        )
+        total_input += response.usage.input_tokens or 0
+        total_output += response.usage.output_tokens or 0
+        append_jsonl(
+            args.transcript,
+            {
+                "at": utc_now(),
+                "event": "forced_report",
+                "turn": args.turn_budget + 1,
+                "content": response.text,
+                "finish_reason": response.finish_reason,
+                "seed_status": response.seed_status,
+                "usage": response.usage.model_dump(mode="json"),
+                "tool_calls": [call.model_dump(mode="json") for call in response.message.tool_calls],
+            },
+        )
+        report_calls = [
+            call for call in response.message.tool_calls if call.name == "submit_report"
+        ]
+        if report_calls and isinstance(report_calls[0].arguments.get("report"), str):
+            final_report = report_calls[0].arguments["report"].strip() + "\n"
+        elif response.text.strip():
+            final_report = response.text.strip() + "\n"
+        else:
+            final_report = "# Repository assessment\n\nNo report was produced.\n"
+        completion_mode = "forced"
+
+    args.report.write_text(final_report, encoding="utf-8")
+    metadata.update(
+        {
+            "finished_at": utc_now(),
+            "completion_mode": completion_mode,
+            "lifecycle": "final" if completion_mode == "natural" else "aborted",
+            "shell_tool_calls": shell_calls,
+            "rejected_tool_calls": rejected_calls,
+            "input_tokens": total_input,
+            "output_tokens": total_output,
+            "transcript_sha256": hashlib.sha256(args.transcript.read_bytes()).hexdigest(),
+            "report_sha256": hashlib.sha256(args.report.read_bytes()).hexdigest(),
+        }
+    )
+    args.metadata.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps(metadata, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

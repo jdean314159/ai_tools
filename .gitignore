@@ -49,6 +49,7 @@ docs/projects/knowledge_mvp/REVIEW_MANIFEST.json
 *.log
 !**/tests/fixtures/*.log
 *.jsonl
+!docs/projects/repository_assessment/runs/**/*.jsonl
 telemetry.jsonl
 calibration.json
 models/

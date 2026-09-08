@@ -1,0 +1,36 @@
+{
+  "corrected_head": {
+    "commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+    "exit_code": 0,
+    "failed": 0,
+    "passed": 3
+  },
+  "graded_at": "2026-09-07T13:11:25Z",
+  "grader": {
+    "path": "../../tools/test_known_defects_at_83e1d09.py",
+    "sha256": "e02288e330e84014298ae4c8420aa4f2a88223cbe11ddef1b4e3c0e9f5079bcb",
+    "tests": [
+      "batch_storage_indexes_each_accepted_episode_once",
+      "dead_pid_text_does_not_replace_locked_inode",
+      "disk_bm25_cache_rebuilds_after_store_mutation"
+    ]
+  },
+  "model_report": {
+    "false_positive_count": 0,
+    "known_defect_recall": {
+      "denominator": 3,
+      "numerator": 0
+    },
+    "precision": null,
+    "precision_omission_reason": "undefined because the report contained zero validated findings"
+  },
+  "python": "3.13.9",
+  "schema": "temporary-known-defect-adjudication/v1",
+  "target": {
+    "commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+    "exit_code": 1,
+    "failed": 3,
+    "passed": 0,
+    "source": "git archive of the target commit"
+  }
+}

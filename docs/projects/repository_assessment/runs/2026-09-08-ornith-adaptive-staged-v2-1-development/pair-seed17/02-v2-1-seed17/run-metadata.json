@@ -1,0 +1,816 @@
+{
+  "accepted_findings": [],
+  "authoritative_report": "deterministic_controller_renderer",
+  "base_url_retained": false,
+  "budgets": {
+    "scout_call_maximum": 18,
+    "scout_calls_per_scope": 2,
+    "shell_call_ceiling": 45,
+    "verifier_call_maximum": 27,
+    "verifier_calls_per_hypothesis": 9
+  },
+  "completion_mode": "incomplete",
+  "condition": "adaptive_staged_v2_1",
+  "critic": {
+    "calls": 1,
+    "records": [
+      {
+        "decision": "insufficient_evidence",
+        "index": 2,
+        "rationale": "The claim asserts a specific implementation of `reciprocal_rank_fusion` (sum of 1/(k + rank) with rank starting at 1, default k=60, absent items scoring 0). The contract_quote supports the summation formula and the absent-item behavior, but it does not demonstrate the two key quantitative details: (1) that ranks are enumerated starting at 1, and (2) that the default value of k is 60. The behavior_quote ('shared 0.03278688524590164') is an unverified output value with no supporting computation, input, or k value to confirm it derives from the claimed formula. The disconfirmation_quote only confirms absent items are absent, not the rank enumeration or k default. Without evidence tying the output to the exact formula (rank \u2265 1, k = 60), the claim's quantitative specifics are unverified. The impact statement ('no violation') is itself an assertion not independently demonstrated by the supplied evidence.",
+        "scope": "engram",
+        "usage": {
+          "input_tokens": 357,
+          "latency_ms": 3544.914,
+          "output_tokens": 237,
+          "total_tokens": 594
+        },
+        "verification": {
+          "behavior_call_id": "shell-2",
+          "behavior_quote": "shared 0.03278688524590164",
+          "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "contract_call_id": "shell-1",
+          "contract_quote": "scores[item_id] = scores.get(item_id, 0.0) + 1.0 / (k + rank)",
+          "decision": "confirmed",
+          "disconfirmation_call_id": "shell-3",
+          "disconfirmation_quote": "absent item present? False",
+          "evidence_validation": {
+            "errors": [],
+            "valid": true
+          },
+          "expected_behavior": "For each ranked list, enumerate ranks starting at 1 and add 1.0/(k + rank) to the item's running score; items in multiple lists have scores summed; items absent from all lists are absent (score 0). Default k=60.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "impact": "None \u2014 behavior matches the invariant exactly; no violation.",
+          "remediation": "None \u2014 implementation is correct.",
+          "scope": "engram",
+          "selection": {
+            "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+            "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+            "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+            "production_path": "engram/src/engram/retrieval/hybrid.py",
+            "symbol": "reciprocal_rank_fusion"
+          },
+          "structured_before_forcing": true,
+          "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+        }
+      }
+    ]
+  },
+  "dossiers": {
+    "schema": "temporary-repository-package-dossier/v1",
+    "sha256": {
+      "action_trajectory_loop_guard": "86244fea50efc2dda276e2e1a827cce5eb1f5b970ad887e423860f3212fe9697",
+      "agent_lib": "f6c60630b0dc1ee3fc0599b101997390cc507e51b8f1e50c2c142e07179c6e52",
+      "engram": "b886edfc72be28229c121f2cebd0e213a7f23f2e8eb68a6f7290cbc7c4baef0e",
+      "llm_engines": "a32616f2ea66069043537d99320d7563f6252c5df85007a7a36a2422bb8ee9a6",
+      "llm_harness_core": "ad7961f367a9bd557756b58b12f21e34436fe1a3ab3eefb5172e2593327ebebb",
+      "llm_inspector": "62c315ea7e645a5297110dbdb30d0d3e56a241d17f4d6e9d2f06f310558bf565",
+      "llm_inspector_ui": "8e4948dc429c5b27fd2c2a4d7831f0ca77bd3147067be8fa54eb20d75f6ea81f",
+      "mail_lib": "7de090e06d0b6d5a79dbcb68f56581f95ab2749b8fc7dfde41ca4ff3874b1149",
+      "rag_lib": "8c5c5c1355ede22dc0000653670df9ef47e46cfee8e62bcbd9eced89770835b9"
+    }
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-08T03:54:52.040597Z",
+  "lifecycle": "aborted",
+  "max_scope_concentration": 0.21428571428571427,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "promotion": {
+    "records": [
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "return _trace_to_inspector_trace(req, prompt_trace, prompt_tokens=result.diagnostics.get(\"prompt_tokens\"), interop_events=result.diagnostics.get(\"trace_events\"))",
+        "claim": "Given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+        "contract_call_id": "shell-2",
+        "contract_quote": "def trace_to_memory_records(trace) -> list[MemoryRecord]: return [item.to_memory_record() for item in trace.context.evidence]",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "evidence_flows = _interop_events_to_evidence_flows(raw_events)",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_augment_via_interop populates ContextResult.evidence_flows from interop events via _interop_events_to_evidence_flows, but never calls trace_to_memory_records; the memory-record conversion mechanism described in the invariant is absent from the implementation.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+        "impact": "The invariant's core mechanism (trace_to_memory_records) is not exercised; the method builds evidence flows directly from interop events without the memory-record conversion path the invariant asserts.",
+        "original_disposition": "disproved",
+        "scope": "llm_inspector",
+        "selection": {
+          "disconfirmation_plan": "Call EngramAugmenter._augment_via_interop with a synthetic AugmentRequest wrapping a Trace that has interop events, and assert that the returned ContextResult.evidence_flows is non-empty and that trace_to_memory_records was exercised; if the method instead raises, returns empty evidence flows, or delegates to _augment_via_legacy_trace, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+          "invariant": "When given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+          "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "symbol": "EngramAugmenter._augment_via_interop"
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py:EngramAugmenter._augment_via_interop; llm_inspector/src/llm_inspector/adapters/engram_adapter.py:_trace_to_inspector_trace; llm_inspector/src/llm_inspector/interop.py:trace_to_memory_records"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "a 0.03278688524590164 (equals 1/61 + 1/62); single-list items equal 1/(k+rank)",
+        "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "scores[item_id] = scores.get(item_id, 0.0) + 1.0 / (k + rank)",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "No alternative rank-penalty formula or fusion constant found; reproduction matches expected 1/(k+rank) sums exactly.",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "For each ranked list, enumerate ranks starting at 1 and add 1.0/(k + rank) to the item's running score; items in multiple lists have scores summed; items absent from all lists are absent (score 0). Default k=60.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "impact": "None \u2014 behavior matches the invariant exactly; no violation.",
+        "original_disposition": "supported",
+        "scope": "engram",
+        "selection": {
+          "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "production_path": "engram/src/engram/retrieval/hybrid.py",
+          "symbol": "reciprocal_rank_fusion"
+        },
+        "structured_before_forcing": false,
+        "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "rrf_scores[cid] += (1.0 - self._bm25_weight) / (_RRF_K + rank)  ...  rrf_scores[cid] += self._bm25_weight / (_RRF_K + rank)",
+        "claim": "HybridRetriever._reciprocal_rank_fusion computes each item's fused score as the sum over the dense and BM25 lists of weight/(k + rank_in_that_list) with k=_RRF_K=60, and emits the merged items in strictly descending fused-score order.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "rrf_score = sum over lists of weight/(60 + rank); sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "_rrf_k = 60  # standard constant for Reciprocal Rank Fusion",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "For two equal-length ranked lists with known, non-overlapping ranks, the fused score of an item equals the sum of (1-bm25_weight)/(60+rank_dense) + bm25_weight/(60+rank_bm25) over the lists in which it appears, and the returned list is sorted by descending fused score.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "impact": "None; the invariant holds as implemented.",
+        "original_disposition": "supported",
+        "scope": "rag_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+          "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+          "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "symbol": "HybridRetriever._reciprocal_rank_fusion"
+        },
+        "structured_before_forcing": false,
+        "symbols": "rag_lib/src/rag_lib/retrieval/retriever.py:HybridRetriever._reciprocal_rank_fusion; _RRF_K=60"
+      }
+    ],
+    "rule": "supported then unresolved; seeded scope order; first three",
+    "selected": 3
+  },
+  "prompt_sha256": {
+    "scout": "2514e5ddbf71efa392fefdf33e6117f9af173e3a02aeed0b70f8c89c3ba7d9da",
+    "selection": "35a7a1704797c8dbd1aa265198f323e8fa5f3e03ac70761d218f4136e8e24286",
+    "verifier": "2e6206538af7da4a212516ca4fde259211cc74f661f5a59968e5fd44948db433"
+  },
+  "protocol_violations": [
+    "scout:llm_engines: no valid structured result",
+    "scout:agent_lib: no valid structured result"
+  ],
+  "remaining_uncertainty": "high",
+  "report_sha256": "a1c4bae96e76bc5abe0a97b4bebe53162ab62e0a97596f4a734e18ece5c5dae9",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-adaptive-staged-run/v2",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 2,
+    "agent_lib": 2,
+    "engram": 5,
+    "llm_engines": 2,
+    "llm_harness_core": 2,
+    "llm_inspector": 6,
+    "llm_inspector_ui": 2,
+    "mail_lib": 2,
+    "rag_lib": 5
+  },
+  "scope_order": [
+    "llm_inspector",
+    "llm_engines",
+    "agent_lib",
+    "engram",
+    "rag_lib",
+    "llm_harness_core",
+    "action_trajectory_loop_guard",
+    "llm_inspector_ui",
+    "mail_lib"
+  ],
+  "scouts": {
+    "results": [
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "return _trace_to_inspector_trace(req, prompt_trace, prompt_tokens=result.diagnostics.get(\"prompt_tokens\"), interop_events=result.diagnostics.get(\"trace_events\"))",
+        "claim": "Given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+        "contract_call_id": "shell-2",
+        "contract_quote": "def trace_to_memory_records(trace) -> list[MemoryRecord]: return [item.to_memory_record() for item in trace.context.evidence]",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "evidence_flows = _interop_events_to_evidence_flows(raw_events)",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_augment_via_interop populates ContextResult.evidence_flows from interop events via _interop_events_to_evidence_flows, but never calls trace_to_memory_records; the memory-record conversion mechanism described in the invariant is absent from the implementation.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+        "impact": "The invariant's core mechanism (trace_to_memory_records) is not exercised; the method builds evidence flows directly from interop events without the memory-record conversion path the invariant asserts.",
+        "original_disposition": "disproved",
+        "scope": "llm_inspector",
+        "selection": {
+          "disconfirmation_plan": "Call EngramAugmenter._augment_via_interop with a synthetic AugmentRequest wrapping a Trace that has interop events, and assert that the returned ContextResult.evidence_flows is non-empty and that trace_to_memory_records was exercised; if the method instead raises, returns empty evidence flows, or delegates to _augment_via_legacy_trace, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+          "invariant": "When given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+          "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "symbol": "EngramAugmenter._augment_via_interop"
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py:EngramAugmenter._augment_via_interop; llm_inspector/src/llm_inspector/adapters/engram_adapter.py:_trace_to_inspector_trace; llm_inspector/src/llm_inspector/interop.py:trace_to_memory_records"
+      },
+      {
+        "disposition": "no_result",
+        "scope": "llm_engines"
+      },
+      {
+        "disposition": "no_result",
+        "scope": "agent_lib"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "a 0.03278688524590164 (equals 1/61 + 1/62); single-list items equal 1/(k+rank)",
+        "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "scores[item_id] = scores.get(item_id, 0.0) + 1.0 / (k + rank)",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "No alternative rank-penalty formula or fusion constant found; reproduction matches expected 1/(k+rank) sums exactly.",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "For each ranked list, enumerate ranks starting at 1 and add 1.0/(k + rank) to the item's running score; items in multiple lists have scores summed; items absent from all lists are absent (score 0). Default k=60.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "impact": "None \u2014 behavior matches the invariant exactly; no violation.",
+        "original_disposition": "supported",
+        "scope": "engram",
+        "selection": {
+          "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "production_path": "engram/src/engram/retrieval/hybrid.py",
+          "symbol": "reciprocal_rank_fusion"
+        },
+        "structured_before_forcing": false,
+        "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "rrf_scores[cid] += (1.0 - self._bm25_weight) / (_RRF_K + rank)  ...  rrf_scores[cid] += self._bm25_weight / (_RRF_K + rank)",
+        "claim": "HybridRetriever._reciprocal_rank_fusion computes each item's fused score as the sum over the dense and BM25 lists of weight/(k + rank_in_that_list) with k=_RRF_K=60, and emits the merged items in strictly descending fused-score order.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "rrf_score = sum over lists of weight/(60 + rank); sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "_rrf_k = 60  # standard constant for Reciprocal Rank Fusion",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "For two equal-length ranked lists with known, non-overlapping ranks, the fused score of an item equals the sum of (1-bm25_weight)/(60+rank_dense) + bm25_weight/(60+rank_bm25) over the lists in which it appears, and the returned list is sorted by descending fused score.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "impact": "None; the invariant holds as implemented.",
+        "original_disposition": "supported",
+        "scope": "rag_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+          "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+          "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "symbol": "HybridRetriever._reciprocal_rank_fusion"
+        },
+        "structured_before_forcing": false,
+        "symbols": "rag_lib/src/rag_lib/retrieval/retriever.py:HybridRetriever._reciprocal_rank_fusion; _RRF_K=60"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "score=round(best, 3)",
+        "claim": "SimilarityEvaluator.evaluate computes cosine similarity over numeric vectors, returning a float in the closed interval [0, 1], where identical normalized vectors yield exactly 1.0, orthogonal vectors yield exactly 0.0, and scores are monotonically non-decreasing in true cosine similarity.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "best = max(SequenceMatcher(None, candidate.lower(), ref.lower()).ratio() for ref in refs)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "def evaluate(self, request: EvaluatorRequest) -> OperationResult[EvaluationResult]: refs = [ref for ref in (request.reference_answer, *request.expected_texts) if ref]",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "SimilarityEvaluator.evaluate operates on string inputs (request.candidate vs request.reference_answer / request.expected_texts) and returns the best difflib.SequenceMatcher.ratio() string-similarity score, rounded to 3 decimals, compared against a threshold \u2014 not a cosine-similarity score over numeric vectors.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "impact": "The hypothesized invariant (numeric-vector cosine similarity, exact 1.0/0.0 endpoints, monotonicity in true cosine similarity) does not apply: the evaluator takes strings and uses SequenceMatcher.ratio(), so the cosine-similarity contract is defeated by the implementation. No violation of a real contract exists; the expected behavior is string ratio similarity, not cosine similarity.",
+        "original_disposition": "disproved",
+        "scope": "llm_harness_core",
+        "selection": {
+          "disconfirmation_plan": "Construct a SimilarityEvaluator with a chosen metric, then call evaluate on pairs of vectors with known cosine similarity (identical, orthogonal, anti-parallel, and partial overlap). Assert that identical vectors produce exactly 1.0, orthogonal vectors produce exactly 0.0, and that scores never fall outside [0, 1] or fail monotonic ordering with respect to true cosine similarity. If a violation appears, verify it is not caused by passing malformed input (e.g., non-numeric or ragged vectors) rather than a genuine contract breach.",
+          "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "invariant": "SimilarityEvaluator.evaluate returns a float score in the closed interval [0, 1], where identical normalized vectors yield a score of exactly 1.0 and orthogonal vectors yield exactly 0.0, and the score is monotonically non-decreasing in cosine similarity.",
+          "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "symbol": "SimilarityEvaluator.evaluate"
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_harness_core/src/llm_harness_core/evaluators.py :: SimilarityEvaluator.evaluate"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "if not evidence: return 0.0",
+        "claim": "_novelty returns a non-negative float that is zero when the action signature exactly matches a previously seen signature and strictly increases (monotonically) as the set of differing normalized-argument positions grows, never exceeding the number of differing positions.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "novel = evidence - seen; return len(novel) / len(evidence)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "return len(novel) / len(evidence)",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_novelty returns 0.0 when evidence exactly matches seen evidence, and increases monotonically with the number of differing normalized-argument positions, never exceeding that count.",
+        "expected_behavior_source": "action_trajectory_loop_guard/tests/test_detector.py",
+        "impact": "none",
+        "original_disposition": "supported",
+        "scope": "action_trajectory_loop_guard",
+        "selection": {
+          "disconfirmation_plan": "Call _novelty on a signature identical to a prior one and assert the result is exactly 0.0; then call it with signatures differing in k distinct normalized-argument positions and assert the returned value is greater than the zero-difference case and does not exceed k. If a differing signature yields 0.0, or a single-difference signature yields a value greater than a two-difference signature, the invariant is falsified.",
+          "expected_behavior_source": "action_trajectory_loop_guard/tests/test_detector.py",
+          "invariant": "_novelty returns a non-negative float that is zero when the action signature exactly matches a previously seen signature and strictly increases (monotonically) as the set of differing normalized-argument positions grows, never exceeding the number of differing positions.",
+          "production_path": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+          "symbol": "_novelty"
+        },
+        "structured_before_forcing": false,
+        "symbols": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py::_novelty"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "engine_registry_bootstrap.py:222: def _coerce_model_descriptor(self, model_id: str, engine_id: str) -> Any:",
+        "claim": "LlmEnginesRegistry._coerce_model_descriptor takes a dict descriptor and returns a dict with keys exactly {\"engine\", \"model\", \"provider\"}, coercing engine/model to non-empty strings and defaulting provider to the engine value when not provided or falsy.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "def _coerce_model_descriptor(self, model_id: str, engine_id: str) -> Any: ... return self._ModelDescriptor(model_id=model_id, label=model_id, source=engine_id, installed=True)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "# ModelDescriptor fields: model_id, label, source, installed",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "LlmEnginesRegistry._coerce_model_descriptor(self, model_id: str, engine_id: str) -> Any takes two positional string arguments (model_id, engine_id) and constructs a llm_engines ModelDescriptor dataclass instance with fields model_id, label, source, installed \u2014 not a dict with keys {\"engine\", \"model\", \"provider\"}. There is no \"provider\" key, no \"engine\" key, and no dict return at all.",
+        "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "impact": "none",
+        "original_disposition": "disproved",
+        "scope": "llm_inspector_ui",
+        "selection": {
+          "disconfirmation_plan": "Call LlmEnginesRegistry._coerce_model_descriptor with a dict missing 'provider', with provider=None, and with provider=\"\" to verify the defaulting-to-engine behavior; also pass a dict where engine is an int or None to confirm coercion raises or normalizes as the source dictates. If the actual output keys or defaulting differ from the stated invariant, the hypothesis is falsified.",
+          "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+          "invariant": "_coerce_model_descriptor returns a dict with keys exactly {\"engine\", \"model\", \"provider\"} where engine is coerced to a non-empty string, model is coerced to a non-empty string, and provider defaults to the engine value when not explicitly provided or is falsy.",
+          "production_path": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+          "symbol": "LlmEnginesRegistry._coerce_model_descriptor"
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py::LlmEnginesRegistry._coerce_model_descriptor"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "assert old_result.priority == Priority.NORMAL",
+        "claim": "triage_message assigns Priority.URGENT only when the message is recent (within the configured cutoff) and is not from a self-addressed sender; a stale or self-sent message never receives URGENT priority.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "if not self_mail and flags.get(\"star\") and _is_recent(message.date): ... priority = Priority.URGENT",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "if _CALENDAR_RE.search(subject): if _is_recent(message.date, max_age_days=CALENDAR_MAX_AGE_DAYS): priority = Priority.URGENT",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "Both URGENT-promoting branches require _is_recent() to be True. The starred branch additionally requires `not self_mail`. A stale message (date older than cutoff) yields _is_recent() == False, so neither branch promotes to URGENT; a self-sent message is excluded from the starred branch.",
+        "expected_behavior_source": "mail_lib/triage.py",
+        "impact": "A stale or self-addressed message is never misclassified as URGENT; recency and non-self-sender are both enforced as gating facts before any URGENT promotion.",
+        "original_disposition": "supported",
+        "scope": "mail_lib",
+        "selection": {
+          "disconfirmation_plan": "Call triage_message with a MailMessage whose date is older than the cutoff and whose sender is not a self-address; assert the returned TriageResult.priority is not Priority.HIGH. Also call with a recent message from a non-self sender and assert priority is not HIGH. If a recent non-self message is classified HIGH, the recency signal is confirmed.",
+          "expected_behavior_source": "mail_lib/triage.py",
+          "invariant": "triage_message assigns Priority.HIGH only when the message is recent (within the configured cutoff) and is not from a self-addressed sender; a stale or self-sent message never receives HIGH priority.",
+          "production_path": "mail_lib/triage.py",
+          "symbol": "triage_message"
+        },
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/triage.py::triage_message, mail_lib/triage.py::_is_recent, mail_lib/triage.py::_is_self_mail"
+      }
+    ],
+    "structured": 7
+  },
+  "seed": 17,
+  "selections": {
+    "records": [
+      {
+        "disconfirmation_plan": "Call EngramAugmenter._augment_via_interop with a synthetic AugmentRequest wrapping a Trace that has interop events, and assert that the returned ContextResult.evidence_flows is non-empty and that trace_to_memory_records was exercised; if the method instead raises, returns empty evidence flows, or delegates to _augment_via_legacy_trace, the invariant is falsified.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+        "first_attempt": true,
+        "invariant": "When given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+        "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "scope": "llm_inspector",
+        "status": "accepted",
+        "symbol": "EngramAugmenter._augment_via_interop"
+      },
+      {
+        "disconfirmation_plan": "Write a test that feeds _extract_json a string containing a nested JSON object with escaped quotes and braces, verifying it returns the correctly delimited substring, and another case with no braces to confirm it raises StructuredOutputError. If the function instead uses json.loads or regex-based extraction with different boundary semantics, the expected outputs will differ, falsifying the hypothesis.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "first_attempt": true,
+        "invariant": "_extract_json returns the first JSON object found by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters, and raises StructuredOutputError when no braces are present in the input text.",
+        "production_path": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "scope": "llm_engines",
+        "status": "accepted",
+        "symbol": "StructuredOutputHandler._extract_json"
+      },
+      {
+        "disconfirmation_plan": "Instantiate NavigationWorkspace with a temp root, then call _denied_relative on \"../etc/passwd\", \"/etc/passwd\", and \"subdir/file.txt\". If the method returns False for the escaping paths or True for the in-bounds path, the invariant is falsified.",
+        "expected_behavior_source": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+        "first_attempt": true,
+        "invariant": "_denied_relative returns True for any path that escapes the workspace root via a leading \"../\" segment or an absolute path, and returns False for a relative path that stays within the root (e.g. \"subdir/file.txt\").",
+        "production_path": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+        "scope": "agent_lib",
+        "status": "accepted",
+        "symbol": "NavigationWorkspace._denied_relative"
+      },
+      {
+        "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "first_attempt": true,
+        "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "production_path": "engram/src/engram/retrieval/hybrid.py",
+        "scope": "engram",
+        "status": "accepted",
+        "symbol": "reciprocal_rank_fusion"
+      },
+      {
+        "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "first_attempt": true,
+        "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+        "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "scope": "rag_lib",
+        "status": "accepted",
+        "symbol": "HybridRetriever._reciprocal_rank_fusion"
+      },
+      {
+        "disconfirmation_plan": "Construct a SimilarityEvaluator with a chosen metric, then call evaluate on pairs of vectors with known cosine similarity (identical, orthogonal, anti-parallel, and partial overlap). Assert that identical vectors produce exactly 1.0, orthogonal vectors produce exactly 0.0, and that scores never fall outside [0, 1] or fail monotonic ordering with respect to true cosine similarity. If a violation appears, verify it is not caused by passing malformed input (e.g., non-numeric or ragged vectors) rather than a genuine contract breach.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "first_attempt": true,
+        "invariant": "SimilarityEvaluator.evaluate returns a float score in the closed interval [0, 1], where identical normalized vectors yield a score of exactly 1.0 and orthogonal vectors yield exactly 0.0, and the score is monotonically non-decreasing in cosine similarity.",
+        "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "scope": "llm_harness_core",
+        "status": "accepted",
+        "symbol": "SimilarityEvaluator.evaluate"
+      },
+      {
+        "disconfirmation_plan": "Call _novelty on a signature identical to a prior one and assert the result is exactly 0.0; then call it with signatures differing in k distinct normalized-argument positions and assert the returned value is greater than the zero-difference case and does not exceed k. If a differing signature yields 0.0, or a single-difference signature yields a value greater than a two-difference signature, the invariant is falsified.",
+        "expected_behavior_source": "action_trajectory_loop_guard/tests/test_detector.py",
+        "first_attempt": true,
+        "invariant": "_novelty returns a non-negative float that is zero when the action signature exactly matches a previously seen signature and strictly increases (monotonically) as the set of differing normalized-argument positions grows, never exceeding the number of differing positions.",
+        "production_path": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+        "scope": "action_trajectory_loop_guard",
+        "status": "accepted",
+        "symbol": "_novelty"
+      },
+      {
+        "disconfirmation_plan": "Call LlmEnginesRegistry._coerce_model_descriptor with a dict missing 'provider', with provider=None, and with provider=\"\" to verify the defaulting-to-engine behavior; also pass a dict where engine is an int or None to confirm coercion raises or normalizes as the source dictates. If the actual output keys or defaulting differ from the stated invariant, the hypothesis is falsified.",
+        "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "first_attempt": true,
+        "invariant": "_coerce_model_descriptor returns a dict with keys exactly {\"engine\", \"model\", \"provider\"} where engine is coerced to a non-empty string, model is coerced to a non-empty string, and provider defaults to the engine value when not explicitly provided or is falsy.",
+        "production_path": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "scope": "llm_inspector_ui",
+        "status": "accepted",
+        "symbol": "LlmEnginesRegistry._coerce_model_descriptor"
+      },
+      {
+        "disconfirmation_plan": "Call triage_message with a MailMessage whose date is older than the cutoff and whose sender is not a self-address; assert the returned TriageResult.priority is not Priority.HIGH. Also call with a recent message from a non-self sender and assert priority is not HIGH. If a recent non-self message is classified HIGH, the recency signal is confirmed.",
+        "expected_behavior_source": "mail_lib/triage.py",
+        "first_attempt": true,
+        "invariant": "triage_message assigns Priority.HIGH only when the message is recent (within the configured cutoff) and is not from a self-addressed sender; a stale or self-sent message never receives HIGH priority.",
+        "production_path": "mail_lib/triage.py",
+        "scope": "mail_lib",
+        "status": "accepted",
+        "symbol": "triage_message"
+      }
+    ],
+    "valid": 9
+  },
+  "shell_call_cap_bound": false,
+  "shell_tool_calls": 28,
+  "started_at": "2026-09-08T03:49:40.842314Z",
+  "substantive_coverage": {
+    "covered": 3,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [
+          "/workspace/action_trajectory_loop_guard/tests/test_detector.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/eval/navigation_workspace.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/engram/src/engram/retrieval/hybrid.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/utils/structured_output.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/tests/test_evaluators.py",
+          "/workspace/llm_harness_core/tests/test_memory_evaluation.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/evaluators.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "/workspace/llm_inspector/src/llm_inspector/interop.py"
+        ]
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/services/engine_service.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/tests/test_mail_lib.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/mail_lib/__init__.py",
+          "/workspace/mail_lib/thunderbird.py",
+          "/workspace/mail_lib/triage.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/retrieval/retriever.py",
+          "/workspace/rag_lib/src/rag_lib/storage/base.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "6fd01eaa934fd43b4f4d50820114710b81c7e0b468b5d66363e561c1e529c0e9",
+  "usage": {
+    "input_tokens": 328415,
+    "model_calls": 46,
+    "output_tokens": 14125
+  },
+  "verifiers": {
+    "results": [
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "return _trace_to_inspector_trace(req, prompt_trace, prompt_tokens=result.diagnostics.get(\"prompt_tokens\"), interop_events=result.diagnostics.get(\"trace_events\"))",
+        "claim": "The invariant is false: given an AugmentRequest whose trace exposes interop events, EngramAugmenter._augment_via_interop populates ContextResult.evidence_flows directly via _interop_events_to_evidence_flows and never calls trace_to_memory_records. The invariant's core mechanism (converting interop events into memory records via trace_to_memory_records) is absent from the implementation.",
+        "contract_call_id": "shell-2",
+        "contract_quote": "def trace_to_memory_records(trace) -> list[MemoryRecord]: return [item.to_memory_record() for item in trace.context.evidence]",
+        "decision": "insufficient_evidence",
+        "disconfirmation_call_id": "shell-3",
+        "disconfirmation_quote": "evidence_flows = _interop_events_to_evidence_flows(raw_events)",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_augment_via_interop populates ContextResult.evidence_flows from interop events via _interop_events_to_evidence_flows, but never calls trace_to_memory_records; the memory-record conversion mechanism described in the invariant is absent from the implementation.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+        "impact": "The invariant's core mechanism (trace_to_memory_records) is not exercised; _augment_via_interop builds evidence flows directly from interop events via _interop_events_to_evidence_flows without the memory-record conversion path the invariant asserts. trace_to_memory_records is defined and exported but never invoked anywhere in the source tree.",
+        "original_decision": "confirmed",
+        "remediation": "Either the invariant is misdescribing the implementation and should be corrected to reference _interop_events_to_evidence_flows, or trace_to_memory_records should actually be wired into the evidence-flow construction if memory-record conversion is intended.",
+        "scope": "llm_inspector",
+        "selection": {
+          "disconfirmation_plan": "Call EngramAugmenter._augment_via_interop with a synthetic AugmentRequest wrapping a Trace that has interop events, and assert that the returned ContextResult.evidence_flows is non-empty and that trace_to_memory_records was exercised; if the method instead raises, returns empty evidence flows, or delegates to _augment_via_legacy_trace, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+          "invariant": "When given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+          "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "symbol": "EngramAugmenter._augment_via_interop"
+        },
+        "structured_before_forcing": true,
+        "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py:EngramAugmenter._augment_via_interop; llm_inspector/src/llm_inspector/adapters/engram_adapter.py:_trace_to_inspector_trace; llm_inspector/src/llm_inspector/adapters/engram_adapter.py:_interop_events_to_evidence_flows; llm_inspector/src/llm_inspector/interop.py:trace_to_memory_records"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "shared 0.03278688524590164",
+        "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "scores[item_id] = scores.get(item_id, 0.0) + 1.0 / (k + rank)",
+        "decision": "confirmed",
+        "disconfirmation_call_id": "shell-3",
+        "disconfirmation_quote": "absent item present? False",
+        "evidence_validation": {
+          "errors": [],
+          "valid": true
+        },
+        "expected_behavior": "For each ranked list, enumerate ranks starting at 1 and add 1.0/(k + rank) to the item's running score; items in multiple lists have scores summed; items absent from all lists are absent (score 0). Default k=60.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "impact": "None \u2014 behavior matches the invariant exactly; no violation.",
+        "remediation": "None \u2014 implementation is correct.",
+        "scope": "engram",
+        "selection": {
+          "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "production_path": "engram/src/engram/retrieval/hybrid.py",
+          "symbol": "reciprocal_rank_fusion"
+        },
+        "structured_before_forcing": true,
+        "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "returned ids: ['A', 'B', 'C']",
+        "claim": "HybridRetriever._reciprocal_rank_fusion computes each item's fused score as the sum over the dense and BM25 lists of weight/(k + rank_in_that_list) with k=_RRF_K=60 (dense weight = 1-bm25_weight, BM25 weight = bm25_weight), and emits the merged items in strictly descending fused-score order.",
+        "contract_call_id": "shell-3",
+        "contract_quote": "_rrf_k = 60  # standard constant for Reciprocal Rank Fusion",
+        "decision": "insufficient_evidence",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "returned scores: [0.009836, 0.009677, 0.009524]",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "For two equal-length ranked lists with known, non-overlapping ranks, the fused score of an item equals the sum of (1-bm25_weight)/(60+rank_dense) + bm25_weight/(60+rank_bm25) over the lists in which it appears, and the returned list is sorted by descending fused score.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "impact": "The RRF fusion in Stage-1 hybrid retrieval correctly implements the weighted reciprocal-rank fusion formula with k=60 and emits candidates in descending fused-score order. The invariant holds as implemented; no defect.",
+        "original_decision": "confirmed",
+        "remediation": "None; the invariant holds as implemented.",
+        "scope": "rag_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+          "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+          "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "symbol": "HybridRetriever._reciprocal_rank_fusion"
+        },
+        "structured_before_forcing": true,
+        "symbols": "rag_lib/src/rag_lib/retrieval/retriever.py:HybridRetriever._reciprocal_rank_fusion; _RRF_K=60 (line 26); dense accumulation line 354; bm25 accumulation line 359; sorted_ids line 366"
+      }
+    ],
+    "structured": 3
+  }
+}

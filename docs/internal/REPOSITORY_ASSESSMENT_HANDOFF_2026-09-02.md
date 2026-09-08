@@ -10,6 +10,57 @@ implements the recorder and honest backfill for the completed GLM/Qwen runs.
 This is profile and recorder work, not another repository cleanup campaign and
 not authorization to fix every issue discovered by the model comparison.
 
+## 2026-09-06 addendum
+
+The earlier GLM/Qwen `/tmp` inputs listed below are no longer present, so they
+cannot be honestly backfilled from exact bytes. Their prompts and dirty-tree
+fingerprints were not retained; the historical table is context, not a
+controlled comparison with later work.
+
+A new Qwen3-Coder 30B-A3B pilot instead used frozen commit `83e1d09` and an
+independent three-defect grader. Exact evidence is retained under
+`docs/projects/repository_assessment/`; the target fails 3/3 and corrected HEAD
+passes 3/3, while the model recalled 0/3. The subsequent preregistered paired
+planner comparison is also complete: both conditions had median recall 0/3,
+independently corrected coverage was baseline 1/9 versus planner 0/9, and
+natural completion was baseline 3/3 versus planner 1/3. The harness-recorded
+field undercounted two baselines because it excluded relevant root-level tests
+and callers permitted by the preregistration. The planner improved uncertainty
+calibration but not task success. This
+addendum does not supply the still-required explicit
+`repository-assessment/v1` profile draft and does not authorize schema
+implementation.
+
+The subsequent matched Q4_0/Q8_0 cache experiment also completed. Both cache
+conditions scored 0/3 recall in all three baseline seeds and corrected median
+coverage 1/9. Q8_0 changed all three trajectories and concentrated them on
+Engram, but produced three false positives versus two under Q4_0. Cache type is
+user-reported because the endpoint does not expose it; blocked order and the
+required server restart limit causal attribution. Exact results are in
+`docs/projects/repository_assessment/QWEN3-CODER-30B-A3B-KV-CACHE-COMPARISON-2026-09-07.md`.
+
+An Ornith 1.5 35B follow-up used the same frozen target, grader, baseline
+prompt, seeds, and turn budget. It passed all 44 prerequisite observations but
+recalled 0/3 graded defects in every repository seed and required forced
+completion in 3/3. Two seeds read the explicit OPEN Engram items later in this
+handoff lineage and correctly reproduced them. Independent execution confirms
+that `ProjectMemory.get_facts()` bypasses recall-policy filtering and extracted
+facts omit trust provenance on both the target and current HEAD. These are
+verified supplied leads, not new hidden-defect discoveries. The result and raw
+evidence are under `docs/projects/repository_assessment/`; no production
+artifact profile was introduced.
+
+The following staged Ornith treatment masked historical internal/project
+documents and used nine fresh-context package scouts, fresh verifiers, an
+evidence critic, and constrained synthesis under the same 45-shell-call
+ceiling. Median coverage improved from 1/9 to 7/9, median concentration fell
+from 62.2% to 11.1%, and median cumulative input fell 94.6%, but all three
+seeds still recalled 0/3 hidden defects. Both proposed candidates were
+non-defects and were removed by verifier/critic gates. This is evidence that
+external structure controls allocation, stopping, calibration, and token
+growth without necessarily supplying defect judgment. It still does not
+authorize the deferred production artifact profile.
+
 ## Settled decisions
 
 1. Use the existing `llm_harness_core.RunArtifact` common envelope. The

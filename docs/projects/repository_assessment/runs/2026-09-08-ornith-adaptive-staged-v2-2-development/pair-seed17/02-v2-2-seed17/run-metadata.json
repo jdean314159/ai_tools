@@ -1,0 +1,966 @@
+{
+  "accepted_findings": [],
+  "authoritative_report": "deterministic_controller_renderer",
+  "base_url_retained": false,
+  "budgets": {
+    "scout_call_maximum": 18,
+    "scout_calls_per_scope": 2,
+    "shell_call_ceiling": 45,
+    "verifier_call_maximum": 27,
+    "verifier_calls_per_hypothesis": 9
+  },
+  "completion_mode": "structured",
+  "condition": "adaptive_staged_v2_2",
+  "critic": {
+    "calls": 1,
+    "records": [
+      {
+        "decision": "insufficient_evidence",
+        "index": 2,
+        "rationale": "The claim asserts a specific implementation behavior for `reciprocal_rank_fusion` (summing 1/(k + rank) across lists, summing scores for items in multiple lists, and zero for absent items). The provided evidence contains only the claim, contract quote, disconfirmation quote, expected behavior, and a symbol reference. None of these demonstrate the actual implementation logic or its computed output. The disconfirmation_quote merely shows a call signature (`reciprocal_rank_fusion(ranked_lists, k=k, id_key=\"id\")`) and does not verify the scoring formula, the summation behavior, or the zero-score handling. Without evidence of the implementation's actual computation or its output on a test case, the claimed behavior and its impact cannot be verified. The impact statement ('no violation detected') is an assertion, not evidence of the implementation's behavior.",
+        "scope": "engram",
+        "usage": {
+          "input_tokens": 369,
+          "latency_ms": 3207.094,
+          "output_tokens": 196,
+          "total_tokens": 565
+        },
+        "verification": {
+          "behavior_call_id": "shell-4",
+          "behavior_quote": "a 0.03252247488101534",
+          "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as the sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "contract_call_id": "shell-1",
+          "contract_quote": "score = sum(1 / (k + rank)) across all lists.",
+          "decision": "confirmed",
+          "disconfirmation_call_id": "shell-6",
+          "disconfirmation_quote": "fused = reciprocal_rank_fusion(ranked_lists, k=k, id_key=\"id\")",
+          "evidence_validation": {
+            "errors": [],
+            "valid": true
+          },
+          "expected_behavior": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "impact": "None \u2014 the implementation conforms to the RRF contract; no violation detected.",
+          "remediation": "None \u2014 implementation matches the documented RRF contract.",
+          "reported_expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "reported_symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion",
+          "scope": "engram",
+          "selection": {
+            "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+            "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+            "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+            "production_path": "engram/src/engram/retrieval/hybrid.py",
+            "symbol": "reciprocal_rank_fusion"
+          },
+          "selection_binding": {
+            "errors": [],
+            "valid": true
+          },
+          "structured_before_forcing": true,
+          "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+        }
+      }
+    ]
+  },
+  "dossiers": {
+    "schema": "temporary-repository-package-dossier/v1",
+    "sha256": {
+      "action_trajectory_loop_guard": "86244fea50efc2dda276e2e1a827cce5eb1f5b970ad887e423860f3212fe9697",
+      "agent_lib": "f6c60630b0dc1ee3fc0599b101997390cc507e51b8f1e50c2c142e07179c6e52",
+      "engram": "b886edfc72be28229c121f2cebd0e213a7f23f2e8eb68a6f7290cbc7c4baef0e",
+      "llm_engines": "a32616f2ea66069043537d99320d7563f6252c5df85007a7a36a2422bb8ee9a6",
+      "llm_harness_core": "ad7961f367a9bd557756b58b12f21e34436fe1a3ab3eefb5172e2593327ebebb",
+      "llm_inspector": "62c315ea7e645a5297110dbdb30d0d3e56a241d17f4d6e9d2f06f310558bf565",
+      "llm_inspector_ui": "8e4948dc429c5b27fd2c2a4d7831f0ca77bd3147067be8fa54eb20d75f6ea81f",
+      "mail_lib": "7de090e06d0b6d5a79dbcb68f56581f95ab2749b8fc7dfde41ca4ff3874b1149",
+      "rag_lib": "8c5c5c1355ede22dc0000653670df9ef47e46cfee8e62bcbd9eced89770835b9"
+    }
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-08T13:00:08.379715Z",
+  "lifecycle": "final",
+  "max_scope_concentration": 0.2894736842105263,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "promotion": {
+    "records": [
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "Test 1 Output: '{\"key\": \"value with \\\\\"escaped\\\\\" quotes\"}'",
+        "claim": "StructuredOutputHandler._extract_json returns the first JSON object found by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters, and raises StructuredOutputError when no braces are present in the input text.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "for i, char in enumerate(text):\\n            if char in \"[{\":\\n                try:\\n                    _obj, end_idx = decoder.raw_decode(text, i)\\n                    return text[i:end_idx]",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "Test 2 (no braces): Output: None (did NOT raise)",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "The method returns the first JSON object by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters. When no braces are present, it raises StructuredOutputError.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "impact": "Callers relying on _extract_json to raise StructuredOutputError on brace-free input will instead receive None, since the implementation returns None rather than raising. Nested-brace and escaped-character extraction works correctly via raw_decode.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "reported_symbols": "StructuredOutputHandler._extract_json -> json.JSONDecoder.raw_decode",
+        "scope": "llm_engines",
+        "selection": {
+          "disconfirmation_plan": "Write a test that feeds _extract_json a string containing a nested JSON object with escaped quotes and braces, verifying it returns the correctly delimited substring, and another case with no braces to confirm it raises StructuredOutputError. If the function instead uses json.loads or regex-based extraction with different boundary semantics, the expected outputs will differ, falsifying the hypothesis.",
+          "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+          "invariant": "_extract_json returns the first JSON object found by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters, and raises StructuredOutputError when no braces are present in the input text.",
+          "production_path": "llm_engines/src/llm_engines/utils/structured_output.py",
+          "symbol": "StructuredOutputHandler._extract_json"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_engines/src/llm_engines/utils/structured_output.py::StructuredOutputHandler._extract_json"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "a 0.03278688524590164 (equals 1/61 + 1/62); b 0.016129032258064516 (equals 1/62)",
+        "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as the sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "score = sum(1 / (k + rank)) across all lists. k=60 from original paper; configurable.",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "grep for reciprocal_rank_fusion outside hybrid.py found only test_rrf.py references, which assert the same formula \u2014 no contradictory implementation exists.",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "impact": "None \u2014 the implementation conforms to the RRF contract; no violation detected.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "reported_symbols": "engram/src/engram/retrieval/hybrid.py:reciprocal_rank_fusion",
+        "scope": "engram",
+        "selection": {
+          "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "production_path": "engram/src/engram/retrieval/hybrid.py",
+          "symbol": "reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "for cid in sorted_ids: if cid in dense_map: chunk = dense_map[cid]; result.append(chunk)",
+        "claim": "HybridRetriever._reciprocal_rank_fusion does not emit items in strictly descending fused-score order and does not include all fused items \u2014 it drops BM25-only results, so the returned ranking is not a complete, strictly-descending RRF merge as the invariant requires.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "# Build a lookup from chunk_id \u2192 StoredChunk for dense results ... Sort by RRF score and return StoredChunks (dense results only for now; BM25-only results would need a separate fetch \u2014 acceptable for Phase 1)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "for rank, (cid, _score) in enumerate(bm25, start=1): rrf_scores[cid] += self._bm25_weight / (_RRF_K + rank)",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "impact": "The RRF fusion silently discards BM25-only results (only dense_map chunks are emitted), so the merged ranking is incomplete and does not reflect the true reciprocal-rank-fusion ordering over the full candidate set \u2014 violating the invariant's completeness and strict-descending-order guarantees.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "reported_symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion",
+        "scope": "rag_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+          "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+          "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "symbol": "HybridRetriever._reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion"
+      }
+    ],
+    "rule": "supported then unresolved; seeded scope order; first three",
+    "selected": 3
+  },
+  "prompt_sha256": {
+    "scout": "4cd05834f9f64e4bc8dbabd493200811a6ab2d1d12e50239ea676528603f2a42",
+    "selection": "35a7a1704797c8dbd1aa265198f323e8fa5f3e03ac70761d218f4136e8e24286",
+    "verifier": "1ff7f5200f3dee9c834415418d33f733f9d5bd607e9d74511ab344a72b9f5ca0"
+  },
+  "protocol_violations": [
+    "scout:rag_lib: attempted shell call beyond budget",
+    "scout:llm_inspector_ui: attempted shell call beyond budget"
+  ],
+  "remaining_uncertainty": "high",
+  "report_sha256": "81447ffed06d7447c44735f1fd045af028d067723de27c03a7001937843645b9",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-adaptive-staged-run/v3",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 2,
+    "agent_lib": 2,
+    "engram": 8,
+    "llm_engines": 7,
+    "llm_harness_core": 2,
+    "llm_inspector": 2,
+    "llm_inspector_ui": 2,
+    "mail_lib": 2,
+    "rag_lib": 11
+  },
+  "scope_order": [
+    "llm_inspector",
+    "llm_engines",
+    "agent_lib",
+    "engram",
+    "rag_lib",
+    "llm_harness_core",
+    "action_trajectory_loop_guard",
+    "llm_inspector_ui",
+    "mail_lib"
+  ],
+  "scouts": {
+    "results": [
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "def _augment_via_interop(self, pm, req): ... return _trace_to_inspector_trace(req, prompt_trace, prompt_tokens=..., interop_events=result.diagnostics.get(\"trace_events\"))",
+        "claim": "Given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+        "contract_call_id": "shell-2",
+        "contract_quote": "def trace_to_memory_records(trace) -> list[MemoryRecord]: return [item.to_memory_record() for item in trace.context.evidence]",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "evidence_flows = _interop_events_to_evidence_flows(raw_events)  (no call to trace_to_memory_records anywhere in _augment_via_interop path)",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_augment_via_interop populates ContextResult.evidence_flows from the interop events (via _interop_events_to_evidence_flows) but never calls trace_to_memory_records; the memory-record conversion function operates on trace.context.evidence, not on the interop events, and is not invoked by this method.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+        "impact": "The claimed conversion of interop events into memory records via trace_to_memory_records does not occur in _augment_via_interop; the invariant's core mechanism is not implemented as stated.",
+        "reported_expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+        "reported_symbols": "EngramAugmenter._augment_via_interop -> _trace_to_inspector_trace -> _interop_events_to_evidence_flows; trace_to_memory_records (interop.py)",
+        "scope": "llm_inspector",
+        "selection": {
+          "disconfirmation_plan": "Call EngramAugmenter._augment_via_interop with a synthetic AugmentRequest wrapping a Trace that has interop events, and assert that the returned ContextResult.evidence_flows is non-empty and that trace_to_memory_records was exercised; if the method instead raises, returns empty evidence flows, or delegates to _augment_via_legacy_trace, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+          "invariant": "When given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+          "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "symbol": "EngramAugmenter._augment_via_interop"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py::EngramAugmenter._augment_via_interop"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "Test 1 Output: '{\"key\": \"value with \\\\\"escaped\\\\\" quotes\"}'",
+        "claim": "StructuredOutputHandler._extract_json returns the first JSON object found by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters, and raises StructuredOutputError when no braces are present in the input text.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "for i, char in enumerate(text):\\n            if char in \"[{\":\\n                try:\\n                    _obj, end_idx = decoder.raw_decode(text, i)\\n                    return text[i:end_idx]",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "Test 2 (no braces): Output: None (did NOT raise)",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "The method returns the first JSON object by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters. When no braces are present, it raises StructuredOutputError.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "impact": "Callers relying on _extract_json to raise StructuredOutputError on brace-free input will instead receive None, since the implementation returns None rather than raising. Nested-brace and escaped-character extraction works correctly via raw_decode.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "reported_symbols": "StructuredOutputHandler._extract_json -> json.JSONDecoder.raw_decode",
+        "scope": "llm_engines",
+        "selection": {
+          "disconfirmation_plan": "Write a test that feeds _extract_json a string containing a nested JSON object with escaped quotes and braces, verifying it returns the correctly delimited substring, and another case with no braces to confirm it raises StructuredOutputError. If the function instead uses json.loads or regex-based extraction with different boundary semantics, the expected outputs will differ, falsifying the hypothesis.",
+          "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+          "invariant": "_extract_json returns the first JSON object found by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters, and raises StructuredOutputError when no braces are present in the input text.",
+          "production_path": "llm_engines/src/llm_engines/utils/structured_output.py",
+          "symbol": "StructuredOutputHandler._extract_json"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_engines/src/llm_engines/utils/structured_output.py::StructuredOutputHandler._extract_json"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "candidate = (self.policy.root / text).resolve(strict=True); candidate.relative_to(self.policy.root)",
+        "claim": "_denied_relative returns True for any path that escapes the workspace root via a leading \"../\" segment or an absolute path, and returns False for a relative path that stays within the root (e.g. \"subdir/file.txt\").",
+        "contract_call_id": "shell-1",
+        "contract_quote": "denied = self._denied_relative(relative, is_dir=candidate.is_dir())",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "if Path(text).is_absolute(): return None, self._failure(\"path\", \"Absolute paths are not allowed.\", \"path_escape\")",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_denied_relative returns True for any path that escapes the workspace root via a leading \"../\" segment or an absolute path, and returns False for a relative path that stays within the root (e.g. \"subdir/file.txt\").",
+        "expected_behavior_source": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+        "impact": "None. The escaping-path guard lives in _resolve, which runs before _denied_relative. _denied_relative only ever receives already-in-bounds relative paths, so it cannot be the mechanism that rejects \"../etc/passwd\" or \"/etc/passwd\".",
+        "reported_expected_behavior_source": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+        "reported_symbols": "NavigationWorkspace._denied_relative -> NavigationWorkspace._resolve",
+        "scope": "agent_lib",
+        "selection": {
+          "disconfirmation_plan": "Instantiate NavigationWorkspace with a temp root, then call _denied_relative on \"../etc/passwd\", \"/etc/passwd\", and \"subdir/file.txt\". If the method returns False for the escaping paths or True for the in-bounds path, the invariant is falsified.",
+          "expected_behavior_source": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+          "invariant": "_denied_relative returns True for any path that escapes the workspace root via a leading \"../\" segment or an absolute path, and returns False for a relative path that stays within the root (e.g. \"subdir/file.txt\").",
+          "production_path": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+          "symbol": "NavigationWorkspace._denied_relative"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "agent_lib/src/agent_lib/eval/navigation_workspace.py::NavigationWorkspace._denied_relative"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "a 0.03278688524590164 (equals 1/61 + 1/62); b 0.016129032258064516 (equals 1/62)",
+        "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as the sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "score = sum(1 / (k + rank)) across all lists. k=60 from original paper; configurable.",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "grep for reciprocal_rank_fusion outside hybrid.py found only test_rrf.py references, which assert the same formula \u2014 no contradictory implementation exists.",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "impact": "None \u2014 the implementation conforms to the RRF contract; no violation detected.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "reported_symbols": "engram/src/engram/retrieval/hybrid.py:reciprocal_rank_fusion",
+        "scope": "engram",
+        "selection": {
+          "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "production_path": "engram/src/engram/retrieval/hybrid.py",
+          "symbol": "reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "for cid in sorted_ids: if cid in dense_map: chunk = dense_map[cid]; result.append(chunk)",
+        "claim": "HybridRetriever._reciprocal_rank_fusion does not emit items in strictly descending fused-score order and does not include all fused items \u2014 it drops BM25-only results, so the returned ranking is not a complete, strictly-descending RRF merge as the invariant requires.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "# Build a lookup from chunk_id \u2192 StoredChunk for dense results ... Sort by RRF score and return StoredChunks (dense results only for now; BM25-only results would need a separate fetch \u2014 acceptable for Phase 1)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "for rank, (cid, _score) in enumerate(bm25, start=1): rrf_scores[cid] += self._bm25_weight / (_RRF_K + rank)",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "impact": "The RRF fusion silently discards BM25-only results (only dense_map chunks are emitted), so the merged ranking is incomplete and does not reflect the true reciprocal-rank-fusion ordering over the full candidate set \u2014 violating the invariant's completeness and strict-descending-order guarantees.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "reported_symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion",
+        "scope": "rag_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+          "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+          "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "symbol": "HybridRetriever._reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "class SimilarityEvaluator: ... def evaluate(self, request: EvaluatorRequest) -> OperationResult[EvaluationResult]: refs = [ref for ref in (request.reference_answer, *request.expected_texts) if ref]",
+        "claim": "SimilarityEvaluator.evaluate returns a float score in the closed interval [0, 1], where identical normalized vectors yield a score of exactly 1.0 and orthogonal vectors yield exactly 0.0, and the score is monotonically non-decreasing in cosine similarity.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "best = max(SequenceMatcher(None, candidate.lower(), ref.lower()).ratio() for ref in refs)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "score=round(best, 3)",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "SimilarityEvaluator.evaluate returns a float score in the closed interval [0, 1], where identical normalized vectors yield a score of exactly 1.0 and orthogonal vectors yield exactly 0.0, and the score is monotonically non-decreasing in cosine similarity.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "impact": "None. The hypothesis describes a cosine-similarity-over-vector-pairs contract that does not exist in this module. The actual SimilarityEvaluator operates on text strings via difflib.SequenceMatcher.ratio(), not on numeric vectors, so the [0,1] / identical=1.0 / orthogonal=0.0 / monotonic-in-cosine-similarity contract is inapplicable and cannot be violated.",
+        "reported_expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "reported_symbols": "SimilarityEvaluator.evaluate (llm_harness_core/src/llm_harness_core/evaluators.py)",
+        "scope": "llm_harness_core",
+        "selection": {
+          "disconfirmation_plan": "Construct a SimilarityEvaluator with a chosen metric, then call evaluate on pairs of vectors with known cosine similarity (identical, orthogonal, anti-parallel, and partial overlap). Assert that identical vectors produce exactly 1.0, orthogonal vectors produce exactly 0.0, and that scores never fall outside [0, 1] or fail monotonic ordering with respect to true cosine similarity. If a violation appears, verify it is not caused by passing malformed input (e.g., non-numeric or ragged vectors) rather than a genuine contract breach.",
+          "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "invariant": "SimilarityEvaluator.evaluate returns a float score in the closed interval [0, 1], where identical normalized vectors yield a score of exactly 1.0 and orthogonal vectors yield exactly 0.0, and the score is monotonically non-decreasing in cosine similarity.",
+          "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "symbol": "SimilarityEvaluator.evaluate"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_harness_core/src/llm_harness_core/evaluators.py::SimilarityEvaluator.evaluate"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "novel = evidence - seen; return len(novel) / len(evidence)",
+        "claim": "_novelty returns a non-negative float that is zero when the action signature exactly matches a previously seen signature and strictly increases (monotonically) as the set of differing normalized-argument positions grows, never exceeding the number of differing positions.",
+        "contract_call_id": "shell-2",
+        "contract_quote": "assert result.evidence_novelty == 0.0",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "if not evidence: return 0.0",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_novelty returns a non-negative float that is zero when the action signature exactly matches a previously seen signature and strictly increases (monotonically) as the set of differing normalized-argument positions grows, never exceeding the number of differing positions.",
+        "expected_behavior_source": "action_trajectory_loop_guard/tests/test_detector.py",
+        "impact": "The detector's novelty signal is well-behaved: identical signatures yield zero novelty and differing evidence yields a bounded, increasing novelty, so the low-novelty loop guard fires only on genuinely repeated evidence.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "action_trajectory_loop_guard/tests/test_detector.py",
+        "reported_symbols": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py::_novelty",
+        "scope": "action_trajectory_loop_guard",
+        "selection": {
+          "disconfirmation_plan": "Call _novelty on a signature identical to a prior one and assert the result is exactly 0.0; then call it with signatures differing in k distinct normalized-argument positions and assert the returned value is greater than the zero-difference case and does not exceed k. If a differing signature yields 0.0, or a single-difference signature yields a value greater than a two-difference signature, the invariant is falsified.",
+          "expected_behavior_source": "action_trajectory_loop_guard/tests/test_detector.py",
+          "invariant": "_novelty returns a non-negative float that is zero when the action signature exactly matches a previously seen signature and strictly increases (monotonically) as the set of differing normalized-argument positions grows, never exceeding the number of differing positions.",
+          "production_path": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+          "symbol": "_novelty"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py::_novelty"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "return self._ModelDescriptor(model_id=model_id, label=model_id, source=engine_id, installed=True)",
+        "claim": "LlmEnginesRegistry._coerce_model_descriptor returns a dict with keys exactly {\"engine\", \"model\", \"provider\"} where engine is coerced to a non-empty string, model is coerced to a non-empty string, and provider defaults to the engine value when not explicitly provided or is falsy.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "def _coerce_model_descriptor(self, model_id: str, engine_id: str) -> Any: ... return self._ModelDescriptor(model_id=model_id, label=model_id, source=engine_id, installed=True)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "The method returns a ModelDescriptor dataclass, not a dict; output keys are model_id/label/source/installed, with no \"provider\", \"engine\", or \"model\" keys and no provider-defaulting-to-engine logic.",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "The method does not return a dict at all. It is defined as `_coerce_model_descriptor(self, model_id: str, engine_id: str) -> Any` and returns a `ModelDescriptor` dataclass instance constructed with keyword arguments `model_id`, `label`, `source`, and `installed` (with graceful fallbacks). It takes two positional string arguments (model_id, engine_id), not a dict, and there is no \"provider\" key, no \"engine\" key, and no \"model\" key in its output. The controller's stated invariant (a dict with keys {engine, model, provider} and provider-defaulting-to-engine behavior) does not match the actual implementation.",
+        "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "impact": "none",
+        "reported_expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "reported_symbols": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py::LlmEnginesRegistry._coerce_model_descriptor",
+        "scope": "llm_inspector_ui",
+        "selection": {
+          "disconfirmation_plan": "Call LlmEnginesRegistry._coerce_model_descriptor with a dict missing 'provider', with provider=None, and with provider=\"\" to verify the defaulting-to-engine behavior; also pass a dict where engine is an int or None to confirm coercion raises or normalizes as the source dictates. If the actual output keys or defaulting differ from the stated invariant, the hypothesis is falsified.",
+          "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+          "invariant": "_coerce_model_descriptor returns a dict with keys exactly {\"engine\", \"model\", \"provider\"} where engine is coerced to a non-empty string, model is coerced to a non-empty string, and provider defaults to the engine value when not explicitly provided or is falsy.",
+          "production_path": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+          "symbol": "LlmEnginesRegistry._coerce_model_descriptor"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py::LlmEnginesRegistry._coerce_model_descriptor"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "if _CALENDAR_RE.search(subject): if _is_recent(message.date, max_age_days=CALENDAR_MAX_AGE_DAYS): priority = Priority.URGENT",
+        "claim": "triage_message could assign Priority.HIGH to a message that is stale (older than the cutoff) or self-addressed, violating the invariant that HIGH is only given to recent, non-self messages.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "if not self_mail and flags.get(\"star\") and _is_recent(message.date): priority = Priority.URGENT",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "return (now - when) <= timedelta(days=max_age_days)",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "triage_message assigns Priority.HIGH only when the message is recent (within the configured cutoff) and is not from a self-addressed sender; a stale or self-sent message never receives HIGH priority.",
+        "expected_behavior_source": "mail_lib/triage.py",
+        "impact": "none",
+        "reported_expected_behavior_source": "mail_lib/triage.py",
+        "reported_symbols": "mail_lib/triage.py::triage_message; mail_lib/triage.py::_is_recent; mail_lib/triage.py::_is_self_mail; mail_lib/triage.py::Priority.URGENT",
+        "scope": "mail_lib",
+        "selection": {
+          "disconfirmation_plan": "Call triage_message with a MailMessage whose date is older than the cutoff and whose sender is not a self-address; assert the returned TriageResult.priority is not Priority.HIGH. Also call with a recent message from a non-self sender and assert priority is not HIGH. If a recent non-self message is classified HIGH, the recency signal is confirmed.",
+          "expected_behavior_source": "mail_lib/triage.py",
+          "invariant": "triage_message assigns Priority.HIGH only when the message is recent (within the configured cutoff) and is not from a self-addressed sender; a stale or self-sent message never receives HIGH priority.",
+          "production_path": "mail_lib/triage.py",
+          "symbol": "triage_message"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/triage.py::triage_message"
+      }
+    ],
+    "structured": 9
+  },
+  "seed": 17,
+  "selections": {
+    "records": [
+      {
+        "disconfirmation_plan": "Call EngramAugmenter._augment_via_interop with a synthetic AugmentRequest wrapping a Trace that has interop events, and assert that the returned ContextResult.evidence_flows is non-empty and that trace_to_memory_records was exercised; if the method instead raises, returns empty evidence flows, or delegates to _augment_via_legacy_trace, the invariant is falsified.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/interop.py",
+        "first_attempt": true,
+        "invariant": "When given an AugmentRequest whose trace exposes interop events, _augment_via_interop converts those events into memory records via trace_to_memory_records and returns a ContextResult whose evidence flows are populated from the same interop events, without invoking any legacy trace path.",
+        "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "scope": "llm_inspector",
+        "status": "accepted",
+        "symbol": "EngramAugmenter._augment_via_interop"
+      },
+      {
+        "disconfirmation_plan": "Write a test that feeds _extract_json a string containing a nested JSON object with escaped quotes and braces, verifying it returns the correctly delimited substring, and another case with no braces to confirm it raises StructuredOutputError. If the function instead uses json.loads or regex-based extraction with different boundary semantics, the expected outputs will differ, falsifying the hypothesis.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "first_attempt": true,
+        "invariant": "_extract_json returns the first JSON object found by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters, and raises StructuredOutputError when no braces are present in the input text.",
+        "production_path": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "scope": "llm_engines",
+        "status": "accepted",
+        "symbol": "StructuredOutputHandler._extract_json"
+      },
+      {
+        "disconfirmation_plan": "Instantiate NavigationWorkspace with a temp root, then call _denied_relative on \"../etc/passwd\", \"/etc/passwd\", and \"subdir/file.txt\". If the method returns False for the escaping paths or True for the in-bounds path, the invariant is falsified.",
+        "expected_behavior_source": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+        "first_attempt": true,
+        "invariant": "_denied_relative returns True for any path that escapes the workspace root via a leading \"../\" segment or an absolute path, and returns False for a relative path that stays within the root (e.g. \"subdir/file.txt\").",
+        "production_path": "agent_lib/src/agent_lib/eval/navigation_workspace.py",
+        "scope": "agent_lib",
+        "status": "accepted",
+        "symbol": "NavigationWorkspace._denied_relative"
+      },
+      {
+        "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "first_attempt": true,
+        "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "production_path": "engram/src/engram/retrieval/hybrid.py",
+        "scope": "engram",
+        "status": "accepted",
+        "symbol": "reciprocal_rank_fusion"
+      },
+      {
+        "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "first_attempt": true,
+        "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+        "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "scope": "rag_lib",
+        "status": "accepted",
+        "symbol": "HybridRetriever._reciprocal_rank_fusion"
+      },
+      {
+        "disconfirmation_plan": "Construct a SimilarityEvaluator with a chosen metric, then call evaluate on pairs of vectors with known cosine similarity (identical, orthogonal, anti-parallel, and partial overlap). Assert that identical vectors produce exactly 1.0, orthogonal vectors produce exactly 0.0, and that scores never fall outside [0, 1] or fail monotonic ordering with respect to true cosine similarity. If a violation appears, verify it is not caused by passing malformed input (e.g., non-numeric or ragged vectors) rather than a genuine contract breach.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "first_attempt": true,
+        "invariant": "SimilarityEvaluator.evaluate returns a float score in the closed interval [0, 1], where identical normalized vectors yield a score of exactly 1.0 and orthogonal vectors yield exactly 0.0, and the score is monotonically non-decreasing in cosine similarity.",
+        "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "scope": "llm_harness_core",
+        "status": "accepted",
+        "symbol": "SimilarityEvaluator.evaluate"
+      },
+      {
+        "disconfirmation_plan": "Call _novelty on a signature identical to a prior one and assert the result is exactly 0.0; then call it with signatures differing in k distinct normalized-argument positions and assert the returned value is greater than the zero-difference case and does not exceed k. If a differing signature yields 0.0, or a single-difference signature yields a value greater than a two-difference signature, the invariant is falsified.",
+        "expected_behavior_source": "action_trajectory_loop_guard/tests/test_detector.py",
+        "first_attempt": true,
+        "invariant": "_novelty returns a non-negative float that is zero when the action signature exactly matches a previously seen signature and strictly increases (monotonically) as the set of differing normalized-argument positions grows, never exceeding the number of differing positions.",
+        "production_path": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+        "scope": "action_trajectory_loop_guard",
+        "status": "accepted",
+        "symbol": "_novelty"
+      },
+      {
+        "disconfirmation_plan": "Call LlmEnginesRegistry._coerce_model_descriptor with a dict missing 'provider', with provider=None, and with provider=\"\" to verify the defaulting-to-engine behavior; also pass a dict where engine is an int or None to confirm coercion raises or normalizes as the source dictates. If the actual output keys or defaulting differ from the stated invariant, the hypothesis is falsified.",
+        "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "first_attempt": true,
+        "invariant": "_coerce_model_descriptor returns a dict with keys exactly {\"engine\", \"model\", \"provider\"} where engine is coerced to a non-empty string, model is coerced to a non-empty string, and provider defaults to the engine value when not explicitly provided or is falsy.",
+        "production_path": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "scope": "llm_inspector_ui",
+        "status": "accepted",
+        "symbol": "LlmEnginesRegistry._coerce_model_descriptor"
+      },
+      {
+        "disconfirmation_plan": "Call triage_message with a MailMessage whose date is older than the cutoff and whose sender is not a self-address; assert the returned TriageResult.priority is not Priority.HIGH. Also call with a recent message from a non-self sender and assert priority is not HIGH. If a recent non-self message is classified HIGH, the recency signal is confirmed.",
+        "expected_behavior_source": "mail_lib/triage.py",
+        "first_attempt": true,
+        "invariant": "triage_message assigns Priority.HIGH only when the message is recent (within the configured cutoff) and is not from a self-addressed sender; a stale or self-sent message never receives HIGH priority.",
+        "production_path": "mail_lib/triage.py",
+        "scope": "mail_lib",
+        "status": "accepted",
+        "symbol": "triage_message"
+      }
+    ],
+    "valid": 9
+  },
+  "shell_call_cap_bound": false,
+  "shell_tool_calls": 38,
+  "started_at": "2026-09-08T12:54:08.822338Z",
+  "substantive_coverage": {
+    "covered": 5,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [
+          "/workspace/action_trajectory_loop_guard/tests/test_detector.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/contracts.py",
+          "/workspace/agent_lib/src/agent_lib/eval/navigation_workspace.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/tests/test_rrf.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/engram/src/engram/retrieval/hybrid.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/tests/test_structured_output.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/utils/structured_output.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/tests/test_evaluators.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/evaluators.py",
+          "/workspace/llm_harness_core/src/llm_harness_core/results.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "/workspace/llm_inspector/src/llm_inspector/interop.py"
+        ]
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/tests/test_mail_lib.py",
+          "/workspace/mail_lib/tests/test_personal_rules.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/mail_lib/triage.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/retrieval/retriever.py",
+          "/workspace/rag_lib/src/rag_lib/storage/base.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "c603459eb6533c56f42c02c2aa6b29f22cf4861a1254c6bbac120d2868babe61",
+  "usage": {
+    "input_tokens": 368469,
+    "model_calls": 52,
+    "output_tokens": 16370
+  },
+  "verifiers": {
+    "results": [
+      {
+        "behavior_call_id": "shell-3",
+        "behavior_quote": "Test 1 Output: '{\"key\": \"value with \\\\\"escaped\\\\\" quotes\"}'",
+        "claim": "The hypothesis claims StructuredOutputHandler._extract_json raises StructuredOutputError when no braces are present in the input text. This is false: the function has return type str | None and returns None on brace-free input; StructuredOutputError is raised only by the higher-level parse() method, never by _extract_json.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "def _extract_json(raw_output: str) -> str | None:",
+        "decision": "rejected",
+        "disconfirmation_call_id": "shell-5",
+        "disconfirmation_quote": "no-braces returned: None",
+        "evidence_validation": {
+          "errors": [],
+          "valid": true
+        },
+        "expected_behavior": "_Struct_extract_json returns the first JSON object by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters. When no braces are present, it returns None (does NOT raise StructuredOutputError).",
+        "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "impact": "Callers of _extract_json receive None (not a raised StructuredOutputError) on brace-free input. The function's return type is str | None; the raise path lives in parse()/parse_with_details(), not in _extract_json. The hypothesis's claimed impact is based on misattributing the raise to the wrong function.",
+        "remediation": "Correct the hypothesis: _extract_json returns None on brace-free input rather than raising StructuredOutputError. The raise occurs in the higher-level parse() method when the ParseResult indicates failure.",
+        "reported_expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+        "reported_symbols": "llm_engines/src/llm_engines/utils/structured_output.py::StructuredOutputHandler._extract_json",
+        "scope": "llm_engines",
+        "selection": {
+          "disconfirmation_plan": "Write a test that feeds _extract_json a string containing a nested JSON object with escaped quotes and braces, verifying it returns the correctly delimited substring, and another case with no braces to confirm it raises StructuredOutputError. If the function instead uses json.loads or regex-based extraction with different boundary semantics, the expected outputs will differ, falsifying the hypothesis.",
+          "expected_behavior_source": "llm_engines/src/llm_engines/utils/structured_output.py",
+          "invariant": "_extract_json returns the first JSON object found by locating the first '{' and matching closing '}', correctly handling nested braces and escaped characters, and raises StructuredOutputError when no braces are present in the input text.",
+          "production_path": "llm_engines/src/llm_engines/utils/structured_output.py",
+          "symbol": "StructuredOutputHandler._extract_json"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": true,
+        "symbols": "llm_engines/src/llm_engines/utils/structured_output.py::StructuredOutputHandler._extract_json"
+      },
+      {
+        "behavior_call_id": "shell-4",
+        "behavior_quote": "a 0.03252247488101534",
+        "claim": "reciprocal_rank_fusion(ranks_lists) returns scores computed as the sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "score = sum(1 / (k + rank)) across all lists.",
+        "decision": "confirmed",
+        "disconfirmation_call_id": "shell-6",
+        "disconfirmation_quote": "fused = reciprocal_rank_fusion(ranked_lists, k=k, id_key=\"id\")",
+        "evidence_validation": {
+          "errors": [],
+          "valid": true
+        },
+        "expected_behavior": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "impact": "None \u2014 the implementation conforms to the RRF contract; no violation detected.",
+        "remediation": "None \u2014 implementation matches the documented RRF contract.",
+        "reported_expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "reported_symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion",
+        "scope": "engram",
+        "selection": {
+          "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists where a shared item appears at rank 0 in one list and rank 1 in another, plus an item present in only one list. Verify the shared item's score equals exactly 1/k + 1/(k+1) and the single-list item equals 1/(k+its_rank). If the implementation uses a different rank-penalty formula (e.g., 1/(rank+1) without configurable k, or a different fusion constant), the exact numeric match will fail and reveal the discrepancy.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "invariant": "reciprocal_rank_fusion(ranks_lists) returns scores computed as sum over each list of 1/(k + rank) for a constant k, where an item appearing in multiple ranked lists has its scores summed, and items absent from all lists receive a score of zero.",
+          "production_path": "engram/src/engram/retrieval/hybrid.py",
+          "symbol": "reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": true,
+        "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-9",
+        "behavior_quote": "missing (BM25-only) ids: {'b1', 'b2', 'b0'}",
+        "claim": "HybridRetriever._reciprocal_rank_fusion does not emit items in strictly descending fused-score order and does not include all fused items \u2014 it drops BM25-only results, so the returned ranking is not a complete, strictly-descending RRF merge as the invariant requires.",
+        "contract_call_id": "shell-3",
+        "contract_quote": "# Sort by RRF score and return StoredChunks (dense results only for now; BM25-only results would need a separate fetch \u2014 acceptable for Phase 1)",
+        "decision": "insufficient_evidence",
+        "disconfirmation_call_id": "shell-3",
+        "disconfirmation_quote": "for cid in sorted_ids: if cid in dense_map: chunk = dense_map[cid]",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "impact": "The RRF fusion silently discards BM25-only results (only dense_map chunks are emitted), so the merged ranking is incomplete and does not reflect the true reciprocal-rank-fusion ordering over the full candidate set \u2014 violating the invariant's completeness and strict-descending-order guarantees.",
+        "original_decision": "confirmed",
+        "remediation": "Emit StoredChunks for BM25-only ids too (fetch them from the store or carry their data), so the returned merge contains every item that received a nonzero RRF score, in strictly descending fused-score order.",
+        "reported_expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "reported_symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion",
+        "scope": "rag_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct two input lists of equal length with known, non-overlapping ranks, call _reciprocal_rank_fusion, and assert the returned order and scores match the hand-computed reciprocal-rank fusion formula. If the returned order is not sorted by descending fused score, or the scores differ from 1/(k+rank) sums, the invariant is falsified.",
+          "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "invariant": "Given two ranked result lists, _reciprocal_rank_fusion produces a merged ranking where each item's fused score equals the sum over lists of 1/(k + rank_in_that_list), with k equal to the number of results per list, and the final items are emitted in strictly descending fused-score order.",
+          "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "symbol": "HybridRetriever._reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion"
+      }
+    ],
+    "structured": 3
+  }
+}

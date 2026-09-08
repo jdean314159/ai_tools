@@ -1,0 +1,440 @@
+{
+  "accepted_findings": [],
+  "base_url_retained": false,
+  "candidate_selection": {
+    "limit": 6,
+    "rule": "first six candidates in seeded scope order",
+    "selected": 2
+  },
+  "completion_mode": "controller_fallback",
+  "condition": "staged_scout_verifier_critic_synthesis",
+  "critic": {
+    "calls": 1,
+    "records": [
+      {
+        "decision": "reject",
+        "index": 2,
+        "rationale": "The evidence confirms the code structure (getattr for trace, isinstance(trace, dict) check, else branch returning missing_trace) and that a present non-dict trace would fall through to the failure path. However, the claim's core premise\u2014that a present non-dict trace is 'legitimately valid' and should succeed\u2014relies on an 'expected behavior' statement that is not part of the repository and is not demonstrated by the evidence. The disconfirmation attempt itself notes that traces may be 'invalid by contract (i.e., traces must always be dicts),' which would make the isinstance check correct. The evidence does not establish that non-dict traces are valid inputs rather than contract violations, nor does it demonstrate the claimed impact against the actual repository contract. The 'expected behavior' is asserted, not evidenced. Therefore the claim is not demonstrated by the supplied evidence.",
+        "scope": "llm_inspector_ui",
+        "usage": {
+          "input_tokens": 521,
+          "latency_ms": 3345.782,
+          "output_tokens": 193,
+          "total_tokens": 714
+        },
+        "verification": {
+          "candidate": {
+            "disconfirmation_attempt": "Inspected interop.py and __init__.py. The success branch is gated solely on `isinstance(trace, dict)`. There is no check for trace presence (e.g., `trace is not None`), so any non-dict trace value \u2014 including legitimately serializable non-dict traces \u2014 is routed to the `missing_trace` failure path. This confirms the conflation of \"not a dict\" with \"absent.\"",
+            "disposition": "candidate",
+            "evidence": "```python\ndef artifact_to_operation_result(artifact: Any) -> OperationResult[dict[str, Any]]:\n    trace = getattr(artifact, \"trace\", None)\n    if isinstance(trace, dict):\n        return OperationResult.success(\n            trace,\n            diagnostics={...},\n        )\n    return OperationResult.failure(\n        code=\"missing_trace\",\n        message=\"Run artifact does not contain a serialized trace.\",\n        details={...},\n    )\n```\nThe success condition is `isinstance(trace, dict)`. A present, valid trace that is a list/str/etc. would be misreported as missing.",
+            "expected_behavior": "`artifact_to_operation_result` should return `OperationResult.success` whenever the artifact contains a serialized trace (any JSON-serializable value), and only return `failure` with `code=\"missing_trace\"` when no trace is present at all.",
+            "scope": "llm_inspector_ui",
+            "severity": "medium",
+            "structured_before_forcing": false,
+            "suspected_violation": "The function only treats `isinstance(trace, dict)` as a valid trace. If the artifact's `trace` is a non-dict but present, serializable value (e.g., a list, string, number, or None-valued-but-present structure), it falls through to the `failure` branch reporting `code=\"missing_trace\"` \u2014 incorrectly reporting a missing trace when one actually exists. The \"missing\" check conflates \"not a dict\" with \"absent.\"",
+            "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py:artifact_to_operation_result; exposed via __init__.py"
+          },
+          "claim": "In llm_inspector_ui/interop.py, artifact_to_operation_result gates success solely on `isinstance(trace, dict)`. Any present, non-dict serialized trace (list, str, number, etc.) is misrouted to the `failure` branch reporting `code=\"missing_trace\"`, conflating \"not a dict\" with \"absent.\"",
+          "decision": "confirmed",
+          "disconfirmation_attempt": "Considered whether non-dict traces are simply invalid by contract (i.e., traces must always be dicts, so the check is correct). But the function signature accepts `Any` and the expected behavior states success should occur for \"any JSON-serializable value,\" so a present non-dict trace is legitimately valid and should not be reported as missing.",
+          "evidence": "Inspected interop.py: `trace = getattr(artifact, \"trace\", None)` then `if isinstance(trace, dict): return OperationResult.success(...)` else `return OperationResult.failure(code=\"missing_trace\", ...)`. The only success condition is `isinstance(trace, dict)`. A present trace that is a list/str/number passes `getattr` with a real value but fails the isinstance check, falling through to the missing_trace failure path. The expected behavior is success whenever a trace is present (any JSON-serializable value) and failure only when absent.",
+          "impact": "A run artifact whose serialized `trace` is a valid but non-dict JSON value (e.g., a list, string, or number) is reported as `missing_trace` and treated as a failure, even though a trace is present. This corrupts success/failure classification for non-dict traces in the UI interop layer.",
+          "remediation": "Change the success condition to check trace presence rather than dict-ness, e.g., `if trace is not None:` (or `if trace is not None:` with explicit None handling), so non-dict but present traces succeed and only truly absent traces fail.",
+          "scope": "llm_inspector_ui",
+          "structured_before_forcing": false,
+          "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py:artifact_to_operation_result; exposed via __init__.py"
+        }
+      }
+    ]
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-07T21:01:06.730679Z",
+  "lifecycle": "aborted",
+  "max_scope_concentration": 0.18181818181818182,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "prompt_sha256": {
+    "scout": "cf172ae87df99a5a4627ff9755ae909ee3f4dd8260d5aeb152c9d43eb9769515",
+    "synthesis": "fe48bcdddf0d091344219e8f2a57e060a0e1e6bfa092cd88483240195b324779",
+    "verifier": "4adeb0217c704665741090b130c4e7deec461340a7ae51bc6b62c4c1108352a6"
+  },
+  "protocol_violations": [
+    "synthesis: no valid structured report; controller fallback used"
+  ],
+  "remaining_uncertainty": "medium",
+  "report_sha256": "075255db219ba205e51dfa3e81b9398a6d3677c9cb6fbc217db25d3ca5a24989",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-staged-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 3,
+    "agent_lib": 3,
+    "engram": 3,
+    "llm_engines": 3,
+    "llm_harness_core": 3,
+    "llm_inspector": 3,
+    "llm_inspector_ui": 6,
+    "mail_lib": 6,
+    "rag_lib": 3
+  },
+  "scope_order": [
+    "agent_lib",
+    "mail_lib",
+    "action_trajectory_loop_guard",
+    "llm_harness_core",
+    "llm_inspector_ui",
+    "engram",
+    "llm_inspector",
+    "llm_engines",
+    "rag_lib"
+  ],
+  "scouts": {
+    "expected": 9,
+    "results": [
+      {
+        "disconfirmation_attempt": "Unable to perform any disconfirmation attempt because shell access was exhausted before any hypothesis could be formed or empirically tested.",
+        "disposition": "no_candidate",
+        "evidence": "Only the public API surface (imports/exports in __init__.py) was reviewed. No production function body, test, or caller was traced, so there is no direct code evidence of a violation.",
+        "expected_behavior": "The package exposes a stable experimental API surface (contracts, coordination, memory adapters, planners, runtime, tools, interop, programming types) as documented in agent_lib/__init__.py.",
+        "scope": "agent_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No specific defect could be established. Shell inspection budget was exhausted before I could trace any single logic path end-to-end against a test or contract, so no falsifiable hypothesis was ever formed, tested, or survived.",
+        "symbols": "/workspace/agent_lib/src/agent_lib/__init__.py"
+      },
+      {
+        "disconfirmation_attempt": "Checked: `iter_messages` uses `load_message_bodies`? No \u2014 `iter_messages` does not call `load_message_bodies`; it reads bodies directly via `_message_from_mbox`. So the mismatch only affects external callers. However, `load_message_body` (singular) returns just the body string, avoiding keying issues. The contract in README says `load_message_bodies` hydrates \"from the same mbox in one read-only pass\" but does not specify key semantics. Without a test or caller demonstrating the bracket/normalization key mismatch causes a real lookup failure, the impact is unverified. The function is internally consistent (returns original-keyed dict), and a caller using original inputs as lookup keys works correctly.",
+        "disposition": "candidate",
+        "evidence": "```python\ndef load_message_bodies(mbox_path: str | Path, header_message_ids: Iterable[str]) -> dict[str, str]:\n    targets: dict[str, str] = {}\n    for header_message_id in header_message_ids:\n        target = normalize_message_id(header_message_id)\n        if not target:\n            raise ValueError(\"header_message_ids must not contain empty values\")\n        targets[target] = header_message_id   # key=normalized, value=original\n    ...\n    found: dict[str, str] = {}\n    box = mailbox.mbox(Path(mbox_path), create=False)\n    try:\n        for message in box:\n            normalized = normalize_message_id(message.get(\"Message-ID\"))\n            original = targets.get(normalized)\n            if original is None:\n                continue\n            found[original] = _message_body(message)   # keyed by original (bracketed) value\n            ...\n    finally:\n        box.close()\n    return found\n```\n`normalize_message_id` strips `<>`. So for input `\"<abc@example.com>\"`, `found` is keyed by `\"<abc@example.com>\"` (the original). A caller iterating expected keys `[\"<abc@example.com>\"]` would look up that bracketed key \u2014 which IS present. But for input `\"abc@example.com\"` (no brackets), key is `\"abc@example.com\"`. The inconsistency: returned dict keys equal the *original inputs*, not the normalized IDs, so a caller that normalizes its expected keys (as `iter_messages` does) would fail to find bodies.",
+        "expected_behavior": "`load_message_bodies` should return a dict keyed by the caller-provided header_message_id strings, mapping each to its full body, regardless of whether the caller passes the value with or without angle brackets.",
+        "scope": "mail_lib",
+        "severity": "medium",
+        "structured_before_forcing": false,
+        "suspected_violation": "`load_message_bodies` keys its internal `targets` dict by the *normalized* (bracket-stripped) header_message_id, but stores the *original* (un-normalized) caller value as the mapping value. When a caller passes IDs with angle brackets (e.g. `\"<abc@example.com>\"`), the returned dict is keyed by the stripped form (`\"abc@example.com\"`) but the values are the original bracketed strings. More critically, the function silently drops any caller-supplied ID that normalizes to an empty string only if it raises \u2014 but it does raise. The real defect: the returned dict keys are normalized IDs while callers may expect keys matching their input exactly, and there's no way to correlate returned keys back to the original inputs when inputs contained brackets.",
+        "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+      },
+      {
+        "disconfirmation_attempt": "I checked whether requiring near-duplicate(current, previous) plus current.redundant effectively restores the two-consecutive guarantee. It does not: near-duplicate(current, previous) constrains the pair (current, previous) but says nothing about whether previous was itself a near-duplicate of the action before it. A low-novelty previous action that is near-duplicate to current but not redundant (because it wasn't a near-duplicate of previous-1) still satisfies confirmed_pair, so the \"two consecutive redundant actions\" contract is not enforced.",
+        "disposition": "no_candidate",
+        "evidence": "Confirmed: an action can have novelty <= 0.10 without being a near-duplicate. _novelty returns len(novel)/len(evidence), which is <= 0.10 whenever at most 10% of returned evidence atoms are new. A read_file returning a single new atom alongside previously-seen atoms yields novelty 0.0 even though its arguments may differ from the prior action (so _near_duplicate is False, making assessment.redundant False). The confirmation line `confirmed_pair = previous.redundant or (previous.novelty <= _NOVELTY_THRESHOLD and _near_duplicate(assessment.action, previous.action))` therefore allows the current redundant action to confirm a loop based on a previous action that was low-novelty but not itself redundant \u2014 contradicting the documented requirement of two consecutive low-novelty near-duplicate actions.",
+        "expected_behavior": "The detector requires two consecutive low-novelty near-duplicate tool actions after an eight-tool-action warmup before emitting an intervention.",
+        "scope": "action_trajectory_loop_guard",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "The confirmation logic can fire on a pair where the earlier action is merely low-novelty (novelty <= 0.10) and near-duplicate to the current action, without the earlier action itself being a confirmed redundant near-duplicate. This means a single redundant action following a low-novelty-but-not-near-duplicate-of-its-predecessor could trigger, deviating from the documented \"two consecutive redundant\" contract.",
+        "symbols": "src/action_trajectory_loop_guard/detector.py: assess_trajectory intervention block; _Assessment.redundant; _near_duplicate; _novelty"
+      },
+      {
+        "disconfirmation_attempt": "Shell budget exhausted before completing end-to-end trace of any specific hypothesis.",
+        "disposition": "no_candidate",
+        "evidence": "Limited inspection available before shell budget exhausted.",
+        "expected_behavior": "The package provides shared interoperability contracts (messages, results, memory records, trace events, evaluators, run artifacts) that other packages exchange. Public API should behave as documented.",
+        "scope": "llm_harness_core",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Insufficient time to complete full trace analysis within shell budget. No specific defect confirmed.",
+        "symbols": "llm_harness_core package"
+      },
+      {
+        "disconfirmation_attempt": "Inspected interop.py and __init__.py. The success branch is gated solely on `isinstance(trace, dict)`. There is no check for trace presence (e.g., `trace is not None`), so any non-dict trace value \u2014 including legitimately serializable non-dict traces \u2014 is routed to the `missing_trace` failure path. This confirms the conflation of \"not a dict\" with \"absent.\"",
+        "disposition": "candidate",
+        "evidence": "```python\ndef artifact_to_operation_result(artifact: Any) -> OperationResult[dict[str, Any]]:\n    trace = getattr(artifact, \"trace\", None)\n    if isinstance(trace, dict):\n        return OperationResult.success(\n            trace,\n            diagnostics={...},\n        )\n    return OperationResult.failure(\n        code=\"missing_trace\",\n        message=\"Run artifact does not contain a serialized trace.\",\n        details={...},\n    )\n```\nThe success condition is `isinstance(trace, dict)`. A present, valid trace that is a list/str/etc. would be misreported as missing.",
+        "expected_behavior": "`artifact_to_operation_result` should return `OperationResult.success` whenever the artifact contains a serialized trace (any JSON-serializable value), and only return `failure` with `code=\"missing_trace\"` when no trace is present at all.",
+        "scope": "llm_inspector_ui",
+        "severity": "medium",
+        "structured_before_forcing": false,
+        "suspected_violation": "The function only treats `isinstance(trace, dict)` as a valid trace. If the artifact's `trace` is a non-dict but present, serializable value (e.g., a list, string, number, or None-valued-but-present structure), it falls through to the `failure` branch reporting `code=\"missing_trace\"` \u2014 incorrectly reporting a missing trace when one actually exists. The \"missing\" check conflates \"not a dict\" with \"absent.\"",
+        "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py:artifact_to_operation_result; exposed via __init__.py"
+      },
+      {
+        "disconfirmation_attempt": "Limited to 3 shell calls; inspected package layout, README contract, and public exports. Could not trace a specific end-to-end path (e.g., path-component validation, permission enforcement, or a retrieval correctness path) to confirm a concrete violation before budget was exhausted.",
+        "disposition": "no_candidate",
+        "evidence": "Public API surface in __init__.py exposes ProjectMemory as the primary entry point with contracts, trust policy, embeddings factory, and interop conversions. README documents owner-only directory/permission behavior and single-path-component identifier requirement.",
+        "expected_behavior": "ProjectMemory stores conversation turns, retrieves relevant prior context, and assembles memory-augmented prompts. Persistent project/session identifiers must be single path components; directories created with owner-only access; JSON metadata with owner-only permissions on POSIX.",
+        "scope": "engram",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No single actionable defect could be confirmed within the shell budget. The package is a prompt-augmentation memory layer with a clear public contract (ProjectMemory), and the observed structure (storage, semantic, retrieval, embeddings, neural, trust, interop) appears internally consistent.",
+        "symbols": "src/engram/__init__.py, src/engram/project_memory.py, src/engram/contracts.py"
+      },
+      {
+        "disconfirmation_attempt": "Shell budget was exhausted before I could trace the artifact/bundle inspection path (artifacts.py) to verify the path-sanitization claim or check for a concrete defect in serialization, comparison, or interop logic. No candidate survived because none was sufficiently established.",
+        "disposition": "no_candidate",
+        "evidence": "The package structure and public API were inspected. The __init__.py shows a coherent, exported surface covering trace model, augmenters, inspectors, exporters, renderers, interop, adapters, and artifact inspection. No obvious defect was observed in the inspected code paths.",
+        "expected_behavior": "The package exposes a well-defined public API (trace normalization, comparison, export, artifact inspection, interop). The README documents that bundle inspection sanitizes resolved absolute paths and that unknown body/profile versions remain envelope-readable but not interpreted.",
+        "scope": "llm_inspector",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "I could not identify a concrete, currently actionable defect. The security-relevant claim about path sanitization in bundle inspection could not be fully traced to its implementation before shell budget was exhausted, so I could not confirm or falsify a violation.",
+        "symbols": "/workspace/llm_inspector/src/llm_inspector/__init__.py, /workspace/llm_inspector/src/llm_inspector/artifacts.py"
+      },
+      {
+        "disconfirmation_attempt": "Limited to 3 shell calls. Reviewed the package's public interface and documentation. No specific hypothesis was confirmed as a currently actionable defect; documented limitations are not defects. Further per-backend tracing was not possible within the shell budget.",
+        "disposition": "no_candidate",
+        "evidence": "The package exposes a coherent public contract: get_engine, EngineFactory, ChatModel, GenerationRequest/Response, ToolExecutor, FailoverEngine, and generation recording via record_generation. README documents capabilities and their limitations explicitly. Without deeper tracing into specific backend implementations (which requires additional shell calls), no falsifiable violation was confirmed.",
+        "expected_behavior": "The llm_engines package provides a unified interface over multiple LLM backends with explicit capability discovery, normalized generation responses, failover, structured output, and generation recording. Public contracts in contracts/ define the ChatModel, GenerationRequest/Response, and event interfaces.",
+        "scope": "llm_engines",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No single concrete defect survived verification. I inspected the package structure, public API surface (__init__.py), README contract documentation, and pyproject.toml. The README documents many behaviors and limitations explicitly (e.g., prefix-cache scaffolding returns zero values, seed is a preference, tool recovery probe does not execute tools). These are documented limitations rather than hidden defects.",
+        "symbols": "/workspace/llm_engines/src/llm_engines/__init__.py, /workspace/llm_engines/README.md, /workspace/llm_engines/pyproject.toml"
+      },
+      {
+        "disconfirmation_attempt": "Shell budget exhausted before completing full end-to-end trace of fusion/rerank/prompt-assembly consistency and cross-checking against test_retriever.py / test_rag_interop.py. No surviving defect to report.",
+        "disposition": "no_candidate",
+        "evidence": "pipeline.py inspect_query merges dense/bm25 results into merged_map by chunk_id keeping highest score, sorts by score, truncates to n_candidates, applies reranker when enabled, and assembles prompt from reranked_results. Diagnostics report candidate_count, reranked_count, selected_count consistently.",
+        "expected_behavior": "inspect_query should return a RetrievalTrace whose fused_results reflect the merged, reranked retrieval results and whose diagnostics counts are internally consistent.",
+        "scope": "rag_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No single concrete defect survived tracing. The pipeline's ingest/delete-by-source, fusion merge, reranking, and prompt-assembly paths appeared internally consistent within the portion of code inspected.",
+        "symbols": "rag_lib/pipeline.py (RAGPipeline.inspect_query, ingest, _setup_components), rag_lib/ingestion/*, rag_lib/retrieval/*, rag_lib/storage/chroma.py"
+      }
+    ],
+    "structured": 9
+  },
+  "seed": 47,
+  "shell_call_cap_bound": false,
+  "shell_call_ceiling": 45,
+  "shell_tool_calls": 33,
+  "started_at": "2026-09-07T20:58:27.508991Z",
+  "substantive_coverage": {
+    "covered": 8,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [
+          "/workspace/action_trajectory_loop_guard/README.md",
+          "/workspace/action_trajectory_loop_guard/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/*.py",
+          "/workspace/agent_lib/src/agent_lib/__init__.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/engram/src/engram/__init__.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/README.md",
+          "/workspace/llm_engines/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/__init__.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/README.md",
+          "/workspace/llm_harness_core/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/__init__.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector/src/llm_inspector/__init__.py"
+        ]
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector_ui/README.md",
+          "/workspace/llm_inspector_ui/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/mail_lib/__init__.py",
+          "/workspace/mail_lib/thunderbird.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [
+          "/workspace/rag_lib/README.md",
+          "/workspace/rag_lib/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/__init__.py",
+          "/workspace/rag_lib/src/rag_lib/pipeline.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "532e53d2f632f5134d9fde08b9e3572e921905cf4b9d5eddce4f2bb0a9fee70f",
+  "usage": {
+    "input_tokens": 114674,
+    "model_calls": 43,
+    "output_tokens": 8574
+  },
+  "verifiers": {
+    "expected": 2,
+    "results": [
+      {
+        "candidate": {
+          "disconfirmation_attempt": "Checked: `iter_messages` uses `load_message_bodies`? No \u2014 `iter_messages` does not call `load_message_bodies`; it reads bodies directly via `_message_from_mbox`. So the mismatch only affects external callers. However, `load_message_body` (singular) returns just the body string, avoiding keying issues. The contract in README says `load_message_bodies` hydrates \"from the same mbox in one read-only pass\" but does not specify key semantics. Without a test or caller demonstrating the bracket/normalization key mismatch causes a real lookup failure, the impact is unverified. The function is internally consistent (returns original-keyed dict), and a caller using original inputs as lookup keys works correctly.",
+          "disposition": "candidate",
+          "evidence": "```python\ndef load_message_bodies(mbox_path: str | Path, header_message_ids: Iterable[str]) -> dict[str, str]:\n    targets: dict[str, str] = {}\n    for header_message_id in header_message_ids:\n        target = normalize_message_id(header_message_id)\n        if not target:\n            raise ValueError(\"header_message_ids must not contain empty values\")\n        targets[target] = header_message_id   # key=normalized, value=original\n    ...\n    found: dict[str, str] = {}\n    box = mailbox.mbox(Path(mbox_path), create=False)\n    try:\n        for message in box:\n            normalized = normalize_message_id(message.get(\"Message-ID\"))\n            original = targets.get(normalized)\n            if original is None:\n                continue\n            found[original] = _message_body(message)   # keyed by original (bracketed) value\n            ...\n    finally:\n        box.close()\n    return found\n```\n`normalize_message_id` strips `<>`. So for input `\"<abc@example.com>\"`, `found` is keyed by `\"<abc@example.com>\"` (the original). A caller iterating expected keys `[\"<abc@example.com>\"]` would look up that bracketed key \u2014 which IS present. But for input `\"abc@example.com\"` (no brackets), key is `\"abc@example.com\"`. The inconsistency: returned dict keys equal the *original inputs*, not the normalized IDs, so a caller that normalizes its expected keys (as `iter_messages` does) would fail to find bodies.",
+          "expected_behavior": "`load_message_bodies` should return a dict keyed by the caller-provided header_message_id strings, mapping each to its full body, regardless of whether the caller passes the value with or without angle brackets.",
+          "scope": "mail_lib",
+          "severity": "medium",
+          "structured_before_forcing": false,
+          "suspected_violation": "`load_message_bodies` keys its internal `targets` dict by the *normalized* (bracket-stripped) header_message_id, but stores the *original* (un-normalized) caller value as the mapping value. When a caller passes IDs with angle brackets (e.g. `\"<abc@example.com>\"`), the returned dict is keyed by the stripped form (`\"abc@example.com\"`) but the values are the original bracketed strings. More critically, the function silently drops any caller-supplied ID that normalizes to an empty string only if it raises \u2014 but it does raise. The real defect: the returned dict keys are normalized IDs while callers may expect keys matching their input exactly, and there's no way to correlate returned keys back to the original inputs when inputs contained brackets.",
+          "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+        },
+        "claim": "load_message_bodies keys its returned dict by normalized IDs while callers expect original-input keys, causing lookup failures for bracketed inputs.",
+        "decision": "rejected",
+        "disconfirmation_attempt": "Traced the full call path: targets dict is only used internally for matching; found dict (the return value) is keyed by original caller inputs. iter_messages does not call load_message_bodies. load_message_body (singular) also works by normalized match. A caller passing original inputs as keys finds them correctly.",
+        "evidence": "Code shows targets[normalized]=original (lookup table) and found[original]=body (result keyed by original input). For input \"<abc@example.com>\", found is keyed by \"<abc@example.com>\" \u2014 the bracketed key IS present. The lookup matches normalized mbox Message-IDs to normalized targets correctly. The function is internally consistent and satisfies its documented contract.",
+        "impact": "No actionable impact: the function returns a dict keyed by the caller's original input strings, so callers using their inputs as lookup keys succeed; no failing caller or test exists.",
+        "remediation": "None \u2014 the function behaves correctly; no change required.",
+        "scope": "mail_lib",
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+      },
+      {
+        "candidate": {
+          "disconfirmation_attempt": "Inspected interop.py and __init__.py. The success branch is gated solely on `isinstance(trace, dict)`. There is no check for trace presence (e.g., `trace is not None`), so any non-dict trace value \u2014 including legitimately serializable non-dict traces \u2014 is routed to the `missing_trace` failure path. This confirms the conflation of \"not a dict\" with \"absent.\"",
+          "disposition": "candidate",
+          "evidence": "```python\ndef artifact_to_operation_result(artifact: Any) -> OperationResult[dict[str, Any]]:\n    trace = getattr(artifact, \"trace\", None)\n    if isinstance(trace, dict):\n        return OperationResult.success(\n            trace,\n            diagnostics={...},\n        )\n    return OperationResult.failure(\n        code=\"missing_trace\",\n        message=\"Run artifact does not contain a serialized trace.\",\n        details={...},\n    )\n```\nThe success condition is `isinstance(trace, dict)`. A present, valid trace that is a list/str/etc. would be misreported as missing.",
+          "expected_behavior": "`artifact_to_operation_result` should return `OperationResult.success` whenever the artifact contains a serialized trace (any JSON-serializable value), and only return `failure` with `code=\"missing_trace\"` when no trace is present at all.",
+          "scope": "llm_inspector_ui",
+          "severity": "medium",
+          "structured_before_forcing": false,
+          "suspected_violation": "The function only treats `isinstance(trace, dict)` as a valid trace. If the artifact's `trace` is a non-dict but present, serializable value (e.g., a list, string, number, or None-valued-but-present structure), it falls through to the `failure` branch reporting `code=\"missing_trace\"` \u2014 incorrectly reporting a missing trace when one actually exists. The \"missing\" check conflates \"not a dict\" with \"absent.\"",
+          "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py:artifact_to_operation_result; exposed via __init__.py"
+        },
+        "claim": "In llm_inspector_ui/interop.py, artifact_to_operation_result gates success solely on `isinstance(trace, dict)`. Any present, non-dict serialized trace (list, str, number, etc.) is misrouted to the `failure` branch reporting `code=\"missing_trace\"`, conflating \"not a dict\" with \"absent.\"",
+        "decision": "confirmed",
+        "disconfirmation_attempt": "Considered whether non-dict traces are simply invalid by contract (i.e., traces must always be dicts, so the check is correct). But the function signature accepts `Any` and the expected behavior states success should occur for \"any JSON-serializable value,\" so a present non-dict trace is legitimately valid and should not be reported as missing.",
+        "evidence": "Inspected interop.py: `trace = getattr(artifact, \"trace\", None)` then `if isinstance(trace, dict): return OperationResult.success(...)` else `return OperationResult.failure(code=\"missing_trace\", ...)`. The only success condition is `isinstance(trace, dict)`. A present trace that is a list/str/number passes `getattr` with a real value but fails the isinstance check, falling through to the missing_trace failure path. The expected behavior is success whenever a trace is present (any JSON-serializable value) and failure only when absent.",
+        "impact": "A run artifact whose serialized `trace` is a valid but non-dict JSON value (e.g., a list, string, or number) is reported as `missing_trace` and treated as a failure, even though a trace is present. This corrupts success/failure classification for non-dict traces in the UI interop layer.",
+        "remediation": "Change the success condition to check trace presence rather than dict-ness, e.g., `if trace is not None:` (or `if trace is not None:` with explicit None handling), so non-dict but present traces succeed and only truly absent traces fail.",
+        "scope": "llm_inspector_ui",
+        "structured_before_forcing": false,
+        "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py:artifact_to_operation_result; exposed via __init__.py"
+      }
+    ],
+    "structured": 2
+  }
+}

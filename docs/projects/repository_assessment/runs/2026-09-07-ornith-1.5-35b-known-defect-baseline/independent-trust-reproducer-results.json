@@ -1,0 +1,33 @@
+{
+  "schema": "temporary-independent-reproducer-result/v1",
+  "executed_at": "2026-09-07",
+  "reproducer": "independent-trust-reproducer.py.raw",
+  "reproducer_sha256": "d849fe23a9509f0a2014d606ba192a8aa221b96e64beba152cd85968428f93cc",
+  "environments": [
+    {
+      "name": "frozen_target",
+      "commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+      "observations": {
+        "cross_tenant_returned": true,
+        "extracted_fact_count": 1,
+        "extracted_metadata": {
+          "role": "user",
+          "session_id": "session-1"
+        }
+      }
+    },
+    {
+      "name": "current_head",
+      "commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+      "observations": {
+        "cross_tenant_returned": true,
+        "extracted_fact_count": 1,
+        "extracted_metadata": {
+          "role": "user",
+          "session_id": "session-1"
+        }
+      }
+    }
+  ],
+  "interpretation": "ProjectMemory.get_facts returned a cross-tenant semantic fact without applying the configured recall policy. Pattern extraction stored a fact with role and session_id but no trust, tenant, source, or writer metadata. Both behaviors remain present on current HEAD."
+}

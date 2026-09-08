@@ -1,0 +1,37 @@
+{
+  "recorded_at": "2026-09-07T13:31:46Z",
+  "launch_configuration": {
+    "cache_type_k": "q4_0",
+    "cache_type_v": "q4_0",
+    "flash_attention": true,
+    "jinja": true,
+    "source": "user-reported launch command"
+  },
+  "llama_build": "b10679-50f068fff",
+  "model_metadata": {
+    "file_size_bytes": 17659361280,
+    "ftype": "Q4_K - Medium",
+    "model_label": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+    "n_ctx": 262144,
+    "n_ctx_train": 262144,
+    "n_embd": 2048,
+    "n_params": 30532122624,
+    "n_vocab": 151936,
+    "total_slots": 4
+  },
+  "model_sha256": null,
+  "observed_discrepancies": [],
+  "omissions": [
+    "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+    "The exact server executable digest and independently inspected process argv are unavailable."
+  ],
+  "server_observations": {
+    "health": "ok",
+    "http_server_header": "llama.cpp",
+    "idle_slots": 4,
+    "slot_context_tokens": 262144,
+    "slot_speculative": false
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+}

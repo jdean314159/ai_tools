@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+import tempfile
+
+from engram import MemoryTrustPolicy, ProjectMemory
+from engram.semantic.extractor import SemanticExtractor
+
+
+def metadata(**overrides):
+    value = {
+        "tenant": "acme",
+        "source": "operator",
+        "writer": "admin",
+        "trust": "verified",
+    }
+    value.update(overrides)
+    return value
+
+
+policy = MemoryTrustPolicy(
+    tenant_id="acme",
+    allowed_sources=frozenset({"operator"}),
+    allowed_writers=frozenset({"admin"}),
+)
+
+with tempfile.TemporaryDirectory() as root:
+    memory = ProjectMemory(base_dir=root, project_id="facts", trust_policy=policy)
+    memory.semantic.add_fact(
+        "fact:verified",
+        "preference",
+        "region",
+        "atlas",
+        confidence=0.9,
+        metadata=metadata(),
+    )
+    memory.semantic.add_fact(
+        "fact:cross-tenant",
+        "preference",
+        "region",
+        "poison",
+        confidence=0.9,
+        metadata=metadata(tenant="other"),
+    )
+    values = {fact["value"] for fact in memory.get_facts(subject="region")}
+    print("cross_tenant_returned", "poison" in values)
+
+with tempfile.TemporaryDirectory() as root:
+    memory = ProjectMemory(
+        base_dir=root,
+        project_id="extraction",
+        trust_policy=policy,
+        extractor=SemanticExtractor(pattern_only=True),
+        enable_semantic_graph=True,
+    )
+    memory._extract_and_store_facts(
+        "actually, the password is hunter2.",
+        "user",
+        "session-1",
+        "episode-1",
+    )
+    facts = memory.get_facts(subject="password")
+    print("extracted_fact_count", len(facts))
+    print("extracted_metadata", facts[0]["metadata"] if facts else None)

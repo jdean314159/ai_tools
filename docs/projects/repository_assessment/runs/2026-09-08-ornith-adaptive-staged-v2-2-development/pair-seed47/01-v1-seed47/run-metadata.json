@@ -1,0 +1,415 @@
+{
+  "accepted_findings": [],
+  "base_url_retained": false,
+  "candidate_selection": {
+    "limit": 6,
+    "rule": "first six candidates in seeded scope order",
+    "selected": 1
+  },
+  "completion_mode": "controller_fallback",
+  "condition": "staged_scout_verifier_critic_synthesis",
+  "critic": {
+    "calls": 1,
+    "records": [
+      {
+        "decision": "reject",
+        "index": 1,
+        "rationale": "The evidence describes the data structures and the early-exit comparison but does not demonstrate the claimed buggy behavior. It asserts that 'after the one normalized match is found, len(found) equals len(targets) and the loop breaks,' but this is unsupported. The evidence shows targets is keyed by normalized id and found is keyed by original id, and that a collision makes len(targets) < number of input keys. However, it does not establish that len(found) can reach len(targets) before both original keys are found. For len(found) to equal len(targets), len(found) distinct original keys must be present; if len(targets) < number of input keys, then len(found) would need to be less than the number of input keys, which is consistent with both original keys being found (not a missing one). The evidence never shows the second original key being skipped, nor that the loop breaks while the second key remains unfound. The disconfirmation attempt further notes that when inputs normalize uniquely the early-exit fires only after every key is found (correct), but does not demonstrate the collision case actually drops a key. Without evidence that the second original key is never emitted, the claimed impact (silent missing body) is unproven. The remediation suggestion is speculative and does not constitute evidence of the defect.",
+        "scope": "mail_lib",
+        "usage": {
+          "input_tokens": 521,
+          "latency_ms": 4366.253,
+          "output_tokens": 282,
+          "total_tokens": 803
+        },
+        "verification": {
+          "candidate": {
+            "disconfirmation_attempt": "Checked that targets is keyed by normalized id and found by original id; the count-based early-exit compares a normalized-keyed count against an original-keyed dict. Distinct normalized ids do not trigger the bug (counts match). The defect is real specifically when inputs collide under normalize_message_id (stripping surrounding <> and whitespace), which is a plausible caller scenario since callers pass raw Message-ID header values.",
+            "disposition": "candidate",
+            "evidence": "targets dict keyed by normalized id: `targets[target] = header_message_id`. found dict keyed by original id: `found[original] = _message_body(message)`. Early exit: `if len(found) == len(targets): break`. When two inputs share a normalized target, len(targets) < number of input ids, so the loop terminates once the one normalized match is found, dropping the other (original) key from `found`.",
+            "expected_behavior": "`load_message_bodies` should return a mapping from each requested (original) Message-ID to its full body. For each input header_message_id, the caller expects that key present in the returned dict (when the message exists in the mbox).",
+            "scope": "mail_lib",
+            "severity": "medium",
+            "structured_before_forcing": false,
+            "suspected_violation": "`load_message_bodies` keys the result dict by the *original* header_message_id string, but the early-exit condition `if len(found) == len(targets)` compares against `targets`, which is keyed by *normalized* Message-ID. When two distinct input IDs normalize to the same canonical form (e.g. `\"<thread@x>\"` and `\"thread@x\"`), `len(targets)` is smaller than the number of distinct input keys. After the single normalized match is found, `len(found) == len(targets)` becomes true and the loop exits, so the duplicate-normalizing input key is never emitted into the result \u2014 the caller receives a missing body for a request that was validly made.",
+            "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+          },
+          "claim": "In mail_lib/thunderbird.py::load_message_bodies, when two distinct input header_message_ids normalize to the same canonical Message-ID, the early-exit condition `if len(found) == len(targets)` triggers after the single normalized match is found, so the second (original) input key is never emitted into the returned dict even though its message exists in the mbox.",
+          "decision": "confirmed",
+          "disconfirmation_attempt": "Checked that distinct normalized ids do NOT trigger the bug: when all inputs normalize uniquely, len(targets) equals the number of input keys and the early-exit fires only after every key is found, which is correct. The defect is specifically gated on input collision under normalize_message_id (strip surrounding <> and whitespace), which is plausible since callers pass raw Message-ID header values.",
+          "evidence": "targets is keyed by normalized id: `targets[target] = header_message_id` in the build loop; found is keyed by original id: `found[original] = _message_body(message)`. The early-exit `if len(found) == len(targets): break` compares len(found) (number of original keys found) against len(targets) (number of distinct normalized ids). When two distinct inputs share a normalized target, the later assignment overwrites in targets, so len(targets) < number of distinct input keys. After the one normalized match is found, len(found) equals len(targets) and the loop breaks, so the second original key is never added to found.",
+          "impact": "A caller requesting bodies for multiple Message-IDs that include two values collapsing under normalize_message_id (e.g. \"<thread@x>\" and \"thread@x\") receives a result missing one of the requested keys, yielding a silent missing-body for a validly-made request.",
+          "remediation": "Key `found` by normalized id (or compare against a set of remaining normalized targets) so the early-exit counts distinct normalized matches rather than original-key count; ensure each requested original id is emitted when its normalized message is found.",
+          "scope": "mail_lib",
+          "structured_before_forcing": false,
+          "symbols": "mail_lib/thunderbird.py::load_message_bodies, mail_lib/thunderbird.py::normalize_message_id"
+        }
+      }
+    ]
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-08T13:22:28.583383Z",
+  "lifecycle": "aborted",
+  "max_scope_concentration": 0.2,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "prompt_sha256": {
+    "scout": "cf172ae87df99a5a4627ff9755ae909ee3f4dd8260d5aeb152c9d43eb9769515",
+    "synthesis": "fe48bcdddf0d091344219e8f2a57e060a0e1e6bfa092cd88483240195b324779",
+    "verifier": "4adeb0217c704665741090b130c4e7deec461340a7ae51bc6b62c4c1108352a6"
+  },
+  "protocol_violations": [
+    "scout:agent_lib: attempted shell call beyond budget",
+    "synthesis: no valid structured report; controller fallback used"
+  ],
+  "remaining_uncertainty": "high",
+  "report_sha256": "a554d5ac0684025ac531d54b39ea8a1a47e8785f9de55691767c56ab20f56014",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-staged-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 3,
+    "agent_lib": 3,
+    "engram": 3,
+    "llm_engines": 3,
+    "llm_harness_core": 3,
+    "llm_inspector": 3,
+    "llm_inspector_ui": 3,
+    "mail_lib": 6,
+    "rag_lib": 3
+  },
+  "scope_order": [
+    "agent_lib",
+    "mail_lib",
+    "action_trajectory_loop_guard",
+    "llm_harness_core",
+    "llm_inspector_ui",
+    "engram",
+    "llm_inspector",
+    "llm_engines",
+    "rag_lib"
+  ],
+  "scouts": {
+    "expected": 9,
+    "results": [
+      {
+        "disconfirmation_attempt": "Unable to complete end-to-end tracing of any candidate path due to exhausted shell budget.",
+        "disposition": "no_candidate",
+        "evidence": "Only the package __init__.py was fully readable, listing the public API. Further inspection of production source and tests was not possible due to shell-call budget exhaustion.",
+        "expected_behavior": "The package should expose a coherent public API surface with no correctness defects in its core contracts, coordination, memory, or runtime modules.",
+        "scope": "agent_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Insufficient evidence gathered before shell budget exhaustion to identify a specific, currently actionable defect.",
+        "symbols": "agent_lib/__init__.py, contracts.py, coordination.py, memory.py, runtime.py"
+      },
+      {
+        "disconfirmation_attempt": "Checked that targets is keyed by normalized id and found by original id; the count-based early-exit compares a normalized-keyed count against an original-keyed dict. Distinct normalized ids do not trigger the bug (counts match). The defect is real specifically when inputs collide under normalize_message_id (stripping surrounding <> and whitespace), which is a plausible caller scenario since callers pass raw Message-ID header values.",
+        "disposition": "candidate",
+        "evidence": "targets dict keyed by normalized id: `targets[target] = header_message_id`. found dict keyed by original id: `found[original] = _message_body(message)`. Early exit: `if len(found) == len(targets): break`. When two inputs share a normalized target, len(targets) < number of input ids, so the loop terminates once the one normalized match is found, dropping the other (original) key from `found`.",
+        "expected_behavior": "`load_message_bodies` should return a mapping from each requested (original) Message-ID to its full body. For each input header_message_id, the caller expects that key present in the returned dict (when the message exists in the mbox).",
+        "scope": "mail_lib",
+        "severity": "medium",
+        "structured_before_forcing": false,
+        "suspected_violation": "`load_message_bodies` keys the result dict by the *original* header_message_id string, but the early-exit condition `if len(found) == len(targets)` compares against `targets`, which is keyed by *normalized* Message-ID. When two distinct input IDs normalize to the same canonical form (e.g. `\"<thread@x>\"` and `\"thread@x\"`), `len(targets)` is smaller than the number of distinct input keys. After the single normalized match is found, `len(found) == len(targets)` becomes true and the loop exits, so the duplicate-normalizing input key is never emitted into the result \u2014 the caller receives a missing body for a request that was validly made.",
+        "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+      },
+      {
+        "disconfirmation_attempt": "Traced the full path from input events through _extract_action, the per-position assessment loop, the warmup/confirmation gating, and the Intervention construction, then checked the round-trip contract via _serialize_action. Verified that the truncation_point references the previous action's sequence_offset as documented and that the single-intervention guard prevents multiple results. The hypothesis that a truncation_point/loop_start mismatch or confirmation-gate bug existed did not survive; the implementation matches the stated contract.",
+        "disposition": "no_candidate",
+        "evidence": "assess_trajectory builds _Action objects via _extract_action, computes novelty = len(evidence-seen)/len(evidence), and near-duplicates against the trailing 12 actions. An Intervention is created only when position >= _WARMUP_TOOL_ACTIONS+1, the current assessment is redundant, and the previous action is also redundant (or low-novelty near-duplicate), with `intervention is None` ensuring a single result. truncation_point = previous.action.sequence_offset and loop_start_action = previous.action.action_number. _serialize_action reproduces the exact event schema (offset/index/tool_call/observation.meta) so snapshots feed back into the detector. No inconsistency between the documented contract (zero-based truncation_point, caller keeps entries before it) and the implementation was found.",
+        "expected_behavior": "For a confirmed low-novelty action loop (two consecutive redundant near-duplicate tool actions after warmup), assess_trajectory/detect_and_redirect should return a single Intervention whose truncation_point is the sequence_offset of the first (previous) confirming action, and whose loop_start_action is that action's action_number.",
+        "scope": "action_trajectory_loop_guard",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "None found. The confirmation logic, near-duplicate detection, novelty computation, warmup gating, and truncation_point selection all trace consistently. The warmup gate (position < _WARMUP_TOOL_ACTIONS + 1), the redundant-pair confirmation, and the \"intervention is None\" single-intervention guard are all coherent, and the serialized snapshots round-trip back into the detector.",
+        "symbols": "src/action_trajectory_loop_guard/detector.py: assess_trajectory, detect_and_redirect, _Assessment.redundant, _near_duplicate, _novelty, _extract_action, _serialize_action"
+      },
+      {
+        "disconfirmation_attempt": "Sought a concrete falsifiable violation in the artifact bundle path (path escape, overwrite, SHA-256 mismatch handling) and across the public contracts. No surviving defect could be established; the documented guarantees were not contradicted by observable behavior within the available inspection budget.",
+        "disposition": "no_candidate",
+        "evidence": "The package README documents strong guarantees: \"The writer creates a previously absent directory, verifies SHA-256 over the exact attachment bytes, and refuses path escape or overwrite.\" The public API (__init__.py) exposes load_artifact_bundle, write_artifact_bundle, resolve_artifact_attachments. No observable contradiction to these contracts was found in the inspected files.",
+        "expected_behavior": "The package provides shared interoperability contracts (messages, results, memory records, trace events, evaluators, and durable run artifact envelopes). Security-sensitive operations like bundle writing must refuse path escape and overwrites, and verify SHA-256 over attachment bytes as documented.",
+        "scope": "llm_harness_core",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No surviving defect found. The documented security guarantees (path-escape refusal, no-overwrite rule, SHA-256 verification) were not contradicted by the public API surface and contracts observed. No concrete falsifiable violation could be established within the available inspection budget.",
+        "symbols": "llm_harness_core/src/llm_harness_core/run_artifacts.py (write_artifact_bundle, load_artifact_bundle, resolve_artifact_attachments, SHA-256 verification, path-escape/no-overwrite guards)"
+      },
+      {
+        "disconfirmation_attempt": "Shell budget exhausted before full trace; cannot confirm a violation.",
+        "disposition": "no_candidate",
+        "evidence": "artifact_to_operation_result inspects getattr(artifact, \"trace\", None); if dict -> success, else -> failure.",
+        "expected_behavior": "artifact_to_operation_result should return a success OperationResult when the artifact contains a serialized trace dict, and a failure when it does not.",
+        "scope": "llm_inspector_ui",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No surviving defect identified within shell budget.",
+        "symbols": "src/llm_inspector_ui/interop.py, src/llm_inspector_ui/__init__.py"
+      },
+      {
+        "disconfirmation_attempt": "Budget exhausted before any single hypothesis could be traced and actively disproved. No candidate survived a disconfirmation attempt.",
+        "disposition": "no_candidate",
+        "evidence": "Package structure inspected: 50+ source files across storage, semantic, neural, retrieval, embeddings, prompting, and CLI scopes. Public API exported from __init__.py. version.py defines SCHEMA_VERSION \"2.0\" and SCHEMA_MIGRATIONS map. Could not complete end-to-end trace of any single hypothesis within remaining budget.",
+        "expected_behavior": "ProjectMemory provides project-level memory augmentation for LLM applications with sessions, turns, prompt building, semantic graph, vector search, and a trust policy.",
+        "scope": "engram",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Insufficient shell budget remaining to trace a specific hypothesis end-to-end. Multiple modules (storage, semantic, neural, retrieval, embeddings, trust) were observed but no single defect was confirmed against a falsifiable contract before budget exhaustion.",
+        "symbols": "src/engram/__init__.py, src/engram/version.py, src/engram/project_memory.py, src/engram/contracts.py, src/engram/trust.py, src/engram/storage/schema.py, src/engram/semantic/*.py, src/engram/neural/*.py"
+      },
+      {
+        "disconfirmation_attempt": "Unable to complete end-to-end tracing of any specific hypothesis due to shell budget exhaustion; therefore no candidate survived the disconfirmation attempt.",
+        "disposition": "no_candidate",
+        "evidence": "Package structure observed: core trace model, exporters, inspectors, artifacts, interop helpers, and lazy RAG exports. Public API appears coherent with documented quick-start usage. No concrete defect evidence could be established within the available inspection budget.",
+        "expected_behavior": "The llm_inspector package normalizes LLM traces into a common model for inspection, comparison, and export, with a stable public API surface.",
+        "scope": "llm_inspector",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Insufficient evidence of a specific, currently actionable defect in correctness, data integrity, security boundaries, persistence, concurrency, packaging, or public contract. The shell budget was exhausted before I could trace a specific code path end-to-end to establish direct evidence of a violation.",
+        "symbols": "llm_inspector/__init__.py, llm_inspector/core, llm_inspector/export, llm_inspector/inspectors, llm_inspector/artifacts"
+      },
+      {
+        "disconfirmation_attempt": "With the shell budget exhausted, no further end-to-end tracing of a specific backend, tool, or contract path was possible to either confirm or falsify a particular hypothesis. Given the breadth of the package and lack of a targeted, evidence-backed defect, no candidate survived the disconfirmation attempt.",
+        "disposition": "no_candidate",
+        "evidence": "Inspected README.md (documents tier: stable, interface scope, backend behaviors) and __init__.py (public exports: get_engine, EngineFactory, ChatModel/GenerationRequest types, ToolExecutor, FailoverEngine, config_loader, discovery, resources, structured_output, interop, generation_artifacts, characterization). The public contract appears coherent and documented. No concrete failing behavior was observed within the available inspection budget.",
+        "expected_behavior": "The llm_engines package provides a unified ChatModel interface over multiple LLM backends (Ollama, Anthropic, OpenAI, vLLM, llama.cpp) with config loading, tool execution, failover, structured output, and generation artifact recording.",
+        "scope": "llm_engines",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No single defect candidate could be isolated from the package surface inspected. The package is large and spans many concerns (backends, contracts, tools, strategies, optimizations, discovery, resources, interop, characterization). Without deeper tracing of a specific code path and with the shell budget exhausted, I could not gather direct evidence of a concrete, currently actionable correctness or contract violation.",
+        "symbols": "/workspace/llm_engines/src/llm_engines/__init__.py, /workspace/llm_engines/src/llm_engines/backends/, /workspace/llm_engines/src/llm_engines/contracts/, /workspace/llm_engines/src/llm_engines/tools.py, /workspace/llm_engines/src/llm_engines/factory.py"
+      },
+      {
+        "disconfirmation_attempt": "Inspected the IngestResult dataclass and success property. The contract appears correct. Further inspection was blocked by shell budget exhaustion before I could trace the retrieval/reranking/prompt-assembly paths which contain more complex logic that could harbor defects.",
+        "disposition": "no_candidate",
+        "evidence": "The success property correctly checks `chunks_stored > 0 and not self.errors`. This appears to be a correct contract.",
+        "expected_behavior": "`IngestResult.success` should return True when a document was successfully ingested (chunks stored and no errors), and False otherwise.",
+        "scope": "rag_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "The `success` property is defined as `self.chunks_stored > 0 and not self.errors`. This is correct as written \u2014 it requires both chunks stored and no errors. No violation found in this contract.",
+        "symbols": "/workspace/rag_lib/src/rag_lib/pipeline.py: IngestResult.success"
+      }
+    ],
+    "structured": 9
+  },
+  "seed": 47,
+  "shell_call_cap_bound": false,
+  "shell_call_ceiling": 45,
+  "shell_tool_calls": 30,
+  "started_at": "2026-09-08T13:20:13.737068Z",
+  "substantive_coverage": {
+    "covered": 7,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/__init__.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/engram/src/engram/__init__.py",
+          "/workspace/engram/src/engram/version.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/__init__.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/__init__.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector/README.md",
+          "/workspace/llm_inspector/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector/src/llm_inspector/__init__.py"
+        ]
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector_ui/README.md",
+          "/workspace/llm_inspector_ui/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/mail_lib/__init__.py",
+          "/workspace/mail_lib/thunderbird.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [
+          "/workspace/rag_lib/README.md",
+          "/workspace/rag_lib/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/__init__.py",
+          "/workspace/rag_lib/src/rag_lib/pipeline.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "12633615b3be1f22014ab560e7280a515c2dffeca42ac86c1c6d5cd9ef50f01d",
+  "usage": {
+    "input_tokens": 105961,
+    "model_calls": 38,
+    "output_tokens": 7031
+  },
+  "verifiers": {
+    "expected": 1,
+    "results": [
+      {
+        "candidate": {
+          "disconfirmation_attempt": "Checked that targets is keyed by normalized id and found by original id; the count-based early-exit compares a normalized-keyed count against an original-keyed dict. Distinct normalized ids do not trigger the bug (counts match). The defect is real specifically when inputs collide under normalize_message_id (stripping surrounding <> and whitespace), which is a plausible caller scenario since callers pass raw Message-ID header values.",
+          "disposition": "candidate",
+          "evidence": "targets dict keyed by normalized id: `targets[target] = header_message_id`. found dict keyed by original id: `found[original] = _message_body(message)`. Early exit: `if len(found) == len(targets): break`. When two inputs share a normalized target, len(targets) < number of input ids, so the loop terminates once the one normalized match is found, dropping the other (original) key from `found`.",
+          "expected_behavior": "`load_message_bodies` should return a mapping from each requested (original) Message-ID to its full body. For each input header_message_id, the caller expects that key present in the returned dict (when the message exists in the mbox).",
+          "scope": "mail_lib",
+          "severity": "medium",
+          "structured_before_forcing": false,
+          "suspected_violation": "`load_message_bodies` keys the result dict by the *original* header_message_id string, but the early-exit condition `if len(found) == len(targets)` compares against `targets`, which is keyed by *normalized* Message-ID. When two distinct input IDs normalize to the same canonical form (e.g. `\"<thread@x>\"` and `\"thread@x\"`), `len(targets)` is smaller than the number of distinct input keys. After the single normalized match is found, `len(found) == len(targets)` becomes true and the loop exits, so the duplicate-normalizing input key is never emitted into the result \u2014 the caller receives a missing body for a request that was validly made.",
+          "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+        },
+        "claim": "In mail_lib/thunderbird.py::load_message_bodies, when two distinct input header_message_ids normalize to the same canonical Message-ID, the early-exit condition `if len(found) == len(targets)` triggers after the single normalized match is found, so the second (original) input key is never emitted into the returned dict even though its message exists in the mbox.",
+        "decision": "confirmed",
+        "disconfirmation_attempt": "Checked that distinct normalized ids do NOT trigger the bug: when all inputs normalize uniquely, len(targets) equals the number of input keys and the early-exit fires only after every key is found, which is correct. The defect is specifically gated on input collision under normalize_message_id (strip surrounding <> and whitespace), which is plausible since callers pass raw Message-ID header values.",
+        "evidence": "targets is keyed by normalized id: `targets[target] = header_message_id` in the build loop; found is keyed by original id: `found[original] = _message_body(message)`. The early-exit `if len(found) == len(targets): break` compares len(found) (number of original keys found) against len(targets) (number of distinct normalized ids). When two distinct inputs share a normalized target, the later assignment overwrites in targets, so len(targets) < number of distinct input keys. After the one normalized match is found, len(found) equals len(targets) and the loop breaks, so the second original key is never added to found.",
+        "impact": "A caller requesting bodies for multiple Message-IDs that include two values collapsing under normalize_message_id (e.g. \"<thread@x>\" and \"thread@x\") receives a result missing one of the requested keys, yielding a silent missing-body for a validly-made request.",
+        "remediation": "Key `found` by normalized id (or compare against a set of remaining normalized targets) so the early-exit counts distinct normalized matches rather than original-key count; ensure each requested original id is emitted when its normalized message is found.",
+        "scope": "mail_lib",
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/thunderbird.py::load_message_bodies, mail_lib/thunderbird.py::normalize_message_id"
+      }
+    ],
+    "structured": 1
+  }
+}

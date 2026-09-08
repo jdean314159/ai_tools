@@ -1,0 +1,13 @@
+ff0d1f8f4cd3a4410ee1c0767f88e0a34a27f75b0ac16e348317ba2387cb0289  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/independent-adjudication.json
+75dafff388c29ec1c96855036362989e753c83c34681e4fca94e6fb46bd9d22f  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q4-control-selection.json
+d75740d57b49e24e9c0c860ffbdbea161a3a0eed24e4409f13d29eaf89e5e7fd  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8-server-fingerprint.json
+befa343bdb4380a08a3c36c20960dad026013aaedc8aa654df7198319c521b80  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/01-baseline-seed17/raw-model-report.md
+240a40c785f20ac0e35a3d09815e3e734b65ddc668f66855920b861c7c4dac98  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/01-baseline-seed17/run-metadata.json
+f38d4e893d94f775152532292007df4b006df402b1111be092f04bd6b56033c0  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/01-baseline-seed17/transcript.jsonl
+537db049105304f96fb7323a6dfa1748a652c125103563106accba373f562106  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/02-baseline-seed31/raw-model-report.md
+a8889fcda74ec8a63278c8081441820cebb8bfa3cec155b44fb7c4c78bf160ac  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/02-baseline-seed31/run-metadata.json
+3bf6f93fd5d3eeb2b57f0a55eb0b893207404a2f95d0ed415f3fd9fc7c3cbc5e  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/02-baseline-seed31/transcript.jsonl
+68ef6f636d1e86f3e3428a1b9ca5753c73943de4629d475f8f36105f8fe855db  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/03-baseline-seed47/raw-model-report.md
+daf934818420fb18588b5698819a4981820b70059f3bb4620579dca6f970a781  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/03-baseline-seed47/run-metadata.json
+576ca5ce08062372182abcb84555dab76edc23bee34cc9f81c3e237b8f91d6c3  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/03-baseline-seed47/transcript.jsonl
+8ed1a95ebc5a720b83aaf9aa2e0153bc8f67b50ce2dc35a492028f70502c8a6e  docs/projects/repository_assessment/runs/2026-09-07-qwen3-coder-30b-a3b-kv-cache-comparison/q8/README.md

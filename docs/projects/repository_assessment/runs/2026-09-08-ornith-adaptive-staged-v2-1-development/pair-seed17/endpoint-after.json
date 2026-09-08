@@ -1,0 +1,68 @@
+{
+  "captured_at": "2026-09-08T04:02:40.035864Z",
+  "fingerprint": {
+    "default_n_ctx": 262144,
+    "default_speculative_types": "none",
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_ftype": "Q4_K - Medium",
+    "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+    "model_meta": {
+      "ftype": "Q4_K - Medium",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "size": 21702472192
+    },
+    "slots": [
+      {
+        "id": 0,
+        "is_processing": false,
+        "n_ctx": 262144,
+        "speculative": true,
+        "speculative_types": "none,draft-mtp"
+      },
+      {
+        "id": 1,
+        "is_processing": false,
+        "n_ctx": 262144,
+        "speculative": true,
+        "speculative_types": "none,draft-mtp"
+      },
+      {
+        "id": 2,
+        "is_processing": false,
+        "n_ctx": 262144,
+        "speculative": true,
+        "speculative_types": "none,draft-mtp"
+      },
+      {
+        "id": 3,
+        "is_processing": false,
+        "n_ctx": 262144,
+        "speculative": true,
+        "speculative_types": "none,draft-mtp"
+      }
+    ],
+    "total_slots": 4
+  },
+  "fingerprint_sha256": "cd24e9603b33dec026aa531b4011dc834212a68c23a85943744c87bf56e49af1",
+  "health": "ok",
+  "http_server_header": "llama.cpp",
+  "privacy": {
+    "endpoint_retained": false,
+    "model_directory_retained": false,
+    "prompts_or_slot_tasks_retained": false
+  },
+  "schema": "temporary-llamacpp-endpoint-snapshot/v1"
+}

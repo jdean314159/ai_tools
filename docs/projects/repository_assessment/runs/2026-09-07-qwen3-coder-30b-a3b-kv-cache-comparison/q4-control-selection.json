@@ -1,0 +1,36 @@
+{
+  "schema": "temporary-kv-cache-control-selection/v1",
+  "selected_at": "2026-09-07",
+  "selection_rule": "Every baseline run from the completed three-seed planner comparison; no outcome-based exclusions.",
+  "cache_type_k": "q4_0",
+  "cache_type_v": "q4_0",
+  "model": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+  "llama_build": "b10679-50f068fff",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "prompt_sha256": "061a04a30f4620082cf0d4ff134cec0369dd8ec77f14b34abe30d682556769cc",
+  "harness_sha256": "8f07bb772896554b37056fb16cf2696c246fcb56971d0ae1549a2da6ebe57972",
+  "controls": [
+    {
+      "seed": 17,
+      "run": "../2026-09-07-qwen3-coder-30b-a3b-planner-comparison/confirmatory/01-baseline-seed17",
+      "metadata_sha256": "31ff6f0ea459dc33e47a059569b73fff24ce3f12080caa93c049bda99aa665cc",
+      "report_sha256": "b9e57a76afb4f82665fa921a5b07b76ea5d7ab44d9574f32880fce28b9246963",
+      "transcript_sha256": "2916dee0fa214e6109ee50907b271feea64407877caf2759dd73043bd4742e0e"
+    },
+    {
+      "seed": 31,
+      "run": "../2026-09-07-qwen3-coder-30b-a3b-planner-comparison/confirmatory/04-baseline-seed31",
+      "metadata_sha256": "2ce278a49cb5a5bbccac5843be580bdc77a6596865409f71ca5710a4c48ceeed",
+      "report_sha256": "5668a50befd624832022f27313836022ab039d699a2b4ab3b050d690da4743eb",
+      "transcript_sha256": "ebc6690c26edd1999619326244cc2c7bd72fcfacf4d5b5a9c7f508ca55aa0a0d"
+    },
+    {
+      "seed": 47,
+      "run": "../2026-09-07-qwen3-coder-30b-a3b-planner-comparison/confirmatory/05-baseline-seed47",
+      "metadata_sha256": "dbe90751295ebc36d6ec1ddba0a23b9156ad7b02f8122d4e55b8fb2b9a176c61",
+      "report_sha256": "4a3525ad7eea217b2d827e9eedd5fcfd7901263383cbae8df253bf3e7bedd90d",
+      "transcript_sha256": "ce52cbeb8eab8778280822df72569d6fcc71973dfba91100edde3ad3926b5f31"
+    }
+  ]
+}

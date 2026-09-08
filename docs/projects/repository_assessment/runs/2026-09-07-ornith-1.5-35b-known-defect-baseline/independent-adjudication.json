@@ -1,0 +1,204 @@
+{
+  "schema": "temporary-ornith-repository-assessment-adjudication/v1",
+  "adjudicated_at": "2026-09-07",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "corrected_head_commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+  "prediction_decisions": {
+    "median_known_defect_recall_remains_zero": "supported",
+    "all_three_runs_submit_naturally": "contradicted",
+    "median_substantive_coverage_remains_one_of_nine": "supported"
+  },
+  "material_improvement_rule": "Ornith median recall must be at least 1/3 and strictly greater than the matched Qwen3-Coder Q4_0 baseline median.",
+  "material_improvement_decision": "not_met",
+  "grader": {
+    "path": "docs/projects/repository_assessment/tools/test_known_defects_at_83e1d09.py",
+    "invalid_preflight": {
+      "result": "3 passed",
+      "reason": "The first target invocation ran beneath the current checkout, whose root conftest placed HEAD package sources ahead of the requested target PYTHONPATH. Import-provenance enforcement exposed the mismatch; this result is excluded."
+    },
+    "target_result": {
+      "passed": 0,
+      "failed": 3
+    },
+    "corrected_head_result": {
+      "passed": 3,
+      "failed": 0
+    }
+  },
+  "scoring_rule": "A known defect counts only when a validated report finding identifies the affected behavior and relevant symbol or call path. Separately reported defects can be true findings but do not increase recall against the frozen denominator.",
+  "known_defects": [
+    {
+      "id": "engram_batch_indexing",
+      "symbol": "ProjectMemory.store_episodes_batch",
+      "behavior": "redundant batch embedding and Chroma insertion after per-episode storage"
+    },
+    {
+      "id": "writer_lock_inode_replacement",
+      "symbol": "WriterLock",
+      "behavior": "dead PID text causes replacement of a pathname whose inode is actively flocked"
+    },
+    {
+      "id": "rag_bm25_stale_same_count_cache",
+      "symbol": "HybridRetriever._get_bm25_index",
+      "behavior": "a persisted same-count BM25 cache is accepted despite a newer collection mutation marker"
+    }
+  ],
+  "coverage_correction": {
+    "reason": "The baseline used relative package paths, while the harness attributes only commands containing literal /workspace/package paths and omits relevant root-level callers and package contract documents. Independent scoring applies the preregistered production-source plus distinct test, caller, README, or package-contract rule to exact transcripts.",
+    "scores": [
+      {
+        "seed": 17,
+        "harness_recorded": 0,
+        "preregistered": 1,
+        "covered_packages": ["engram"]
+      },
+      {
+        "seed": 31,
+        "harness_recorded": 0,
+        "preregistered": 2,
+        "covered_packages": ["engram", "llm_engines"]
+      },
+      {
+        "seed": 47,
+        "harness_recorded": 0,
+        "preregistered": 1,
+        "covered_packages": ["engram"]
+      }
+    ]
+  },
+  "runs": [
+    {
+      "run": "01-baseline-seed17",
+      "seed": 17,
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 1,
+      "completion_mode": "forced",
+      "turns": 45,
+      "shell_calls": 45,
+      "input_tokens": 1524638,
+      "output_tokens": 9300,
+      "elapsed_seconds": 205.281,
+      "remaining_uncertainty": "medium",
+      "independent_scope_call_distribution": {
+        "engram": 36,
+        "cross_repository": 9
+      },
+      "dominant_package": "engram",
+      "max_package_concentration_percent": 80.0,
+      "validated_finding_count": 3,
+      "true_finding_count": 2,
+      "false_positive_count": 1,
+      "precision": 0.6666666666666666,
+      "adjudications": [
+        {
+          "claim": "ProjectMemory.get_facts bypasses the configured recall trust policy",
+          "disposition": "confirmed_pre_disclosed_defect",
+          "rationale": "The model first read this exact OPEN item in CLAUDE_VERIFICATION_HANDOFF_2026-09-01.md, then reproduced that get_facts returns a cross-tenant fact. The independent reproducer confirms the behavior on the frozen target and current HEAD."
+        },
+        {
+          "claim": "Extracted semantic facts omit trust, tenant, source, and writer metadata",
+          "disposition": "confirmed_pre_disclosed_defect",
+          "rationale": "The model first read this exact OPEN item in the handoff, then reproduced the missing metadata. The independent reproducer confirms the behavior on the frozen target and current HEAD; the appropriate inheritance semantics still require an explicit policy decision."
+        },
+        {
+          "claim": "Trust-policy tests do not cover get_facts",
+          "disposition": "non_defect_coverage_gap",
+          "rationale": "The missing regression test is real and useful, but it is supporting coverage evidence rather than a distinct implementation defect."
+        }
+      ]
+    },
+    {
+      "run": "02-baseline-seed31",
+      "seed": 31,
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 2,
+      "completion_mode": "forced",
+      "turns": 45,
+      "shell_calls": 45,
+      "input_tokens": 1801811,
+      "output_tokens": 4651,
+      "elapsed_seconds": 201.045,
+      "remaining_uncertainty": "low",
+      "independent_scope_call_distribution": {
+        "agent_lib": 4,
+        "engram": 14,
+        "llm_engines": 9,
+        "llm_harness_core": 3,
+        "llm_inspector": 1,
+        "cross_repository": 14
+      },
+      "dominant_package": "engram",
+      "max_package_concentration_percent": 31.1,
+      "validated_finding_count": 0,
+      "true_finding_count": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "adjudications": []
+    },
+    {
+      "run": "03-baseline-seed47",
+      "seed": 47,
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 1,
+      "completion_mode": "forced",
+      "turns": 45,
+      "shell_calls": 45,
+      "input_tokens": 1648791,
+      "output_tokens": 7632,
+      "elapsed_seconds": 190.847,
+      "remaining_uncertainty": "medium",
+      "independent_scope_call_distribution": {
+        "action_trajectory_loop_guard": 1,
+        "agent_lib": 8,
+        "engram": 28,
+        "cross_repository": 8
+      },
+      "dominant_package": "engram",
+      "max_package_concentration_percent": 62.2,
+      "validated_finding_count": 1,
+      "true_finding_count": 1,
+      "false_positive_count": 0,
+      "precision": 1.0,
+      "adjudications": [
+        {
+          "claim": "ProjectMemory.get_facts bypasses the configured recall trust policy",
+          "disposition": "confirmed_pre_disclosed_defect",
+          "rationale": "The model first read this exact OPEN item in CLAUDE_VERIFICATION_HANDOFF_2026-09-01.md, then reproduced it. Independent execution confirms the behavior on the frozen target and current HEAD."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "recall_scores": [0, 0, 0],
+    "median_recall": 0,
+    "coverage_scores": [1, 2, 1],
+    "median_coverage": 1,
+    "natural_completions": 0,
+    "turn_cap_bound": 3,
+    "validated_finding_claims": 4,
+    "true_finding_claims": 3,
+    "false_positive_claims": 1,
+    "aggregate_precision": 0.75,
+    "unique_confirmed_defects": 2,
+    "unique_newly_discovered_defects": 0,
+    "median_turns": 45,
+    "median_shell_calls": 45,
+    "median_input_tokens": 1648791,
+    "median_output_tokens": 7632,
+    "median_elapsed_seconds": 201.045,
+    "median_max_package_concentration_percent": 62.2,
+    "low_uncertainty_below_8_of_9_coverage": 1
+  },
+  "interpretation": {
+    "objective_recall": "Ornith did not identify any of the three independently graded defects in any seed, so the preregistered improvement threshold was not met.",
+    "lead_following": "Two seeds read an internal handoff that explicitly named two different OPEN Engram defects and then reproduced those behaviors. This is evidence of useful lead verification, not hidden-defect recall or independent discovery.",
+    "termination": "Perfect performance on the synthetic recovery suite did not transfer to autonomous stopping: all three repository runs bound the 45-turn cap and required forced reports.",
+    "causal_limit": "The Qwen comparison is sequential and Ornith used active MTP while the matched Qwen Q4_0 baseline did not. Outcome differences cannot be attributed solely to model weights."
+  }
+}

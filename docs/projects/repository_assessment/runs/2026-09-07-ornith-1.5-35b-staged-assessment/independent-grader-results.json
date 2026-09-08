@@ -1,0 +1,19 @@
+{
+  "schema": "temporary-known-defect-grader-result/v1",
+  "recorded_at": "2026-09-07",
+  "grader_source": "docs/projects/repository_assessment/tools/test_known_defects_at_83e1d09.py",
+  "target": {
+    "commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+    "archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "result": "3 failed",
+    "failed": 3,
+    "passed": 0
+  },
+  "head": {
+    "commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+    "result": "3 passed",
+    "failed": 0,
+    "passed": 3
+  },
+  "isolation": "The grader was copied to /tmp and executed from /tmp with explicit target-only or HEAD-only PYTHONPATH roots, plugin autoload disabled, and no repository conftest import path."
+}

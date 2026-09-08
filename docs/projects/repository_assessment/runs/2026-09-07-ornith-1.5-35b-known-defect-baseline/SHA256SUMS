@@ -1,0 +1,13 @@
+b45c633b233c683f5309f947f110fe2e4d745c65ee5cea02d559ac6aa2df064c  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/01-baseline-seed17/raw-model-report.md
+9f7adae93a24f73bb6c2fe96315c5ea307c1d4ed9438d7140025ce9381ae78ca  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/01-baseline-seed17/run-metadata.json
+51d7474d9eec9d34593d27cb06eda836cda0530f90af94d6a4edc2f72e9b8a22  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/01-baseline-seed17/transcript.jsonl
+bf3df8b0c4ab7ff6e51d24fde4977ac0542a3882d03c9c36692e885cb47e8dac  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/02-baseline-seed31/raw-model-report.md
+adc73ad0d674ec69dd25389381023710d31bf7c6df4285565851878ec81e0500  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/02-baseline-seed31/run-metadata.json
+3bc391303d40b8f0b093316487370f6ad70fdf9a3afa678461aef0b6abe505a5  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/02-baseline-seed31/transcript.jsonl
+9773c9c8937ea8ea617b920a64f287e74c8ef48a047529aa9a7c35b6878ef80e  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/03-baseline-seed47/raw-model-report.md
+335c7641c631291fc91cc5997ed264097c81307d17a57fffaf96e3fdfd2b9c9b  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/03-baseline-seed47/run-metadata.json
+21129f7cbec22b21172035fa0b3d6ce75bbe3568554d1b96b6c6eb9c0576b29c  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/03-baseline-seed47/transcript.jsonl
+35b7c268c368423757325461f6074d047565882bda3d303a930c46879175709e  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/independent-adjudication.json
+6478420aaf3e92a21938a34c7c860e2c96892544490bcdabb3ce2baf11bfc215  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/independent-trust-reproducer-results.json
+d849fe23a9509f0a2014d606ba192a8aa221b96e64beba152cd85968428f93cc  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/independent-trust-reproducer.py.raw
+ad85b5e37dfcf6e7efa050617eb7484396658d86598cda1bc55dd041fc448ee4  docs/projects/repository_assessment/runs/2026-09-07-ornith-1.5-35b-known-defect-baseline/server-fingerprint.json

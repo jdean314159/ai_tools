@@ -1,0 +1,40 @@
+{
+  "recorded_at": "2026-09-07T14:34:59Z",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "harness_sha256": "8f07bb772896554b37056fb16cf2696c246fcb56971d0ae1549a2da6ebe57972",
+  "model_sha256": null,
+  "llama_build": "b10679-50f068fff",
+  "launch_configuration": {
+    "cache_type_k": "q8_0",
+    "cache_type_v": "q8_0",
+    "flash_attention": true,
+    "jinja": true,
+    "speculative_decoding": false,
+    "source": "user-reported restart command changing only cache-type-k and cache-type-v from the frozen Q4_0 launch"
+  },
+  "model_metadata": {
+    "model_label": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+    "file_size_bytes": 17659361280,
+    "ftype": "Q4_K - Medium",
+    "n_ctx": 262144,
+    "n_ctx_train": 262144,
+    "n_embd": 2048,
+    "n_params": 30532122624,
+    "n_vocab": 151936,
+    "total_slots": 4
+  },
+  "server_observations": {
+    "health": "ok",
+    "http_server_header": "llama.cpp",
+    "idle_slots": 4,
+    "slot_context_tokens": 262144,
+    "slot_speculative": false
+  },
+  "observed_discrepancies": [],
+  "omissions": [
+    "The llama.cpp HTTP endpoints do not expose KV-cache types; Q8_0 K/V is established only by the user-reported launch command.",
+    "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+    "The exact server executable digest and independently inspected process argv are unavailable."
+  ]
+}

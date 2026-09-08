@@ -1,0 +1,506 @@
+{
+  "accepted_findings": [
+    {
+      "decision": "accept",
+      "index": 2,
+      "rationale": "The evidence directly demonstrates the claimed behavior and its inconsistency. normalize_message_id (line 85) strips whitespace and angle brackets; load_message_body (lines 299-307) computes target = normalize_message_id(header_message_id) and matches by normalized value, so it is keyed/looked-up by the normalized form. load_message_bodies (line 314+) computes the same normalized target per input but stores found[original] = _message_body(message), keyed by the raw original header_message_id. This is an internal inconsistency with the established normalized-key contract used by load_message_body and the rest of the package. The impact (KeyError when callers look up by normalized ID and the stored header differs from its normalized form) follows directly from the dict being keyed by the raw original value rather than the normalized key. The remediation (key by the normalized target) correctly resolves the inconsistency.",
+      "scope": "mail_lib",
+      "usage": {
+        "input_tokens": 573,
+        "latency_ms": 2600.991,
+        "output_tokens": 205,
+        "total_tokens": 778
+      },
+      "verification": {
+        "candidate": {
+          "disconfirmation_attempt": "Checked whether callers depend on original vs normalized keys; load_message_body normalizes and is the reference behavior. Need to confirm a caller expects normalized keys to consume load_message_bodies output.",
+          "disposition": "candidate",
+          "evidence": "In load_message_bodies: targets[target]=header_message_id (key=normalized target, value=original). Then in the read loop: original=targets.get(normalized); found[original]=_message_body(message). The dict is keyed by original (un-normalized) while load_message_body and normalize_message_id are used everywhere else for consistent keys.",
+          "expected_behavior": "`load_message_bodies` should return a dict keyed by the normalized Message-ID (matching `load_message_body` and the mbox source of truth), so callers can reliably look up bodies by normalized ID.",
+          "scope": "mail_lib",
+          "severity": "high",
+          "structured_before_forcing": false,
+          "suspected_violation": "`load_message_bodies` builds `found` keyed by the original, un-normalized `header_message_id` (`found[original] = ...`) rather than the normalized `target`. This makes the returned keys inconsistent with `load_message_body` (which normalizes) and with the rest of the package's Message-ID handling, so a caller looking up by normalized ID gets a KeyError.",
+          "symbols": "mail_lib/thunderbird.py :: load_message_bodies"
+        },
+        "claim": "In mail_lib/thunderbird.py, `load_message_bodies` builds its result dict keyed by the original, un-normalized `header_message_id` (`found[original] = _message_body(message)`) instead of the normalized `target`. This makes the returned keys inconsistent with `load_message_body` (which normalizes via `normalize_message_id`) and with the rest of the package's Message-ID handling, so a caller looking up a body by normalized ID would get a KeyError.",
+        "decision": "confirmed",
+        "disconfirmation_attempt": "Checked whether any caller depends on original vs normalized keys: load_message_body is the reference single-message behavior and it normalizes; the rest of the package (lines 445, 479, 565) also normalizes Message-IDs before matching. No caller was found that expects load_message_bodies to return raw original keys, so the batch function's behavior is inconsistent with the established normalized-key contract.",
+        "evidence": "grep of mail_lib/thunderbird.py shows: normalize_message_id (line 85) strips surrounding whitespace and angle brackets. load_message_body (line 299-307) computes target = normalize_message_id(header_message_id) and matches messages by normalize_message_id(message.get(\"Message-ID\")) == target, i.e. keyed/looked-up by normalized value. load_message_bodies (line 314+) computes target = normalize_message_id(header_message_id) per input but stores found[original] = _message_body(message) keyed by the original un-normalized value. The single-input function normalizes while the batch function does not, an internal inconsistency.",
+        "impact": "Callers that look up message bodies by normalized Message-ID using the dict returned by load_message_bodies will raise KeyError when the stored header Message-ID differs from its normalized form (e.g. differing angle brackets or surrounding whitespace), because the dict is keyed by the raw original value rather than the normalized key used everywhere else.",
+        "remediation": "Change load_message_bodies to key the result dict by the normalized target (found[target] = _message_body(message)) so returned keys match load_message_body and the package's normalized Message-ID convention.",
+        "scope": "mail_lib",
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/thunderbird.py :: load_message_bodies (found[original] = ...), load_message_body (target = normalize_message_id(...)), normalize_message_id"
+      }
+    }
+  ],
+  "base_url_retained": false,
+  "candidate_selection": {
+    "limit": 6,
+    "rule": "first six candidates in seeded scope order",
+    "selected": 2
+  },
+  "completion_mode": "structured",
+  "condition": "staged_scout_verifier_critic_synthesis",
+  "critic": {
+    "calls": 2,
+    "records": [
+      {
+        "decision": "insufficient_evidence",
+        "index": 1,
+        "rationale": "The evidence correctly establishes that assess_trajectory builds a filtered action list via enumerate, that _extract_action defaults sequence_offset to the filtered enumerate offset, and that loop_start_action is derived from the 1-based original index. It also correctly notes these two indexing schemes coincide only when no non-tool events are filtered out. However, the claim asserts a concrete defect with a specific harmful impact (misaligned truncation that corrupts the replay/preservation contract), and the evidence does not demonstrate that this actually occurs in practice. Critically, the evidence does not establish: (1) that _extract_action is ever called with a non-int captured_offset in a way that would make sequence_offset diverge from the original position, or that the enumerated offset is used at all when events are filtered; (2) how the caller actually uses truncation_point against agent_steps \u2014 whether agent_steps is the filtered list or the original trajectory, which determines whether any divergence is even observable; and (3) that the divergence produces the claimed corruption rather than being benign. The disconfirmation_attempt itself concedes the mismatch is 'latent' and only manifests when filtered and unfiltered positions differ, and the evidence provides no demonstration that this divergence actually arises or that it corrupts behavior. The claim rests on a naming-scheme inconsistency without showing the inconsistency is reachable or harmful. Therefore the claimed behavior and impact are not demonstrated.",
+        "scope": "action_trajectory_loop_guard",
+        "usage": {
+          "input_tokens": 711,
+          "latency_ms": 4350.655,
+          "output_tokens": 300,
+          "total_tokens": 1011
+        },
+        "verification": {
+          "candidate": {
+            "disconfirmation_attempt": "Checked: sequence_offset defaults to the filtered-list offset, and loop_start_action uses the original 1-based index. The replay test includes a message-only step (AgentAction.message_only), confirming non-action events appear in real trajectories, so the divergence is reachable, not theoretical. The warmup/confirmation gating and truncation_point==8 assertion in the passing test are consistent only because that test's actions have no intervening non-tool events, so offset==index there. The mismatch is latent whenever filtered and unfiltered positions differ.",
+            "disposition": "candidate",
+            "evidence": "In assess_trajectory: intervention = Intervention(truncation_point=previous.action.sequence_offset, ...). sequence_offset is assigned in _extract_action as `int(captured_offset) if isinstance(captured_offset, int) else offset`, where offset is the zero-based enumerate index over the *filtered* actions list. loop_start_action uses previous.action.action_number which is the 1-based original index. README documents preserved_steps = agent_steps[:intervention.truncation_point]. When non-tool events are filtered out, the filtered offset no longer equals the original step position, so the slice boundary is wrong relative to loop_start_action.",
+            "expected_behavior": "`intervention.truncation_point` should index into the caller's original trajectory so that `agent_steps[:intervention.truncation_point]` preserves exactly the entries before the loop-starting action, consistent with `loop_start_action` which names that same action.",
+            "scope": "action_trajectory_loop_guard",
+            "severity": "high",
+            "structured_before_forcing": false,
+            "suspected_violation": "`truncation_point` is set to `previous.action.sequence_offset`, which is the zero-based position in the *filtered* tool-action list (defaulting to enumeration offset), not the position in the original unfiltered trajectory. When the trajectory contains non-tool events (messages, etc.) before the loop, the filtered offset diverges from the original step index, so `agent_steps[:truncation_point]` truncates at the wrong boundary \u2014 either dropping preserved evidence or keeping a looping action that `loop_start_action` claims to exclude.",
+            "symbols": "action_trajectory_loop_guard/detector.py: assess_trajectory (intervention construction), _extract_action (sequence_offset), README.md (agent_steps[:intervention.truncation_point])"
+          },
+          "claim": "In assess_trajectory, when a confirmed action loop is detected, intervention.truncation_point is set to previous.action.sequence_offset, which is the zero-based position in the *filtered* tool-action list (the enumerate index over actions that survive _extract_action), not the position in the original unfiltered trajectory. When the trajectory contains non-tool events (messages, etc.) interspersed with tool actions, the filtered offset diverges from the original step index, so agent_steps[:truncation_point] truncates at the wrong boundary relative to loop_start_action (which names the 1-based original action_number).",
+          "decision": "confirmed",
+          "disconfirmation_attempt": "The passing replay test (test_detector.py) uses trajectories whose actions have no intervening non-tool events, so filtered offset == original position and truncation_point coincides with loop_start_action-1; the truncation_point==8 assertion and warmup gating hold only in that narrow case. This confirms the mismatch is latent and only manifests when filtered and unfiltered positions differ, not that it is impossible.",
+          "evidence": "assess_trajectory builds actions = [action for offset, event in enumerate(events) if (action := _extract_action(event, offset)) is not None], so offset is the enumerate index over the *filtered* tool-action list only. _extract_action assigns sequence_offset = int(captured_offset) if isinstance(captured_offset, int) else offset \u2014 defaulting to the filtered enumerate offset. The intervention sets truncation_point=previous.action.sequence_offset while loop_start_action=previous.action.action_number (1-based original index via number=_field(event,\"index\") or offset+1). The Intervention docstring states truncation_point is a zero-based sequence offset the caller uses to retain entries before it. These two naming schemes (filtered offset vs original 1-based action_number) are only equal when no non-tool events are filtered out.",
+          "impact": "The truncation boundary used to preserve pre-loop evidence is misaligned with the action named by loop_start_action. Depending on whether non-tool events precede the loop, agent_steps[:truncation_point] either drops preserved evidence or retains a looping action that loop_start_action claims to exclude \u2014 corrupting the replay/preservation contract.",
+          "remediation": "Make truncation_point index the caller's original trajectory consistently with loop_start_action: derive it from the original step index (e.g., the event's original position or action_number-1) rather than the filtered enumerate offset, or document that truncation_point indexes the filtered action list rather than the raw trajectory.",
+          "scope": "action_trajectory_loop_guard",
+          "structured_before_forcing": false,
+          "symbols": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py: assess_trajectory (intervention construction with truncation_point=previous.action.sequence_offset and loop_start_action=previous.action.action_number), _extract_action (sequence_offset = int(captured_offset) if isinstance(captured_offset, int) else offset, where offset is enumerate index over filtered actions), Intervention docstring (\"truncation_point is a zero-based sequence offset. The caller retains trajectory entries before it\")"
+        }
+      },
+      {
+        "decision": "accept",
+        "index": 2,
+        "rationale": "The evidence directly demonstrates the claimed behavior and its inconsistency. normalize_message_id (line 85) strips whitespace and angle brackets; load_message_body (lines 299-307) computes target = normalize_message_id(header_message_id) and matches by normalized value, so it is keyed/looked-up by the normalized form. load_message_bodies (line 314+) computes the same normalized target per input but stores found[original] = _message_body(message), keyed by the raw original header_message_id. This is an internal inconsistency with the established normalized-key contract used by load_message_body and the rest of the package. The impact (KeyError when callers look up by normalized ID and the stored header differs from its normalized form) follows directly from the dict being keyed by the raw original value rather than the normalized key. The remediation (key by the normalized target) correctly resolves the inconsistency.",
+        "scope": "mail_lib",
+        "usage": {
+          "input_tokens": 573,
+          "latency_ms": 2600.991,
+          "output_tokens": 205,
+          "total_tokens": 778
+        },
+        "verification": {
+          "candidate": {
+            "disconfirmation_attempt": "Checked whether callers depend on original vs normalized keys; load_message_body normalizes and is the reference behavior. Need to confirm a caller expects normalized keys to consume load_message_bodies output.",
+            "disposition": "candidate",
+            "evidence": "In load_message_bodies: targets[target]=header_message_id (key=normalized target, value=original). Then in the read loop: original=targets.get(normalized); found[original]=_message_body(message). The dict is keyed by original (un-normalized) while load_message_body and normalize_message_id are used everywhere else for consistent keys.",
+            "expected_behavior": "`load_message_bodies` should return a dict keyed by the normalized Message-ID (matching `load_message_body` and the mbox source of truth), so callers can reliably look up bodies by normalized ID.",
+            "scope": "mail_lib",
+            "severity": "high",
+            "structured_before_forcing": false,
+            "suspected_violation": "`load_message_bodies` builds `found` keyed by the original, un-normalized `header_message_id` (`found[original] = ...`) rather than the normalized `target`. This makes the returned keys inconsistent with `load_message_body` (which normalizes) and with the rest of the package's Message-ID handling, so a caller looking up by normalized ID gets a KeyError.",
+            "symbols": "mail_lib/thunderbird.py :: load_message_bodies"
+          },
+          "claim": "In mail_lib/thunderbird.py, `load_message_bodies` builds its result dict keyed by the original, un-normalized `header_message_id` (`found[original] = _message_body(message)`) instead of the normalized `target`. This makes the returned keys inconsistent with `load_message_body` (which normalizes via `normalize_message_id`) and with the rest of the package's Message-ID handling, so a caller looking up a body by normalized ID would get a KeyError.",
+          "decision": "confirmed",
+          "disconfirmation_attempt": "Checked whether any caller depends on original vs normalized keys: load_message_body is the reference single-message behavior and it normalizes; the rest of the package (lines 445, 479, 565) also normalizes Message-IDs before matching. No caller was found that expects load_message_bodies to return raw original keys, so the batch function's behavior is inconsistent with the established normalized-key contract.",
+          "evidence": "grep of mail_lib/thunderbird.py shows: normalize_message_id (line 85) strips surrounding whitespace and angle brackets. load_message_body (line 299-307) computes target = normalize_message_id(header_message_id) and matches messages by normalize_message_id(message.get(\"Message-ID\")) == target, i.e. keyed/looked-up by normalized value. load_message_bodies (line 314+) computes target = normalize_message_id(header_message_id) per input but stores found[original] = _message_body(message) keyed by the original un-normalized value. The single-input function normalizes while the batch function does not, an internal inconsistency.",
+          "impact": "Callers that look up message bodies by normalized Message-ID using the dict returned by load_message_bodies will raise KeyError when the stored header Message-ID differs from its normalized form (e.g. differing angle brackets or surrounding whitespace), because the dict is keyed by the raw original value rather than the normalized key used everywhere else.",
+          "remediation": "Change load_message_bodies to key the result dict by the normalized target (found[target] = _message_body(message)) so returned keys match load_message_body and the package's normalized Message-ID convention.",
+          "scope": "mail_lib",
+          "structured_before_forcing": false,
+          "symbols": "mail_lib/thunderbird.py :: load_message_bodies (found[original] = ...), load_message_body (target = normalize_message_id(...)), normalize_message_id"
+        }
+      }
+    ]
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-08T03:32:29.568579Z",
+  "lifecycle": "final",
+  "max_scope_concentration": 0.18181818181818182,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "prompt_sha256": {
+    "scout": "cf172ae87df99a5a4627ff9755ae909ee3f4dd8260d5aeb152c9d43eb9769515",
+    "synthesis": "fe48bcdddf0d091344219e8f2a57e060a0e1e6bfa092cd88483240195b324779",
+    "verifier": "4adeb0217c704665741090b130c4e7deec461340a7ae51bc6b62c4c1108352a6"
+  },
+  "protocol_violations": [],
+  "remaining_uncertainty": "medium",
+  "report_sha256": "780f30c6a37b27a61affee56432a4f9cf8d2b80a079560c649b322a592ff0b90",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-staged-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 6,
+    "agent_lib": 3,
+    "engram": 3,
+    "llm_engines": 3,
+    "llm_harness_core": 3,
+    "llm_inspector": 3,
+    "llm_inspector_ui": 3,
+    "mail_lib": 6,
+    "rag_lib": 3
+  },
+  "scope_order": [
+    "llm_inspector",
+    "llm_engines",
+    "agent_lib",
+    "engram",
+    "rag_lib",
+    "llm_harness_core",
+    "action_trajectory_loop_guard",
+    "llm_inspector_ui",
+    "mail_lib"
+  ],
+  "scouts": {
+    "expected": 9,
+    "results": [
+      {
+        "disconfirmation_attempt": "With the limited shell budget, I inspected the package structure and public API surface. The package appears architecturally sound with clear separation of concerns. Without being able to trace specific data paths through serialization or test the exporters' round-trip behavior, I cannot confirm any specific defect. The absence of a confirmed, reproducible violation of a falsifiable contract means no candidate survives.",
+        "disposition": "no_candidate",
+        "evidence": "Package has a coherent structure: core/types.py, core/trace.py, core/serialize.py for the trace model; export/ for JSON exporters; renderers/ for console output; inspectors/ for comparison logic; augmenters/ and adapters/ for context augmentation. The __init__.py exposes a comprehensive, consistent public API with lazy loading for RAG utilities. pyproject.toml is properly configured with build system, dependencies, and entry points.",
+        "expected_behavior": "The llm_inspector package exposes a stable public API (core trace model, exporters, renderers, inspectors) that normalizes LLM traces into a common model for inspection, diffing, and export. Public contract functions (e.g., report_to_dict, diff_to_dict, bundle_to_dict) should round-trip data consistently and renderers should produce deterministic output.",
+        "scope": "llm_inspector",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No specific defect was confirmed. The package structure shows a well-organized observability layer with core types, exporters, renderers, inspectors, augmenters, adapters, and interop helpers. The public API in __init__.py is comprehensive and consistent.",
+        "symbols": "/workspace/llm_inspector/src/llm_inspector/__init__.py\n/workspace/llm_inspector/src/llm_inspector/core/\n/workspace/llm_inspector/src/llm_inspector/export/\n/workspace/llm_inspector/src/llm_inspector/renderers/"
+      },
+      {
+        "disconfirmation_attempt": "Could not perform any empirical trace or test execution because the shell budget was exhausted. Without the ability to run tests or trace source, no hypothesis could be confirmed or falsified, so no candidate was submitted.",
+        "disposition": "no_candidate",
+        "evidence": "Only static inspection of README.md, pyproject.toml, and __init__.py was possible. The public contract surface is large and spans engine abstraction, capability discovery, structured output parsing, tool execution, and generation-artifact recording. No code path could be traced empirically within the available shell budget.",
+        "expected_behavior": "The llm_engines package provides a unified ChatModel interface over multiple LLM backends (Ollama, Anthropic, OpenAI, vLLM, llama.cpp) with explicit capabilities, structured responses, failover, tool execution, and durable generation artifacts.",
+        "scope": "llm_engines",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Unable to identify a verified defect: shell budget was exhausted before any hypothesis could be traced end-to-end and actively disproven. No candidate survived the required disconfirmation attempt.",
+        "symbols": "llm_engines/__init__.py (get_engine, EngineFactory, ToolExecutor, StructuredOutputHandler, record_generation); contracts/; backends/"
+      },
+      {
+        "disconfirmation_attempt": "Limited to inspecting package layout and public API declarations. Could not perform deeper path tracing or behavioral reproduction due to shell budget constraints.",
+        "disposition": "no_candidate",
+        "evidence": "Inspected package structure and __init__.py public API surface. The package is an experimental agent-orchestration layer. Without additional shell budget to trace specific code paths and reproduce behavior, no concrete defect could be verified.",
+        "expected_behavior": "The package should expose a coherent public API surface with contracts, coordination, memory adapters, planners, runtime, tools, and interop functions as documented in __init__.py.",
+        "scope": "agent_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No specific defect could be substantiated with direct code evidence within the available shell budget. The package is large (1000+ lines across many modules) and I could not trace a concrete end-to-end path to a falsifiable violation.",
+        "symbols": "agent_lib/__init__.py, contracts.py, coordination.py, memory.py, runtime.py, interop.py"
+      },
+      {
+        "disconfirmation_attempt": "Insufficient to complete a full disconfirmation pass. Only top-level structure, README contract, and public exports were inspected; no end-to-end trace of a specific hypothesis was performed before budget was exhausted.",
+        "disposition": "no_candidate",
+        "evidence": "Public API surface in __init__.py exposes ProjectMemory, MemoryTrustPolicy, AugmentRequest/Result, interop and evaluation helpers. README documents owner-only directory/permission behavior and opt-in trust policy enforcement. Further deep tracing into project_memory.py, trust.py, and storage was not completed due to shell budget exhaustion.",
+        "expected_behavior": "ProjectMemory stores conversation turns, retrieves relevant prior context, and assembles memory-augmented prompts. Persistent project/session identifiers must be single path components; directories created with owner-only access and JSON metadata with owner-only read/write permissions on POSIX.",
+        "scope": "engram",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No surviving defect candidate identified within the available inspection budget. The package's public API (ProjectMemory, MemoryTrustPolicy, interop/evaluation helpers) and documented contracts appeared consistent with the README's stated behavior.",
+        "symbols": "/workspace/engram/src/engram/__init__.py, /workspace/engram/README.md"
+      },
+      {
+        "disconfirmation_attempt": "Inspected package structure, public exports, and README contract. The only apparent anomaly (evaluate() raising NotImplementedError) is a documented, intentional limitation explicitly called out in the README as \"not implemented yet\" \u2014 not a currently actionable defect. Further deep tracing of pipeline/interop internals was not possible within the exhausted shell budget.",
+        "disposition": "no_candidate",
+        "evidence": "Public API surface confirmed via __init__.py exports (RAGPipeline, IngestResult, RetrievalTrace, describe_rag_pipeline, error hierarchy). README documents the intended contract and the documented NotImplementedError limitation for external-judge evaluation.",
+        "expected_behavior": "The public API is `RAGPipeline` with methods `ingest()`, `ingest_directory()`, `retrieve()`, `assemble_prompt()`, and `evaluate()`. The README documents that `assemble_prompt()` requires chunks returned by `retrieve()`, and that `evaluate()` external-judge execution intentionally raises `NotImplementedError` (a documented limitation).",
+        "scope": "rag_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No surviving defect candidate. The documented `NotImplementedError` in `evaluate()` is an explicitly documented limitation, not a defect. Other potential issues did not survive the disconfirmation attempt within the available inspection budget.",
+        "symbols": "rag_lib/__init__.py, rag_lib/pipeline.py, rag_lib/interop.py"
+      },
+      {
+        "disconfirmation_attempt": "Could not complete the disconfirmation attempt because the shell budget was exhausted before I could inspect the _confined_bundle_path implementation and its symlink handling.",
+        "disposition": "no_candidate",
+        "evidence": "Insufficient evidence to substantiate. The visible portions show AttachmentLocator validation rejects absolute/`..` bundled-file values, resolve_artifact_attachments catches escape via ArtifactValidationError, and digests are verified. The clipped middle section (_confined_bundle_path, _digest_file) could not be fully inspected before shell budget was exhausted.",
+        "expected_behavior": "`resolve_artifact_attachments` and `write_artifact_bundle` must confine bundled-file attachment paths to the bundle root, refusing any path escape (absolute paths, `..` traversal, or symlink escape) and verifying SHA-256 digests over exact attachment bytes.",
+        "scope": "llm_harness_core",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "I suspected the path-confinement logic (`_confined_bundle_path`) might allow bundle-root escape via symlink traversal or fail to verify digests, but I could not complete inspection due to shell budget exhaustion.",
+        "symbols": "run_artifacts.py: _confined_bundle_path, resolve_artifact_attachments, write_artifact_bundle, _digest_file, _digest_bytes"
+      },
+      {
+        "disconfirmation_attempt": "Checked: sequence_offset defaults to the filtered-list offset, and loop_start_action uses the original 1-based index. The replay test includes a message-only step (AgentAction.message_only), confirming non-action events appear in real trajectories, so the divergence is reachable, not theoretical. The warmup/confirmation gating and truncation_point==8 assertion in the passing test are consistent only because that test's actions have no intervening non-tool events, so offset==index there. The mismatch is latent whenever filtered and unfiltered positions differ.",
+        "disposition": "candidate",
+        "evidence": "In assess_trajectory: intervention = Intervention(truncation_point=previous.action.sequence_offset, ...). sequence_offset is assigned in _extract_action as `int(captured_offset) if isinstance(captured_offset, int) else offset`, where offset is the zero-based enumerate index over the *filtered* actions list. loop_start_action uses previous.action.action_number which is the 1-based original index. README documents preserved_steps = agent_steps[:intervention.truncation_point]. When non-tool events are filtered out, the filtered offset no longer equals the original step position, so the slice boundary is wrong relative to loop_start_action.",
+        "expected_behavior": "`intervention.truncation_point` should index into the caller's original trajectory so that `agent_steps[:intervention.truncation_point]` preserves exactly the entries before the loop-starting action, consistent with `loop_start_action` which names that same action.",
+        "scope": "action_trajectory_loop_guard",
+        "severity": "high",
+        "structured_before_forcing": false,
+        "suspected_violation": "`truncation_point` is set to `previous.action.sequence_offset`, which is the zero-based position in the *filtered* tool-action list (defaulting to enumeration offset), not the position in the original unfiltered trajectory. When the trajectory contains non-tool events (messages, etc.) before the loop, the filtered offset diverges from the original step index, so `agent_steps[:truncation_point]` truncates at the wrong boundary \u2014 either dropping preserved evidence or keeping a looping action that `loop_start_action` claims to exclude.",
+        "symbols": "action_trajectory_loop_guard/detector.py: assess_trajectory (intervention construction), _extract_action (sequence_offset), README.md (agent_steps[:intervention.truncation_point])"
+      },
+      {
+        "disconfirmation_attempt": "Reviewed interop.py and __init__.py; the public contract is well-defined and the implementation matches it. No evidence of a defect in the public interop surface.",
+        "disposition": "no_candidate",
+        "evidence": "artifact_to_operation_result checks getattr(artifact, \"trace\", None) and isinstance(trace, dict) to decide success vs failure. This is a straightforward, self-consistent implementation.",
+        "expected_behavior": "artifact_to_operation_result should return a success OperationResult when the artifact contains a serialized trace dict, and a failure with code \"missing_trace\" when it does not.",
+        "scope": "llm_inspector_ui",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "None identified as a real defect. The interop logic appears consistent with its contract.",
+        "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py"
+      },
+      {
+        "disconfirmation_attempt": "Checked whether callers depend on original vs normalized keys; load_message_body normalizes and is the reference behavior. Need to confirm a caller expects normalized keys to consume load_message_bodies output.",
+        "disposition": "candidate",
+        "evidence": "In load_message_bodies: targets[target]=header_message_id (key=normalized target, value=original). Then in the read loop: original=targets.get(normalized); found[original]=_message_body(message). The dict is keyed by original (un-normalized) while load_message_body and normalize_message_id are used everywhere else for consistent keys.",
+        "expected_behavior": "`load_message_bodies` should return a dict keyed by the normalized Message-ID (matching `load_message_body` and the mbox source of truth), so callers can reliably look up bodies by normalized ID.",
+        "scope": "mail_lib",
+        "severity": "high",
+        "structured_before_forcing": false,
+        "suspected_violation": "`load_message_bodies` builds `found` keyed by the original, un-normalized `header_message_id` (`found[original] = ...`) rather than the normalized `target`. This makes the returned keys inconsistent with `load_message_body` (which normalizes) and with the rest of the package's Message-ID handling, so a caller looking up by normalized ID gets a KeyError.",
+        "symbols": "mail_lib/thunderbird.py :: load_message_bodies"
+      }
+    ],
+    "structured": 9
+  },
+  "seed": 17,
+  "shell_call_cap_bound": false,
+  "shell_call_ceiling": 45,
+  "shell_tool_calls": 33,
+  "started_at": "2026-09-08T03:29:30.555677Z",
+  "substantive_coverage": {
+    "covered": 8,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [
+          "/workspace/action_trajectory_loop_guard/README.md",
+          "/workspace/action_trajectory_loop_guard/tests/test_detector.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/*.py",
+          "/workspace/agent_lib/src/agent_lib/__init__.py",
+          "/workspace/agent_lib/src/agent_lib/eval/*.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/engram/src/engram/__init__.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/README.md",
+          "/workspace/llm_engines/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/__init__.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+          "/workspace/llm_harness_core/src/llm_harness_core/run_artifacts.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector/src/llm_inspector/__init__.py"
+        ]
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector_ui/README.md",
+          "/workspace/llm_inspector_ui/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/mail_lib/__init__.py",
+          "/workspace/mail_lib/thunderbird.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [
+          "/workspace/rag_lib/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/__init__.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "f34eb0c2b132c54e71ca3ec3941e8e792d85019ac35cd6239abf4bb17cf59ea5",
+  "usage": {
+    "input_tokens": 125444,
+    "model_calls": 45,
+    "output_tokens": 10800
+  },
+  "verifiers": {
+    "expected": 2,
+    "results": [
+      {
+        "candidate": {
+          "disconfirmation_attempt": "Checked: sequence_offset defaults to the filtered-list offset, and loop_start_action uses the original 1-based index. The replay test includes a message-only step (AgentAction.message_only), confirming non-action events appear in real trajectories, so the divergence is reachable, not theoretical. The warmup/confirmation gating and truncation_point==8 assertion in the passing test are consistent only because that test's actions have no intervening non-tool events, so offset==index there. The mismatch is latent whenever filtered and unfiltered positions differ.",
+          "disposition": "candidate",
+          "evidence": "In assess_trajectory: intervention = Intervention(truncation_point=previous.action.sequence_offset, ...). sequence_offset is assigned in _extract_action as `int(captured_offset) if isinstance(captured_offset, int) else offset`, where offset is the zero-based enumerate index over the *filtered* actions list. loop_start_action uses previous.action.action_number which is the 1-based original index. README documents preserved_steps = agent_steps[:intervention.truncation_point]. When non-tool events are filtered out, the filtered offset no longer equals the original step position, so the slice boundary is wrong relative to loop_start_action.",
+          "expected_behavior": "`intervention.truncation_point` should index into the caller's original trajectory so that `agent_steps[:intervention.truncation_point]` preserves exactly the entries before the loop-starting action, consistent with `loop_start_action` which names that same action.",
+          "scope": "action_trajectory_loop_guard",
+          "severity": "high",
+          "structured_before_forcing": false,
+          "suspected_violation": "`truncation_point` is set to `previous.action.sequence_offset`, which is the zero-based position in the *filtered* tool-action list (defaulting to enumeration offset), not the position in the original unfiltered trajectory. When the trajectory contains non-tool events (messages, etc.) before the loop, the filtered offset diverges from the original step index, so `agent_steps[:truncation_point]` truncates at the wrong boundary \u2014 either dropping preserved evidence or keeping a looping action that `loop_start_action` claims to exclude.",
+          "symbols": "action_trajectory_loop_guard/detector.py: assess_trajectory (intervention construction), _extract_action (sequence_offset), README.md (agent_steps[:intervention.truncation_point])"
+        },
+        "claim": "In assess_trajectory, when a confirmed action loop is detected, intervention.truncation_point is set to previous.action.sequence_offset, which is the zero-based position in the *filtered* tool-action list (the enumerate index over actions that survive _extract_action), not the position in the original unfiltered trajectory. When the trajectory contains non-tool events (messages, etc.) interspersed with tool actions, the filtered offset diverges from the original step index, so agent_steps[:truncation_point] truncates at the wrong boundary relative to loop_start_action (which names the 1-based original action_number).",
+        "decision": "confirmed",
+        "disconfirmation_attempt": "The passing replay test (test_detector.py) uses trajectories whose actions have no intervening non-tool events, so filtered offset == original position and truncation_point coincides with loop_start_action-1; the truncation_point==8 assertion and warmup gating hold only in that narrow case. This confirms the mismatch is latent and only manifests when filtered and unfiltered positions differ, not that it is impossible.",
+        "evidence": "assess_trajectory builds actions = [action for offset, event in enumerate(events) if (action := _extract_action(event, offset)) is not None], so offset is the enumerate index over the *filtered* tool-action list only. _extract_action assigns sequence_offset = int(captured_offset) if isinstance(captured_offset, int) else offset \u2014 defaulting to the filtered enumerate offset. The intervention sets truncation_point=previous.action.sequence_offset while loop_start_action=previous.action.action_number (1-based original index via number=_field(event,\"index\") or offset+1). The Intervention docstring states truncation_point is a zero-based sequence offset the caller uses to retain entries before it. These two naming schemes (filtered offset vs original 1-based action_number) are only equal when no non-tool events are filtered out.",
+        "impact": "The truncation boundary used to preserve pre-loop evidence is misaligned with the action named by loop_start_action. Depending on whether non-tool events precede the loop, agent_steps[:truncation_point] either drops preserved evidence or retains a looping action that loop_start_action claims to exclude \u2014 corrupting the replay/preservation contract.",
+        "remediation": "Make truncation_point index the caller's original trajectory consistently with loop_start_action: derive it from the original step index (e.g., the event's original position or action_number-1) rather than the filtered enumerate offset, or document that truncation_point indexes the filtered action list rather than the raw trajectory.",
+        "scope": "action_trajectory_loop_guard",
+        "structured_before_forcing": false,
+        "symbols": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py: assess_trajectory (intervention construction with truncation_point=previous.action.sequence_offset and loop_start_action=previous.action.action_number), _extract_action (sequence_offset = int(captured_offset) if isinstance(captured_offset, int) else offset, where offset is enumerate index over filtered actions), Intervention docstring (\"truncation_point is a zero-based sequence offset. The caller retains trajectory entries before it\")"
+      },
+      {
+        "candidate": {
+          "disconfirmation_attempt": "Checked whether callers depend on original vs normalized keys; load_message_body normalizes and is the reference behavior. Need to confirm a caller expects normalized keys to consume load_message_bodies output.",
+          "disposition": "candidate",
+          "evidence": "In load_message_bodies: targets[target]=header_message_id (key=normalized target, value=original). Then in the read loop: original=targets.get(normalized); found[original]=_message_body(message). The dict is keyed by original (un-normalized) while load_message_body and normalize_message_id are used everywhere else for consistent keys.",
+          "expected_behavior": "`load_message_bodies` should return a dict keyed by the normalized Message-ID (matching `load_message_body` and the mbox source of truth), so callers can reliably look up bodies by normalized ID.",
+          "scope": "mail_lib",
+          "severity": "high",
+          "structured_before_forcing": false,
+          "suspected_violation": "`load_message_bodies` builds `found` keyed by the original, un-normalized `header_message_id` (`found[original] = ...`) rather than the normalized `target`. This makes the returned keys inconsistent with `load_message_body` (which normalizes) and with the rest of the package's Message-ID handling, so a caller looking up by normalized ID gets a KeyError.",
+          "symbols": "mail_lib/thunderbird.py :: load_message_bodies"
+        },
+        "claim": "In mail_lib/thunderbird.py, `load_message_bodies` builds its result dict keyed by the original, un-normalized `header_message_id` (`found[original] = _message_body(message)`) instead of the normalized `target`. This makes the returned keys inconsistent with `load_message_body` (which normalizes via `normalize_message_id`) and with the rest of the package's Message-ID handling, so a caller looking up a body by normalized ID would get a KeyError.",
+        "decision": "confirmed",
+        "disconfirmation_attempt": "Checked whether any caller depends on original vs normalized keys: load_message_body is the reference single-message behavior and it normalizes; the rest of the package (lines 445, 479, 565) also normalizes Message-IDs before matching. No caller was found that expects load_message_bodies to return raw original keys, so the batch function's behavior is inconsistent with the established normalized-key contract.",
+        "evidence": "grep of mail_lib/thunderbird.py shows: normalize_message_id (line 85) strips surrounding whitespace and angle brackets. load_message_body (line 299-307) computes target = normalize_message_id(header_message_id) and matches messages by normalize_message_id(message.get(\"Message-ID\")) == target, i.e. keyed/looked-up by normalized value. load_message_bodies (line 314+) computes target = normalize_message_id(header_message_id) per input but stores found[original] = _message_body(message) keyed by the original un-normalized value. The single-input function normalizes while the batch function does not, an internal inconsistency.",
+        "impact": "Callers that look up message bodies by normalized Message-ID using the dict returned by load_message_bodies will raise KeyError when the stored header Message-ID differs from its normalized form (e.g. differing angle brackets or surrounding whitespace), because the dict is keyed by the raw original value rather than the normalized key used everywhere else.",
+        "remediation": "Change load_message_bodies to key the result dict by the normalized target (found[target] = _message_body(message)) so returned keys match load_message_body and the package's normalized Message-ID convention.",
+        "scope": "mail_lib",
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/thunderbird.py :: load_message_bodies (found[original] = ...), load_message_body (target = normalize_message_id(...)), normalize_message_id"
+      }
+    ],
+    "structured": 2
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "all_v2_mechanical_gates_pass": true,
+  "campaign": "2026-09-08-ornith-adaptive-staged-v2-2-development",
+  "endpoint": {
+    "fingerprint_sha256": "cd24e9603b33dec026aa531b4011dc834212a68c23a85943744c87bf56e49af1",
+    "snapshots": 6,
+    "stable": true
+  },
+  "grader_pass": true,
+  "known_defect_recall": {
+    "basis": "No authoritative report contained an accepted finding.",
+    "v1": {
+      "17": "0/3",
+      "31": "0/3",
+      "47": "0/3"
+    },
+    "v2_2": {
+      "17": "0/3",
+      "31": "0/3",
+      "47": "0/3"
+    }
+  },
+  "runs_found": 6,
+  "schema": "temporary-adaptive-campaign-validation/v1",
+  "v1": {
+    "medians": {
+      "coverage": 7,
+      "input_tokens": 115521,
+      "max_scope_concentration": 0.2,
+      "shell_calls": 30
+    },
+    "runs": [
+      {
+        "accepted_findings": 0,
+        "artifact_hashes_match": true,
+        "completion_mode": "structured",
+        "condition": "staged_scout_verifier_critic_synthesis",
+        "coverage": 7,
+        "coverage_recomputed_matches": true,
+        "input_tokens": 115521,
+        "lifecycle": "final",
+        "max_scope_concentration": 0.1111111111111111,
+        "model_calls": 35,
+        "output_tokens": 6251,
+        "promoted": 0,
+        "protocol_violations": [
+          "scout:llm_inspector_ui: attempted shell call beyond budget"
+        ],
+        "seed": 17,
+        "shell_calls": 27,
+        "structured_scouts": 9,
+        "structured_verifiers": 0
+      },
+      {
+        "accepted_findings": 0,
+        "artifact_hashes_match": true,
+        "completion_mode": "structured",
+        "condition": "staged_scout_verifier_critic_synthesis",
+        "coverage": 8,
+        "coverage_recomputed_matches": true,
+        "input_tokens": 123613,
+        "lifecycle": "final",
+        "max_scope_concentration": 0.2,
+        "model_calls": 40,
+        "output_tokens": 6386,
+        "promoted": 1,
+        "protocol_violations": [],
+        "seed": 31,
+        "shell_calls": 30,
+        "structured_scouts": 9,
+        "structured_verifiers": 1
+      },
+      {
+        "accepted_findings": 0,
+        "artifact_hashes_match": true,
+        "completion_mode": "controller_fallback",
+        "condition": "staged_scout_verifier_critic_synthesis",
+        "coverage": 7,
+        "coverage_recomputed_matches": true,
+        "input_tokens": 105961,
+        "lifecycle": "aborted",
+        "max_scope_concentration": 0.2,
+        "model_calls": 38,
+        "output_tokens": 7031,
+        "promoted": 1,
+        "protocol_violations": [
+          "scout:agent_lib: attempted shell call beyond budget",
+          "synthesis: no valid structured report; controller fallback used"
+        ],
+        "seed": 47,
+        "shell_calls": 30,
+        "structured_scouts": 9,
+        "structured_verifiers": 1
+      }
+    ]
+  },
+  "v2_2": {
+    "medians": {
+      "coverage": 3,
+      "input_tokens": 376075,
+      "max_scope_concentration": 0.2894736842105263,
+      "shell_calls": 38
+    },
+    "runs": [
+      {
+        "accepted_findings": 0,
+        "binding_mismatches": 0,
+        "completion_mode": "structured",
+        "condition": "adaptive_staged_v2_2",
+        "coverage": 5,
+        "input_tokens": 368469,
+        "invalid_evidence_records": 10,
+        "lifecycle": "final",
+        "max_scope_concentration": 0.2894736842105263,
+        "mechanical_gates": {
+          "budgets": true,
+          "coverage": true,
+          "dossiers": true,
+          "evidence": true,
+          "report": true,
+          "selections": true,
+          "verifiers": true
+        },
+        "mechanical_pass": true,
+        "model_calls": 52,
+        "output_tokens": 16370,
+        "promoted": 3,
+        "protocol_violations": [
+          "scout:rag_lib: attempted shell call beyond budget",
+          "scout:llm_inspector_ui: attempted shell call beyond budget"
+        ],
+        "scout_calls": 18,
+        "seed": 17,
+        "shell_calls": 38,
+        "valid_evidence_records_rechecked": 2,
+        "verifier_calls": 20
+      },
+      {
+        "accepted_findings": 0,
+        "binding_mismatches": 0,
+        "completion_mode": "structured",
+        "condition": "adaptive_staged_v2_2",
+        "coverage": 3,
+        "input_tokens": 376075,
+        "invalid_evidence_records": 9,
+        "lifecycle": "final",
+        "max_scope_concentration": 0.30303030303030304,
+        "mechanical_gates": {
+          "budgets": true,
+          "coverage": true,
+          "dossiers": true,
+          "evidence": true,
+          "report": true,
+          "selections": true,
+          "verifiers": true
+        },
+        "mechanical_pass": true,
+        "model_calls": 48,
+        "output_tokens": 17186,
+        "promoted": 2,
+        "protocol_violations": [],
+        "scout_calls": 18,
+        "seed": 31,
+        "shell_calls": 33,
+        "valid_evidence_records_rechecked": 2,
+        "verifier_calls": 15
+      },
+      {
+        "accepted_findings": 0,
+        "binding_mismatches": 0,
+        "completion_mode": "structured",
+        "condition": "adaptive_staged_v2_2",
+        "coverage": 3,
+        "input_tokens": 478868,
+        "invalid_evidence_records": 10,
+        "lifecycle": "final",
+        "max_scope_concentration": 0.2682926829268293,
+        "mechanical_gates": {
+          "budgets": true,
+          "coverage": true,
+          "dossiers": true,
+          "evidence": true,
+          "report": true,
+          "selections": true,
+          "verifiers": true
+        },
+        "mechanical_pass": true,
+        "model_calls": 55,
+        "output_tokens": 19827,
+        "promoted": 3,
+        "protocol_violations": [],
+        "scout_calls": 18,
+        "seed": 47,
+        "shell_calls": 41,
+        "valid_evidence_records_rechecked": 2,
+        "verifier_calls": 23
+      }
+    ]
+  }
+}

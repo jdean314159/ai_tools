@@ -1,0 +1,166 @@
+{
+  "schema": "temporary-repository-assessment-adjudication/v1",
+  "adjudicated_at": "2026-09-07",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "corrected_head_commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+  "grader": {
+    "path": "docs/projects/repository_assessment/tools/test_known_defects_at_83e1d09.py",
+    "target_result": {
+      "passed": 0,
+      "failed": 3
+    },
+    "corrected_head_result": {
+      "passed": 3,
+      "failed": 0
+    }
+  },
+  "scoring_rule": "A known defect counts only when a validated report finding identifies the affected behavior and relevant symbol or call path. Planner candidates rejected or marked insufficient_evidence by the isolated critic are not validated findings. Raw candidates remain visible separately.",
+  "coverage_correction": {
+    "reason": "The preregistration allowed a distinct caller, test, or contract read, but the harness only recognized README.md, pyproject.toml, and tests nested under the package directory. Independent scoring from the raw transcripts counts relevant root-level tests and callers.",
+    "effect": "Baseline seeds 17 and 31 change from harness-recorded 0/9 to preregistered 1/9. All other run values are unchanged. The baseline median changes from 0/9 to 1/9; planner median remains 0/9."
+  },
+  "known_defects": [
+    {
+      "id": "engram_batch_indexing",
+      "symbol": "ProjectMemory.store_episodes_batch",
+      "behavior": "redundant batch embedding and Chroma insertion after per-episode storage"
+    },
+    {
+      "id": "writer_lock_inode_replacement",
+      "symbol": "WriterLock",
+      "behavior": "dead PID text causes replacement of a pathname whose inode is actively flocked"
+    },
+    {
+      "id": "rag_bm25_stale_same_count_cache",
+      "symbol": "HybridRetriever._get_bm25_index",
+      "behavior": "a persisted same-count BM25 cache is accepted despite a newer collection mutation marker"
+    }
+  ],
+  "runs": [
+    {
+      "run": "01-baseline-seed17",
+      "condition": "baseline",
+      "seed": 17,
+      "known_defect_recall": 0,
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 1,
+      "recalled_defect_ids": [],
+      "validated_finding_count": 1,
+      "false_positive_count": 1,
+      "precision": 0.0,
+      "raw_candidate_count": 1,
+      "adjudications": [
+        {
+          "claim": "rag_lib user configuration resolves under the sandbox HOME",
+          "disposition": "false_positive",
+          "rationale": "Path.expanduser correctly follows HOME for a per-user configuration path. The sandbox intentionally sets HOME to its private directory, and the report demonstrates no incorrect behavior."
+        }
+      ]
+    },
+    {
+      "run": "02-planner-seed17",
+      "condition": "planner",
+      "seed": 17,
+      "known_defect_recall": 0,
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 0,
+      "recalled_defect_ids": [],
+      "validated_finding_count": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "raw_candidate_count": 0,
+      "adjudications": []
+    },
+    {
+      "run": "03-planner-seed31",
+      "condition": "planner",
+      "seed": 31,
+      "known_defect_recall": 0,
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 0,
+      "recalled_defect_ids": [],
+      "validated_finding_count": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "raw_candidate_count": 1,
+      "adjudications": [
+        {
+          "claim": "engram file locking permits concurrent JSON corruption",
+          "critic_disposition": "insufficient_evidence",
+          "disposition": "excluded_unvalidated_candidate",
+          "rationale": "The investigator read no production source in this run, supplied no reproducer, named no relevant locking call path, and the isolated critic rejected the evidence. It also does not identify the graded WriterLock dead-PID inode replacement behavior."
+        }
+      ]
+    },
+    {
+      "run": "04-baseline-seed31",
+      "condition": "baseline",
+      "seed": 31,
+      "known_defect_recall": 0,
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 1,
+      "recalled_defect_ids": [],
+      "validated_finding_count": 1,
+      "false_positive_count": 1,
+      "precision": 0.0,
+      "raw_candidate_count": 1,
+      "adjudications": [
+        {
+          "claim": "ProjectMemory._apply_composition_trust_policy allows a metadata-based trust bypass",
+          "disposition": "false_positive",
+          "rationale": "The report gives no failing input or bypass path and says its trust-policy scenarios behaved correctly. The cited implementation extracts metadata from dictionaries and object attributes; a malformed metadata value could raise during dict conversion, but the report does not establish a trust bypass."
+        }
+      ]
+    },
+    {
+      "run": "05-baseline-seed47",
+      "condition": "baseline",
+      "seed": 47,
+      "known_defect_recall": 0,
+      "harness_recorded_coverage": 1,
+      "preregistered_coverage": 1,
+      "recalled_defect_ids": [],
+      "validated_finding_count": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "raw_candidate_count": 0,
+      "adjudications": []
+    },
+    {
+      "run": "06-planner-seed47",
+      "condition": "planner",
+      "seed": 47,
+      "known_defect_recall": 0,
+      "harness_recorded_coverage": 0,
+      "preregistered_coverage": 0,
+      "recalled_defect_ids": [],
+      "validated_finding_count": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "raw_candidate_count": 0,
+      "adjudications": []
+    }
+  ],
+  "condition_summary": {
+    "baseline": {
+      "recall_scores": [0, 0, 0],
+      "median_recall": 0,
+      "preregistered_coverage_scores": [1, 1, 1],
+      "median_preregistered_coverage": 1,
+      "validated_findings": 2,
+      "false_positives": 2,
+      "aggregate_precision": 0.0
+    },
+    "planner": {
+      "recall_scores": [0, 0, 0],
+      "median_recall": 0,
+      "preregistered_coverage_scores": [0, 0, 0],
+      "median_preregistered_coverage": 0,
+      "validated_findings": 0,
+      "false_positives": 0,
+      "aggregate_precision": null,
+      "raw_candidates": 1,
+      "critic_accepted_candidates": 0
+    }
+  }
+}

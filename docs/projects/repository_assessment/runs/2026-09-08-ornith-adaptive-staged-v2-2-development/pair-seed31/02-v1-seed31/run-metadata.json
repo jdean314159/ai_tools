@@ -1,0 +1,380 @@
+{
+  "accepted_findings": [],
+  "base_url_retained": false,
+  "candidate_selection": {
+    "limit": 6,
+    "rule": "first six candidates in seeded scope order",
+    "selected": 1
+  },
+  "completion_mode": "structured",
+  "condition": "staged_scout_verifier_critic_synthesis",
+  "critic": {
+    "calls": 0,
+    "records": []
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none, while all four post-campaign /slots records reported speculative true and speculative.types none,draft-mtp; slot-level state is used as evidence that MTP was active.",
+      "The OpenAI adapter declared speculative_decoding false because it exposes no request-level speculation control; this does not describe independently configured llama.cpp slot behavior."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported."
+    ],
+    "recorded_at": "2026-09-07T19:16:35Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": "none,draft-mtp"
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-08T13:18:57.331561Z",
+  "lifecycle": "final",
+  "max_scope_concentration": 0.2,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "prompt_sha256": {
+    "scout": "cf172ae87df99a5a4627ff9755ae909ee3f4dd8260d5aeb152c9d43eb9769515",
+    "synthesis": "fe48bcdddf0d091344219e8f2a57e060a0e1e6bfa092cd88483240195b324779",
+    "verifier": "4adeb0217c704665741090b130c4e7deec461340a7ae51bc6b62c4c1108352a6"
+  },
+  "protocol_violations": [],
+  "remaining_uncertainty": "medium",
+  "report_sha256": "e13e09c2d6f2ad8c4c3dee196e862c2cb14aea80c4e45190d8fb8cfbeb60aeae",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-staged-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 3,
+    "agent_lib": 3,
+    "engram": 3,
+    "llm_engines": 3,
+    "llm_harness_core": 3,
+    "llm_inspector": 3,
+    "llm_inspector_ui": 3,
+    "mail_lib": 6,
+    "rag_lib": 3
+  },
+  "scope_order": [
+    "engram",
+    "llm_harness_core",
+    "rag_lib",
+    "llm_inspector_ui",
+    "llm_engines",
+    "llm_inspector",
+    "mail_lib",
+    "action_trajectory_loop_guard",
+    "agent_lib"
+  ],
+  "scouts": {
+    "expected": 9,
+    "results": [
+      {
+        "disconfirmation_attempt": "I intended to open /workspace/engram/src/engram/project_memory.py to trace how project_id and session_id are validated and used to construct directory paths, then check for path traversal protection. Shell budget was exhausted before this inspection could be performed, so no candidate survives \u2014 the hypothesis remains unverified and cannot be submitted without evidence.",
+        "disposition": "no_candidate",
+        "evidence": "README states: \"Persistent project and session identifiers must be single path components. Engram creates project/session directories with owner-only access.\" This indicates a security-relevant contract around ID validation. However, I was unable to inspect project_memory.py due to shell budget exhaustion, so I cannot confirm whether the validation is actually implemented or violated.",
+        "expected_behavior": "Per README, \"Persistent project and session identifiers must be single path components.\" ProjectMemory should reject or safely handle identifiers that are not single path components (e.g., containing path separators or `..`) to prevent directory traversal, since it \"creates project/session directories with owner-only access.\"",
+        "scope": "engram",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "I could not complete tracing the ID validation in ProjectMemory before the shell budget was exhausted. The README strongly implies a security boundary around single-path-component IDs, but I have no verified evidence of a violation.",
+        "symbols": "/workspace/engram/src/engram/project_memory.py, /workspace/engram/README.md"
+      },
+      {
+        "disconfirmation_attempt": "Need to inspect production source files to identify a specific defect.",
+        "disposition": "no_candidate",
+        "evidence": "Package structure and __init__ exports reviewed.",
+        "expected_behavior": "Package provides shared interoperability contracts (messages, results, memory records, trace events, evaluators, artifacts).",
+        "scope": "llm_harness_core",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "None identified yet.",
+        "symbols": "llm_harness_core package"
+      },
+      {
+        "disconfirmation_attempt": "Could not complete the end-to-end trace of fusion vs. selection vs. trace reporting because the shell budget was exhausted before inspecting retriever.py. No candidate survived verification.",
+        "disposition": "no_candidate",
+        "evidence": "Insufficient evidence remaining to confirm a defect. The fusion/merge logic in pipeline.inspect_query builds stage1_results from merged_map, then reranks, then selects. Need to verify retriever.assemble_prompt_with_selection and fusion ordering against trace reporting, but shell budget exhausted.",
+        "expected_behavior": "The RetrievalTrace.fused_results should reflect the actual fused (deduplicated, score-merged) results that flow into reranking, and the selected prompt chunks should be a subset of those results.",
+        "scope": "rag_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Possible inconsistency in RetrievalTrace between fused_results and reranked/selected results, but needs more inspection to confirm.",
+        "symbols": "rag_lib/pipeline.py, inspect_query, rag_lib/retrieval/retriever.py"
+      },
+      {
+        "disconfirmation_attempt": "Reviewed the interop module and __init__ public contract. The branching logic for trace presence is correct and matches the documented behavior. The package is a Streamlit workbench with no programmatic API beyond the two interop helpers, which behave as specified.",
+        "disposition": "no_candidate",
+        "evidence": "The interop.py file shows artifact_to_operation_result checks `isinstance(trace, dict)` and returns OperationResult.success with diagnostics, or OperationResult.failure with code \"missing_trace\". describe_ui returns a properly-formed CapabilityDescriptor. The public API in __init__ only exposes these two helpers as documented.",
+        "expected_behavior": "`artifact_to_operation_result` should return a success OperationResult when the artifact contains a serialized trace dict, and a failure with code \"missing_trace\" when it does not.",
+        "scope": "llm_inspector_ui",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No defect identified. The interop helpers appear to correctly branch on whether `artifact.trace` is a dict, returning success or the documented failure.",
+        "symbols": "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py"
+      },
+      {
+        "disconfirmation_attempt": "Limited to 3 shell calls. Inspected README, pyproject.toml, and __init__.py. The package appears to be a stable, actively-maintained core abstraction layer. No concrete defect path was traced far enough to confirm a violation, and remaining candidates (token counting, structured output, failover, artifacts) could not be verified against their tests/implementation within budget.",
+        "disposition": "no_candidate",
+        "evidence": "Public API (__init__.py) exposes get_engine, EngineFactory, ChatModel, GenerationRequest/Response, ToolExecutor, FailoverEngine, structured output, and generation artifacts. README documents the contract explicitly including documented limitations (e.g., prefix-cache scaffolding returns zero values, seed is a preference, failover engine lacks tool-aware semantics). These are documented limitations, not defects.",
+        "expected_behavior": "The llm_engines package provides a unified ChatModel interface over multiple LLM backends (Ollama, Anthropic, OpenAI, vLLM, llama.cpp) with explicit capabilities, structured responses, failover, tool execution, structured output, and durable generation artifacts.",
+        "scope": "llm_engines",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No single defect was confirmed. The package is a stable backend abstraction layer with a well-defined public contract. Multiple potential areas (token counting, structured output parsing, failover, generation artifacts) were considered but no currently actionable, evidence-backed defect survived disconfirmation within the shell budget.",
+        "symbols": "/workspace/llm_engines/src/llm_engines/__init__.py, /workspace/llm_engines/src/llm_engines/contracts/engine.py, /workspace/llm_engines/src/llm_engines/factory.py"
+      },
+      {
+        "disconfirmation_attempt": "No hypothesis was formed or tested due to exhausted shell budget.",
+        "disposition": "no_candidate",
+        "evidence": "No code path was traced. Only package layout and core/types.py were partially reviewed.",
+        "expected_behavior": "A defect candidate must be supported by a traced, falsifiable code path with surviving evidence.",
+        "scope": "llm_inspector",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Insufficient inspection. Shell budget exhausted before any hypothesis could be traced or falsified. No candidate survived the required disconfirmation attempt.",
+        "symbols": "n/a \u2014 inspection incomplete"
+      },
+      {
+        "disconfirmation_attempt": "I checked whether the returned dict keys matter: callers would look up by original ID. The `targets` dict uses normalized keys with original values, so `targets.get(normalized)` returns the original. But if two distinct original IDs normalize to the same key (e.g. duplicates in input list, or IDs differing only by surrounding whitespace/brackets), `targets` collapses them \u2014 only the last original is retained. The `found` dict is keyed by original, so if two originals are identical strings, `found` has one entry but `len(targets)` counts one too \u2014 consistent. However, if input has e.g. [\"abc@example\", \"abc@example\"] (exact dup), targets = {\"abc@example\": \"abc@example\"} (len 1), and found gets one entry (len 1), break fires \u2014 correct. The real issue: if input has [\"abc@example\", \"<abc@example>\"] both normalizing to \"abc@example\", targets = {\"abc@example\": \"<abc@example>\"} (len 1, last wins), found = {\"<abc@example>\": body} (len 1), break fires, returns {\"<abc@example>\": body}. The caller who requested \"abc@example\" gets a body keyed by \"<abc@example>\" \u2014 a KeyError for their requested key. This is a genuine contract mismatch between requested IDs and returned keys.",
+        "disposition": "candidate",
+        "evidence": "```python\ndef load_message_bodies(mbox_path: str | Path, header_message_ids: Iterable[str]) -> dict[str, str]:\n    \"\"\"Load full message bodies from one mbox by normalized Message-ID.\"\"\"\n    targets: dict[str, str] = {}\n    for header_message_id in header_message_ids:\n        target = normalize_message_id(header_message_id)\n        if not target:\n            raise ValueError(\"header_message_ids must not contain empty values\")\n        targets[target] = header_message_id\n    if not targets:\n        return {}\n\n    found: dict[str, str] = {}\n    box = mailbox.mbox(Path(mbox_path), create=False)\n    try:\n        for message in box:\n            normalized = normalize_message_id(message.get(\"Message-ID\"))\n            original = targets.get(normalized)\n            if original is None:\n                continue\n            found[original] = _message_body(message)\n            if len(found) == len(targets):\n                break\n    finally:\n        box.close()\n    return found\n```\nThe `targets` dict is keyed by normalized `target` but values are original IDs. The `found` dict is keyed by `original` (the stored value). If input contains duplicate normalized IDs mapping to different original strings, `targets` keeps only the last original. The `found` dict keyed by original could then have fewer entries than `len(targets)` if originals collide, or the `len(found) == len(targets)` break condition compares counts that don't correspond to distinct messages. Additionally, `normalize_message_id` strips `<>` and whitespace but does NOT lowercase, so case differences remain distinct \u2014 but the returned keys are originals while matching uses normalized form, so a caller requesting \"Message-ID: <abc@example>\" gets back a body keyed by \"<abc@example>\" which is correct, but requesting both \"abc@example\" and \"<abc@example>\" (both normalizing to \"abc@example\") collapses to one target.",
+        "expected_behavior": "`load_message_bodies` should return a dict mapping each requested (original) Message-ID to its full body text, correctly handling duplicate Message-IDs and case differences.",
+        "scope": "mail_lib",
+        "severity": "medium",
+        "structured_before_forcing": false,
+        "suspected_violation": "In `load_message_bodies`, the code normalizes Message-IDs as dict keys (`targets` and `found`) but stores the original (un-normalized) value as the key in the returned dict. When two requested IDs normalize to the same value (e.g. \"abc\" and \"<abc>\" or case variants), the `targets` dict collapses them to one entry keyed by normalized form, but the returned `found` dict is keyed by the original ID. This creates an inconsistency: the loop breaks when `len(found) == len(targets)`, but `found` values are stored under original IDs. If the same original ID appears twice in the input, or if normalization causes a mismatch between the number of requested and found entries, the result may be incomplete or contain wrong keys.",
+        "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+      },
+      {
+        "disconfirmation_attempt": "Could not perform any disconfirmation because the detector implementation and tests were not inspectable within the available shell budget.",
+        "disposition": "no_candidate",
+        "evidence": "No production source or test code could be read; shell budget was exhausted before any code inspection was possible.",
+        "expected_behavior": "The detector should identify low-novelty near-duplicate actions by canonical path and range overlap, measure novelty from returned (path, line) coordinates, and propose an intervention only after two consecutive low-novelty near-duplicate actions following an eight-tool-action warmup.",
+        "scope": "action_trajectory_loop_guard",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "Unable to inspect detector.py or test_detector.py due to shell budget exhaustion. No specific behavioral violation could be traced or verified against the documented contract.",
+        "symbols": "src/action_trajectory_loop_guard/detector.py, tests/test_detector.py, src/action_trajectory_loop_guard/__init__.py"
+      },
+      {
+        "disconfirmation_attempt": "Shell budget exhausted before any specific hypothesis could be traced and actively disproven. No candidate was confirmed.",
+        "disposition": "no_candidate",
+        "evidence": "Only the package __init__.py was inspected before the shell budget was exhausted. No production source path was traced end-to-end against a test or contract, so no falsifiable hypothesis could be validated or falsified.",
+        "expected_behavior": "The agent_lib package exposes a coherent public API surface (contracts, coordination, memory, planners, runtime, tools, interop, programming) with documented experimental status; imports and re-exports should be consistent and functional.",
+        "scope": "agent_lib",
+        "severity": "none",
+        "structured_before_forcing": false,
+        "suspected_violation": "No concrete defect candidate survived inspection. The package is large and spans many subsystems; the only surface-level observation (a backward-compat type alias comment) is intentional and documented, not a violation.",
+        "symbols": "/workspace/agent_lib/src/agent_lib/__init__.py"
+      }
+    ],
+    "structured": 9
+  },
+  "seed": 31,
+  "shell_call_cap_bound": false,
+  "shell_call_ceiling": 45,
+  "shell_tool_calls": 30,
+  "started_at": "2026-09-08T13:16:40.850976Z",
+  "substantive_coverage": {
+    "covered": 8,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [
+          "/workspace/action_trajectory_loop_guard/README.md",
+          "/workspace/action_trajectory_loop_guard/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/__init__.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/engram/src/engram/__init__.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [
+          "/workspace/llm_engines/README.md",
+          "/workspace/llm_engines/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/__init__.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/README.md",
+          "/workspace/llm_harness_core/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/__init__.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+          "/workspace/llm_inspector/src/llm_inspector/core/types.py"
+        ]
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [
+          "/workspace/llm_inspector_ui/README.md",
+          "/workspace/llm_inspector_ui/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/interop.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [
+          "/workspace/mail_lib/README.md"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/mail_lib/__init__.py",
+          "/workspace/mail_lib/thunderbird.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [
+          "/workspace/rag_lib/README.md",
+          "/workspace/rag_lib/pyproject.toml"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/__init__.py",
+          "/workspace/rag_lib/src/rag_lib/pipeline.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "4aeb05b3dfcb0dfdd14a05ba169382cbc2c5b774aadd3200d8f82b42c821efb7",
+  "usage": {
+    "input_tokens": 123613,
+    "model_calls": 40,
+    "output_tokens": 6386
+  },
+  "verifiers": {
+    "expected": 1,
+    "results": [
+      {
+        "candidate": {
+          "disconfirmation_attempt": "I checked whether the returned dict keys matter: callers would look up by original ID. The `targets` dict uses normalized keys with original values, so `targets.get(normalized)` returns the original. But if two distinct original IDs normalize to the same key (e.g. duplicates in input list, or IDs differing only by surrounding whitespace/brackets), `targets` collapses them \u2014 only the last original is retained. The `found` dict is keyed by original, so if two originals are identical strings, `found` has one entry but `len(targets)` counts one too \u2014 consistent. However, if input has e.g. [\"abc@example\", \"abc@example\"] (exact dup), targets = {\"abc@example\": \"abc@example\"} (len 1), and found gets one entry (len 1), break fires \u2014 correct. The real issue: if input has [\"abc@example\", \"<abc@example>\"] both normalizing to \"abc@example\", targets = {\"abc@example\": \"<abc@example>\"} (len 1, last wins), found = {\"<abc@example>\": body} (len 1), break fires, returns {\"<abc@example>\": body}. The caller who requested \"abc@example\" gets a body keyed by \"<abc@example>\" \u2014 a KeyError for their requested key. This is a genuine contract mismatch between requested IDs and returned keys.",
+          "disposition": "candidate",
+          "evidence": "```python\ndef load_message_bodies(mbox_path: str | Path, header_message_ids: Iterable[str]) -> dict[str, str]:\n    \"\"\"Load full message bodies from one mbox by normalized Message-ID.\"\"\"\n    targets: dict[str, str] = {}\n    for header_message_id in header_message_ids:\n        target = normalize_message_id(header_message_id)\n        if not target:\n            raise ValueError(\"header_message_ids must not contain empty values\")\n        targets[target] = header_message_id\n    if not targets:\n        return {}\n\n    found: dict[str, str] = {}\n    box = mailbox.mbox(Path(mbox_path), create=False)\n    try:\n        for message in box:\n            normalized = normalize_message_id(message.get(\"Message-ID\"))\n            original = targets.get(normalized)\n            if original is None:\n                continue\n            found[original] = _message_body(message)\n            if len(found) == len(targets):\n                break\n    finally:\n        box.close()\n    return found\n```\nThe `targets` dict is keyed by normalized `target` but values are original IDs. The `found` dict is keyed by `original` (the stored value). If input contains duplicate normalized IDs mapping to different original strings, `targets` keeps only the last original. The `found` dict keyed by original could then have fewer entries than `len(targets)` if originals collide, or the `len(found) == len(targets)` break condition compares counts that don't correspond to distinct messages. Additionally, `normalize_message_id` strips `<>` and whitespace but does NOT lowercase, so case differences remain distinct \u2014 but the returned keys are originals while matching uses normalized form, so a caller requesting \"Message-ID: <abc@example>\" gets back a body keyed by \"<abc@example>\" which is correct, but requesting both \"abc@example\" and \"<abc@example>\" (both normalizing to \"abc@example\") collapses to one target.",
+          "expected_behavior": "`load_message_bodies` should return a dict mapping each requested (original) Message-ID to its full body text, correctly handling duplicate Message-IDs and case differences.",
+          "scope": "mail_lib",
+          "severity": "medium",
+          "structured_before_forcing": false,
+          "suspected_violation": "In `load_message_bodies`, the code normalizes Message-IDs as dict keys (`targets` and `found`) but stores the original (un-normalized) value as the key in the returned dict. When two requested IDs normalize to the same value (e.g. \"abc\" and \"<abc>\" or case variants), the `targets` dict collapses them to one entry keyed by normalized form, but the returned `found` dict is keyed by the original ID. This creates an inconsistency: the loop breaks when `len(found) == len(targets)`, but `found` values are stored under original IDs. If the same original ID appears twice in the input, or if normalization causes a mismatch between the number of requested and found entries, the result may be incomplete or contain wrong keys.",
+          "symbols": "mail_lib/thunderbird.py::load_message_bodies"
+        },
+        "claim": "`load_message_bodies` returns a dict keyed by the original requested Message-ID (not the normalized form), so a caller requesting \"abc@example\" always gets back a body keyed by \"abc@example\". The claim that this produces a KeyError for the requested key, or a contract mismatch, is false.",
+        "decision": "rejected",
+        "disconfirmation_attempt": "I traced the return contract and callers. `found` is keyed by the original requested ID, so `load_message_bodies(...).get(\"abc@example\")` never raises \u2014 it returns None if that original wasn't the surviving target. The example in the disconfirmation attempt contradicts itself (it can't simultaneously have `targets` collapse two originals to one entry AND have `found` keyed by a different original). The only real effect of normalization is deduplication of distinct-but-equivalent IDs, which matches the documented \"by normalized Message-ID\" contract. No evidence of a KeyError or wrong-key return exists.",
+        "evidence": "The function builds `targets: dict[str, str]` keyed by normalized `target` with value = original `header_message_id`. It then builds `found: dict[str, str]` keyed by `original = targets.get(normalized)` (the stored original value) and returns `found`. Therefore the returned keys are always the original requested IDs, never the normalized form. The scout's own disconfirmation example is internally inconsistent: it asserts `found = {\"<abc@example>\": body}` while simultaneously claiming `targets` collapses \"abc@example\" and \"<abc@example>\" to one entry \u2014 but if both normalize to \"abc@example\", `targets` holds only the LAST original (\"<abc@example>\"), so `targets.get(\"abc@example\")` returns \"<abc@example>\", and `found` is keyed by \"<abc@example>\". A caller requesting \"abc@example\" would then simply miss that key (returns {} for that lookup), not raise a KeyError. No caller raises a KeyError from this path.",
+        "impact": "No actionable defect. The returned dict is correctly keyed by the original requested ID, so callers can look up bodies by the exact ID they requested. The only genuine behavior is that distinct IDs normalizing to the same value (e.g. \"abc@example\" and \"<abc@example>\") collapse to a single target \u2014 which is the intended dedup-by-normalized-ID contract, not a bug.",
+        "remediation": "None; the function behaves as its contract specifies. If deduplication of equivalent IDs is undesirable, that would be a deliberate API change, not a defect fix.",
+        "scope": "mail_lib",
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/thunderbird.py::load_message_bodies, mail_lib/thunderbird.py::normalize_message_id, examples/mail_assistant/services.py::load_message_bodies"
+      }
+    ],
+    "structured": 1
+  }
+}

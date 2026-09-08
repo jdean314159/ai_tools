@@ -1,0 +1,229 @@
+{
+  "schema": "temporary-ornith-adaptive-staged-repository-assessment-adjudication/v1",
+  "adjudicated_at": "2026-09-08",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "corrected_head_commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+  "primary_scoring_rule": "Only critic-accepted findings in the authoritative report are final findings. A known defect counts only when a final finding identifies both the affected behavior and relevant symbol or call path.",
+  "scope_limit": "This is a paired harness-development result on a disclosed target. Defect recall is descriptive and is not evidence of generalization.",
+  "known_defects": [
+    {
+      "id": "engram_batch_indexing",
+      "symbol": "ProjectMemory.store_episodes_batch",
+      "behavior": "redundant batch embedding and Chroma insertion after per-episode storage"
+    },
+    {
+      "id": "writer_lock_inode_replacement",
+      "symbol": "WriterLock",
+      "behavior": "dead PID text causes replacement of a pathname whose inode is actively flocked"
+    },
+    {
+      "id": "rag_bm25_stale_same_count_cache",
+      "symbol": "HybridRetriever._get_bm25_index",
+      "behavior": "a persisted same-count BM25 cache is accepted despite a newer collection mutation marker"
+    }
+  ],
+  "grader": {
+    "path": "docs/projects/repository_assessment/tools/test_known_defects_at_83e1d09.py",
+    "sha256": "e02288e330e84014298ae4c8420aa4f2a88223cbe11ddef1b4e3c0e9f5079bcb",
+    "target_result": {
+      "passed": 0,
+      "failed": 3
+    },
+    "corrected_head_result": {
+      "passed": 3,
+      "failed": 0
+    },
+    "excluded_attempt": "An initial target invocation ran the in-repository grader and allowed pytest root discovery to reintroduce corrected-HEAD package paths. It produced 3 passed and is excluded. The retained result copied the grader to /tmp, disabled plugin autoload, and used explicit target-only or HEAD-only import roots."
+  },
+  "independent_validation": {
+    "path": "independent-validation.json",
+    "validator_path": "docs/projects/repository_assessment/tools/validate_adaptive_campaign.py",
+    "validator_sha256": "9bd70a22d6f5783a4b532424dff3ce63f5928bedcdf8cc80458b4159921480d0",
+    "all_v2_mechanical_gates_pass": true,
+    "endpoint_snapshots": 6,
+    "endpoint_fingerprint_stable": true,
+    "endpoint_fingerprint_sha256": "cd24e9603b33dec026aa531b4011dc834212a68c23a85943744c87bf56e49af1",
+    "v1_coverage_recomputed_matches": 3,
+    "v2_coverage_recomputed_matches": 3
+  },
+  "runs": [
+    {
+      "condition": "staged_v1",
+      "seed": 17,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 7,
+      "shell_calls": 27,
+      "max_package_concentration_percent": 11.1,
+      "input_tokens": 115521,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null
+    },
+    {
+      "condition": "adaptive_staged_v2_2",
+      "seed": 17,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 5,
+      "shell_calls": 38,
+      "max_package_concentration_percent": 28.9,
+      "input_tokens": 368469,
+      "promoted_hypotheses": 3,
+      "verifier_results": 3,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "mechanical_gates_pass": true
+    },
+    {
+      "condition": "adaptive_staged_v2_2",
+      "seed": 31,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 3,
+      "shell_calls": 33,
+      "max_package_concentration_percent": 30.3,
+      "input_tokens": 376075,
+      "promoted_hypotheses": 2,
+      "verifier_results": 2,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "mechanical_gates_pass": true
+    },
+    {
+      "condition": "staged_v1",
+      "seed": 31,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 8,
+      "shell_calls": 30,
+      "max_package_concentration_percent": 20.0,
+      "input_tokens": 123613,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null
+    },
+    {
+      "condition": "staged_v1",
+      "seed": 47,
+      "lifecycle": "aborted",
+      "completion_mode": "controller_fallback",
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 7,
+      "shell_calls": 30,
+      "max_package_concentration_percent": 20.0,
+      "input_tokens": 105961,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "comparison_caveat": "All nine scouts and the promoted verifier returned structured results. The final model synthesis did not, so the retained report is a deterministic controller fallback and the envelope remains aborted."
+    },
+    {
+      "condition": "adaptive_staged_v2_2",
+      "seed": 47,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "recalled_defect_ids": [],
+      "coverage": 3,
+      "shell_calls": 41,
+      "max_package_concentration_percent": 26.8,
+      "input_tokens": 478868,
+      "promoted_hypotheses": 3,
+      "verifier_results": 3,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "mechanical_gates_pass": true
+    }
+  ],
+  "summary": {
+    "v1": {
+      "recall_scores": [0, 0, 0],
+      "median_recall": 0,
+      "coverage_scores": [7, 8, 7],
+      "median_coverage": 7,
+      "median_shell_calls": 30,
+      "median_max_package_concentration_percent": 20.0,
+      "median_input_tokens": 115521,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "structured_final_reports": 2,
+      "controller_fallback_reports": 1
+    },
+    "v2_2": {
+      "recall_scores": [0, 0, 0],
+      "median_recall": 0,
+      "coverage_scores": [5, 3, 3],
+      "median_coverage": 3,
+      "median_shell_calls": 38,
+      "median_max_package_concentration_percent": 28.9,
+      "median_input_tokens": 376075,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "selection_attempts": 27,
+      "first_attempt_selections": 27,
+      "distinct_package_symbol_selections": 9,
+      "packages_with_identical_cross_seed_selection": 9,
+      "selection_observations": 27,
+      "scout_results": 27,
+      "scouts_structured_before_forcing": 0,
+      "scout_dispositions": {
+        "supported": 0,
+        "disproved": 16,
+        "unresolved": 11
+      },
+      "promoted_hypotheses": 8,
+      "verifier_results": 8,
+      "verifiers_structured_before_forcing": 5,
+      "verifier_dispositions": {
+        "confirmed": 2,
+        "rejected": 2,
+        "insufficient_evidence": 4
+      },
+      "critic_results": 2,
+      "critic_accepts": 0,
+      "evidence_records": 35,
+      "valid_evidence_records": 6,
+      "invalid_evidence_records": 29,
+      "invalid_evidence_percent": 82.9
+    },
+    "comparisons": {
+      "v2_2_versus_paired_v1_input_multiple": 3.26,
+      "v2_2_versus_autonomous_baseline_input_reduction_percent": 77.2,
+      "v2_2_versus_autonomous_baseline_coverage": "3/9 versus 1/9",
+      "v2_2_versus_autonomous_baseline_concentration_percent": "28.9 versus 62.2"
+    }
+  },
+  "prediction_decisions": {
+    "all_v2_mechanical_gates_pass": "supported",
+    "v2_median_coverage_at_least_seven_and_not_below_v1": "contradicted",
+    "v2_median_concentration_no_more_than_twenty_five_percent": "contradicted",
+    "v2_median_input_below_twenty_five_percent_of_autonomous_baseline": "supported",
+    "v2_accepted_false_positives_no_more_than_v1": "supported",
+    "v2_median_known_defect_recall_may_remain_zero": "observed_zero"
+  },
+  "interpretation": {
+    "mechanism": "The repaired controller passed every frozen mechanical gate. The two earlier invalid campaigns are interface-development evidence and are excluded from behavioral scoring.",
+    "selection": "Every package received a valid first-attempt selection, but each package received the same selected symbol in all three seeds. Deterministic orientation became a deterministic search tunnel rather than broadening the empirical investigation.",
+    "coverage": "Median substantive coverage fell from 7/9 under paired staged v1 to 3/9 under v2.2, while median concentration rose from 20.0% to 28.9%. Both preregistered allocation predictions were contradicted.",
+    "evidence": "Independent replay found that 29 of 35 submitted evidence records did not contain the claimed exact quote in the referenced same-stage output. Conservative downgrades and the critics prevented those records from becoming accepted findings.",
+    "judgment": "The model did not recall any of the three graded defects. Two verifier confirmations described no demonstrated violation and both critics returned insufficient evidence. The pipeline prevented a false acceptance but did not find the target defects.",
+    "efficiency": "V2.2 used 77.2% fewer median input tokens than the original autonomous baseline, satisfying its preregistered threshold, but used 3.26 times the paired staged-v1 median input while covering fewer packages.",
+    "next_gate": "The frozen treatment may proceed unchanged only to a separately preregistered blinded confirmation, or the research line may stop. It must not be tuned further on target 83e1d09. No suitable independently prepared blinded target is currently retained in this repository."
+  }
+}

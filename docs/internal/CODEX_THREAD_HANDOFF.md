@@ -1,6 +1,6 @@
 # Fresh Codex thread handoff
 
-- Prepared: 2026-09-03
+- Prepared: 2026-09-08
 - Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
 - Current focus: specify and record repository-assessment model comparisons
 
@@ -18,7 +18,27 @@ Do not read `history/SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## Current selected task
 
-The next thread should implement no schema until Claude supplies the initial
+The adaptive-v2.2 Phase 1 campaign is complete. Do not tune the treatment
+again on known target `83e1d09`. The next experiment gate is an independently
+prepared blinded target set and separate Phase 2 preregistration; no suitable
+target is currently retained in this repository. If no blinded oracle can be
+obtained, stop this research line rather than substituting more runs on the
+development target.
+
+The result may later become a bounded `llm-failure-lab` evidence packet, but do
+not mutate the sibling lab until the `ai_tools` artifacts have stable committed
+Git identities, disclosure review and independent packet verification are
+complete, and the lab maintainer authorizes teaching placement.
+
+A draft next-round recommendation is ready for Claude review at
+`docs/projects/repository_assessment/ORNITH-POST-V2-2-NEXT-ROUND-RECOMMENDATION-2026-09-08.md`.
+It recommends stopping v2.2 on the known target and, only after acquiring new
+targets, separately ablating controller-owned evidence transport,
+controller-assigned risk diversity, a defect-shaped promotion schema, and a
+three/six scout-verifier budget. It is not an accepted plan or
+preregistration.
+
+Continue to implement no production schema until Claude supplies the initial
 `repository-assessment/v1` profile. Once supplied, validate every reuse claim
 against `llm_harness_core.run_artifacts`, identify fields or adapters that do
 not exist, and implement the smallest recorder/backfill slice. Preserve the
@@ -31,6 +51,88 @@ Checkpoint writing, a general evaluation metrics framework, and a distinct
 comparison profile are explicitly deferred. The detailed evidence, current
 working-tree warning, test record, and pasteable opening prompt are in
 `docs/internal/REPOSITORY_ASSESSMENT_HANDOFF_2026-09-02.md`.
+
+## Assessment checkpoints through 2026-09-08
+
+The adaptive staged-v2.2 follow-on completed on 2026-09-08. The valid paired
+campaign passed all frozen mechanical gates and independently reproduced every
+coverage score, endpoint fingerprint, report, dossier, budget, and grader
+result. Against fresh staged-v1 controls, v2.2 median coverage fell from 7/9 to
+3/9, concentration rose from 20.0% to 28.9%, calls rose from 30 to 38, and
+input grew from 115,521 to 376,075 tokens. Recall remained 0/3 in all six runs;
+neither condition accepted a final finding.
+
+V2.2 selected the same symbol per package in all three seeds, so deterministic
+orientation became deterministic tunneling. Independent exact-quote replay
+invalidated 29/35 evidence records. Controller downgrades and critics prevented
+unsupported acceptance, demonstrating evidence control without defect
+judgment. All 27 scouts required forced structure; five of eight verifiers
+completed naturally. Two prior campaign attempts are retained and excluded:
+v2 referenced IDs hidden by Jinja, and v2.1 made a repeated controller-owned
+binding abortive. Read
+`docs/projects/repository_assessment/ORNITH-ADAPTIVE-STAGED-V2-2-ASSESSMENT-2026-09-08.md`
+and its valid campaign directory before any follow-on.
+
+The live Qwen3-Coder 30B-A3B model passed the unchanged basic characterization
+campaign 20/20 and the single-turn tool-decision campaign 12/12, then passed
+6/12 multi-turn recovery cases. Its frozen repository-assessment pilot scored
+0/3 against an independent known-defect grader, spent 42/45 shell calls in
+`llm_inspector`, exhausted the turn cap, and required a forced report. The
+grader fails 3/3 on target commit `83e1d09` and passes 3/3 on current HEAD.
+
+Exact artifacts, hashes, the grader, and the corrected bounded interpretation
+are under `docs/projects/repository_assessment/`. The completed seed-7 run is a
+pilot, not a confirmatory repetition.
+
+The subsequent frozen six-run comparison is complete. Baseline and planner
+conditions both had median recall 0/3; independently corrected substantive
+coverage was baseline 1/9 versus planner 0/9, and natural completion was
+baseline 3/3 versus planner 1/3. The planner prevented
+low-uncertainty reports under the coverage threshold but otherwise contradicted
+the coverage and termination predictions. All exact transcripts, reports,
+temporary metadata, independent adjudication, invalid development attempts,
+and the maintained harness are retained. The adjudication discloses that the
+harness undercounted two baselines by excluding relevant root-level tests and
+callers permitted by the preregistration. See
+`docs/projects/repository_assessment/QWEN3-CODER-30B-A3B-PLANNER-COMPARISON-2026-09-07.md`.
+
+The separately preregistered Q4_0/Q8_0 cache comparison is complete. Both
+conditions scored 0/3 recall in all three paired seeds and corrected median
+coverage 1/9. All six runs terminated naturally. Q8_0 changed every transcript
+and concentrated all seeds on Engram, but produced three false positives versus
+two under Q4_0 and did not improve median whole-run time. Read
+`docs/projects/repository_assessment/QWEN3-CODER-30B-A3B-KV-CACHE-COMPARISON-2026-09-07.md`.
+Cache precision is user-reported, and the blocked restart design limits causal
+attribution. No follow-on is selected; a 90-turn condition, F16 cache,
+counterbalanced restart design, and redesigned planner remain separate work.
+
+The subsequent Ornith 1.5 35B campaign is also complete. The model passed
+basic capabilities 20/20, tool decisions 12/12, and tool recovery 12/12, then
+scored 0/3 frozen repository-defect recall in each of three preregistered seeds.
+All three bound the 45-turn cap and required forced reports; corrected coverage
+was 1/9, 2/9, and 1/9. Seeds 17 and 47 did correctly reproduce two Engram trust
+defects after reading an internal handoff that named them explicitly. An
+independent reproducer confirms both are still present on HEAD: `get_facts()`
+bypasses recall-policy filtering, and extracted facts omit trust provenance.
+Treat those as verified supplied leads, not new discovery. See
+`docs/projects/repository_assessment/ORNITH-1.5-35B-KNOWN-DEFECT-BASELINE-2026-09-07.md`.
+Ornith used active draft MTP, so its sequential comparison with the
+non-speculative Qwen baseline is not a model-weights-only causal estimate.
+
+A subsequent preregistered staged treatment reused the same Ornith endpoint,
+target, grader, and seeds while replacing one growing autonomous context with
+nine fresh package scouts, fresh candidate verifiers, an evidence critic, and
+constrained synthesis. Historical handoff and experiment documents were
+masked. Coverage improved from baseline scores 1/9, 2/9, 1/9 to 7/9, 6/9,
+8/9; median concentration fell from 62.2% to 11.1%; median input fell 94.6% to
+89,359 tokens. Recall remained 0/3 in every seed. Two seed-47 candidates were
+both independently adjudicated non-defects and filtered before the report.
+Every scout and verifier still needed a forced structured-summary request, and
+one synthesis used a controller fallback. See
+`docs/projects/repository_assessment/ORNITH-1.5-35B-STAGED-ASSESSMENT-2026-09-07.md`.
+Do not describe this as prompt wording alone improving performance: the tested
+treatment bundles prompt, fresh-context decomposition, fixed budgets, gates,
+and controller-owned uncertainty.
 
 ## Current cleanup checkpoint
 
@@ -180,8 +282,10 @@ Key commits, oldest to newest:
 
 ## Current evidence boundary
 
-- Current live model: llama.cpp-hosted
-  `Qwen3.8-Flash-Next-UD-IQ4_XS` on the DGX Spark.
+- Current live model: llama.cpp-hosted `Ornith-1.5-35B-Q4_K_M.gguf` on the DGX
+  Spark. The endpoint reports llama.cpp build `b10679-50f068fff`; the remote
+  model digest and server-executable digest remain unavailable. Slot records
+  reported active draft MTP with a three-token user-reported draft limit.
 - Security and availability probes used thinking off, temperature zero, and
   exact judge-free scoring. No oracle or LLM judge was used.
 - Results are bounded synthetic characterizations, not general security or

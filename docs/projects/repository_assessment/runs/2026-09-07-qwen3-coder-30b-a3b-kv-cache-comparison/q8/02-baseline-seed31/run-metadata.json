@@ -1,0 +1,185 @@
+{
+  "base_url_retained": false,
+  "completion_mode": "natural",
+  "condition": "baseline",
+  "coverage": null,
+  "critic": {
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "records": []
+  },
+  "fingerprint": {
+    "harness_sha256": "8f07bb772896554b37056fb16cf2696c246fcb56971d0ae1549a2da6ebe57972",
+    "launch_configuration": {
+      "cache_type_k": "q8_0",
+      "cache_type_v": "q8_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported restart command changing only cache-type-k and cache-type-v from the frozen Q4_0 launch",
+      "speculative_decoding": false
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 17659361280,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 30532122624,
+      "n_vocab": 151936,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [],
+    "omissions": [
+      "The llama.cpp HTTP endpoints do not expose KV-cache types; Q8_0 K/V is established only by the user-reported launch command.",
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable."
+    ],
+    "recorded_at": "2026-09-07T14:34:59Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": false
+    },
+    "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+    "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532"
+  },
+  "finished_at": "2026-09-07T15:02:32.134667Z",
+  "investigator_usage": {
+    "input_tokens": 476328,
+    "output_tokens": 4347
+  },
+  "lifecycle": "final",
+  "model": "Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf",
+  "prompt_sha256": "061a04a30f4620082cf0d4ff134cec0369dd8ec77f14b34abe30d682556769cc",
+  "protocol_violations": [],
+  "rejected_tool_calls": 0,
+  "remaining_uncertainty": "low",
+  "report_sha256": "537db049105304f96fb7323a6dfa1748a652c125103563106accba373f562106",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "observations": {
+        "imports_under_workspace": true,
+        "module_origins": {
+          "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+          "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+          "engram": "/workspace/engram/src/engram/__init__.py",
+          "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+          "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+          "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+          "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "mail_lib": "/workspace/mail_lib/__init__.py",
+          "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+        },
+        "network_interfaces": [
+          "lo"
+        ],
+        "network_unshared": true,
+        "private_tmp_writable": true,
+        "repository_read_only": true
+      },
+      "returncode": 0,
+      "stderr": "",
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-planner-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 0,
+    "agent_lib": 0,
+    "cross_repository": 15,
+    "engram": 22,
+    "llm_engines": 0,
+    "llm_harness_core": 0,
+    "llm_inspector": 0,
+    "llm_inspector_ui": 0,
+    "mail_lib": 0,
+    "rag_lib": 0
+  },
+  "seed": 31,
+  "shell_tool_calls": 37,
+  "started_at": "2026-09-07T15:00:31.836572Z",
+  "substantive_coverage": {
+    "covered": 1,
+    "exposed": 1,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "engram": {
+        "corroborating_reads": [
+          "/workspace/engram/tests/test_temporal_memory.py"
+        ],
+        "covered": true,
+        "exposed": true,
+        "production_reads": [
+          "/workspace/engram/src/engram/concurrency.py",
+          "/workspace/engram/src/engram/project_memory.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_inspector": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "mail_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "rag_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      }
+    }
+  },
+  "target_archive_sha256": "e4bac3a08e16a0d4644e658b93d1bcd5ce5a77d7af4c49e0a63a3a07e52206d2",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "3bf6f93fd5d3eeb2b57f0a55eb0b893207404a2f95d0ed415f3fd9fc7c3cbc5e",
+  "turn_budget": 45,
+  "turn_cap_bound": false,
+  "turns_used": 38
+}

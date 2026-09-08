@@ -1,0 +1,201 @@
+{
+  "schema": "temporary-kv-cache-comparison-adjudication/v1",
+  "adjudicated_at": "2026-09-07",
+  "target_commit": "83e1d09c5a39bc7a9b27e97dfdf39bd1cf694532",
+  "corrected_head_commit": "61a63fc1eb09c655cfee53aefb96b2045f1ca9bf",
+  "primary_decision": "no_material_q8_improvement",
+  "prediction_decision": "supported",
+  "material_improvement_rule": "Q8_0 median recall must be at least 1/3 and improve over Q4_0 in at least two paired seeds.",
+  "known_defects": [
+    {
+      "id": "engram_batch_indexing",
+      "symbol": "ProjectMemory.store_episodes_batch",
+      "behavior": "redundant batch embedding and Chroma insertion after per-episode storage"
+    },
+    {
+      "id": "writer_lock_inode_replacement",
+      "symbol": "WriterLock",
+      "behavior": "dead PID text causes replacement of a pathname whose inode is actively flocked"
+    },
+    {
+      "id": "rag_bm25_stale_same_count_cache",
+      "symbol": "HybridRetriever._get_bm25_index",
+      "behavior": "a persisted same-count BM25 cache is accepted despite a newer collection mutation marker"
+    }
+  ],
+  "pairs": [
+    {
+      "seed": 17,
+      "q4_0": {
+        "known_defect_recall": 0,
+        "validated_findings": 1,
+        "false_positives": 1,
+        "precision": 0.0,
+        "corrected_coverage": 1,
+        "completion_mode": "natural",
+        "turns": 24,
+        "shell_calls": 23,
+        "input_tokens": 191184,
+        "output_tokens": 2977,
+        "elapsed_seconds": 60.116,
+        "remaining_uncertainty": "low",
+        "dominant_package": "rag_lib"
+      },
+      "q8_0": {
+        "known_defect_recall": 0,
+        "validated_findings": 1,
+        "false_positives": 1,
+        "precision": 0.0,
+        "harness_recorded_coverage": 0,
+        "corrected_coverage": 1,
+        "coverage_evidence": {
+          "production": "/workspace/engram/src/engram/project_memory.py",
+          "corroborating": "/workspace/tests/test_engram_memory_security_policy_probe.py"
+        },
+        "completion_mode": "natural",
+        "turns": 34,
+        "shell_calls": 33,
+        "input_tokens": 414057,
+        "output_tokens": 3141,
+        "elapsed_seconds": 75.22,
+        "remaining_uncertainty": "low",
+        "dominant_package": "engram",
+        "adjudication": {
+          "claim": "ProjectMemory.delete_episode continues deleting after trust-policy rejection",
+          "disposition": "false_positive",
+          "rationale": "The cited method returns False immediately after recording a tenant-mismatch rejection, before changing the in-memory list, rewriting JSONL, or deleting from ChromaDB."
+        }
+      }
+    },
+    {
+      "seed": 31,
+      "q4_0": {
+        "known_defect_recall": 0,
+        "validated_findings": 1,
+        "false_positives": 1,
+        "precision": 0.0,
+        "corrected_coverage": 1,
+        "completion_mode": "natural",
+        "turns": 44,
+        "shell_calls": 43,
+        "input_tokens": 705443,
+        "output_tokens": 5663,
+        "elapsed_seconds": 156.115,
+        "remaining_uncertainty": "medium",
+        "dominant_package": "engram"
+      },
+      "q8_0": {
+        "known_defect_recall": 0,
+        "validated_findings": 1,
+        "false_positives": 1,
+        "precision": 0.0,
+        "harness_recorded_coverage": 1,
+        "corrected_coverage": 1,
+        "coverage_evidence": {
+          "production": "/workspace/engram/src/engram/project_memory.py",
+          "corroborating": "/workspace/engram/tests/test_temporal_memory.py"
+        },
+        "completion_mode": "natural",
+        "turns": 38,
+        "shell_calls": 37,
+        "input_tokens": 476328,
+        "output_tokens": 4347,
+        "elapsed_seconds": 120.298,
+        "remaining_uncertainty": "low",
+        "dominant_package": "engram",
+        "adjudication": {
+          "claim": "in-place temporal predecessor metadata updates cause corruption under concurrent access",
+          "disposition": "false_positive",
+          "rationale": "ProjectMemory holds its WriterLock for the persistent instance lifetime, the code creates a new metadata dictionary before assignment, and the report provides no failing concurrent reproducer. It also explicitly says the exact manifestation is unconfirmed."
+        }
+      }
+    },
+    {
+      "seed": 47,
+      "q4_0": {
+        "known_defect_recall": 0,
+        "validated_findings": 0,
+        "false_positives": 0,
+        "precision": null,
+        "corrected_coverage": 1,
+        "completion_mode": "natural",
+        "turns": 30,
+        "shell_calls": 29,
+        "input_tokens": 391057,
+        "output_tokens": 4213,
+        "elapsed_seconds": 107.069,
+        "remaining_uncertainty": "low",
+        "dominant_package": "llm_inspector"
+      },
+      "q8_0": {
+        "known_defect_recall": 0,
+        "validated_findings": 1,
+        "false_positives": 1,
+        "precision": 0.0,
+        "harness_recorded_coverage": 0,
+        "corrected_coverage": 1,
+        "coverage_evidence": {
+          "production": "/workspace/engram/src/engram/project_memory.py",
+          "corroborating": "/workspace/tests/test_engram_memory_security_policy_probe.py"
+        },
+        "completion_mode": "natural",
+        "turns": 36,
+        "shell_calls": 35,
+        "input_tokens": 435435,
+        "output_tokens": 4564,
+        "elapsed_seconds": 106.229,
+        "remaining_uncertainty": "medium",
+        "dominant_package": "engram",
+        "adjudication": {
+          "claim": "ProjectMemory._load_episodes loses valid JSONL rows when rewriting after malformed input",
+          "disposition": "false_positive",
+          "rationale": "_read_jsonl retains every parseable dictionary, _load_episodes appends every row it can normalize, and the rewrite contains those accepted rows. The report supplies no valid row that is omitted and acknowledges that skipping malformed JSON is expected."
+        }
+      }
+    }
+  ],
+  "condition_summary": {
+    "q4_0": {
+      "recall_scores": [0, 0, 0],
+      "median_recall": 0,
+      "validated_findings": 2,
+      "false_positives": 2,
+      "aggregate_precision": 0.0,
+      "corrected_coverage_scores": [1, 1, 1],
+      "median_corrected_coverage": 1,
+      "natural_completions": 3,
+      "turn_cap_bound": 0,
+      "median_turns": 30,
+      "median_shell_calls": 29,
+      "median_input_tokens": 391057,
+      "median_output_tokens": 4213,
+      "median_elapsed_seconds": 107.069,
+      "median_max_package_concentration_percent": 44.8,
+      "low_uncertainty_below_8_of_9_coverage": 2
+    },
+    "q8_0": {
+      "recall_scores": [0, 0, 0],
+      "median_recall": 0,
+      "validated_findings": 3,
+      "false_positives": 3,
+      "aggregate_precision": 0.0,
+      "corrected_coverage_scores": [1, 1, 1],
+      "median_corrected_coverage": 1,
+      "natural_completions": 3,
+      "turn_cap_bound": 0,
+      "median_turns": 36,
+      "median_shell_calls": 35,
+      "median_input_tokens": 435435,
+      "median_output_tokens": 4347,
+      "median_elapsed_seconds": 106.229,
+      "median_max_package_concentration_percent": 59.5,
+      "low_uncertainty_below_8_of_9_coverage": 2
+    }
+  },
+  "interpretation": {
+    "objective_quality": "No Q8_0 recall improvement; Q8_0 added one false positive relative to Q4_0.",
+    "trajectory": "All paired transcript hashes differ. Q8_0 concentrated every seed on Engram, while Q4_0 dominant packages were rag_lib, engram, and llm_inspector.",
+    "latency": "Median whole-run elapsed time was effectively unchanged, but the runs followed different trajectories and processed different cumulative prompt volumes, so this is not a controlled throughput benchmark.",
+    "causal_limit": "Cache condition is blocked by time and server restart; trajectory changes are compatible with a cache effect but cannot exclude restart or block-order effects."
+  }
+}
