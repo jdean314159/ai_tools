@@ -1,0 +1,64 @@
+{
+  "schema": "temporary-probe-obligation-screen-adjudication/v1",
+  "adjudicated_at": "2026-09-09",
+  "independent_verification": false,
+  "authority_disclosure": "Codex designed, implemented, validated, operated, adjudicated, documented, and committed this screen under consolidated owner authority.",
+  "primary_scoring_rule": "A known defect counts only when the final retained report identifies the affected behavior and actionable violation. A structural non-completion has no final report and is not scored as zero recall.",
+  "known_defects": [
+    "engram_storage_identifier_escape",
+    "engram_persistent_path_permissions",
+    "engram_cross_tenant_episode_deletion"
+  ],
+  "runs": {
+    "probe_optional": {
+      "run_directory": "01-probe-optional-seed31",
+      "condition": "probe_optional",
+      "completion_mode": "forced",
+      "outcome": "forced_valid_submission",
+      "valid_defect_denominator": 3,
+      "recall_evaluable": true,
+      "recall_count": 0,
+      "recalled_defects": [],
+      "accepted_findings": [
+        {
+          "id": "F1",
+          "classification": "false_positive",
+          "reason": "The report treated intentionally masked historical artifacts as a live repository defect; the model-visible target sandbox deliberately hides those paths."
+        },
+        {
+          "id": "F2",
+          "classification": "false_positive",
+          "reason": "The report treated absence of Git metadata in an exported read-only target as a source defect; the export boundary is intentional and the claim does not identify a defect in the target implementation."
+        }
+      ],
+      "accepted_false_positives": ["F1", "F2"],
+      "false_positive_count": 2,
+      "probe_tool_calls": 0,
+      "shell_tool_calls": 45,
+      "action_calls": 45,
+      "satisfying_probe_calls": 0,
+      "adjudication": "The forced report retained two environmental/tooling claims and no known target defect."
+    },
+    "probe_required": {
+      "run_directory": "02-probe-required-seed31",
+      "condition": "probe_required",
+      "completion_mode": "structural_noncompletion",
+      "outcome": "structural_noncompletion_probe_unsatisfied",
+      "valid_defect_denominator": 3,
+      "recall_evaluable": false,
+      "recall_count": 0,
+      "recalled_defects": [],
+      "accepted_findings": [],
+      "accepted_false_positives": [],
+      "false_positive_count": 0,
+      "probe_tool_calls": 0,
+      "shell_tool_calls": 45,
+      "action_calls": 45,
+      "satisfying_probe_calls": 0,
+      "adjudication": "No final model report was accepted. The treatment exhausted the action budget without satisfying the probe predicate; this is structural non-completion, not a zero-recall observation."
+    }
+  },
+  "screen_decision": "screen_did_not_trigger",
+  "screen_decision_rule": "A positive requires treatment recall to exceed control recall by at least one valid defect with no increase in accepted false positives. The treatment had no evaluable final report, so escalation was not triggered.",
+  "interpretation": "The probe obligation did not produce a positive screen in this one seed and target. The treatment's structural non-completion cannot distinguish lack of judgment from budget displacement or inability to satisfy the gate. This result is not evidence of absence."
+}

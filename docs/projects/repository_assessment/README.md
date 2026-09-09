@@ -24,6 +24,7 @@ adjudication records; tools under `tools/` are maintained external graders.
 - [Ornith model-blind target-transfer pilot preregistration](ORNITH-MODEL-BLIND-TRANSFER-PILOT-PREREGISTRATION-2026-09-09.md)
 - [Ornith model-blind target-transfer pilot result](ORNITH-MODEL-BLIND-TRANSFER-PILOT-2026-09-09.md)
 - [Ornith empirical-probe-obligation screen preregistration](ORNITH-PROBE-OBLIGATION-SCREEN-PREREGISTRATION-2026-09-09.md)
+- [Ornith empirical-probe-obligation screen result](ORNITH-PROBE-OBLIGATION-SCREEN-2026-09-09.md)
 
 The retained temporary metadata is not the production
 `repository-assessment/v1` profile. That profile and recorder remain deferred

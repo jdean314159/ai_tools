@@ -45,6 +45,21 @@ For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
 
+### Latest completed work — Ornith empirical-probe-obligation screen
+
+The two-run exploratory screen held the Ornith model, target `7d37920`, seed
+31, single-context harness, tools, endpoint, and 45-action budget fixed while
+adding a generic controller-enforced behavioral-probe obligation in the second
+arm. Both arms had the same instrumented probe tool and sandbox. The optional
+control used all 45 actions as shell calls and produced a forced report with
+two environmental false positives and 0/3 known-defect recall. The required
+arm also used all 45 actions as shell calls, never called the probe tool, and
+ended as structural non-completion; its recall is not evaluable, not 0/3.
+The frozen target grader failed 3/3 and corrected reference passed 3/3. The
+screen did not trigger escalation and supplies no evidence of absence. The
+protocol, gate controls, exact runs, adjudication, and non-independent
+validation are retained under `docs/projects/repository_assessment/`.
+
 ### Latest completed work — Ornith model-blind target transfer
 
 The preregistered four-run exploratory pilot compared frozen staged v1 and

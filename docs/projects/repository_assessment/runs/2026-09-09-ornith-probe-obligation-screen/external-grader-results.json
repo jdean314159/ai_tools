@@ -1,0 +1,19 @@
+{
+  "schema": "temporary-probe-obligation-screen-grader-results/v1",
+  "recorded_at": "2026-09-09",
+  "grader": "docs/projects/repository_assessment/tools/test_engram_boundary_defects_at_7d37920.py",
+  "grader_sha256": "6df8cf5c9ad7eb29f06e9e0db34dedd4801bdfaa66860028b53f98ddb484efe8",
+  "target_commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+  "corrected_reference": "8e2e9e5f2c45c935bdc3afa2479a08dc702b44db",
+  "target_result": {
+    "failed": 3,
+    "passed": 0,
+    "returncode": 1
+  },
+  "corrected_reference_result": {
+    "failed": 0,
+    "passed": 3,
+    "returncode": 0
+  },
+  "execution_boundary": "Both runs used -c /dev/null, --noconftest, plugin autoload disabled, bytecode writing disabled, and explicit export-only PYTHONPATH roots."
+}

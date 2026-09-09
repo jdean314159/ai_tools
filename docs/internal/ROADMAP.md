@@ -34,6 +34,13 @@ independent packet verification, and authorized curriculum placement.
 Production `repository-assessment/v1` remains deferred pending the explicit
 Claude draft.
 
+The subsequent two-run Ornith empirical-probe-obligation screen is complete.
+The probe-optional arm forced a report after 45 shell actions; the
+probe-required arm exhausted the same budget without calling the instrumented
+probe and ended as structural non-completion. Treatment recall is not
+evaluable and the screen did not trigger escalation. This result does not
+support an absence claim; no further tuning on this target is selected.
+
 <!-- AI_TOOLS_STATUS_END -->
 
 ## Purpose

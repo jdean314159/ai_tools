@@ -1,0 +1,216 @@
+{
+  "action_call_budget": 45,
+  "action_calls": 45,
+  "action_cap_bound": true,
+  "base_url_retained": false,
+  "completion_mode": "forced",
+  "condition": "probe_optional",
+  "controller_policy_sha256": "571e7c25ada6c6b9f0bd29b0b4b5ec69a1de248c4c1f41a4f9a94ff1cc341ad8",
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none while all four idle /slots records reported speculative true but did not label the speculative type. The launch MTP flags remain user-reported for this server instance."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported.",
+      "The current /slots response does not identify the speculative type even though speculative is true; draft MTP type and draft limit are user-reported."
+    ],
+    "recorded_at": "2026-09-09T10:58:19.731171Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": null
+    }
+  },
+  "finished_at": "2026-09-09T18:21:25.443386Z",
+  "lifecycle": "aborted",
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "model_turn_cap_bound": false,
+  "model_turn_ceiling": 60,
+  "model_turns": 45,
+  "outcome": "forced_valid_submission",
+  "probe_authoring_events": 0,
+  "probe_execution_events": 0,
+  "probe_records": [],
+  "probe_tool_calls": 0,
+  "prompt_sha256": {
+    "probe_obligation": "40b6c12937470ef46b6778dc33934ac5b8f5b09570c8f2a37c858c76a73ddf81",
+    "shared_system": "3a38f57ad77d19158b105c3e70e3ca8caced821017966bb5eaae5e9f9fb4f9f0",
+    "shared_user": "2e7b5dd5fce502c4df9b542ccccad5a340f30470a4b752a535c2c313eaa2b9b8"
+  },
+  "protocol_violations": [],
+  "rejected_report_calls": 0,
+  "rejected_tool_calls": 0,
+  "remaining_uncertainty": "high",
+  "report_disposition": "findings",
+  "report_probe_call_id": "none",
+  "report_probe_observation": "none",
+  "report_sha256": "e9eb9603f6008fe35e4c8aee642fc900a825c89fda1f4ffeb5b3db284ea29855",
+  "runner_sha256": "a2fac005d03f3be8d6a72558e9861fbc5f9844ba639fbee67b9a42367404103d",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "satisfying_probe_calls": 0,
+  "schema": "temporary-repository-assessment-probe-obligation-screen-run/v1",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 0,
+    "agent_lib": 0,
+    "cross_repository": 45,
+    "engram": 0,
+    "llm_engines": 0,
+    "llm_harness_core": 0,
+    "llm_inspector": 0,
+    "llm_inspector_ui": 0,
+    "mail_lib": 0,
+    "rag_lib": 0
+  },
+  "seed": 31,
+  "shell_tool_calls": 45,
+  "started_at": "2026-09-09T18:18:54.403261Z",
+  "submission_gate_blocked": false,
+  "substantive_coverage": {
+    "covered": 0,
+    "exposed": 0,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "engram": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_engines": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_inspector": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "mail_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      },
+      "rag_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "exposed": false,
+        "production_reads": []
+      }
+    }
+  },
+  "target_archive_sha256": "02e68e5c7cb349f1c6e3011fd6f0265ebdf6a87fa753bef932fabfd271bd8769",
+  "target_commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+  "target_tree": "0177f7c8288a42ca771084c42362ddb6f90a9640",
+  "temperature": 0,
+  "thinking": false,
+  "tool_schema_sha256": {
+    "run_probe": "9b74c6f43334c619284750d2c5d9b9766a21c15b21eecd3969aa35aee6925504",
+    "shell": "30717239e515e5f40a67f59e70da8c1b9ce12708b115dfb0926b720d83d72022",
+    "submit_report": "f470382ccced38bfc39ee1ea28d4162aa4585ae8c2ab107f20b3e14e0654f7e4"
+  },
+  "transcript_sha256": "10eccd6aee7eb2400459496023c0e9a091cf193ff7c0bc7df9d8dc932d279337",
+  "treatment_language_violations": [],
+  "usage": {
+    "input_tokens": 869535,
+    "model_calls": 46,
+    "output_tokens": 4652
+  }
+}
