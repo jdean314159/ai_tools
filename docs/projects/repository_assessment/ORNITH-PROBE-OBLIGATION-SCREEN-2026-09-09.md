@@ -31,13 +31,15 @@ attempts are retained for later review.
 | probe optional | forced valid submission | 45 | 45 | 0 | not required | 0/3 evaluable | 2 false positives, 0 known defects |
 | probe required | structural non-completion | 45 | 45 | 0 | unsatisfied | not evaluable | no final report |
 
-The control ran for 151.0 seconds, used 869,535 input and 4,652 output tokens,
+The control ran for approximately 151.04 seconds (derived from the retained
+`started_at`/`finished_at` timestamps), used 869,535 input and 4,652 output tokens,
 and made 46 model calls including forced reporting. Its report claimed missing
 run-artifact fixtures and a Git-metadata hygiene problem; post-run adjudication
 classified both as environmental false positives for this intentionally masked
 export target. Neither matched a graded defect.
 
-The treatment ran for 151.0 seconds, used 1,518,414 input and 3,194 output
+The treatment ran for approximately 91.02 seconds (derived from the retained
+`started_at`/`finished_at` timestamps), used 1,518,414 input and 3,194 output
 tokens, and made 45 model calls. It never called `run_probe`, so the mechanical
 predicate was never satisfied. The controller ended the run structurally rather
 than forcing a report without the required observation.
