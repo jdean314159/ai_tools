@@ -919,7 +919,9 @@ def run_adaptive_assessment(
     output_dir: Path,
     fingerprint: dict[str, Any],
     environment_validation: dict[str, Any],
+    target_identity: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    target = v1.normalize_target_identity(target_identity)
     output_dir.mkdir(parents=False, exist_ok=False)
     dossier_dir = output_dir / "dossiers"
     dossier_dir.mkdir()
@@ -1080,8 +1082,7 @@ def run_adaptive_assessment(
         "seed": seed,
         "started_at": started_at,
         "finished_at": base.utc_now(),
-        "target_commit": TARGET_COMMIT,
-        "target_archive_sha256": TARGET_ARCHIVE_SHA256,
+        **target,
         "model": fingerprint["model_metadata"].get("model_label"),
         "fingerprint": fingerprint,
         "base_url_retained": False,
@@ -1150,11 +1151,18 @@ def main() -> int:
     parser.add_argument("--model", required=True)
     parser.add_argument("--fingerprint", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--target-commit")
+    parser.add_argument("--target-tree")
+    parser.add_argument("--target-archive-sha256")
     args = parser.parse_args()
     if args.output_dir.exists():
         parser.error(f"refusing to overwrite {args.output_dir}")
     if not args.root.is_dir() or not args.venv.is_dir() or not args.rg.is_file():
         parser.error("root, venv, or rg path is invalid")
+    try:
+        target_identity = v1.target_identity_from_args(args)
+    except ValueError as exc:
+        parser.error(str(exc))
     fingerprint = base._load_fingerprint(args.fingerprint)
     environment_validation = v1.validate_sanitized_sandbox(args.root, args.venv, args.rg)
     if not environment_validation["valid"]:
@@ -1166,8 +1174,7 @@ def main() -> int:
             "lifecycle": "aborted",
             "validity": "invalid",
             "invalid_reason": "sanitized sandbox validation failed before model execution",
-            "target_commit": TARGET_COMMIT,
-            "target_archive_sha256": TARGET_ARCHIVE_SHA256,
+            **target_identity,
             "sandbox_validation": environment_validation,
         }
         base._write_json(args.output_dir / "run-metadata.json", invalid)
@@ -1189,6 +1196,7 @@ def main() -> int:
         output_dir=args.output_dir,
         fingerprint=fingerprint,
         environment_validation=environment_validation,
+        target_identity=target_identity,
     )
     print(json.dumps(metadata, indent=2, sort_keys=True))
     return 0

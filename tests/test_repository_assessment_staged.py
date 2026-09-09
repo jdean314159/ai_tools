@@ -118,7 +118,29 @@ def test_controller_uncertainty_comes_only_from_coverage() -> None:
     assert runner.controller_uncertainty(9) == "low"
 
 
+def test_target_identity_override_requires_and_retains_all_three_fields() -> None:
+    identity = {
+        "target_commit": "1" * 40,
+        "target_tree": "2" * 40,
+        "target_archive_sha256": "3" * 64,
+    }
+
+    assert runner.normalize_target_identity(identity) == identity
+
+    try:
+        runner.normalize_target_identity({"target_commit": "1" * 40})
+    except ValueError as error:
+        assert "exactly" in str(error)
+    else:  # pragma: no cover - contract guard
+        raise AssertionError("partial target identity must fail")
+
+
 def test_staged_run_with_no_candidates_completes_structured(tmp_path: Path) -> None:
+    identity = {
+        "target_commit": "1" * 40,
+        "target_tree": "2" * 40,
+        "target_archive_sha256": "3" * 64,
+    }
     metadata = runner.run_staged_assessment(
         engine=FakeEngine(),
         seed=17,
@@ -128,6 +150,7 @@ def test_staged_run_with_no_candidates_completes_structured(tmp_path: Path) -> N
         output_dir=tmp_path / "run",
         fingerprint=_fingerprint(),
         environment_validation={"valid": True},
+        target_identity=identity,
     )
 
     assert metadata["completion_mode"] == "structured"
@@ -136,3 +159,4 @@ def test_staged_run_with_no_candidates_completes_structured(tmp_path: Path) -> N
     assert metadata["shell_tool_calls"] == 0
     assert metadata["remaining_uncertainty"] == "high"
     assert metadata["accepted_findings"] == []
+    assert {key: metadata[key] for key in identity} == identity

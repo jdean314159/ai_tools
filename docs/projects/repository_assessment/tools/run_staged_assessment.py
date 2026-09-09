@@ -48,6 +48,44 @@ SCOUT_SHELL_BUDGET = 3
 VERIFIER_SHELL_BUDGET = 3
 MAX_CANDIDATES = 6
 MAX_STAGE_MODEL_CALLS = 5
+_COMMIT_RE = re.compile(r"[0-9a-f]{40}")
+_SHA256_RE = re.compile(r"[0-9a-f]{64}")
+
+
+def normalize_target_identity(identity: dict[str, str] | None = None) -> dict[str, str]:
+    if identity is None:
+        return {
+            "target_commit": TARGET_COMMIT,
+            "target_archive_sha256": TARGET_ARCHIVE_SHA256,
+        }
+    expected = {"target_commit", "target_tree", "target_archive_sha256"}
+    if set(identity) != expected:
+        raise ValueError(f"target identity must contain exactly: {sorted(expected)}")
+    normalized = {key: str(value).strip().lower() for key, value in identity.items()}
+    if not _COMMIT_RE.fullmatch(normalized["target_commit"]):
+        raise ValueError("target_commit must be a full lowercase Git object ID")
+    if not _COMMIT_RE.fullmatch(normalized["target_tree"]):
+        raise ValueError("target_tree must be a full lowercase Git object ID")
+    if not _SHA256_RE.fullmatch(normalized["target_archive_sha256"]):
+        raise ValueError("target_archive_sha256 must be a lowercase SHA-256 digest")
+    return normalized
+
+
+def target_identity_from_args(args: argparse.Namespace) -> dict[str, str]:
+    values = (args.target_commit, args.target_tree, args.target_archive_sha256)
+    if not any(values):
+        return normalize_target_identity()
+    if not all(values):
+        raise ValueError(
+            "--target-commit, --target-tree, and --target-archive-sha256 are all required together"
+        )
+    return normalize_target_identity(
+        {
+            "target_commit": args.target_commit,
+            "target_tree": args.target_tree,
+            "target_archive_sha256": args.target_archive_sha256,
+        }
+    )
 
 SCOUT_SYSTEM_PROMPT = """You are one package scout in a staged, read-only repository assessment.
 
@@ -714,7 +752,9 @@ def run_staged_assessment(
     output_dir: Path,
     fingerprint: dict[str, Any],
     environment_validation: dict[str, Any],
+    target_identity: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    target = normalize_target_identity(target_identity)
     output_dir.mkdir(parents=False, exist_ok=False)
     transcript = output_dir / "transcript.jsonl"
     report_path = output_dir / "raw-model-report.md"
@@ -857,8 +897,7 @@ def run_staged_assessment(
         "seed": seed,
         "started_at": started_at,
         "finished_at": base.utc_now(),
-        "target_commit": TARGET_COMMIT,
-        "target_archive_sha256": TARGET_ARCHIVE_SHA256,
+        **target,
         "model": fingerprint["model_metadata"].get("model_label"),
         "fingerprint": fingerprint,
         "base_url_retained": False,
@@ -926,11 +965,18 @@ def main() -> int:
     parser.add_argument("--model", required=True)
     parser.add_argument("--fingerprint", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--target-commit")
+    parser.add_argument("--target-tree")
+    parser.add_argument("--target-archive-sha256")
     args = parser.parse_args()
     if args.output_dir.exists():
         parser.error(f"refusing to overwrite {args.output_dir}")
     if not args.root.is_dir() or not args.venv.is_dir() or not args.rg.is_file():
         parser.error("root, venv, or rg path is invalid")
+    try:
+        target_identity = target_identity_from_args(args)
+    except ValueError as exc:
+        parser.error(str(exc))
     fingerprint = base._load_fingerprint(args.fingerprint)
     environment_validation = validate_sanitized_sandbox(args.root, args.venv, args.rg)
     if not environment_validation["valid"]:
@@ -942,8 +988,7 @@ def main() -> int:
             "lifecycle": "aborted",
             "validity": "invalid",
             "invalid_reason": "sanitized sandbox validation failed before model execution",
-            "target_commit": TARGET_COMMIT,
-            "target_archive_sha256": TARGET_ARCHIVE_SHA256,
+            **target_identity,
             "sandbox_validation": environment_validation,
         }
         base._write_json(args.output_dir / "run-metadata.json", invalid)
@@ -965,6 +1010,7 @@ def main() -> int:
         output_dir=args.output_dir,
         fingerprint=fingerprint,
         environment_validation=environment_validation,
+        target_identity=target_identity,
     )
     print(json.dumps(metadata, indent=2, sort_keys=True))
     return 0

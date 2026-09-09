@@ -20,6 +20,8 @@ adjudication records; tools under `tools/` are maintained external graders.
 - [Adaptive staged v2.2 mechanical-repair preregistration](ORNITH-ADAPTIVE-STAGED-V2-2-PREREGISTRATION-2026-09-07.md)
 - [Adaptive staged v2.2 result](ORNITH-ADAPTIVE-STAGED-V2-2-ASSESSMENT-2026-09-08.md)
 - [Post-v2.2 next-round recommendation for review](ORNITH-POST-V2-2-NEXT-ROUND-RECOMMENDATION-2026-09-08.md)
+- [Model-blind target acquisition record](TARGET-ACQUISITION-2026-09-08.md)
+- [Ornith model-blind target-transfer pilot preregistration](ORNITH-MODEL-BLIND-TRANSFER-PILOT-PREREGISTRATION-2026-09-09.md)
 
 The retained temporary metadata is not the production
 `repository-assessment/v1` profile. That profile and recorder remain deferred

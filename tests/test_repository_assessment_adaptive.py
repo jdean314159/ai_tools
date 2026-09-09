@@ -456,6 +456,11 @@ def test_complete_adaptive_campaign_obeys_budget_and_renders_without_model_synth
         }
 
     monkeypatch.setattr(runner.v1, "run_sanitized_shell", fake_shell)
+    identity = {
+        "target_commit": "1" * 40,
+        "target_tree": "2" * 40,
+        "target_archive_sha256": "3" * 64,
+    }
     metadata = runner.run_adaptive_assessment(
         engine=AdaptiveCampaignFakeEngine(),
         seed=17,
@@ -465,6 +470,7 @@ def test_complete_adaptive_campaign_obeys_budget_and_renders_without_model_synth
         output_dir=tmp_path / "run",
         fingerprint={"model_metadata": {"model_label": "fixture"}},
         environment_validation={"valid": True},
+        target_identity=identity,
     )
 
     assert metadata["completion_mode"] == "structured"
@@ -478,3 +484,4 @@ def test_complete_adaptive_campaign_obeys_budget_and_renders_without_model_synth
     assert metadata["substantive_coverage"]["covered"] == 9
     assert metadata["accepted_findings"] == []
     assert metadata["authoritative_report"] == "deterministic_controller_renderer"
+    assert {key: metadata[key] for key in identity} == identity
