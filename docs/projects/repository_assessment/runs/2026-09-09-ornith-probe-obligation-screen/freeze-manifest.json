@@ -1,0 +1,44 @@
+{
+  "authorization": {
+    "consolidated_authority": true,
+    "granted_at": "2026-09-09",
+    "independent_verification_planned_in_run": false,
+    "scope": "Ornith repository-assessment two-run probe-obligation screen"
+  },
+  "controller_policy_sha256": "571e7c25ada6c6b9f0bd29b0b4b5ec69a1de248c4c1f41a4f9a94ff1cc341ad8",
+  "generated_before_first_model_request": true,
+  "grader_sha256": "6df8cf5c9ad7eb29f06e9e0db34dedd4801bdfaa66860028b53f98ddb484efe8",
+  "invalidation_policy": {
+    "automatic_pair_restart_only_for_preregistered_rule": true,
+    "no_protocol_change_after_first_generation": true,
+    "post_generation_fix_requires_new_version": true,
+    "retain_invalid_attempt": true
+  },
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "prompt_sha256": {
+    "probe_obligation": "40b6c12937470ef46b6778dc33934ac5b8f5b09570c8f2a37c858c76a73ddf81",
+    "shared_system": "3a38f57ad77d19158b105c3e70e3ca8caced821017966bb5eaae5e9f9fb4f9f0",
+    "shared_user": "2e7b5dd5fce502c4df9b542ccccad5a340f30470a4b752a535c2c313eaa2b9b8"
+  },
+  "protocol_status": "frozen",
+  "reference_fingerprint_path": "docs/projects/repository_assessment/runs/2026-09-09-ornith-model-blind-transfer-pilot/model-fingerprint.json",
+  "reference_fingerprint_sha256": "4cd5fc58c32c3d7ecb3564fa7b9e5cb81da6c781b099c35aa74e02444243dd01",
+  "run_order": [
+    "01-probe-optional-seed31",
+    "02-probe-required-seed31"
+  ],
+  "runner_sha256": "a2fac005d03f3be8d6a72558e9861fbc5f9844ba639fbee67b9a42367404103d",
+  "schema": "temporary-probe-obligation-screen-freeze/v1",
+  "seed": 31,
+  "target_identity": {
+    "target_archive_sha256": "02e68e5c7cb349f1c6e3011fd6f0265ebdf6a87fa753bef932fabfd271bd8769",
+    "target_commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+    "target_tree": "0177f7c8288a42ca771084c42362ddb6f90a9640"
+  },
+  "tool_schema_sha256": {
+    "run_probe": "9b74c6f43334c619284750d2c5d9b9766a21c15b21eecd3969aa35aee6925504",
+    "shell": "30717239e515e5f40a67f59e70da8c1b9ce12708b115dfb0926b720d83d72022",
+    "submit_report": "f470382ccced38bfc39ee1ea28d4162aa4585ae8c2ab107f20b3e14e0654f7e4"
+  },
+  "validator_sha256": "3cf25ccbd844282fe1fe6a7ef4ae9c300497b78db7162d392c1b2a9f0ac9af86"
+}

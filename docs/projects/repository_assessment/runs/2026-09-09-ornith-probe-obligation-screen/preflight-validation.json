@@ -1,0 +1,101 @@
+{
+  "archive_embedded_commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+  "archive_sha256": "02e68e5c7cb349f1c6e3011fd6f0265ebdf6a87fa753bef932fabfd271bd8769",
+  "errors": [],
+  "gate_controls": {
+    "negative_control": {
+      "code_sha256": "22fd878d0c649f5d5bf11b2aff2ea62315ff9f4c5500066b1f0b1dbe223ea80e",
+      "elapsed_ms": 30.159,
+      "filename": "negative_control.py",
+      "observed_output_present": true,
+      "probe_call_id": "negative-control-no-repository-import",
+      "returncode": 0,
+      "satisfaction_failures": [
+        "no_workspace_module_loaded"
+      ],
+      "satisfied": false,
+      "stderr": "",
+      "stderr_clipped": false,
+      "stderr_length": 0,
+      "stdout": "negative control observation\n",
+      "stdout_clipped": false,
+      "stdout_length": 29,
+      "timed_out": false,
+      "workspace_module_files": []
+    },
+    "negative_control_valid": true,
+    "positive_control": {
+      "code_sha256": "2bb22634ca20d74ff64b4f1f0565f4b19a96dc6e8c58b84299647e8e111da394",
+      "elapsed_ms": 58.004,
+      "filename": "positive_control.py",
+      "observed_output_present": true,
+      "probe_call_id": "positive-control-repository-import",
+      "returncode": 0,
+      "satisfaction_failures": [],
+      "satisfied": true,
+      "stderr": "",
+      "stderr_clipped": false,
+      "stderr_length": 0,
+      "stdout": "positive control origin: /workspace/llm_harness_core/src/llm_harness_core/__init__.py\n",
+      "stdout_clipped": false,
+      "stdout_length": 86,
+      "timed_out": false,
+      "workspace_module_files": [
+        "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/capabilities.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/documents.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/evaluators.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/events.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/memory_evaluation.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/messages.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/results.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/run_artifacts.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/synthetic_data.py",
+        "/workspace/llm_harness_core/src/llm_harness_core/version.py"
+      ]
+    },
+    "positive_control_valid": true,
+    "proposition": "The gate rejects an executed, output-producing script that loads no module from /workspace and accepts one that does.",
+    "schema": "temporary-probe-obligation-gate-controls/v1",
+    "valid": true
+  },
+  "grader_executed": false,
+  "manifest_sha256": "6bf92772124e9bfceb75161c042c744dbb23f2fe74b307ebea7e778bc6093cc0",
+  "recall_adjudicated": false,
+  "sandbox": {
+    "base": {
+      "observations": {
+        "imports_under_workspace": true,
+        "module_origins": {
+          "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+          "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+          "engram": "/workspace/engram/src/engram/__init__.py",
+          "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+          "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+          "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+          "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+          "mail_lib": "/workspace/mail_lib/__init__.py",
+          "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+        },
+        "network_interfaces": [
+          "lo"
+        ],
+        "network_unshared": true,
+        "private_tmp_writable": true,
+        "repository_read_only": true
+      },
+      "returncode": 0,
+      "stderr": "",
+      "valid": true
+    },
+    "mask_stderr": "",
+    "masks": {
+      "agent_instructions_visible": true,
+      "internal_empty": true,
+      "projects_empty": true
+    },
+    "valid": true
+  },
+  "schema": "temporary-probe-obligation-screen-preflight/v1",
+  "valid": true
+}

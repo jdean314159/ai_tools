@@ -1,0 +1,73 @@
+{
+  "archive_embedded_commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+  "archive_sha256": "02e68e5c7cb349f1c6e3011fd6f0265ebdf6a87fa753bef932fabfd271bd8769",
+  "errors": [
+    "sanitized sandbox validation failed",
+    "probe gate controls failed"
+  ],
+  "gate_controls": {
+    "negative_control": {
+      "code_sha256": "22fd878d0c649f5d5bf11b2aff2ea62315ff9f4c5500066b1f0b1dbe223ea80e",
+      "elapsed_ms": 1.96,
+      "filename": "negative_control.py",
+      "observed_output_present": true,
+      "probe_call_id": "negative-control-no-repository-import",
+      "returncode": 1,
+      "satisfaction_failures": [
+        "missing_controller_attestation",
+        "no_workspace_module_loaded"
+      ],
+      "satisfied": false,
+      "stderr": "bwrap: Can't find source path /usr/bin/rg: No such file or directory\n",
+      "stderr_clipped": false,
+      "stderr_length": 69,
+      "stdout": "",
+      "stdout_clipped": false,
+      "stdout_length": 0,
+      "timed_out": false,
+      "workspace_module_files": []
+    },
+    "negative_control_valid": true,
+    "positive_control": {
+      "code_sha256": "2bb22634ca20d74ff64b4f1f0565f4b19a96dc6e8c58b84299647e8e111da394",
+      "elapsed_ms": 1.827,
+      "filename": "positive_control.py",
+      "observed_output_present": true,
+      "probe_call_id": "positive-control-repository-import",
+      "returncode": 1,
+      "satisfaction_failures": [
+        "missing_controller_attestation",
+        "no_workspace_module_loaded"
+      ],
+      "satisfied": false,
+      "stderr": "bwrap: Can't find source path /usr/bin/rg: No such file or directory\n",
+      "stderr_clipped": false,
+      "stderr_length": 69,
+      "stdout": "",
+      "stdout_clipped": false,
+      "stdout_length": 0,
+      "timed_out": false,
+      "workspace_module_files": []
+    },
+    "positive_control_valid": false,
+    "proposition": "The gate rejects an executed, output-producing script that loads no module from /workspace and accepts one that does.",
+    "schema": "temporary-probe-obligation-gate-controls/v1",
+    "valid": false
+  },
+  "grader_executed": false,
+  "manifest_sha256": "6bf92772124e9bfceb75161c042c744dbb23f2fe74b307ebea7e778bc6093cc0",
+  "recall_adjudicated": false,
+  "sandbox": {
+    "base": {
+      "observations": {},
+      "returncode": 1,
+      "stderr": "bwrap: Can't find source path /usr/bin/rg: No such file or directory\n",
+      "valid": false
+    },
+    "mask_stderr": "bwrap: Can't find source path /usr/bin/rg: No such file or directory\n",
+    "masks": {},
+    "valid": false
+  },
+  "schema": "temporary-probe-obligation-screen-preflight/v1",
+  "valid": false
+}
