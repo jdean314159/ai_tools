@@ -1,0 +1,21 @@
+{
+  "endpoint_observations": {
+    "target-23c1549": [],
+    "target-7d37920": [
+      "endpoint slot 0 speculative_types telemetry changed from None to 'none,draft-mtp'",
+      "endpoint slot 1 speculative_types telemetry changed from None to 'none,draft-mtp'",
+      "endpoint slot 2 speculative_types telemetry changed from None to 'none,draft-mtp'",
+      "endpoint slot 3 speculative_types telemetry changed from None to 'none,draft-mtp'"
+    ]
+  },
+  "errors": [
+    "staged runner digest mismatch",
+    "adaptive runner digest mismatch"
+  ],
+  "expected_runs": 4,
+  "observed_run_metadata": 4,
+  "recall_adjudicated": false,
+  "schema": "temporary-ornith-model-blind-transfer-validation/v1",
+  "valid": false,
+  "validated_runs": 4
+}

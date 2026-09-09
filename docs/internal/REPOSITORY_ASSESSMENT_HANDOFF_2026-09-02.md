@@ -61,6 +61,28 @@ external structure controls allocation, stopping, calibration, and token
 growth without necessarily supplying defect judgment. It still does not
 authorize the deferred production artifact profile.
 
+## 2026-09-09 addendum
+
+The frozen adaptive-v2.2 treatment and staged-v1 control were transferred to
+two previously unused historical targets with three objective defects each.
+The model could not see the graders, defect inventory, corrected references,
+or historical assessment documents. Post-run review invalidated one frozen
+false-fail grader row, leaving five valid defects. Both conditions recalled
+0/5 and accepted zero findings. V1 coverage was 7/9 and 6/9; v2.2 coverage
+was 2/9 and 3/9, with v2.2 using 3.94 times the v1 median input. Exact-quote
+validation rejected 16/23 v2.2 scout and verifier evidence records.
+
+This is exploratory transfer evidence, not Phase 2 confirmation: Codex selected
+the targets and wrote their graders, and each target used one paired seed. The
+invalid row required a feature introduced after its target and is retained as
+a scorer false-fail case. The result rules out `83e1d09` as the sole
+explanation for zero recall but does not
+support repository- or model-level population claims. All used targets are
+closed to tuning, no v2.3 is selected, and any continuation requires
+evaluator-independent targets plus a new preregistration. Exact evidence and
+interpretation are in
+`docs/projects/repository_assessment/ORNITH-MODEL-BLIND-TRANSFER-PILOT-2026-09-09.md`.
+
 ## Settled decisions
 
 1. Use the existing `llm_harness_core.RunArtifact` common envelope. The

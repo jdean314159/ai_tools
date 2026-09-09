@@ -13,21 +13,22 @@ ADR-021/022. The teaching material was extracted to the sibling
 deferred; its maintainer gate builds local wheels from this checkout. The
 checkpoint blocks below are historical.
 
-The latest model checkpoint is the completed adaptive staged Ornith v2.2
-development comparison. Every v2.2 mechanical gate passed, but against fresh
-paired staged-v1 controls median package coverage fell from 7/9 to 3/9,
-concentration rose from 20.0% to 28.9%, median shell calls rose from 30 to 38,
-and median input grew 3.26 times to 376,075 tokens. Recall remained 0/3 in both
-conditions, with zero accepted findings. Only 6/35 v2.2 evidence records passed
-independent exact-quote replay, and all nine package selections converged on
-the same symbol across all three seeds. The controller enforced bounded,
-auditable rejection; it did not improve judgment.
+The latest model checkpoint is the completed Ornith model-blind transfer
+pilot. On two previously unused historical targets, staged v1 and adaptive
+v2.2 each recalled 0/5 valid known defects and accepted no findings. V1
+covered 7/9 and 6/9 packages; v2.2 covered 2/9 and 3/9, while using 3.94 times
+the paired-v1 median input. Only 7/23 v2.2 scout and verifier evidence records
+passed exact-quote validation. The controller enforced bounded, auditable
+rejection but did not improve defect judgment.
+One sixth frozen scorer row was invalidated post-run because it required a
+feature introduced after the target; the original false-fail result and
+corrected two-test grader are both retained.
 
-Do not tune again on the known `83e1d09` target. The selected next gate is to
-obtain at least two independently prepared blinded targets with external
-graders, then either preregister and run the frozen v2.2 treatment unchanged or
-stop the line. No such target is currently retained. A diversified v2.3 would
-be a separate development study on new targets, not a repair to this result.
+The transfer pilot is exploratory because Codex selected the targets and
+wrote their graders and each target used one paired seed. Do not tune on any of
+the three used targets. No v2.3 is selected. A stronger continuation requires
+evaluator-independent target preparation, more than one seed per target, and
+a new preregistration; otherwise the line remains stopped.
 Reliability-lab export remains downstream of stable commits, disclosure review,
 independent packet verification, and authorized curriculum placement.
 Production `repository-assessment/v1` remains deferred pending the explicit
@@ -215,6 +216,14 @@ into one schema shape.
   29/35 v2.2 evidence records. The known target is closed to tuning; any
   unchanged confirmation requires independently prepared blinded targets and
   a separate preregistration.
+- Completed transfer checkpoint: a four-run exploratory pilot compared frozen
+  staged v1 and adaptive v2.2 on two unused model-blind targets. Both conditions
+  recalled 0/5 valid defects and accepted zero findings. One frozen scorer row
+  was a post-run false-fail and is excluded from the denominator. V2.2 covered
+  fewer packages on both targets and used 3.94 times the v1 median input. This
+  rules out the original target as the sole explanation but does not satisfy
+  the independent Phase 2 gate. Exact evidence is under
+  `docs/projects/repository_assessment/runs/2026-09-09-ornith-model-blind-transfer-pilot/`.
 
 ### Done when
 

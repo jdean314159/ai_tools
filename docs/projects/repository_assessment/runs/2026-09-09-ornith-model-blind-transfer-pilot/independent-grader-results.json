@@ -1,0 +1,50 @@
+{
+  "schema": "temporary-model-blind-transfer-grader-results/v2",
+  "recorded_at": "2026-09-09",
+  "isolation": "Each grader ran from the exported target or corrected-reference root with -c /dev/null, --noconftest, plugin autoload disabled, bytecode writing disabled, and explicit export-only PYTHONPATH roots.",
+  "targets": {
+    "target-23c1549": {
+      "commit": "23c1549d5aae3ac67454aade1b725f2931770014",
+      "corrected_reference": "49026eac3d2e24b02641bf9db0a76e94909e9386",
+      "valid_defect_count": 2,
+      "frozen_grader": {
+        "path": "docs/projects/repository_assessment/tools/test_cross_package_defects_at_23c1549.py",
+        "sha256": "6e2a8a48b3baf28ae0c5eb6c52784cba16c12d23c9ac37814666f23bc69524ab",
+        "target_result": {"failed": 3, "passed": 0, "returncode": 1},
+        "corrected_reference_result": {"failed": 0, "passed": 3, "returncode": 0}
+      },
+      "semantic_invalidation": {
+        "invalid_test": "test_shipped_engine_config_contains_no_private_deployment_address",
+        "reason": "Target 23c1549 predates commit 4b7d610, which introduced the Spark entry and private address. The test failed only because it required the later inference-host placeholder.",
+        "target_config_sha256": "bc4ef8e64dcce8b33d28068f89ef1a46f3cfbe02762f76aa867604dfaffb9563",
+        "pre_introduction_config_sha256": "bc4ef8e64dcce8b33d28068f89ef1a46f3cfbe02762f76aa867604dfaffb9563"
+      },
+      "corrected_grader": {
+        "path": "docs/projects/repository_assessment/tools/test_cross_package_defects_at_23c1549_corrected.py",
+        "sha256": "d1a589561ef0d724ec13e9c502d2130ebf6014ae1778db673296c866f2e6c23a",
+        "target_result": {"failed": 2, "passed": 0, "returncode": 1},
+        "corrected_reference_result": {"failed": 0, "passed": 2, "returncode": 0}
+      }
+    },
+    "target-7d37920": {
+      "commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+      "corrected_reference": "8e2e9e5f2c45c935bdc3afa2479a08dc702b44db",
+      "valid_defect_count": 3,
+      "grader": {
+        "path": "docs/projects/repository_assessment/tools/test_engram_boundary_defects_at_7d37920.py",
+        "sha256": "6df8cf5c9ad7eb29f06e9e0db34dedd4801bdfaa66860028b53f98ddb484efe8"
+      },
+      "target_result": {
+        "failed": 3,
+        "passed": 0,
+        "returncode": 1
+      },
+      "corrected_reference_result": {
+        "failed": 0,
+        "passed": 3,
+        "returncode": 0
+      }
+    }
+  },
+  "excluded_attempt": "During target acquisition, an Engram invocation omitted -c /dev/null and pytest injected the live checkout through pytest.ini. That earlier 3-pass target result is retained only as invalid runner-isolation evidence and is excluded from these results."
+}

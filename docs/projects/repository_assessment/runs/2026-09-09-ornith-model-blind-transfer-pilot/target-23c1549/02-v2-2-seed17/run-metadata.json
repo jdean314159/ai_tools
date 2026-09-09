@@ -1,0 +1,990 @@
+{
+  "accepted_findings": [],
+  "authoritative_report": "deterministic_controller_renderer",
+  "base_url_retained": false,
+  "budgets": {
+    "scout_call_maximum": 18,
+    "scout_calls_per_scope": 2,
+    "shell_call_ceiling": 45,
+    "verifier_call_maximum": 27,
+    "verifier_calls_per_hypothesis": 9
+  },
+  "completion_mode": "structured",
+  "condition": "adaptive_staged_v2_2",
+  "critic": {
+    "calls": 2,
+    "records": [
+      {
+        "decision": "insufficient_evidence",
+        "index": 2,
+        "rationale": "The claim concerns the behavior of EngramAugmenter.augment, but the supplied evidence does not demonstrate the claimed routing or evidence-flow provenance. The contract_quote shows that when _augment_via_interop returns None, augment() falls back to _augment_via_legacy_trace \u2014 but it does not show that _augment_via_interop returns None specifically when the interop adapter is unavailable, nor that it returns a ContextResult when the adapter is available. The disconfirmation_quote ('if not callable(build_prompt_interop): return None') references build_prompt_interop, which is not the same as the interop adapter referenced in the claim, and there is no evidence linking build_prompt_interop availability to the interop adapter's availability. The behavior_quote demonstrates how evidence flows are derived from interop events, but it does not establish that this path is taken when the interop adapter is available or that the legacy path is taken when it is unavailable. Without evidence connecting interop adapter availability to the selection of each path and its corresponding evidence-flow derivation, the claim's routing and provenance assertions are not demonstrated.",
+        "scope": "llm_inspector",
+        "usage": {
+          "input_tokens": 451,
+          "latency_ms": 3771.972,
+          "output_tokens": 244,
+          "total_tokens": 695
+        },
+        "verification": {
+          "behavior_call_id": "shell-3",
+          "behavior_quote": "raw_events = list(interop_events or [])\n    if not raw_events:\n        raw_events = getattr(prompt_trace, \"to_interop_events\", lambda: [])()\n    evidence_flows = _interop_events_to_evidence_flows(raw_events)",
+          "claim": "EngramAugmenter.augment routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events when the interop adapter is available; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+          "contract_call_id": "shell-2",
+          "contract_quote": "interop_trace = self._augment_via_interop(pm, req)\n            if interop_trace is not None:\n                return interop_trace\n            return self._augment_via_legacy_trace(pm, req)",
+          "decision": "confirmed",
+          "disconfirmation_call_id": "shell-2",
+          "disconfirmation_quote": "if not callable(build_prompt_interop):\n            return None",
+          "evidence_validation": {
+            "errors": [],
+            "valid": true
+          },
+          "expected_behavior": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "impact": "augment() deterministically selects the augmentation path by interop availability; evidence-flow provenance (interop events vs. legacy trace turns) follows the selected path, with no ambiguity or dead branch.",
+          "remediation": "None.",
+          "reported_expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "reported_symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py::EngramAugmenter.augment",
+          "scope": "llm_inspector",
+          "selection": {
+            "disconfirmation_plan": "Construct an EngramAugmenter with a stubbed interop adapter present and confirm augment() calls _augment_via_interop and produces evidence flows from interop events; then construct one with the interop adapter absent and confirm it calls _augment_via_legacy_trace and derives flows from trace turns. If neither branch is taken or evidence flows come from the wrong source, the invariant is falsified.",
+            "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+            "invariant": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+            "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+            "symbol": "EngramAugmenter.augment"
+          },
+          "selection_binding": {
+            "errors": [],
+            "valid": true
+          },
+          "structured_before_forcing": false,
+          "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py::EngramAugmenter.augment"
+        }
+      },
+      {
+        "decision": "insufficient_evidence",
+        "index": 3,
+        "rationale": "The evidence does not demonstrate the claimed behavior and impact. The disconfirmation_quote ('S2 PASS: GenerationError raised: All engines failed after 4 attempts. Last error: connection refused \u2014 backend un\u2026') describes a scenario where ALL engines failed, which is a different case than the claim's primary scenario (primary raises a retryable failure, secondary is healthy and returns its result). The behavior_quote ('S1 PASS: fell back to healthy secondary and returned its result') asserts the desired behavior but provides no supporting evidence that this is a real repository test/behavior \u2014 it reads as an unverified assertion. There is no evidence linking FailoverEngine.generate to the contract_quote ('response = engine.generate(effective_request)') or demonstrating that the implementation actually conforms to the documented contract. The evidence is internally inconsistent (S1 claims success/failover, S2 claims total failure) and does not establish the specific claimed behavior. Per the instructions, I must not infer missing repository facts.",
+        "scope": "llm_engines",
+        "usage": {
+          "input_tokens": 401,
+          "latency_ms": 3368.843,
+          "output_tokens": 220,
+          "total_tokens": 621
+        },
+        "verification": {
+          "behavior_call_id": "shell-7",
+          "behavior_quote": "S1 PASS: fell back to healthy secondary and returned its result",
+          "claim": "FailoverEngine.generate, when the primary engine raises a retryable failure, falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+          "contract_call_id": "shell-3",
+          "contract_quote": "response = engine.generate(effective_request)",
+          "decision": "confirmed",
+          "disconfirmation_call_id": "shell-7",
+          "disconfirmation_quote": "S2 PASS: GenerationError raised: All engines failed after 4 attempts. Last error: connection refused \u2014 backend un",
+          "evidence_validation": {
+            "errors": [],
+            "valid": true
+          },
+          "expected_behavior": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+          "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+          "impact": "FailoverEngine correctly implements the failover contract: a retryable failure on the primary engine triggers fallback to a healthy secondary engine whose result is returned, and when all engines are exhausted the underlying error propagates via GenerationError rather than returning a partial/empty response. No defect \u2014 implementation conforms to the documented contract.",
+          "remediation": "None \u2014 the implementation conforms to the failover contract; no violation detected.",
+          "reported_expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+          "reported_symbols": "llm_engines/src/llm_engines/router.py::FailoverEngine.generate",
+          "scope": "llm_engines",
+          "selection": {
+            "disconfirmation_plan": "Construct a FailoverEngine with two backends where the first raises a retryable error on generate; assert that the second backend's output is returned and that its call_count incremented. Then assert that when both backends raise, the final exception propagates and no response object is returned. If the observed behavior contradicts these outcomes, the hypothesis is falsified.",
+            "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+            "invariant": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+            "production_path": "llm_engines/src/llm_engines/router.py",
+            "symbol": "FailoverEngine.generate"
+          },
+          "selection_binding": {
+            "errors": [],
+            "valid": true
+          },
+          "structured_before_forcing": false,
+          "symbols": "llm_engines/src/llm_engines/router.py::FailoverEngine.generate"
+        }
+      }
+    ]
+  },
+  "dossiers": {
+    "schema": "temporary-repository-package-dossier/v1",
+    "sha256": {
+      "action_trajectory_loop_guard": "d664255a60aa9fdb9356e42f2edf025102fbd2aa24119fe1345bebbf76430317",
+      "agent_lib": "979e080b79f9b81c81a16fad9fa432f3706880a1016029a78b1e3a7f9e4db62e",
+      "engram": "8f901afc2fa270fa01e2d2813fa166839f4d7ed049677c132f852f3379dcf828",
+      "llm_engines": "a7145bbd73188f6de03214db65efb750b116c5e9243fa3da7dcb52f1ec518127",
+      "llm_harness_core": "b8db6f4fd1f57379813606a720748ce4f60c9671938c9d692a0041bb1ca3ed46",
+      "llm_inspector": "c9c38def0e9d4c0146d9be94a1f94a380734b8c0a83e7f8f757dce6cdc03b9f7",
+      "llm_inspector_ui": "a8bd7ed2e5925024f3777ce1d79c72961b1d8bc68838d28fad78f39df235b62b",
+      "mail_lib": "9ccbcd3a214570aa64c5bed440814362bf5de85f6e158f16cc7ae7a2e1892810",
+      "rag_lib": "3b60bd89455e8794dbc2807fd31420e60d987ab87206a30ea5e3cfeda58cdd1f"
+    }
+  },
+  "fingerprint": {
+    "launch_configuration": {
+      "cache_type_k": "q4_0",
+      "cache_type_v": "q4_0",
+      "flash_attention": true,
+      "jinja": true,
+      "source": "user-reported launch configuration",
+      "spec_draft_n_max": 3,
+      "spec_type": "draft-mtp"
+    },
+    "llama_build": "b10679-50f068fff",
+    "model_metadata": {
+      "file_size_bytes": 21702472192,
+      "ftype": "Q4_K - Medium",
+      "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+      "n_ctx": 262144,
+      "n_ctx_train": 262144,
+      "n_embd": 2048,
+      "n_params": 35505251456,
+      "n_vocab": 248320,
+      "total_slots": 4
+    },
+    "model_sha256": null,
+    "observed_discrepancies": [
+      "The default /props generation settings reported speculative.types as none while all four idle /slots records reported speculative true but did not label the speculative type. The launch MTP flags remain user-reported for this server instance."
+    ],
+    "omissions": [
+      "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+      "The exact server executable digest and independently inspected process argv are unavailable.",
+      "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported.",
+      "The current /slots response does not identify the speculative type even though speculative is true; draft MTP type and draft limit are user-reported."
+    ],
+    "recorded_at": "2026-09-09T10:58:19.731171Z",
+    "server_observations": {
+      "health": "ok",
+      "http_server_header": "llama.cpp",
+      "idle_slots": 4,
+      "slot_context_tokens": 262144,
+      "slot_speculative": true,
+      "slot_speculative_types": null
+    }
+  },
+  "finished_at": "2026-09-09T11:14:37.398718Z",
+  "lifecycle": "final",
+  "max_scope_concentration": 0.24444444444444444,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "promotion": {
+    "records": [
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "score=round(best, 3)",
+        "claim": "When comparing a document against itself (identical text), the similarity score returned by SimilarityEvaluator.evaluate is exactly 1.0.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "best = max(SequenceMatcher(None, candidate.lower(), ref.lower()).ratio() for ref in refs)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "SequenceMatcher(None, candidate.lower(), ref.lower()).ratio()",
+        "disposition": "supported",
+        "evidence_validation": {
+          "errors": [],
+          "valid": true
+        },
+        "expected_behavior": "When comparing a document against itself (identical text), the similarity score returned is exactly 1.0, because the cosine similarity of a vector with itself is 1.0 under any consistent normalization.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "impact": "None \u2014 the implementation is correct; the invariant holds. No violation exists.",
+        "reported_expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "reported_symbols": "SimilarityEvaluator.evaluate \u2192 SequenceMatcher(None, candidate.lower(), ref.lower()).ratio()",
+        "scope": "llm_harness_core",
+        "selection": {
+          "disconfirmation_plan": "Call SimilarityEvaluator.evaluate with a document whose text is identical to itself but where the embedding normalization or scoring path could produce a value other than 1.0 (e.g., due to a division-by-zero guard, a clamping step, or a different normalization applied to each operand independently). If the returned score differs from 1.0, the invariant is falsified.",
+          "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "invariant": "When comparing a document against itself (identical text), the similarity score returned is exactly 1.0, because the cosine similarity of a vector with itself is 1.0 under any consistent normalization.",
+          "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "symbol": "SimilarityEvaluator.evaluate"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_harness_core/src/llm_harness_core/evaluators.py::SimilarityEvaluator.evaluate"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "evidence_flows = _interop_events_to_evidence_flows(raw_events) with raw_events = interop events (interop) or prompt_trace.to_interop_events() (legacy)",
+        "claim": "EngramAugmenter.augment routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events when the interop adapter is available; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "interop_trace = self._augment_via_interop(pm, req); if interop_trace is not None: return interop_trace; return self._augment_via_legacy_trace(pm, req)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "if not callable(build_prompt_interop): return None / if not isinstance(result, OperationResult) or not result.ok: return None / if prompt_trace is None: return None",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "impact": "augment() deterministically selects the augmentation path by interop availability; evidence-flow provenance (interop events vs. legacy trace turns) follows the selected path, with no ambiguity or dead branch.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "reported_symbols": "EngramAugmenter.augment -> _augment_via_interop / _augment_via_legacy_trace -> _trace_to_inspector_trace -> _interop_events_to_evidence_flows",
+        "scope": "llm_inspector",
+        "selection": {
+          "disconfirmation_plan": "Construct an EngramAugmenter with a stubbed interop adapter present and confirm augment() calls _augment_via_interop and produces evidence flows from interop events; then construct one with the interop adapter absent and confirm it calls _augment_via_legacy_trace and derives flows from trace turns. If neither branch is taken or evidence flows come from the wrong source, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "invariant": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+          "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "symbol": "EngramAugmenter.augment"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py::EngramAugmenter.augment"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "raise GenerationError(f\"All engines failed after {attempts} attempts. Last error: {last_error}\") from last_error",
+        "claim": "FailoverEngine.generate, when the primary engine raises a retryable failure, falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "response = engine.generate(effective_request); self._health[idx].record_success(); ... return response",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "for idx, engine in candidates: ... while attempts < self.policy.max_attempts: ... return response",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+        "impact": "None \u2014 the implementation conforms to the failover contract; no violation detected.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+        "reported_symbols": "FailoverEngine.generate (llm_engines/src/llm_engines/router.py); GenerationError contract (llm_engines/src/llm_engines/contracts/engine.py)",
+        "scope": "llm_engines",
+        "selection": {
+          "disconfirmation_plan": "Construct a FailoverEngine with two backends where the first raises a retryable error on generate; assert that the second backend's output is returned and that its call_count incremented. Then assert that when both backends raise, the final exception propagates and no response object is returned. If the observed behavior contradicts these outcomes, the hypothesis is falsified.",
+          "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+          "invariant": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+          "production_path": "llm_engines/src/llm_engines/router.py",
+          "symbol": "FailoverEngine.generate"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_engines/src/llm_engines/router.py::FailoverEngine.generate"
+      }
+    ],
+    "rule": "supported then unresolved; seeded scope order; first three",
+    "selected": 3
+  },
+  "prompt_sha256": {
+    "scout": "4cd05834f9f64e4bc8dbabd493200811a6ab2d1d12e50239ea676528603f2a42",
+    "selection": "35a7a1704797c8dbd1aa265198f323e8fa5f3e03ac70761d218f4136e8e24286",
+    "verifier": "1ff7f5200f3dee9c834415418d33f733f9d5bd607e9d74511ab344a72b9f5ca0"
+  },
+  "protocol_violations": [
+    "scout:llm_inspector_ui: attempted shell call beyond budget"
+  ],
+  "remaining_uncertainty": "high",
+  "report_sha256": "b9c499c6d90f20c6ef22722273726bdee82a04ce291dfdb13806860b618b4436",
+  "sandbox": {
+    "engine": "bubblewrap",
+    "host_fallback": false,
+    "masked_paths": [
+      "/workspace/docs/internal",
+      "/workspace/docs/projects"
+    ],
+    "network_unshared": true,
+    "private_tmp": true,
+    "repository_read_only": true,
+    "validation": {
+      "base": {
+        "observations": {
+          "imports_under_workspace": true,
+          "module_origins": {
+            "action_trajectory_loop_guard": "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/__init__.py",
+            "agent_lib": "/workspace/agent_lib/src/agent_lib/__init__.py",
+            "engram": "/workspace/engram/src/engram/__init__.py",
+            "llm_engines": "/workspace/llm_engines/src/llm_engines/__init__.py",
+            "llm_harness_core": "/workspace/llm_harness_core/src/llm_harness_core/__init__.py",
+            "llm_inspector": "/workspace/llm_inspector/src/llm_inspector/__init__.py",
+            "llm_inspector_ui": "/workspace/llm_inspector_ui/src/llm_inspector_ui/__init__.py",
+            "mail_lib": "/workspace/mail_lib/__init__.py",
+            "rag_lib": "/workspace/rag_lib/src/rag_lib/__init__.py"
+          },
+          "network_interfaces": [
+            "lo"
+          ],
+          "network_unshared": true,
+          "private_tmp_writable": true,
+          "repository_read_only": true
+        },
+        "returncode": 0,
+        "stderr": "",
+        "valid": true
+      },
+      "mask_stderr": "",
+      "masks": {
+        "agent_instructions_visible": true,
+        "internal_empty": true,
+        "projects_empty": true
+      },
+      "valid": true
+    }
+  },
+  "schema": "temporary-repository-assessment-adaptive-staged-run/v3",
+  "scope_call_distribution": {
+    "action_trajectory_loop_guard": 2,
+    "agent_lib": 2,
+    "engram": 2,
+    "llm_engines": 11,
+    "llm_harness_core": 11,
+    "llm_inspector": 11,
+    "llm_inspector_ui": 2,
+    "mail_lib": 2,
+    "rag_lib": 2
+  },
+  "scope_order": [
+    "llm_inspector",
+    "llm_engines",
+    "agent_lib",
+    "engram",
+    "rag_lib",
+    "llm_harness_core",
+    "action_trajectory_loop_guard",
+    "llm_inspector_ui",
+    "mail_lib"
+  ],
+  "scouts": {
+    "results": [
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "evidence_flows = _interop_events_to_evidence_flows(raw_events) with raw_events = interop events (interop) or prompt_trace.to_interop_events() (legacy)",
+        "claim": "EngramAugmenter.augment routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events when the interop adapter is available; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "interop_trace = self._augment_via_interop(pm, req); if interop_trace is not None: return interop_trace; return self._augment_via_legacy_trace(pm, req)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "if not callable(build_prompt_interop): return None / if not isinstance(result, OperationResult) or not result.ok: return None / if prompt_trace is None: return None",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "impact": "augment() deterministically selects the augmentation path by interop availability; evidence-flow provenance (interop events vs. legacy trace turns) follows the selected path, with no ambiguity or dead branch.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "reported_symbols": "EngramAugmenter.augment -> _augment_via_interop / _augment_via_legacy_trace -> _trace_to_inspector_trace -> _interop_events_to_evidence_flows",
+        "scope": "llm_inspector",
+        "selection": {
+          "disconfirmation_plan": "Construct an EngramAugmenter with a stubbed interop adapter present and confirm augment() calls _augment_via_interop and produces evidence flows from interop events; then construct one with the interop adapter absent and confirm it calls _augment_via_legacy_trace and derives flows from trace turns. If neither branch is taken or evidence flows come from the wrong source, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "invariant": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+          "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "symbol": "EngramAugmenter.augment"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py::EngramAugmenter.augment"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "raise GenerationError(f\"All engines failed after {attempts} attempts. Last error: {last_error}\") from last_error",
+        "claim": "FailoverEngine.generate, when the primary engine raises a retryable failure, falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "response = engine.generate(effective_request); self._health[idx].record_success(); ... return response",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "for idx, engine in candidates: ... while attempts < self.policy.max_attempts: ... return response",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+        "impact": "None \u2014 the implementation conforms to the failover contract; no violation detected.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+        "reported_symbols": "FailoverEngine.generate (llm_engines/src/llm_engines/router.py); GenerationError contract (llm_engines/src/llm_engines/contracts/engine.py)",
+        "scope": "llm_engines",
+        "selection": {
+          "disconfirmation_plan": "Construct a FailoverEngine with two backends where the first raises a retryable error on generate; assert that the second backend's output is returned and that its call_count incremented. Then assert that when both backends raise, the final exception propagates and no response object is returned. If the observed behavior contradicts these outcomes, the hypothesis is falsified.",
+          "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+          "invariant": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+          "production_path": "llm_engines/src/llm_engines/router.py",
+          "symbol": "FailoverEngine.generate"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_engines/src/llm_engines/router.py::FailoverEngine.generate"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "if prompt_tokens + self.budget.minimum_output_reserve > remaining_cumulative: return self._budget_stop(\"token_budget\")",
+        "claim": "_budget_stop returns True (signaling the planner to halt) only when the observed number of navigation steps or LLM calls has reached or exceeded the configured budget ceiling, and returns False while the budget remains unconsumed.",
+        "contract_call_id": "shell-2",
+        "contract_quote": "def _budget_stop(self, reason: str) -> AgentAction:",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "def _budget_stop(self, reason: str) -> AgentAction:",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "_budget_stop is a guard that returns an AgentAction (a stop action) when the prompt token estimate plus minimum_output reserve exceeds the remaining cumulative token budget or the context window; it is not a boolean-returning step/LLM-call counter.",
+        "expected_behavior_source": "agent_lib/src/agent_lib/eval/repo_navigation.py",
+        "impact": "None; the method returns an AgentAction, not a boolean, and is triggered by token/context-window thresholds, not by a step or LLM-call count reaching a budget ceiling.",
+        "reported_expected_behavior_source": "agent_lib/src/agent_lib/eval/repo_navigation.py",
+        "reported_symbols": "agent_lib/src/agent_lib/eval/repo_navigation.py::BudgetedNavigationPlanner._budget_stop (line 1043); used in plan() at lines 1086-1090",
+        "scope": "agent_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct a BudgetedNavigationPlanner with a small finite budget, drive plan() through repeated steps, and assert that _budget_stop returns False before the budget is consumed and True at/after it; if _budget_stop returns True while budget headroom remains (or stays False past the ceiling), the invariant is falsified.",
+          "expected_behavior_source": "agent_lib/src/agent_lib/eval/repo_navigation.py",
+          "invariant": "_budget_stop returns True (signaling the planner to halt) only when the observed number of navigation steps or LLM calls has reached or exceeded the configured budget ceiling, and returns False while the budget remains unconsumed.",
+          "production_path": "agent_lib/src/agent_lib/eval/repo_navigation.py",
+          "symbol": "BudgetedNavigationPlanner._budget_stop"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "agent_lib/src/agent_lib/eval/repo_navigation.py::BudgetedNavigationPlanner._budget_stop"
+      },
+      {
+        "behavior_call_id": "shell-2",
+        "behavior_quote": "rank1: 0.01639344262295082  [= 1/61, not 1/1]",
+        "claim": "reciprocal_rank_fusion assigns each item a score computed as the sum over lists of 1/rank (with rank starting at 1).",
+        "contract_call_id": "shell-1",
+        "contract_quote": "score = sum(1 / (k + rank)) across all lists. k=60 from original paper; configurable.",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "Actual formula gives 1/61 + 1/62 = 0.03252247488101534",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "reciprocal_rank_fusion assigns each item a score computed as the sum over lists of 1/rank (with rank starting at 1), and when the same item appears multiple times across the input lists its scores accumulate; the returned list is ordered by descending accumulated score with ties broken by first-appearance order.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "impact": "none",
+        "reported_expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "reported_symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion",
+        "scope": "engram",
+        "selection": {
+          "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists sharing an item at rank 1 in list one and rank 2 in list two, plus a unique item. Verify the shared item's score equals 1/1 + 1/2 = 1.5 and that it sorts above a unique item appearing only at rank 3 (score 1/3 \u2248 0.333). Also confirm that an item appearing only in the second list at rank 1 (score 1.0) outranks the rank-3 item, and that duplicate entries within a single list both contribute to the total.",
+          "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+          "invariant": "reciprocal_rank_fusion assigns each item a score computed as the sum over lists of 1/rank (with rank starting at 1), and when the same item appears multiple times across the input lists its scores accumulate; the returned list is ordered by descending accumulated score with ties broken by first-appearance order.",
+          "production_path": "engram/src/engram/retrieval/hybrid.py",
+          "symbol": "reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "engram/src/engram/retrieval/hybrid.py::reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "rrf_scores[cid] += self._bm25_weight / (_RRF_K + rank)",
+        "claim": "HybridRetriever._reciprocal_rank_fusion returns a merged list whose score for each document equals k / (rank_in_list_1 + rank_in_list_2 + k) with default k=60.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "rrf_scores[chunk.chunk_id] += (1.0 - self._bm25_weight) / (_RRF_K + rank)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "RRF score = sum(1 / (k + rank_i)) across all result lists. k=60 is the standard constant.",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "The RRF fused score for each document is the sum across the two ranked lists of weight_i / (k + rank_in_list_i), i.e. sum(1 / (k + rank_i)) weighted by bm25_weight (0.4) for BM25 and (1 - bm25_weight) for dense \u2014 NOT k / (rank_in_list_1 + rank_in_list_2 + k).",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "impact": "None; the implementation correctly follows the standard RRF formula documented in its own docstring and the _RRF_K=60 constant. The hypothesized k/(r1+r2+k) form is not what the code computes.",
+        "reported_expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "reported_symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion",
+        "scope": "rag_lib",
+        "selection": {
+          "disconfirmation_plan": "Construct a HybridRetriever instance with a mocked store, feed _reciprocal_rank_fusion two synthetic lists of (chunk, rank) pairs with known, overlapping ranks, and assert that the returned scores match the formula k/(r1+r2+k) for k=60 and that the ordering is non-increasing. If any computed score deviates from the formula or the ordering is not descending, the invariant is falsified.",
+          "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "invariant": "Given two ranked result lists produced from the BM25 and dense branches, _reciprocal_rank_fusion returns a single merged list whose score for each document equals k / (rank_in_list_1 + rank_in_list_2 + k) with the default k=60, and the final merged list is ordered by strictly descending fused score (ties broken by stable original order).",
+          "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+          "symbol": "HybridRetriever._reciprocal_rank_fusion"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "rag_lib/src/rag_lib/retrieval/retriever.py::HybridRetriever._reciprocal_rank_fusion"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "score=round(best, 3)",
+        "claim": "When comparing a document against itself (identical text), the similarity score returned by SimilarityEvaluator.evaluate is exactly 1.0.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "best = max(SequenceMatcher(None, candidate.lower(), ref.lower()).ratio() for ref in refs)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "SequenceMatcher(None, candidate.lower(), ref.lower()).ratio()",
+        "disposition": "supported",
+        "evidence_validation": {
+          "errors": [],
+          "valid": true
+        },
+        "expected_behavior": "When comparing a document against itself (identical text), the similarity score returned is exactly 1.0, because the cosine similarity of a vector with itself is 1.0 under any consistent normalization.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "impact": "None \u2014 the implementation is correct; the invariant holds. No violation exists.",
+        "reported_expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "reported_symbols": "SimilarityEvaluator.evaluate \u2192 SequenceMatcher(None, candidate.lower(), ref.lower()).ratio()",
+        "scope": "llm_harness_core",
+        "selection": {
+          "disconfirmation_plan": "Call SimilarityEvaluator.evaluate with a document whose text is identical to itself but where the embedding normalization or scoring path could produce a value other than 1.0 (e.g., due to a division-by-zero guard, a clamping step, or a different normalization applied to each operand independently). If the returned score differs from 1.0, the invariant is falsified.",
+          "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "invariant": "When comparing a document against itself (identical text), the similarity score returned is exactly 1.0, because the cosine similarity of a vector with itself is 1.0 under any consistent normalization.",
+          "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "symbol": "SimilarityEvaluator.evaluate"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_harness_core/src/llm_harness_core/evaluators.py::SimilarityEvaluator.evaluate"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "if not evidence: return 0.0",
+        "claim": "_novelty returns a non-negative float that is exactly 0.0 when the candidate evidence set exactly matches a previously seen set, and strictly increases (or stays equal) as the set of previously seen signatures diverges from the candidate.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "novel = evidence - seen; return len(novel) / len(evidence)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "novel = evidence - seen",
+        "disposition": "unresolved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "When the candidate evidence set exactly equals the seen set, novel = evidence - seen is empty, so len(novel)/len(evidence) == 0.0. As the seen set diverges from the candidate, the novel set grows, so the ratio increases or stays equal.",
+        "expected_behavior_source": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+        "impact": "The novelty score is monotonic in set divergence and is exactly zero on an exact match, which underpins the redundant-action detection (novelty <= _NOVELTY_THRESHOLD). A violation would cause false-positive or missed loop interventions.",
+        "original_disposition": "supported",
+        "reported_expected_behavior_source": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+        "reported_symbols": "_novelty(evidence: frozenset, seen: set) -> float  \u2192  novel = evidence - seen; return len(novel) / len(evidence)",
+        "scope": "action_trajectory_loop_guard",
+        "selection": {
+          "disconfirmation_plan": "Call _novelty with a signature equal to one already in the seen set and assert the returned value is exactly 0.0; then call it with a signature that shares no tokens with any seen signature and assert the value is greater than the zero-match case. If a zero-match returns non-zero, or a fully-divergent signature returns a value not greater than the zero-match value, the invariant is falsified.",
+          "expected_behavior_source": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+          "invariant": "_novelty returns a non-negative float that is zero when the candidate signature exactly matches a previously seen signature, and strictly increases (or stays equal) as the set of previously seen signatures diverges from the candidate.",
+          "production_path": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+          "symbol": "_novelty"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py::_novelty"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "def _coerce_model_descriptor(self, model_id: str, engine_id: str) -> Any:",
+        "claim": "Coerce returns a dict with exactly keys {engine, model, provider} where engine/model are non-empty strings and provider is the explicit provider or the engine's declared provider.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "return self._ModelDescriptor(model_id=model_id, label=model_id, source=engine_id, installed=True)",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "return self._ModelDescriptor(model_id=model_id, label=model_id, source=engine_id, installed=True)",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "Coerce returns a dict with exactly the keys {\"engine\", \"model\", \"provider\"} where \"engine\" and \"model\" are non-empty strings and \"provider\" is a string that is either the explicit provider value or the engine's declared provider when provider is absent or empty.",
+        "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "impact": "none",
+        "reported_expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "reported_symbols": "LlmEnginesRegistry._coerce_model_descriptor",
+        "scope": "llm_inspector_ui",
+        "selection": {
+          "disconfirmation_plan": "Call LlmEnginesRegistry._coerce_model_descriptor with a minimal descriptor (e.g., {\"engine\": \"echo\", \"model\": \"m1\"}) and assert the returned dict's keys, value types, and that provider equals the engine's declared provider from list_engines. If the function raises, returns a missing key, leaves provider empty, or returns a non-dict, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+          "invariant": "_coerce_model_descriptor always returns a dict with exactly the keys {\"engine\", \"model\", \"provider\"} where \"engine\" and \"model\" are non-empty strings and \"provider\" is a string that is either the explicit provider value or the engine's declared provider when provider is absent or empty.",
+          "production_path": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+          "symbol": "LlmEnginesRegistry._coerce_model_descriptor"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py::LlmEnginesRegistry._coerce_model_descriptor"
+      },
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "\"\"\"Return whether a body contains URLs and at most a short amount of prose.\"\"\"",
+        "claim": "is_bare_link_body returns True only when the body, after stripping whitespace, consists of a single URL-like token (no surrounding text) and that token is neither an email address nor a mailto: link; it returns False for empty bodies, bodies containing multiple space-separated tokens, bodies that are plain email addresses, and bodies that are mailto: links.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "def is_bare_link_body(body: str) -> bool: ... if not _URL_RE.search(body): return False ... prose_characters = sum(not character.isspace() for character in without_urls) return prose_characters <= SELFMAIL_LINK_MAX_PROSE_CHARS",
+        "disconfirmation_call_id": "shell-1",
+        "disconfirmation_quote": "without_urls = _URL_RE.sub(\"\", body); prose_characters = sum(not character.isspace() for character in without_urls); return prose_characters <= SELFMAIL_LINK_MAX_PROSE_CHARS",
+        "disposition": "disproved",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "disconfirmation_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "is_bare_link_body returns True only when the body consists of a single URL-like token with no surrounding text, and returns False for empty bodies, multiple-token bodies, plain email addresses, and mailto: links.",
+        "expected_behavior_source": "mail_lib/triage.py",
+        "impact": "The invariant is falsified: the implementation uses a \"URL present plus at most 40 prose characters\" rule, not a single-token rule. A body like \"see https://example.com now\" (multiple tokens, surrounding prose) returns True under the implementation, contradicting the invariant's assertion that it should return False. The function does not reject multiple tokens, plain emails, or mailto links based on token structure.",
+        "reported_expected_behavior_source": "mail_lib/triage.py",
+        "reported_symbols": "mail_lib/triage.py::is_bare_link_body",
+        "scope": "mail_lib",
+        "selection": {
+          "disconfirmation_plan": "Call is_bare_link_body with a body that is a single bare URL (e.g. \"https://example.com/path\") and assert it returns True; then call it with a body containing two tokens (\"see https://example.com now\"), a plain email (\"user@example.com\"), a mailto link (\"mailto:user@example.com\"), and an empty string, asserting each returns False. If any of these contradict the stated behavior, the invariant is falsified and the implementation's actual rule is revealed.",
+          "expected_behavior_source": "mail_lib/triage.py",
+          "invariant": "is_bare_link_body returns True only when the message body, after stripping whitespace, consists of a single URL-like token (no surrounding text) and that token is neither an email address nor a mailto: link; it returns False for empty bodies, bodies containing multiple space-separated tokens, bodies that are plain email addresses, and bodies that are mailto: links.",
+          "production_path": "mail_lib/triage.py",
+          "symbol": "is_bare_link_body"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "mail_lib/triage.py::is_bare_link_body"
+      }
+    ],
+    "structured": 9
+  },
+  "seed": 17,
+  "selections": {
+    "records": [
+      {
+        "disconfirmation_plan": "Construct an EngramAugmenter with a stubbed interop adapter present and confirm augment() calls _augment_via_interop and produces evidence flows from interop events; then construct one with the interop adapter absent and confirm it calls _augment_via_legacy_trace and derives flows from trace turns. If neither branch is taken or evidence flows come from the wrong source, the invariant is falsified.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "first_attempt": true,
+        "invariant": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+        "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "scope": "llm_inspector",
+        "status": "accepted",
+        "symbol": "EngramAugmenter.augment"
+      },
+      {
+        "disconfirmation_plan": "Construct a FailoverEngine with two backends where the first raises a retryable error on generate; assert that the second backend's output is returned and that its call_count incremented. Then assert that when both backends raise, the final exception propagates and no response object is returned. If the observed behavior contradicts these outcomes, the hypothesis is falsified.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+        "first_attempt": true,
+        "invariant": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+        "production_path": "llm_engines/src/llm_engines/router.py",
+        "scope": "llm_engines",
+        "status": "accepted",
+        "symbol": "FailoverEngine.generate"
+      },
+      {
+        "disconfirmation_plan": "Construct a BudgetedNavigationPlanner with a small finite budget, drive plan() through repeated steps, and assert that _budget_stop returns False before the budget is consumed and True at/after it; if _budget_stop returns True while budget headroom remains (or stays False past the ceiling), the invariant is falsified.",
+        "expected_behavior_source": "agent_lib/src/agent_lib/eval/repo_navigation.py",
+        "first_attempt": true,
+        "invariant": "_budget_stop returns True (signaling the planner to halt) only when the observed number of navigation steps or LLM calls has reached or exceeded the configured budget ceiling, and returns False while the budget remains unconsumed.",
+        "production_path": "agent_lib/src/agent_lib/eval/repo_navigation.py",
+        "scope": "agent_lib",
+        "status": "accepted",
+        "symbol": "BudgetedNavigationPlanner._budget_stop"
+      },
+      {
+        "disconfirmation_plan": "Call reciprocal_rank_fusion with two lists sharing an item at rank 1 in list one and rank 2 in list two, plus a unique item. Verify the shared item's score equals 1/1 + 1/2 = 1.5 and that it sorts above a unique item appearing only at rank 3 (score 1/3 \u2248 0.333). Also confirm that an item appearing only in the second list at rank 1 (score 1.0) outranks the rank-3 item, and that duplicate entries within a single list both contribute to the total.",
+        "expected_behavior_source": "engram/src/engram/retrieval/hybrid.py",
+        "first_attempt": true,
+        "invariant": "reciprocal_rank_fusion assigns each item a score computed as the sum over lists of 1/rank (with rank starting at 1), and when the same item appears multiple times across the input lists its scores accumulate; the returned list is ordered by descending accumulated score with ties broken by first-appearance order.",
+        "production_path": "engram/src/engram/retrieval/hybrid.py",
+        "scope": "engram",
+        "status": "accepted",
+        "symbol": "reciprocal_rank_fusion"
+      },
+      {
+        "disconfirmation_plan": "Construct a HybridRetriever instance with a mocked store, feed _reciprocal_rank_fusion two synthetic lists of (chunk, rank) pairs with known, overlapping ranks, and assert that the returned scores match the formula k/(r1+r2+k) for k=60 and that the ordering is non-increasing. If any computed score deviates from the formula or the ordering is not descending, the invariant is falsified.",
+        "expected_behavior_source": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "first_attempt": true,
+        "invariant": "Given two ranked result lists produced from the BM25 and dense branches, _reciprocal_rank_fusion returns a single merged list whose score for each document equals k / (rank_in_list_1 + rank_in_list_2 + k) with the default k=60, and the final merged list is ordered by strictly descending fused score (ties broken by stable original order).",
+        "production_path": "rag_lib/src/rag_lib/retrieval/retriever.py",
+        "scope": "rag_lib",
+        "status": "accepted",
+        "symbol": "HybridRetriever._reciprocal_rank_fusion"
+      },
+      {
+        "disconfirmation_plan": "Call SimilarityEvaluator.evaluate with a document whose text is identical to itself but where the embedding normalization or scoring path could produce a value other than 1.0 (e.g., due to a division-by-zero guard, a clamping step, or a different normalization applied to each operand independently). If the returned score differs from 1.0, the invariant is falsified.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "first_attempt": true,
+        "invariant": "When comparing a document against itself (identical text), the similarity score returned is exactly 1.0, because the cosine similarity of a vector with itself is 1.0 under any consistent normalization.",
+        "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "scope": "llm_harness_core",
+        "status": "accepted",
+        "symbol": "SimilarityEvaluator.evaluate"
+      },
+      {
+        "disconfirmation_plan": "Call _novelty with a signature equal to one already in the seen set and assert the returned value is exactly 0.0; then call it with a signature that shares no tokens with any seen signature and assert the value is greater than the zero-match case. If a zero-match returns non-zero, or a fully-divergent signature returns a value not greater than the zero-match value, the invariant is falsified.",
+        "expected_behavior_source": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+        "first_attempt": true,
+        "invariant": "_novelty returns a non-negative float that is zero when the candidate signature exactly matches a previously seen signature, and strictly increases (or stays equal) as the set of previously seen signatures diverges from the candidate.",
+        "production_path": "action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py",
+        "scope": "action_trajectory_loop_guard",
+        "status": "accepted",
+        "symbol": "_novelty"
+      },
+      {
+        "disconfirmation_plan": "Call LlmEnginesRegistry._coerce_model_descriptor with a minimal descriptor (e.g., {\"engine\": \"echo\", \"model\": \"m1\"}) and assert the returned dict's keys, value types, and that provider equals the engine's declared provider from list_engines. If the function raises, returns a missing key, leaves provider empty, or returns a non-dict, the invariant is falsified.",
+        "expected_behavior_source": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "first_attempt": true,
+        "invariant": "_coerce_model_descriptor always returns a dict with exactly the keys {\"engine\", \"model\", \"provider\"} where \"engine\" and \"model\" are non-empty strings and \"provider\" is a string that is either the explicit provider value or the engine's declared provider when provider is absent or empty.",
+        "production_path": "llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py",
+        "scope": "llm_inspector_ui",
+        "status": "accepted",
+        "symbol": "LlmEnginesRegistry._coerce_model_descriptor"
+      },
+      {
+        "disconfirmation_plan": "Call is_bare_link_body with a body that is a single bare URL (e.g. \"https://example.com/path\") and assert it returns True; then call it with a body containing two tokens (\"see https://example.com now\"), a plain email (\"user@example.com\"), a mailto link (\"mailto:user@example.com\"), and an empty string, asserting each returns False. If any of these contradict the stated behavior, the invariant is falsified and the implementation's actual rule is revealed.",
+        "expected_behavior_source": "mail_lib/triage.py",
+        "first_attempt": true,
+        "invariant": "is_bare_link_body returns True only when the message body, after stripping whitespace, consists of a single URL-like token (no surrounding text) and that token is neither an email address nor a mailto: link; it returns False for empty bodies, bodies containing multiple space-separated tokens, bodies that are plain email addresses, and bodies that are mailto: links.",
+        "production_path": "mail_lib/triage.py",
+        "scope": "mail_lib",
+        "status": "accepted",
+        "symbol": "is_bare_link_body"
+      }
+    ],
+    "valid": 9
+  },
+  "shell_call_cap_bound": true,
+  "shell_tool_calls": 45,
+  "started_at": "2026-09-09T11:08:24.009172Z",
+  "substantive_coverage": {
+    "covered": 2,
+    "scopes": {
+      "action_trajectory_loop_guard": {
+        "corroborating_reads": [
+          "/workspace/action_trajectory_loop_guard/tests/test_detector.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/action_trajectory_loop_guard/src/action_trajectory_loop_guard/detector.py"
+        ]
+      },
+      "agent_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/agent_lib/src/agent_lib/eval/repo_navigation.py"
+        ]
+      },
+      "engram": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/engram/src/engram/retrieval/hybrid.py"
+        ]
+      },
+      "llm_engines": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_engines/src/llm_engines/contracts/engine.py",
+          "/workspace/llm_engines/src/llm_engines/router.py"
+        ]
+      },
+      "llm_harness_core": {
+        "corroborating_reads": [
+          "/workspace/llm_harness_core/tests/test_evaluators.py"
+        ],
+        "covered": true,
+        "production_reads": [
+          "/workspace/llm_harness_core/src/llm_harness_core/evaluators.py",
+          "/workspace/llm_harness_core/src/llm_harness_core/results.py"
+        ]
+      },
+      "llm_inspector": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "/workspace/llm_inspector/src/llm_inspector/interop.py"
+        ]
+      },
+      "llm_inspector_ui": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/llm_inspector_ui/src/llm_inspector_ui/services/engine_registry_bootstrap.py"
+        ]
+      },
+      "mail_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/mail_lib/thunderbird.py",
+          "/workspace/mail_lib/triage.py"
+        ]
+      },
+      "rag_lib": {
+        "corroborating_reads": [],
+        "covered": false,
+        "production_reads": [
+          "/workspace/rag_lib/src/rag_lib/retrieval/retriever.py"
+        ]
+      }
+    }
+  },
+  "target_archive_sha256": "ba24146927228771ccefc078cf8732e0a1abb77e3d4a77ff699205742413d1b0",
+  "target_commit": "23c1549d5aae3ac67454aade1b725f2931770014",
+  "target_tree": "d4faa7c547ab8e34f251124c7e5ca7a9dcbf6364",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "cd5403376ce328178b9bba30ad28e1d2e30e6dc7f009a56c703e1cba28b687c3",
+  "usage": {
+    "input_tokens": 474829,
+    "model_calls": 62,
+    "output_tokens": 16820
+  },
+  "verifiers": {
+    "results": [
+      {
+        "behavior_call_id": "shell-1",
+        "behavior_quote": "score=round(best, 3)",
+        "claim": "When comparing a document against itself (identical text), the similarity score returned by SimilarityEvaluator.evaluate is exactly 1.0.",
+        "contract_call_id": "shell-1",
+        "contract_quote": "best = max(SequenceMatcher(None, candidate.lower(), ref.lower()).ratio() for ref in refs)",
+        "decision": "insufficient_evidence",
+        "disconfirmation_call_id": "shell-8",
+        "disconfirmation_quote": "Non-empty identical 'The quick brown fox': score=1.0 passed=True",
+        "evidence_validation": {
+          "errors": [
+            "contract_quote is not an exact substring of retained output",
+            "behavior_quote is not an exact substring of retained output"
+          ],
+          "valid": false
+        },
+        "expected_behavior": "When comparing a document against itself (identical text), the similarity score returned is exactly 1.0, because the cosine similarity of a vector with itself is 1.0 under any consistent normalization.",
+        "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "impact": "None \u2014 the implementation is correct; the invariant holds. No violation exists.",
+        "original_decision": "confirmed",
+        "remediation": "None \u2014 the implementation is correct; the invariant holds. No violation exists.",
+        "reported_expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+        "reported_symbols": "llm_harness_core/src/llm_harness_core/evaluators.py::SimilarityEvaluator.evaluate",
+        "scope": "llm_harness_core",
+        "selection": {
+          "disconfirmation_plan": "Call SimilarityEvaluator.evaluate with a document whose text is identical to itself but where the embedding normalization or scoring path could produce a value other than 1.0 (e.g., due to a division-by-zero guard, a clamping step, or a different normalization applied to each operand independently). If the returned score differs from 1.0, the invariant is falsified.",
+          "expected_behavior_source": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "invariant": "When comparing a document against itself (identical text), the similarity score returned is exactly 1.0, because the cosine similarity of a vector with itself is 1.0 under any consistent normalization.",
+          "production_path": "llm_harness_core/src/llm_harness_core/evaluators.py",
+          "symbol": "SimilarityEvaluator.evaluate"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_harness_core/src/llm_harness_core/evaluators.py::SimilarityEvaluator.evaluate"
+      },
+      {
+        "behavior_call_id": "shell-3",
+        "behavior_quote": "raw_events = list(interop_events or [])\n    if not raw_events:\n        raw_events = getattr(prompt_trace, \"to_interop_events\", lambda: [])()\n    evidence_flows = _interop_events_to_evidence_flows(raw_events)",
+        "claim": "EngramAugmenter.augment routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events when the interop adapter is available; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+        "contract_call_id": "shell-2",
+        "contract_quote": "interop_trace = self._augment_via_interop(pm, req)\n            if interop_trace is not None:\n                return interop_trace\n            return self._augment_via_legacy_trace(pm, req)",
+        "decision": "confirmed",
+        "disconfirmation_call_id": "shell-2",
+        "disconfirmation_quote": "if not callable(build_prompt_interop):\n            return None",
+        "evidence_validation": {
+          "errors": [],
+          "valid": true
+        },
+        "expected_behavior": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+        "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "impact": "augment() deterministically selects the augmentation path by interop availability; evidence-flow provenance (interop events vs. legacy trace turns) follows the selected path, with no ambiguity or dead branch.",
+        "remediation": "None.",
+        "reported_expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+        "reported_symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py::EngramAugmenter.augment",
+        "scope": "llm_inspector",
+        "selection": {
+          "disconfirmation_plan": "Construct an EngramAugmenter with a stubbed interop adapter present and confirm augment() calls _augment_via_interop and produces evidence flows from interop events; then construct one with the interop adapter absent and confirm it calls _augment_via_legacy_trace and derives flows from trace turns. If neither branch is taken or evidence flows come from the wrong source, the invariant is falsified.",
+          "expected_behavior_source": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "invariant": "When the interop adapter is available, augment() routes through _augment_via_interop and returns a ContextResult whose evidence flows are derived from interop events; when the interop adapter is unavailable, it falls back to _augment_via_legacy_trace and derives evidence flows from the legacy trace's turns instead.",
+          "production_path": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py",
+          "symbol": "EngramAugmenter.augment"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_inspector/src/llm_inspector/adapters/engram_adapter.py::EngramAugmenter.augment"
+      },
+      {
+        "behavior_call_id": "shell-7",
+        "behavior_quote": "S1 PASS: fell back to healthy secondary and returned its result",
+        "claim": "FailoverEngine.generate, when the primary engine raises a retryable failure, falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+        "contract_call_id": "shell-3",
+        "contract_quote": "response = engine.generate(effective_request)",
+        "decision": "confirmed",
+        "disconfirmation_call_id": "shell-7",
+        "disconfirmation_quote": "S2 PASS: GenerationError raised: All engines failed after 4 attempts. Last error: connection refused \u2014 backend un",
+        "evidence_validation": {
+          "errors": [],
+          "valid": true
+        },
+        "expected_behavior": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+        "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+        "impact": "FailoverEngine correctly implements the failover contract: a retryable failure on the primary engine triggers fallback to a healthy secondary engine whose result is returned, and when all engines are exhausted the underlying error propagates via GenerationError rather than returning a partial/empty response. No defect \u2014 implementation conforms to the documented contract.",
+        "remediation": "None \u2014 the implementation conforms to the failover contract; no violation detected.",
+        "reported_expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+        "reported_symbols": "llm_engines/src/llm_engines/router.py::FailoverEngine.generate",
+        "scope": "llm_engines",
+        "selection": {
+          "disconfirmation_plan": "Construct a FailoverEngine with two backends where the first raises a retryable error on generate; assert that the second backend's output is returned and that its call_count incremented. Then assert that when both backends raise, the final exception propagates and no response object is returned. If the observed behavior contradicts these outcomes, the hypothesis is falsified.",
+          "expected_behavior_source": "llm_engines/src/llm_engines/router.py",
+          "invariant": "When the primary engine raises a retryable failure, FailoverEngine.generate falls back to a healthy secondary engine and returns its result; when all engines are exhausted or unhealthy, it raises the last underlying error rather than returning a partial or empty response.",
+          "production_path": "llm_engines/src/llm_engines/router.py",
+          "symbol": "FailoverEngine.generate"
+        },
+        "selection_binding": {
+          "errors": [],
+          "valid": true
+        },
+        "structured_before_forcing": false,
+        "symbols": "llm_engines/src/llm_engines/router.py::FailoverEngine.generate"
+      }
+    ],
+    "structured": 3
+  }
+}

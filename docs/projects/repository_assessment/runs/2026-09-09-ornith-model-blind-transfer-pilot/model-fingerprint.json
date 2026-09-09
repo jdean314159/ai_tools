@@ -1,0 +1,42 @@
+{
+  "launch_configuration": {
+    "cache_type_k": "q4_0",
+    "cache_type_v": "q4_0",
+    "flash_attention": true,
+    "jinja": true,
+    "source": "user-reported launch configuration",
+    "spec_draft_n_max": 3,
+    "spec_type": "draft-mtp"
+  },
+  "llama_build": "b10679-50f068fff",
+  "model_metadata": {
+    "file_size_bytes": 21702472192,
+    "ftype": "Q4_K - Medium",
+    "model_label": "Ornith-1.5-35B-Q4_K_M.gguf",
+    "n_ctx": 262144,
+    "n_ctx_train": 262144,
+    "n_embd": 2048,
+    "n_params": 35505251456,
+    "n_vocab": 248320,
+    "total_slots": 4
+  },
+  "model_sha256": null,
+  "observed_discrepancies": [
+    "The default /props generation settings reported speculative.types as none while all four idle /slots records reported speculative true but did not label the speculative type. The launch MTP flags remain user-reported for this server instance."
+  ],
+  "omissions": [
+    "The model file is remote to this checkout and the endpoint reports no digest, so model_sha256 is unavailable.",
+    "The exact server executable digest and independently inspected process argv are unavailable.",
+    "The HTTP endpoint does not expose K/V cache precision; cache_type_k and cache_type_v are user-reported.",
+    "The current /slots response does not identify the speculative type even though speculative is true; draft MTP type and draft limit are user-reported."
+  ],
+  "recorded_at": "2026-09-09T10:58:19.731171Z",
+  "server_observations": {
+    "health": "ok",
+    "http_server_header": "llama.cpp",
+    "idle_slots": 4,
+    "slot_context_tokens": 262144,
+    "slot_speculative": true,
+    "slot_speculative_types": null
+  }
+}

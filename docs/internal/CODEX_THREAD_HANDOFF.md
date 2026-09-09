@@ -1,6 +1,6 @@
 # Fresh Codex thread handoff
 
-- Prepared: 2026-09-08
+- Prepared: 2026-09-09
 - Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
 - Current focus: specify and record repository-assessment model comparisons
 
@@ -18,25 +18,21 @@ Do not read `history/SESSION_HANDOFF.md` end to end; it is a historical log.
 
 ## Current selected task
 
-The adaptive-v2.2 Phase 1 campaign is complete. Do not tune the treatment
-again on known target `83e1d09`. The next experiment gate is an independently
-prepared blinded target set and separate Phase 2 preregistration; no suitable
-target is currently retained in this repository. If no blinded oracle can be
-obtained, stop this research line rather than substituting more runs on the
-development target.
+The adaptive-v2.2 Phase 1 campaign and exploratory model-blind transfer pilot
+are complete. Do not tune the treatment on `83e1d09`, `23c1549`, or `7d37920`.
+No further model experiment is selected. A stronger continuation requires an
+evaluator-independent blinded target set, more than one seed per target, and a
+separate preregistration; otherwise stop this research line.
 
 The result may later become a bounded `llm-failure-lab` evidence packet, but do
 not mutate the sibling lab until the `ai_tools` artifacts have stable committed
 Git identities, disclosure review and independent packet verification are
 complete, and the lab maintainer authorizes teaching placement.
 
-A draft next-round recommendation is ready for Claude review at
+A pre-transfer next-round recommendation remains at
 `docs/projects/repository_assessment/ORNITH-POST-V2-2-NEXT-ROUND-RECOMMENDATION-2026-09-08.md`.
-It recommends stopping v2.2 on the known target and, only after acquiring new
-targets, separately ablating controller-owned evidence transport,
-controller-assigned risk diversity, a defect-shaped promotion schema, and a
-three/six scout-verifier budget. It is not an accepted plan or
-preregistration.
+The completed transfer result supersedes its experimental suggestions: no
+v2.3 or component ablation is selected.
 
 Continue to implement no production schema until Claude supplies the initial
 `repository-assessment/v1` profile. Once supplied, validate every reuse claim
@@ -52,7 +48,24 @@ comparison profile are explicitly deferred. The detailed evidence, current
 working-tree warning, test record, and pasteable opening prompt are in
 `docs/internal/REPOSITORY_ASSESSMENT_HANDOFF_2026-09-02.md`.
 
-## Assessment checkpoints through 2026-09-08
+## Assessment checkpoints through 2026-09-09
+
+The model-blind transfer pilot compared frozen staged v1 and adaptive v2.2 on
+two previously unused historical targets. Post-run semantic review invalidated
+one frozen false-fail scorer row, leaving five valid defects. Both conditions
+recalled 0/5 and accepted no findings. V1
+coverage was 7/9 and 6/9 versus v2.2 at 2/9 and 3/9; v2.2 used 3.94 times the
+paired-v1 median input. Only 7/23 v2.2 scout and verifier evidence records
+passed exact-quote validation. The Engram grader reproduced 3 failures on its
+target and 3 passes on its corrected reference. The other corrected grader
+reproduced 2 failures and 2 passes; its frozen third row had required a feature
+introduced after the target.
+
+This rules out `83e1d09` as the sole explanation for zero recall, but it is not
+Phase 2 confirmation: Codex selected the targets and wrote the graders, and
+each target used one paired seed. Read
+`docs/projects/repository_assessment/ORNITH-MODEL-BLIND-TRANSFER-PILOT-2026-09-09.md`
+and its campaign directory before making any broader claim.
 
 The adaptive staged-v2.2 follow-on completed on 2026-09-08. The valid paired
 campaign passed all frozen mechanical gates and independently reproduced every

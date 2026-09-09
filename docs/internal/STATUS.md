@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-09-08
+Last updated: 2026-09-09
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -30,17 +30,48 @@ then raised median package coverage from 1/9 to 7/9, reduced median input by
 94.6%, and eliminated package fixation, but hidden recall remained 0/3.**
 
 The completed adaptive-v2.2 development comparison passed every frozen
-mechanical gate but regressed against fresh paired staged-v1 controls: median
-coverage fell from 7/9 to 3/9, median concentration rose from 20.0% to 28.9%,
-and median input grew 3.26 times to 376,075 tokens. Recall remained 0/3 and no
-finding was accepted in either condition. The known target is closed to
-further tuning; Phase 2 requires independently prepared blinded targets.
+mechanical gate but regressed against fresh paired staged-v1 controls. A
+subsequent exploratory transfer pilot used two previously unused,
+model-blind historical targets with initially three-row graders. Post-run
+review invalidated one false-fail row, leaving five valid defects; both v1 and
+v2.2 recalled 0/5. V2.2 covered fewer packages on both targets and
+used 3.94 times the paired-v1 median input. The result now spans three
+objective targets, but the new targets and graders were Codex-selected rather
+than evaluator-independent and used one seed each. All three targets are
+closed to further tuning; confirmation requires independently prepared
+targets and a new preregistration.
 
 For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
 
-### Latest completed work — adaptive staged Ornith v2.2
+### Latest completed work — Ornith model-blind target transfer
+
+The preregistered four-run exploratory pilot compared frozen staged v1 and
+adaptive v2.2 on two previously unused historical target trees. The Engram
+grader failed 3/3 on its target and passed 3/3 on its corrected reference. The
+other frozen grader did the same mechanically, but semantic review found one
+false-fail row; its corrected split is 2 failures versus 2 passes. The
+grader sources, defect descriptions, fixed trees, and historical
+project/internal documents were absent from the model-visible sandboxes.
+
+Both conditions recalled 0 of 5 valid known-defect opportunities and accepted
+no findings. V1 coverage was 7/9 and 6/9; v2.2 coverage was 2/9 and 3/9.
+Median input was 108,051.5 tokens for v1 and 425,700 for v2.2, a 3.94-times
+increase. V2.2 made 18/18 valid selections and promoted five hypotheses, but none
+concerned a graded behavior. Exact-quote checks invalidated 16/23 submitted
+scout and verifier evidence records. Critics and verifiers prevented false
+acceptance without supplying defect judgment.
+
+This shows that the earlier zero recall was not unique to target `83e1d09` or
+one structured harness. It remains an exploratory result: Codex selected the
+targets and constructed the graders, there was one paired seed per target, and
+all evidence comes from one repository and model. The invalid row is itself a
+grader false-fail case: the target predated the feature whose later placeholder
+the test required. No further tuning is selected. Exact results are in
+`docs/projects/repository_assessment/ORNITH-MODEL-BLIND-TRANSFER-PILOT-2026-09-09.md`.
+
+### Earlier completed work — adaptive staged Ornith v2.2
 
 The six-run paired development campaign is complete under the frozen v2,
 v2.1, and v2.2 preregistrations. Two earlier full-campaign restarts are

@@ -1,14 +1,17 @@
 # Repository-assessment target acquisition — 2026-09-08
 
-Status: two model-blind candidate targets validated; independent Phase 2 target
-gate not satisfied.
+Status: exploratory targets retained; one frozen scorer row was invalidated
+after the pilot; independent Phase 2 target gate not satisfied.
 
 ## Outcome
 
-Two recent historical trees each expose exactly three externally gradable
-defects and retain the same nine package scopes used by the staged-v1 and
-adaptive-v2.2 harnesses. Each grader fails 3/3 on its target and passes 3/3 on
-its specific corrected reference.
+Two recent historical trees retain the same nine package scopes used by the
+staged-v1 and adaptive-v2.2 harnesses. Post-run semantic review found five
+valid externally gradable defects: two at `23c1549` and three at `7d37920`.
+The frozen `23c1549` grader mechanically failed 3/3, but one failure incorrectly
+required an endpoint entry introduced after the target. The corrected grader
+fails 2/2 on that target and passes 2/2 on its corrected reference. The Engram
+grader retains its 3-fail/3-pass split.
 
 These are usable for an explicitly exploratory transfer study. They are not
 independently prepared blinded-confirmation targets: Codex selected the commits
@@ -20,7 +23,7 @@ harness author has. No Phase 2 run is authorized by this record.
 
 | Target | Target tree | Target tar SHA-256 | Corrected reference | Reference tree | Reference tar SHA-256 | Grader outcome |
 | --- | --- | --- | --- | --- | --- | --- |
-| `23c1549d5aae3ac67454aade1b725f2931770014` | `d4faa7c547ab8e34f251124c7e5ca7a9dcbf6364` | `ba24146927228771ccefc078cf8732e0a1abb77e3d4a77ff699205742413d1b0` | `49026eac3d2e24b02641bf9db0a76e94909e9386` | `a55d073413f0f5d83a711d9e5a59e1d85040c6ca` | `4fba9a6ddfb60f2f1ce6062e92f4fafb0f5b2cc3e02640e121b47827249ec6b2` | target 0/3 pass; reference 3/3 pass |
+| `23c1549d5aae3ac67454aade1b725f2931770014` | `d4faa7c547ab8e34f251124c7e5ca7a9dcbf6364` | `ba24146927228771ccefc078cf8732e0a1abb77e3d4a77ff699205742413d1b0` | `49026eac3d2e24b02641bf9db0a76e94909e9386` | `a55d073413f0f5d83a711d9e5a59e1d85040c6ca` | `4fba9a6ddfb60f2f1ce6062e92f4fafb0f5b2cc3e02640e121b47827249ec6b2` | corrected: target 0/2 pass; reference 2/2 pass |
 | `7d37920a81a9cb672c24af3a55557621e5c5009f` | `0177f7c8288a42ca771084c42362ddb6f90a9640` | `02e68e5c7cb349f1c6e3011fd6f0265ebdf6a87fa753bef932fabfd271bd8769` | `8e2e9e5f2c45c935bdc3afa2479a08dc702b44db` | `1bfc4d68cf322489cda7bd0aa1cd9e550710a457` | `59d8aeee1addb77efffb323226eacc276fe9c475def82fc6db5ea6ddda7f9cc2` | target 0/3 pass; reference 3/3 pass |
 
 The archive command for each row was:
@@ -46,9 +49,7 @@ Grader:
 
 1. `agent_lib` enforced `tool_not_granted` but omitted it from the shared
    blocked-policy classification.
-2. packaged `llm_engines` data contained a private deployment address instead
-   of a placeholder.
-3. the publication-hygiene checker did not fail closed when Git could not
+2. the publication-hygiene checker did not fail closed when Git could not
    provide a tracked-file inventory.
 
 The fixes were already present by reference `49026ea`; they were made
@@ -90,8 +91,20 @@ Observed outcomes:
 
 | Grader | Target | Corrected reference |
 | --- | --- | --- |
-| cross-package `23c1549` grader | 3 failed | 3 passed |
+| frozen cross-package `23c1549` grader | 3 failed | 3 passed |
+| corrected cross-package `23c1549` grader | 2 failed | 2 passed |
 | Engram `7d37920` grader | 3 failed | 3 passed |
+
+The frozen cross-package grader's private-endpoint row is a false failure. The
+target predates `4b7d610`, which introduced the Spark entry and its private
+address; the target file is byte-identical to `4b7d610^` and contains neither
+the address nor the later placeholder. Commit `cda69ca` subsequently replaced
+the address, but that fix does not imply the earlier target contained it. The
+frozen grader is retained unchanged. The post-run corrected grader,
+`tools/test_cross_package_defects_at_23c1549_corrected.py` (SHA-256
+`d1a589561ef0d724ec13e9c502d2130ebf6014ae1778db673296c866f2e6c23a`),
+removes only that invalid row. This changes the campaign denominator from six
+to five without changing any model report or its zero-recall numerator.
 
 An earlier Engram validation attempt is invalid and excluded. Although
 conftest loading was disabled, pytest still read the live checkout's

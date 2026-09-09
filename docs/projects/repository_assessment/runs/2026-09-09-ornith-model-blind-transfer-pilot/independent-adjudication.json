@@ -1,0 +1,208 @@
+{
+  "schema": "temporary-ornith-model-blind-transfer-adjudication/v1",
+  "adjudicated_at": "2026-09-09",
+  "primary_scoring_rule": "Only findings retained as accepted in the final authoritative report count. A known defect requires both the affected behavior and actionable violation; nearby file or symbol inspection does not count.",
+  "scope_limit": "Exploratory model-blind transfer pilot on two Codex-selected historical targets with one paired seed per target. Target selection and grader construction were not evaluator-independent.",
+  "known_defects": [
+    {
+      "id": "agent_tool_not_granted_policy_classification",
+      "target": "23c1549d5aae3ac67454aade1b725f2931770014",
+      "scope": "agent_lib",
+      "behavior": "tool_not_granted was enforced but omitted from the shared blocked-policy classification"
+    },
+    {
+      "id": "publication_hygiene_git_fail_open",
+      "target": "23c1549d5aae3ac67454aade1b725f2931770014",
+      "scope": "repository",
+      "behavior": "the publication-hygiene checker did not fail closed when Git could not supply a tracked-file inventory"
+    },
+    {
+      "id": "engram_storage_identifier_escape",
+      "target": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+      "scope": "engram",
+      "behavior": "project and session identifiers could escape their intended storage roots"
+    },
+    {
+      "id": "engram_persistent_path_permissions",
+      "target": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+      "scope": "engram",
+      "behavior": "persistent memory directories and JSONL files inherited permissive umask modes instead of enforcing private modes"
+    },
+    {
+      "id": "engram_cross_tenant_episode_deletion",
+      "target": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+      "scope": "engram",
+      "behavior": "tenant policy was not enforced when deleting another tenant's episode"
+    }
+  ],
+  "grader": {
+    "results_path": "independent-grader-results.json",
+    "results_sha256": "5bb3995194955f76e614256a2dab49ec5779300066b02a715cce043dbba3969c",
+    "target_23c1549": {
+      "frozen_grader_target": "3 failed",
+      "frozen_grader_corrected_reference_49026ea": "3 passed",
+      "semantic_invalidation_count": 1,
+      "corrected_grader_target": "2 failed",
+      "corrected_grader_corrected_reference_49026ea": "2 passed"
+    },
+    "target_7d37920": {
+      "target": "3 failed",
+      "corrected_reference_8e2e9e5": "3 passed"
+    }
+  },
+  "independent_validation": {
+    "path": "independent-validation.json",
+    "sha256": "6421be53a9710ddfa9512c33dd4f992f5fb24d572c22f466df7c9cebec15d4b1",
+    "validator_path": "docs/projects/repository_assessment/tools/validate_model_blind_transfer_pilot.py",
+    "validator_sha256": "6b1bfdf0dcf29a2128042888695ebe0280708b87d7797eaf4b7160b1412eecf9",
+    "valid": true,
+    "validated_runs": 4,
+    "grader_outcomes_valid": true,
+    "frozen_grader_semantic_invalidations": 1,
+    "endpoint_materially_stable": true,
+    "endpoint_observation": "The second pair changed only nullable slot telemetry from unlabeled to the explicit none,draft-mtp label; all known configuration fields remained equal."
+  },
+  "runs": [
+    {
+      "target": "23c1549",
+      "condition": "staged_v1",
+      "seed": 17,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "known_defect_denominator": 2,
+      "recalled_defect_ids": [],
+      "coverage": 7,
+      "shell_calls": 30,
+      "max_package_concentration_percent": 20.0,
+      "input_tokens": 102316,
+      "output_tokens": 5442,
+      "model_calls": 39,
+      "elapsed_seconds": 112.756654,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "adjudication": "No accepted final finding; one candidate was rejected by its verifier."
+    },
+    {
+      "target": "23c1549",
+      "condition": "adaptive_staged_v2_2",
+      "seed": 17,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "known_defect_denominator": 2,
+      "recalled_defect_ids": [],
+      "coverage": 2,
+      "shell_calls": 45,
+      "shell_call_cap_bound": true,
+      "max_package_concentration_percent": 24.4,
+      "input_tokens": 474829,
+      "output_tokens": 16820,
+      "model_calls": 62,
+      "elapsed_seconds": 373.389546,
+      "promoted_hypotheses": 3,
+      "verifier_results": 3,
+      "critic_results": 2,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "adjudication": "Neither critic accepted the two verifier-confirmed non-defect claims; no final finding matched a known defect."
+    },
+    {
+      "target": "7d37920",
+      "condition": "adaptive_staged_v2_2",
+      "seed": 31,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "known_defect_denominator": 3,
+      "recalled_defect_ids": [],
+      "coverage": 3,
+      "shell_calls": 32,
+      "shell_call_cap_bound": false,
+      "max_package_concentration_percent": 34.4,
+      "input_tokens": 376571,
+      "output_tokens": 17589,
+      "model_calls": 47,
+      "elapsed_seconds": 355.588978,
+      "promoted_hypotheses": 2,
+      "verifier_results": 2,
+      "critic_results": 0,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "adjudication": "Both promoted hypotheses were rejected by their verifiers; no final finding matched a known defect."
+    },
+    {
+      "target": "7d37920",
+      "condition": "staged_v1",
+      "seed": 31,
+      "lifecycle": "final",
+      "completion_mode": "structured",
+      "known_defect_recall": 0,
+      "known_defect_denominator": 3,
+      "recalled_defect_ids": [],
+      "coverage": 6,
+      "shell_calls": 27,
+      "max_package_concentration_percent": 11.1,
+      "input_tokens": 113787,
+      "output_tokens": 5911,
+      "model_calls": 36,
+      "elapsed_seconds": 120.838629,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null,
+      "adjudication": "No candidate or accepted final finding matched a known defect."
+    }
+  ],
+  "summary": {
+    "staged_v1": {
+      "known_defects_recalled": 0,
+      "known_defect_opportunities": 5,
+      "target_macro_recall": 0.0,
+      "coverage_scores": [7, 6],
+      "median_coverage": 6.5,
+      "median_shell_calls": 28.5,
+      "median_max_package_concentration_percent": 15.6,
+      "median_input_tokens": 108051.5,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null
+    },
+    "adaptive_v2_2": {
+      "known_defects_recalled": 0,
+      "known_defect_opportunities": 5,
+      "target_macro_recall": 0.0,
+      "coverage_scores": [2, 3],
+      "median_coverage": 2.5,
+      "median_shell_calls": 38.5,
+      "median_max_package_concentration_percent": 29.4,
+      "median_input_tokens": 425700,
+      "selection_attempts": 18,
+      "valid_selections": 18,
+      "promoted_hypotheses": 5,
+      "verifier_results": 5,
+      "critic_results": 2,
+      "submitted_evidence_records": 23,
+      "valid_evidence_records": 7,
+      "invalid_evidence_records": 16,
+      "invalid_evidence_percent": 69.6,
+      "accepted_findings": 0,
+      "false_positive_count": 0,
+      "precision": null
+    },
+    "comparison": {
+      "adaptive_versus_v1_median_input_multiple": 3.94,
+      "adaptive_minus_v1_known_defects_recalled": 0,
+      "material_improvement_threshold_met": false
+    }
+  },
+  "prediction_decisions": {
+    "median_recall_zero_per_target_in_both_conditions": "not_evaluable_as_written_because_one_frozen_target_denominator_was_invalid; corrected_recall_is_zero_on_both_targets",
+    "v1_coverage_at_least_v2_on_both_targets": "supported",
+    "no_critic_accepted_false_positive": "supported",
+    "v2_exposes_evidence_downgrades": "supported",
+    "material_treatment_improvement": "not_met"
+  }
+}

@@ -2,6 +2,13 @@
 
 Status: frozen before the first model generation request.
 
+Post-run correction: the frozen `23c1549` grader included one false-fail row
+for a Spark configuration entry introduced after the target. The original
+preregistration below remains the frozen design at commit `1f5bd24`; final
+scoring uses two valid defects at `23c1549` and three at `7d37920`. The
+correction was made only after all four reports were final and does not alter
+the zero-recall numerator or condition comparison.
+
 This is an exploratory pilot, not adaptive-v2 Phase 2 and not a confirmatory
 model comparison. Codex selected the historical targets and wrote their
 graders after inspecting later fixes. The model remains blind to the oracle,
