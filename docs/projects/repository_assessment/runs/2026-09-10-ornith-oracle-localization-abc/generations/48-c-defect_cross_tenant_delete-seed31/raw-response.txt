@@ -1,0 +1,6 @@
+{
+  "verdict": "reject",
+  "affected_behavior": "delete_episode removes an episode from JSONL and ChromaDB without any tenant authorization check.",
+  "actionable_violation": "The shown code performs no tenant authorization: it filters episodes by episode_id alone and deletes without verifying the caller's tenant ownership, so a caller could delete another tenant's episode.",
+  "rationale": "The function filters self._episodes by episode_id and deletes the matching entry, rewriting JSONL and removing from ChromaDB. There is no tenant_id parameter, no tenant filtering, and no authorization logic in the shown span. The hypothesis is supported by the shown code. Note: whether this is a real violation depends on surrounding context (e.g., whether _episodes is already tenant-scoped or a caller is validated elsewhere), which is not shown here."
+}

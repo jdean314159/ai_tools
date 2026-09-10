@@ -1,0 +1,36 @@
+{
+  "condition": "C",
+  "elapsed_ms": 2975.385,
+  "fingerprint_sha256": "7f28badde6e6e11dc44daa89332d0614a1cf4f5c92f3baf45005b772aa166d78",
+  "finish_reason": "stop",
+  "finished_at": "2026-09-10T14:22:59.471564Z",
+  "invalid_reasons": [],
+  "item_id": "negative_git_fail_closed",
+  "lifecycle": "final",
+  "max_tokens": 512,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "order": 56,
+  "pair_id": "git_fail_closed",
+  "prompt_sha256": {
+    "system": "8805a05506be66a448ab9230d4d02209537740b947b44902388e6433049ce363",
+    "user": "268b7ba1d52bbd9c1481ae3f5224dd4b0d55b9b24b162f2854017973f760d207"
+  },
+  "raw_response_sha256": "76b32a46afbf16c8b061e28b60a305dc7e822aef09204a414c7a6fc3ec1a1cc9",
+  "run_id": "56-c-negative_git_fail_closed-seed17",
+  "schema": "oracle-localization-run/v1",
+  "seed": 17,
+  "seed_status": "accepted",
+  "span_sha256": "cf38e1ab2b226a0eed378ca4c05100066fff80926324af2ddaf33f933a983a0d",
+  "started_at": "2026-09-10T14:22:56.495905Z",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "479cde2b24dd7f37e03ed7e4a1d07d5c693ab783cc342a4bc6a971c3f668d98a",
+  "truth": "false_hypothesis",
+  "usage": {
+    "input_tokens": 309,
+    "latency_ms": 2975.333,
+    "output_tokens": 217,
+    "total_tokens": 526
+  },
+  "validity": "valid"
+}

@@ -1,0 +1,6 @@
+{
+  "actionable_violation": "None found in the shown span. The function builds a state dict via _dict_subset over an explicit allowlist of metadata keys, then conditionally adds 'error', 'blocked', and 'degraded' fields. The blocked_errors set is used only for a boolean flag, and the sandbox_fallback_used check is guarded by bool(). No untrusted data is executed, no unsafe serialization occurs, and no injection or resource-handling risk is present in these lines.",
+  "affected_behavior": "Construction of the tool execution state dict from agent metadata",
+  "rationale": "The logic is self-contained and uses an explicit key allowlist plus guarded conditional assignments. The shown behavior does not exhibit a correctness, security, or reliability violation on its own.",
+  "verdict": "no_violation"
+}

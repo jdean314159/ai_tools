@@ -1,0 +1,20 @@
+{
+  "generation_set": {
+    "errors": [],
+    "expected_runs": 60,
+    "generation_set": "generations",
+    "observed_valid_runs": 60,
+    "token_and_elapsed_fields_checked": 60,
+    "valid": true
+  },
+  "inputs": {
+    "errors": [],
+    "oracle_pairs": 5,
+    "planned_runs": 60,
+    "scorer_controls_passed": true,
+    "span_items": 10,
+    "valid": true
+  },
+  "schema": "oracle-localization-validation/v1",
+  "valid": true
+}

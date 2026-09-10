@@ -1,0 +1,6 @@
+{
+  "actionable_violation": "None",
+  "affected_behavior": "None",
+  "rationale": "The function correctly runs `git ls-files` with a fixed command list (no shell injection risk), captures output safely, and normalizes paths relative to ROOT. It properly handles non-zero exit codes and OSError, and filters empty lines before constructing the set. The shown behavior is acceptable with no correctness, security, or reliability issues.",
+  "verdict": "no_violation"
+}

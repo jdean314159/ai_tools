@@ -1,0 +1,6 @@
+{
+  "actionable_violation": "None. The shown code correctly validates that the project_id (and any other value passed as a path component) is a single, safe path component: it rejects '.', '..', backslashes, NUL bytes, and any value containing path separators (enforced by Path(component).name != component). It also falls back to 'default' for empty/None values. This prevents path traversal when constructing the storage root via self.base_dir / safe, so the behavior is acceptable.",
+  "affected_behavior": "Path component sanitization in _safe_storage_component",
+  "rationale": "The validation logic covers the relevant path traversal vectors (parent directory references, OS-specific separators, NUL bytes) and enforces single-component constraint. No unsafe path construction or unchecked value is present in this span.",
+  "verdict": "no_violation"
+}

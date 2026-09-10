@@ -1,0 +1,6 @@
+{
+  "actionable_violation": "None. The code does not silently return an empty inventory on git failure; it fails loudly by raising RuntimeError. The hypothesis's claim of silent empty-inventory passing is contradicted by the shown code.",
+  "affected_behavior": "The _git_tracked_files helper raises RuntimeError when git is unavailable (OSError) or when 'git ls-files' returns a non-zero exit code, rather than returning an empty set.",
+  "rationale": "The shown _git_tracked_files function explicitly raises RuntimeError on OSError (git unavailable) and on any non-zero returncode from 'git ls-files'. This means it does not fail closed by returning an empty set; instead it aborts with an error. Therefore the hypothesis that it 'does not fail closed' and allows an empty inventory to silently pass is contradicted by the visible code. No surrounding behavior is shown that would change this, so the claimed behavior and actionable violation are not supported.",
+  "verdict": "reject"
+}

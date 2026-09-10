@@ -2,7 +2,8 @@
 
 **Date:** 2026-09-10  
 **Campaign:** Ornith repository assessment  
-**Status:** Preregistered; span manifest frozen; model generation has not started.
+**Status:** Completed under the corrected pre-generation manifest; see
+[final result](ORNITH-ORACLE-LOCALIZATION-ABC-2026-09-10.md).
 
 ## Purpose
 
@@ -47,16 +48,10 @@ is localized recall: the model must identify the affected behavior and state an
 actionable violation within the presented span. False assertions on negative
 spans are scored separately; C confirmations and rejections are also separate.
 
-## Remaining work
+## Completion note
 
-1. Select and verify matched negative spans against the frozen source and
-   graders; record boundaries and hashes.
-2. Implement the single-turn A/B/C runner and explicit scoring layer.
-3. Demonstrate scorer negative and positive controls before generation.
-4. Freeze prompts, item manifest, scorer, and oracle mapping in a pre-generation
-   commit.
-5. Run all planned items, spot-check token and elapsed-time fields against raw
-   transcripts, adjudicate, validate, and document results.
-
-Do not add spans, seeds, conditions, or prompt changes after observing model
-output. Retain any invalid attempts with their reasons.
+All planned work is complete. A pre-generation audit corrected the invalid
+private-address row, restored the permissions defect, and moved the path-escape
+span onto the faulty join before any model request. The corrected inputs and
+controls were frozen at `c53361c`. All 60 fresh runs were valid, adjudicated,
+and documented. No rerun or post-output prompt change was made.

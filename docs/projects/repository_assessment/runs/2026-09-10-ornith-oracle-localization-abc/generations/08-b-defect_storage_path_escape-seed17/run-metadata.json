@@ -1,0 +1,36 @@
+{
+  "condition": "B",
+  "elapsed_ms": 2408.303,
+  "fingerprint_sha256": "7f28badde6e6e11dc44daa89332d0614a1cf4f5c92f3baf45005b772aa166d78",
+  "finish_reason": "stop",
+  "finished_at": "2026-09-10T14:20:44.258649Z",
+  "invalid_reasons": [],
+  "item_id": "defect_storage_path_escape",
+  "lifecycle": "final",
+  "max_tokens": 512,
+  "model": "Ornith-1.5-35B-Q4_K_M.gguf",
+  "order": 8,
+  "pair_id": "storage_path_escape",
+  "prompt_sha256": {
+    "system": "8805a05506be66a448ab9230d4d02209537740b947b44902388e6433049ce363",
+    "user": "51b34a2721f2904e76df556fac6976e943e32788ec498c57d393a7f9dd8d101a"
+  },
+  "raw_response_sha256": "bda66bad40db4a3e50e5431408aa9fb85bdda87fc16f6abd59c6e31717645d28",
+  "run_id": "08-b-defect_storage_path_escape-seed17",
+  "schema": "oracle-localization-run/v1",
+  "seed": 17,
+  "seed_status": "accepted",
+  "span_sha256": "68333c9ee53455087b69f7347cd5b1b6e9ad33384214385683d015e8de8c61b2",
+  "started_at": "2026-09-10T14:20:41.850105Z",
+  "temperature": 0,
+  "thinking": false,
+  "transcript_sha256": "a6b8e635b525060ef842cf46515f9b2c6b05cc291e53d78871dde5b2d6e0bd7f",
+  "truth": "defect",
+  "usage": {
+    "input_tokens": 225,
+    "latency_ms": 2408.252,
+    "output_tokens": 170,
+    "total_tokens": 395
+  },
+  "validity": "valid"
+}

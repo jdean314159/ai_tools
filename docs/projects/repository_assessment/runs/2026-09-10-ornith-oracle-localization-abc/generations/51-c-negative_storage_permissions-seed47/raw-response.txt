@@ -1,0 +1,6 @@
+{
+  "verdict": "confirm",
+  "affected_behavior": "Creation of persistent memory directories and JSONL files",
+  "actionable_violation": "Directories and files are created with mkdir/open without setting restrictive modes at creation time; chmod is applied afterward, so a permissive umask can leave them world-readable between creation and the chmod call",
+  "rationale": "The code calls self._storage_root.mkdir(parents=True, exist_ok=True) and self._sessions_dir.mkdir(parents=True, exist_ok=True) without passing a mode, so the resulting permissions depend on the process umask. Similarly, path.open('a'/'w') creates files without specifying mode. The restrictive 0700/0600 modes are only applied afterward via _secure_storage_path's chmod, which is a TOCTOU-style gap: between creation and chmod, or if chmod fails (caught and only logged), the entries may be exposed under a permissive umask. No mode is enforced at creation time."
+}

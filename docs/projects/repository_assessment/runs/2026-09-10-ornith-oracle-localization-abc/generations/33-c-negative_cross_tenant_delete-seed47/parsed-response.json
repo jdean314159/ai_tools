@@ -1,0 +1,6 @@
+{
+  "actionable_violation": "The code explicitly enforces tenant authorization; it does NOT allow deleting another tenant's episode. The hypothesis is contradicted by the shown code.",
+  "affected_behavior": "delete_episode applies tenant authorization via self.trust_policy.authorizes_tenant before deletion, rejecting with tenant_mismatch on mismatch",
+  "rationale": "The source shows delete_episode calls self.trust_policy.authorizes_tenant(episode.get('metadata')) and returns False (rejecting the deletion, appending a tenant_mismatch audit, and emitting telemetry) when authorization fails. This is exactly the tenant authorization the hypothesis claims is missing. There is no evidence in this span of missing authorization or a bypass. The hypothesis is not supported.",
+  "verdict": "reject"
+}

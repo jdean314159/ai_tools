@@ -1,0 +1,6 @@
+{
+  "verdict": "reject",
+  "affected_behavior": "The blocked_errors set does not include 'tool_not_granted', so a tool_not_granted error is not marked blocked and instead falls through to a tool_invocation_failed warning.",
+  "actionable_violation": "A tool_not_granted error is not classified as blocked policy execution; it produces a tool_invocation_failed warning instead of a tool_execution_blocked warning.",
+  "rationale": "The shown code defines blocked_errors as a fixed set that does not contain 'tool_not_granted'. Since _tool_execution_state only sets state['blocked'] = True for errors in that set, a tool_not_granted error leaves blocked unset. In _tool_result_warnings, blocked is falsy, so no tool_execution_blocked warning is emitted. The final condition (not result.success and error != 'command_timeout' and not blocked) then fires, producing a tool_invocation_failed warning. This confirms the hypothesis: tool_not_granted is misclassified as a generic failure rather than a blocked policy execution. The only assumption is that a tool_not_granted result has result.success == False, which is reasonable for an error result. The code fully supports the claimed behavior and violation."
+}

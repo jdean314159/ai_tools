@@ -1,0 +1,6 @@
+{
+  "verdict": "reject",
+  "affected_behavior": "Path component validation for project_id in storage root computation",
+  "actionable_violation": "None",
+  "rationale": "The code explicitly validates the project_id before using it as a path component. _safe_storage_component rejects '.', '..', values containing backslashes, null bytes, embedded path separators (Path(component).name != component), and empty/whitespace-only values, raising ValueError in each case. Therefore the project_id cannot contain separators or traversal values that would escape the configured storage root. The hypothesis that it is used without validation is contradicted by the shown code."
+}

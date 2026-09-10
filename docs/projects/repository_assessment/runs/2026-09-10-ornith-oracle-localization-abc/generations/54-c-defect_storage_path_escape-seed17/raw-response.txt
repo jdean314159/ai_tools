@@ -1,0 +1,6 @@
+{
+  "verdict": "reject",
+  "affected_behavior": "storage root path construction",
+  "actionable_violation": "no",
+  "rationale": "The shown code builds the storage root as self.base_dir / safe where safe is derived from self.project_id. There is no validation that rejects separators or traversal values, but the hypothesis claims an actionable security violation (path traversal escaping the root). The code does not demonstrate that traversal values can actually escape the configured root, nor does it show any downstream use that would allow escaping. The hypothesis asserts a concrete exploitable behavior and actionable violation that is not supported by this isolated snippet alone."
+}

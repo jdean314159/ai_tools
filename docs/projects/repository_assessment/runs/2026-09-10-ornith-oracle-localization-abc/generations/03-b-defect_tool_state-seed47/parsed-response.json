@@ -1,0 +1,6 @@
+{
+  "actionable_violation": "None found in the shown span. The helper functions (_tool_execution_state, _tool_result_warnings, _run_summary) correctly subset metadata, guard against None errors before membership checks, and only append warnings under explicit conditions. The blocked/degraded/error/timeout/approval branches are mutually consistent and do not leak sensitive data or perform unsafe operations. No correctness, security, or reliability violation is supported by the shown code.",
+  "affected_behavior": "Generation of tool execution warnings from tool result metadata",
+  "rationale": "The code safely extracts a subset of metadata, handles the None error case before checking membership in blocked_errors, and constructs warnings with clearly-scoped details. There is no unvalidated input handling, no unsafe serialization, no resource leak, and no logic error evident in the displayed lines.",
+  "verdict": "no_violation"
+}

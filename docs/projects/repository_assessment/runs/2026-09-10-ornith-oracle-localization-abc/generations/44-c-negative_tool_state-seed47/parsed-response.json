@@ -1,0 +1,6 @@
+{
+  "actionable_violation": "None",
+  "affected_behavior": "The _tool_execution_state helper correctly classifies tool_not_granted as a blocked error.",
+  "rationale": "The shown code explicitly includes 'tool_not_granted' in the blocked_errors set (line: 'tool_not_granted',) and sets state['blocked'] = True when the error matches. Therefore the helper does NOT fail to classify tool_not_granted as blocked; the hypothesis contradicts the visible code. No actionable violation is supported.",
+  "verdict": "reject"
+}

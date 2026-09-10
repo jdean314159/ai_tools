@@ -1,0 +1,6 @@
+{
+  "verdict": "confirm",
+  "affected_behavior": "Directory and file creation in _ensure_storage_dirs, _append_jsonl, and _rewrite_jsonl",
+  "actionable_violation": "mkdir and path.open calls do not set restrictive permission modes (0700/0600), so files/dirs are created with the process umask, which may be permissive and expose stored memory",
+  "rationale": "The shown code calls self._storage_root.mkdir(parents=True, exist_ok=True) and self._sessions_dir.mkdir(...) without any mode argument, and opens JSONL files with path.open('a'/'w') without mode control. No chmod or mode=0o700/0o600 is applied anywhere in the span, so creation relies on the umask. This directly supports that permissive umask could expose stored memory."
+}
