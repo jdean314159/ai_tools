@@ -1,0 +1,55 @@
+{
+  "schema": "oracle-localization-span-manifest/v1",
+  "items": [
+    {
+      "item_id": "defect_tool_state",
+      "kind": "defect",
+      "commit": "23c1549d5aae3ac67454aade1b725f2931770014",
+      "path": "agent_lib/src/agent_lib/interop.py",
+      "start_line": 22,
+      "end_line": 58,
+      "sha256": "d9b98c798c6de784f1d34fedfb855820880f3db841b47532a0db53bfa9abb308",
+      "text": "def _tool_execution_state(meta: dict[str, Any]) -> dict[str, Any]:\n    state = _dict_subset(meta, 'approval_required', 'approval_mode', 'patch_status', 'policy_reason', 'sandbox_requested_backend', 'sandbox_backend', 'sandbox_external', 'sandbox_fallback_used', 'available_sandbox_backends', 'environment_inherited', 'environment_keys', 'timeout_seconds', 'returncode')\n    error = meta.get('error')\n    if error is not None:\n        state['error'] = error\n    blocked_errors = {'policy_violation', 'invalid_arguments', 'invalid_path', 'path_escape', 'write_denied', 'ownership_denied', 'command_denied', 'sandbox_unavailable', 'invalid_sandbox_backend'}\n    if error in blocked_errors:\n        state['blocked'] = True\n    if bool(meta.get('sandbox_fallback_used')):\n        state['degraded'] = True\n    return state\n\n\ndef _tool_result_warnings(result: ToolResult) -> tuple[OperationWarning, ...]:\n    meta = dict(result.meta)\n    state = _tool_execution_state(meta)\n    warnings: list[OperationWarning] = []\n    if state.get('blocked'):\n        warnings.append(OperationWarning(code='tool_execution_blocked', message=f'Tool {result.name} was blocked by runtime policy.', details={'tool_name': result.name, **state}))\n    if state.get('degraded'):\n        warnings.append(OperationWarning(code='tool_execution_degraded', message=f'Tool {result.name} used degraded execution mode.', details={'tool_name': result.name, **state}))\n    if meta.get('approval_required'):\n        warnings.append(OperationWarning(code='tool_approval_required', message=f'Tool {result.name} requires approval before applying changes.', details={'tool_name': result.name, **state}))\n    if meta.get('error') == 'command_timeout':\n        warnings.append(OperationWarning(code='tool_execution_timeout', message=f'Tool {result.name} timed out.', details={'tool_name': result.name, **state}))\n    if not result.success and meta.get('error') != 'command_timeout' and not state.get('blocked'):\n        warnings.append(OperationWarning(code='tool_invocation_failed', message=f'Tool {result.name} failed.', details=meta))\n    return tuple(warnings)\n\n\ndef _run_summary(run: AgentRun) -> dict[str, Any]:\n    return {\n        \"task_id\": run.task.task_id,\n        \"session_id\": run.task.session_id,\n        \"status\": run.status,\n        \"stop_reason\": run.stop_reason,\n        \"final_output\": run.final_output,\n"
+    },
+    {
+      "item_id": "defect_private_address",
+      "kind": "defect",
+      "commit": "23c1549d5aae3ac67454aade1b725f2931770014",
+      "path": "llm_engines/src/llm_engines/data/llm_engines.yaml",
+      "start_line": 75,
+      "end_line": 86,
+      "sha256": "e0d861a6a5143cc3b6ca2baf27eaa075708c7995f670e0d373abf20dca53895d",
+      "text": "  # --- Cloud fallbacks (require API keys in environment) ---\n\n  claude:\n    type: anthropic\n    model: claude-sonnet-4-6\n    api_key_env: ANTHROPIC_API_KEY\n    max_context: 200000\n    system_prompt: You are a helpful AI assistant.\n\n  openai_mini:\n    type: openai\n    model: gpt-4o-mini\n"
+    },
+    {
+      "item_id": "defect_git_fail_open",
+      "kind": "defect",
+      "commit": "23c1549d5aae3ac67454aade1b725f2931770014",
+      "path": "scripts/check_publication_hygiene.py",
+      "start_line": 17,
+      "end_line": 35,
+      "sha256": "1f3ef9db812ff8d94257a0fe3bf9b007f92f4f10aad159257655bda33dbd2b61",
+      "text": "def _git_tracked_files() -> set[Path]:\n    result = subprocess.run(\n        [\"git\", \"ls-files\"],\n        cwd=ROOT,\n        capture_output=True,\n        text=True,\n    )\n    return {ROOT / line.strip() for line in result.stdout.splitlines() if line.strip()}\n\n\nREQUIRED_ROOT_DOCS = [\n    \"README.md\",\n    \"ADR_INDEX.md\",\n    \"LICENSE\",\n    \"THIRD_PARTY_NOTICES.md\",\n    \"CONTRIBUTING.md\",\n]\n\nEXPECTED_LICENSE_EXPRESSION = \"Apache-2.0\"\n"
+    },
+    {
+      "item_id": "defect_path_escape",
+      "kind": "defect",
+      "commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+      "path": "engram/src/engram/project_memory.py",
+      "start_line": 318,
+      "end_line": 327,
+      "sha256": "49963c95459bf63a85f71f727efff33d0cd5bef855559663cc76a36cc2eb7d64",
+      "text": "        if self._storage_root is None:\n            return\n        self._storage_root.mkdir(parents=True, exist_ok=True)\n        if self._sessions_dir is not None:\n            self._sessions_dir.mkdir(parents=True, exist_ok=True)\n\n    def _read_jsonl(self, path: Path | None) -> list[dict[str, Any]]:\n        if path is None or not path.exists():\n            return []\n        rows: list[dict[str, Any]] = []\n"
+    },
+    {
+      "item_id": "defect_cross_tenant_delete",
+      "kind": "defect",
+      "commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+      "path": "engram/src/engram/project_memory.py",
+      "start_line": 1990,
+      "end_line": 2025,
+      "sha256": "c3f5411ff7f3ee9d8c0da47df0b6f95cf6f2fc60d902e1221012e7c4b102602f",
+      "text": "    def delete_episode(self, episode_id: str) -> bool:\n        \"\"\"Delete one episode from JSONL and ChromaDB.\n\n        Args:\n            episode_id: Episode ID to delete (e.g. \"ep_abc123\")\n\n        Returns:\n            True if found and deleted, False if not found.\n        \"\"\"\n        original_count = len(self._episodes)\n        self._episodes = [ep for ep in self._episodes if ep.get(\"id\") != episode_id]\n\n        if len(self._episodes) == original_count:\n            return False  # Not found\n\n        # Rewrite JSONL\n        self._rewrite_jsonl(self._episodes_path, self._episodes)\n\n        # Remove from ChromaDB\n        if self.chromadb:\n            try:\n                self.chromadb.delete(episode_id)\n            except Exception as e:\n                logger.debug(f\"ChromaDB delete failed for {episode_id}: {e}\")\n\n        self._quality_stats[\"stored\"] = max(0, self._quality_stats[\"stored\"] - 1)\n        self.telemetry.emit(\"episode_deleted\", {\"episode_id\": episode_id})\n        logger.debug(f\"Deleted episode: {episode_id}\")\n        return True\n\n    def forget_session(self, session_id: str) -> dict:\n        \"\"\"Remove all turns and auto-ingested episodes for a session.\n\n        Args:\n            session_id: Session to forget.\n\n"
+    }
+  ]
+}
