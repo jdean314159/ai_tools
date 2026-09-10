@@ -1,13 +1,17 @@
 # Ornith empirical-probe-obligation screen result — 2026-09-09
 
-The one-pair screen did not trigger escalation. The probe-required treatment
-did not execute a probe: it exhausted all 45 investigation actions as shell
+In this record, “probe” means a call to the screen’s dedicated, instrumented
+`run_probe` tool. This is narrower than a behavioral diagnostic typed into a
+shell command, which v2.2 used. The one-pair screen did not trigger escalation.
+The probe-required treatment did not execute the instrumented probe: it exhausted all 45 investigation actions as shell
 calls and ended in the preregistered structural non-completion state. The
-probe-optional control also exhausted 45 shell actions, then produced a forced
+probe-optional control also exhausted 45 shell actions (none were behavioral
+diagnostics against target code), then produced a forced
 report. The treatment therefore has no evaluable final report and must not be
 reported as 0/3 recall.
 
-This is a screen result, not evidence that probe obligation cannot improve
+This is a screen result about adoption of a dedicated instrumented tool, not
+evidence that probe obligation cannot improve
 recall. It is one Ornith model, one target, one seed, and a controller-side
 intervention designed and adjudicated under consolidated owner authority.
 
