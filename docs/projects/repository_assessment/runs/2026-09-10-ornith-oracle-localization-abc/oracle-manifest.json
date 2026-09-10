@@ -1,0 +1,130 @@
+{
+  "grader_boundary": "evaluator-only except each condition-C item's hypothesis",
+  "oracles": [
+    {
+      "hypothesis": "The helper fails to classify a tool_not_granted error as blocked policy execution, so downstream warnings misclassify the result.",
+      "match_groups": [
+        [
+          "tool[_ -]?not[_ -]?granted",
+          "ungranted"
+        ],
+        [
+          "block",
+          "policy"
+        ],
+        [
+          "omit",
+          "missing",
+          "not (?:classif|treat|includ|mark)",
+          "fail"
+        ]
+      ],
+      "oracle": "tool_not_granted is omitted from the blocked-policy error set and is therefore not classified as blocked.",
+      "pair_id": "tool_state"
+    },
+    {
+      "hypothesis": "The tracked-file inventory helper does not fail closed when git is unavailable or returns an error, so an empty inventory can silently pass publication checks.",
+      "match_groups": [
+        [
+          "git",
+          "ls.files",
+          "tracked.file"
+        ],
+        [
+          "return.?code",
+          "exit status",
+          "unavailable",
+          "fail",
+          "error"
+        ],
+        [
+          "fail.closed",
+          "silent",
+          "empty",
+          "unchecked",
+          "ignor",
+          "pass"
+        ]
+      ],
+      "oracle": "git ls-files failures are unchecked; stderr and return code are ignored and empty stdout is treated as a valid tracked-file inventory.",
+      "pair_id": "git_fail_closed"
+    },
+    {
+      "hypothesis": "The project identifier is used as a path component without validation, allowing separators or traversal values to escape the configured storage root.",
+      "match_groups": [
+        [
+          "project.?id",
+          "identifier"
+        ],
+        [
+          "path",
+          "travers",
+          "separator",
+          "component",
+          "escape"
+        ],
+        [
+          "validat",
+          "saniti",
+          "reject",
+          "unchecked",
+          "without"
+        ]
+      ],
+      "oracle": "project_id is joined directly to base_dir without requiring a single safe path component, allowing path traversal.",
+      "pair_id": "storage_path_escape"
+    },
+    {
+      "hypothesis": "Persistent memory directories and JSONL files are created without enforcing private 0700 and 0600 modes, so a permissive umask can expose stored memory.",
+      "match_groups": [
+        [
+          "permission",
+          "mode",
+          "umask",
+          "chmod",
+          "0700",
+          "0600"
+        ],
+        [
+          "director",
+          "file",
+          "jsonl",
+          "storage",
+          "memory"
+        ],
+        [
+          "private",
+          "expos",
+          "permissive",
+          "not enforc",
+          "inherit"
+        ]
+      ],
+      "oracle": "storage directories and JSONL files inherit the process umask instead of enforcing private directory and file modes.",
+      "pair_id": "storage_permissions"
+    },
+    {
+      "hypothesis": "delete_episode removes an episode without applying configured tenant authorization, allowing a caller to delete another tenant's episode.",
+      "match_groups": [
+        [
+          "delet",
+          "remov"
+        ],
+        [
+          "tenant",
+          "trust.?policy"
+        ],
+        [
+          "authoriz",
+          "cross.tenant",
+          "mismatch",
+          "ownership",
+          "without"
+        ]
+      ],
+      "oracle": "delete_episode deletes a matching episode without consulting MemoryTrustPolicy tenant authorization.",
+      "pair_id": "cross_tenant_delete"
+    }
+  ],
+  "schema": "oracle-localization-oracle-manifest/v1"
+}

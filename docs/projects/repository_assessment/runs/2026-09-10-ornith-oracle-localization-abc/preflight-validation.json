@@ -1,0 +1,69 @@
+{
+  "graders": [
+    {
+      "corrected_reference": "49026eac3d2e24b02641bf9db0a76e94909e9386",
+      "expected_tests": 2,
+      "grader": "test_cross_package_defects_at_23c1549_corrected.py",
+      "runs": [
+        {
+          "commit": "23c1549d5aae3ac67454aade1b725f2931770014",
+          "expected_outcome": true,
+          "failed": 2,
+          "output_sha256": "3c7a9480cd1b1ae38ba68dfe3720f8e021d99c1e1e1e5153b738526810f27890",
+          "passed": 0,
+          "returncode": 1,
+          "role": "target"
+        },
+        {
+          "commit": "49026eac3d2e24b02641bf9db0a76e94909e9386",
+          "expected_outcome": true,
+          "failed": 0,
+          "output_sha256": "615346574e154b3beff92a0c3300cc216b1d715cbac6441c7dbf923797c8c68f",
+          "passed": 2,
+          "returncode": 0,
+          "role": "corrected_reference"
+        }
+      ],
+      "target": "23c1549d5aae3ac67454aade1b725f2931770014",
+      "valid": true
+    },
+    {
+      "corrected_reference": "8e2e9e5f2c45c935bdc3afa2479a08dc702b44db",
+      "expected_tests": 3,
+      "grader": "test_engram_boundary_defects_at_7d37920.py",
+      "runs": [
+        {
+          "commit": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+          "expected_outcome": true,
+          "failed": 3,
+          "output_sha256": "e5efd39022a6aaa5a07d4d5d9a2f24054d1615acfe8999e5bc8151f29ff5cf47",
+          "passed": 0,
+          "returncode": 1,
+          "role": "target"
+        },
+        {
+          "commit": "8e2e9e5f2c45c935bdc3afa2479a08dc702b44db",
+          "expected_outcome": true,
+          "failed": 0,
+          "output_sha256": "1d3314562a9345a9f75b1adf32d61168822c00d316f7db85833230bba023e448",
+          "passed": 3,
+          "returncode": 0,
+          "role": "corrected_reference"
+        }
+      ],
+      "target": "7d37920a81a9cb672c24af3a55557621e5c5009f",
+      "valid": true
+    }
+  ],
+  "graders_valid": true,
+  "inputs": {
+    "errors": [],
+    "oracle_pairs": 5,
+    "planned_runs": 60,
+    "scorer_controls_passed": true,
+    "span_items": 10,
+    "valid": true
+  },
+  "schema": "oracle-localization-validation/v1",
+  "valid": true
+}

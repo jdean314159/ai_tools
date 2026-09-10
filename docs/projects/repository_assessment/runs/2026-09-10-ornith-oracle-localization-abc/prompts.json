@@ -1,0 +1,6 @@
+{
+  "condition_b_user_template": "Review this isolated source span for a concrete correctness, security, or reliability violation. If the span supports one, identify the affected behavior and state the actionable violation. If it does not, return no_violation and explain why the shown behavior is acceptable.\n\nSource: {path}, lines {start_line}-{end_line}\n```{language}\n{text}```",
+  "condition_c_user_template": "Evaluate the hypothesis against this isolated source span. Confirm it only if the shown code supports the claimed behavior and actionable violation; otherwise reject it. Do not infer missing surrounding behavior.\n\nHypothesis: {hypothesis}\n\nSource: {path}, lines {start_line}-{end_line}\n```{language}\n{text}```",
+  "schema": "oracle-localization-prompts/v1",
+  "system": "You are reviewing one isolated source span. Judge only behavior supported by the shown code. Do not assume unseen repository context. Return only the requested JSON object."
+}

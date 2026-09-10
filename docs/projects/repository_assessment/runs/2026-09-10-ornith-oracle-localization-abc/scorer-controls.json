@@ -1,0 +1,110 @@
+{
+  "all_passed": true,
+  "controls": [
+    {
+      "control_id": "accept_correct_identification",
+      "expected": {
+        "localized_recall": true
+      },
+      "observed": {
+        "condition": "B",
+        "correct_confirmation": false,
+        "correct_rejection": false,
+        "false_assertion": false,
+        "false_confirmation": false,
+        "false_rejection": false,
+        "kind": "defect",
+        "localized_recall": true,
+        "oracle_group_matches": [
+          true,
+          true,
+          true
+        ],
+        "oracle_match": true,
+        "parse_error": null,
+        "valid_response": true,
+        "verdict": "violation"
+      },
+      "passed": true
+    },
+    {
+      "control_id": "reject_description_without_violation",
+      "expected": {
+        "localized_recall": false
+      },
+      "observed": {
+        "condition": "B",
+        "correct_confirmation": false,
+        "correct_rejection": false,
+        "false_assertion": false,
+        "false_confirmation": false,
+        "false_rejection": false,
+        "kind": "defect",
+        "localized_recall": false,
+        "oracle_group_matches": [
+          false,
+          false,
+          false
+        ],
+        "oracle_match": false,
+        "parse_error": null,
+        "valid_response": true,
+        "verdict": "violation"
+      },
+      "passed": true
+    },
+    {
+      "control_id": "accept_negative_abstention",
+      "expected": {
+        "false_assertion": false
+      },
+      "observed": {
+        "condition": "B",
+        "correct_confirmation": false,
+        "correct_rejection": false,
+        "false_assertion": false,
+        "false_confirmation": false,
+        "false_rejection": false,
+        "kind": "negative",
+        "localized_recall": false,
+        "oracle_group_matches": [
+          false,
+          true,
+          false
+        ],
+        "oracle_match": false,
+        "parse_error": null,
+        "valid_response": true,
+        "verdict": "no_violation"
+      },
+      "passed": true
+    },
+    {
+      "control_id": "detect_negative_false_assertion",
+      "expected": {
+        "false_assertion": true
+      },
+      "observed": {
+        "condition": "B",
+        "correct_confirmation": false,
+        "correct_rejection": false,
+        "false_assertion": true,
+        "false_confirmation": false,
+        "false_rejection": false,
+        "kind": "negative",
+        "localized_recall": false,
+        "oracle_group_matches": [
+          false,
+          true,
+          false
+        ],
+        "oracle_match": false,
+        "parse_error": null,
+        "valid_response": true,
+        "verdict": "violation"
+      },
+      "passed": true
+    }
+  ],
+  "schema": "oracle-localization-scorer-controls/v1"
+}
