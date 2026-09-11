@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-09-09
+Last updated: 2026-09-10
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -44,6 +44,24 @@ targets and a new preregistration.
 For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
+
+### Latest completed work — complete hybrid retrieval fusion
+
+The pre-benchmark RAG blocker identified by the reliability-lab handover is
+repaired. `HybridRetriever` now materializes BM25-only candidates through an
+exact ChromaDB ID lookup, retains their stored text, expanded context, source
+identity, document type, and metadata, and emits them according to reciprocal
+rank fusion rather than silently dropping them outside the dense top-K set.
+Stores without exact ID lookup retain a bounded compatibility path. Any
+candidate that still cannot be materialized is omitted with an explicit
+warning and chunk-ID diagnostic in both retrieval details and the public
+`RetrievalTrace`.
+
+Focused tests cover survival and trace provenance for a BM25-only candidate,
+the unmaterialized-candidate diagnostic, and ordered ChromaDB materialization.
+The canonical RAG gate passes 116/116; the cross-package integration gate
+passes 48 with one optional skip. No corpus was ingested and no benchmark was
+generated.
 
 ### Latest completed work — Ornith empirical-probe-obligation screen
 

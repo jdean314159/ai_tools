@@ -179,6 +179,7 @@ class RAGPipeline:
         bm25_docs: list[Any] = []
         merged_map: dict[str, Any] = {}
         events: list[TraceEvent] = []
+        retrieval_warnings: list[str] = []
 
         if len(query_variants) > 1:
             events.append(
@@ -203,6 +204,8 @@ class RAGPipeline:
             dense_results = details.get("dense_results", [])
             bm25_results = details.get("bm25_results", [])
             fused_results = details.get("fused_results", [])
+            stage_warnings = [str(warning) for warning in details.get("warnings", [])]
+            retrieval_warnings.extend(stage_warnings)
             dense_docs.extend(
                 [
                     chunk.to_retrieved_document(
@@ -227,10 +230,15 @@ class RAGPipeline:
                     payload={
                         "query_variant": q_variant,
                         "variant_index": idx,
+                        "warnings": stage_warnings,
                         **dict(details.get("diagnostics", {})),
                     },
-                    severity="info",
-                    message="Completed Stage 1 hybrid retrieval.",
+                    severity="warning" if stage_warnings else "info",
+                    message=(
+                        "Completed Stage 1 hybrid retrieval with warnings."
+                        if stage_warnings
+                        else "Completed Stage 1 hybrid retrieval."
+                    ),
                     tags=("rag", "retrieval", "stage1"),
                 )
             )
@@ -327,6 +335,7 @@ class RAGPipeline:
                 "selected_count": len(selected_chunks),
                 "max_context_tokens": max_context_tokens,
                 "system_prompt_present": bool(system_prompt.strip()),
+                "warnings": retrieval_warnings,
             },
         )
 

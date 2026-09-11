@@ -160,6 +160,43 @@ class ChromaStorage:
 
         return chunks
 
+    def get_by_ids(
+        self,
+        chunk_ids: list[str],
+        collection: str = "default",
+    ) -> list[StoredChunk]:
+        """Materialize stored chunks by ID, preserving the requested order."""
+        if not chunk_ids:
+            return []
+
+        coll = self._get_or_create_collection(collection)
+        try:
+            results = coll.get(ids=chunk_ids, include=["documents", "metadatas"])
+        except Exception as exc:
+            raise StorageError(f"ChromaDB ID lookup failed: {exc}") from exc
+
+        chunks_by_id: dict[str, StoredChunk] = {}
+        for cid, doc, meta in zip(
+            results.get("ids", []),
+            results.get("documents", []),
+            results.get("metadatas", []),
+        ):
+            meta = meta or {}
+            chunks_by_id[cid] = StoredChunk(
+                chunk_id=cid,
+                text=doc or "",
+                context_text=meta.get("context_text", doc or ""),
+                score=0.0,
+                source_id=meta.get("source_id", ""),
+                doc_type=meta.get("doc_type", "unknown"),
+                metadata={
+                    key: value
+                    for key, value in meta.items()
+                    if key not in ("source_id", "doc_type", "context_text")
+                },
+            )
+        return [chunks_by_id[cid] for cid in chunk_ids if cid in chunks_by_id]
+
     def delete_by_source(
         self,
         file_path: str,

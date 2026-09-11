@@ -13,6 +13,7 @@ D12: BM25 index persisted to disk; rebuilt only when ChromaDB is newer.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 import json
 import logging
 import time
@@ -69,12 +70,33 @@ class HybridRetriever:
         self,
         bm25: list[tuple[str, float]],
         dense_results: list[StoredChunk],
-    ) -> list[StoredChunk]:
+        collection: str,
+    ) -> tuple[list[StoredChunk], list[str]]:
         dense_map = {chunk.chunk_id: chunk for chunk in dense_results}
+        bm25_only_ids = [chunk_id for chunk_id, _score in bm25 if chunk_id not in dense_map]
+        materialized: list[StoredChunk] = []
+
+        get_by_ids = getattr(self._store, "get_by_ids", None)
+        if bm25_only_ids and callable(get_by_ids):
+            try:
+                materialized = get_by_ids(bm25_only_ids, collection=collection)
+            except Exception as exc:
+                logger.warning(
+                    "Cannot materialize BM25-only candidates for '%s' by ID: %s",
+                    collection,
+                    exc,
+                )
+        elif bm25_only_ids:
+            # Compatibility path for VectorStore implementations that predate
+            # exact ID lookup. This uses the existing bounded collection scan.
+            materialized = self._load_all_chunks_from_store(collection)
+
+        chunk_map = {**dense_map, **{chunk.chunk_id: chunk for chunk in materialized}}
         results: list[StoredChunk] = []
+        missing_ids: list[str] = []
         for rank, (chunk_id, score) in enumerate(bm25, start=1):
-            if chunk_id in dense_map:
-                chunk = dense_map[chunk_id]
+            chunk = chunk_map.get(chunk_id)
+            if chunk is not None:
                 results.append(
                     StoredChunk(
                         chunk_id=chunk.chunk_id,
@@ -87,18 +109,8 @@ class HybridRetriever:
                     )
                 )
             else:
-                results.append(
-                    StoredChunk(
-                        chunk_id=chunk_id,
-                        text="",
-                        context_text="",
-                        score=round(float(score), 6),
-                        source_id=chunk_id,
-                        doc_type="unknown",
-                        metadata={"bm25_only": True, "bm25_rank": rank},
-                    )
-                )
-        return results
+                missing_ids.append(chunk_id)
+        return results, missing_ids
 
     # ------------------------------------------------------------------
     # Public API
@@ -131,19 +143,33 @@ class HybridRetriever:
 
         bm25_index, corpus_ids = self._get_bm25_index(collection)
         bm25_scores = self._bm25_search(query, bm25_index, corpus_ids, collection)
-        bm25_results = self._bm25_results_to_chunks(bm25_scores, dense_results)
-        fused = self._reciprocal_rank_fusion(dense_results, bm25_scores)
+        bm25_results, missing_bm25_ids = self._bm25_results_to_chunks(
+            bm25_scores,
+            dense_results,
+            collection,
+        )
+        fused = self._reciprocal_rank_fusion(dense_results, bm25_results)
         final = fused[: self._n_candidates]
 
         dense_ids = {chunk.chunk_id for chunk in dense_results}
         bm25_ids = {cid for cid, _ in bm25_scores}
+        warnings: list[str] = []
+        if missing_bm25_ids:
+            warnings.append("bm25_candidates_unmaterialized")
+            logger.warning(
+                "Could not materialize %d BM25 candidate(s) for '%s': %s",
+                len(missing_bm25_ids),
+                collection,
+                ", ".join(missing_bm25_ids),
+            )
+
         return {
             "query": query,
             "collection": collection,
             "dense_results": dense_results,
             "bm25_results": bm25_results,
             "fused_results": final,
-            "warnings": [],
+            "warnings": warnings,
             "diagnostics": {
                 "dense_count": len(dense_results),
                 "bm25_count": len(bm25_scores),
@@ -152,6 +178,8 @@ class HybridRetriever:
                     1 for chunk in final if chunk.chunk_id not in bm25_ids
                 ),
                 "bm25_only_candidates": sum(1 for cid in bm25_ids if cid not in dense_ids),
+                "bm25_unmaterialized_count": len(missing_bm25_ids),
+                "bm25_unmaterialized_chunk_ids": missing_bm25_ids,
             },
         }
 
@@ -397,7 +425,7 @@ class HybridRetriever:
     def _reciprocal_rank_fusion(
         self,
         dense: list[StoredChunk],
-        bm25: list[tuple[str, float]],
+        bm25: list[StoredChunk],
     ) -> list[StoredChunk]:
         """Combine dense and BM25 rankings via Reciprocal Rank Fusion.
 
@@ -412,23 +440,40 @@ class HybridRetriever:
             rrf_scores[chunk.chunk_id] += (1.0 - self._bm25_weight) / (_RRF_K + rank)
 
         # BM25 ranking
-        for rank, (cid, _score) in enumerate(bm25, start=1):
+        for fallback_rank, chunk in enumerate(bm25, start=1):
+            rank = chunk.metadata.get("bm25_rank", fallback_rank)
+            cid = chunk.chunk_id
             rrf_scores[cid] = rrf_scores.get(cid, 0.0)
             rrf_scores[cid] += self._bm25_weight / (_RRF_K + rank)
 
-        # Build a lookup from chunk_id → StoredChunk for dense results
+        # Build a lookup from chunk_id → StoredChunk for both channels.
         dense_map = {c.chunk_id: c for c in dense}
+        bm25_map = {c.chunk_id: c for c in bm25}
+        dense_ranks = {chunk.chunk_id: rank for rank, chunk in enumerate(dense, start=1)}
+        bm25_ranks = {
+            chunk.chunk_id: chunk.metadata.get("bm25_rank", fallback_rank)
+            for fallback_rank, chunk in enumerate(bm25, start=1)
+        }
 
-        # Sort by RRF score and return StoredChunks (dense results only for now;
-        # BM25-only results would need a separate fetch — acceptable for Phase 1)
         sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)
         result: list[StoredChunk] = []
         for cid in sorted_ids:
-            if cid in dense_map:
-                chunk = dense_map[cid]
-                # Update score to reflect RRF fusion score
-                object.__setattr__(chunk, "score", round(rrf_scores[cid], 6)) if hasattr(
-                    chunk, "__dataclass_fields__"
-                ) else None
-                result.append(chunk)
+            chunk = dense_map.get(cid) or bm25_map[cid]
+            metadata = dict(chunk.metadata)
+            if cid in dense_ranks:
+                metadata["dense_rank"] = dense_ranks[cid]
+            if cid in bm25_ranks:
+                metadata["bm25_rank"] = bm25_ranks[cid]
+            metadata["retrieval_channels"] = [
+                channel
+                for channel, channel_map in (("dense", dense_map), ("bm25", bm25_map))
+                if cid in channel_map
+            ]
+            result.append(
+                replace(
+                    chunk,
+                    score=round(rrf_scores[cid], 6),
+                    metadata=metadata,
+                )
+            )
         return result

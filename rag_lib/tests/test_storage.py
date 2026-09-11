@@ -152,6 +152,29 @@ class TestAddAndSearch:
         results = store.search(_fake_embedding("short text"), n_results=1)
         assert results[0].context_text == "short text [context]"
 
+    def test_get_by_ids_materializes_chunks_in_requested_order(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="test-model",
+            embed_dimensions=768,
+        )
+        first = _make_chunk("first text", "first.txt", 0)
+        second = _make_chunk("second text", "second.txt", 0)
+        store.add(
+            [first, second],
+            [_fake_embedding("first text"), _fake_embedding("second text")],
+        )
+        first_id = first.chunk_id("abc123")
+        second_id = second.chunk_id("abc123")
+
+        results = store.get_by_ids([second_id, first_id])
+
+        assert [chunk.chunk_id for chunk in results] == [second_id, first_id]
+        assert results[0].text == "second text"
+        assert results[0].context_text == "second text [context]"
+        assert results[0].source_id == "second.txt:0"
+        assert results[0].metadata["strategy"] == "fixed_size"
+
     def test_score_in_valid_range(self, tmp_dir):
         store = ChromaStorage(
             path=str(tmp_dir / "chroma"),

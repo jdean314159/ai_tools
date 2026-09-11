@@ -56,6 +56,101 @@ class TestRRF:
         score = (1 - 0.4) / (_RRF_K + 1)
         assert abs(score - 0.6 / 61) < 1e-6
 
+    def test_bm25_only_candidate_survives_fusion_with_stored_content(
+        self, mock_embedder, tmp_dir, monkeypatch
+    ):
+        dense = _make_chunk("dense result", "dense", 0.9)
+        lexical = _make_chunk("exact lexical answer", "lexical", 0.1)
+        store = _make_mock_store([dense])
+        store.get_by_ids.return_value = [lexical]
+        retriever = HybridRetriever(
+            store=store,
+            embedder=mock_embedder,
+            bm25_path=str(tmp_dir / "bm25"),
+            n_candidates=2,
+        )
+        monkeypatch.setattr(retriever, "_get_bm25_index", lambda _collection: (object(), []))
+        monkeypatch.setattr(
+            retriever,
+            "_bm25_search",
+            lambda _query, _index, _ids, _collection: [("lexical", 12.0)],
+        )
+
+        details = retriever.retrieve_with_details("exact lexical answer")
+
+        fused = {chunk.chunk_id: chunk for chunk in details["fused_results"]}
+        assert set(fused) == {"dense", "lexical"}
+        assert fused["lexical"].text == "exact lexical answer"
+        assert fused["lexical"].context_text == "exact lexical answer [expanded context]"
+        assert fused["lexical"].source_id == "doc.txt:lexical"
+        assert fused["lexical"].metadata["strategy"] == "fixed_size"
+        assert fused["lexical"].metadata["retrieval_channels"] == ["bm25"]
+        assert details["warnings"] == []
+        assert details["diagnostics"]["bm25_unmaterialized_count"] == 0
+
+        from rag_lib.pipeline import RAGPipeline
+
+        pipeline = object.__new__(RAGPipeline)
+        pipeline._config = {
+            "retriever": {"n_candidates": 2, "n_results": 2, "max_context_tokens": 200}
+        }
+        pipeline._retriever = retriever
+        pipeline._reranker = None
+        pipeline._expander = None
+        trace = pipeline.inspect_query("exact lexical answer", max_context_tokens=200)
+        traced = {document.doc_id: document for document in trace.fused_results}
+        assert set(traced) == {"dense", "lexical"}
+        assert traced["lexical"].text == "exact lexical answer [expanded context]"
+        assert traced["lexical"].source == "doc.txt:lexical"
+        assert traced["lexical"].metadata["strategy"] == "fixed_size"
+        assert traced["lexical"].metadata["retrieval_channels"] == ["bm25"]
+
+    def test_unmaterialized_bm25_candidate_emits_explicit_diagnostic(
+        self, mock_embedder, tmp_dir, monkeypatch, caplog
+    ):
+        import logging
+
+        dense = _make_chunk("dense result", "dense", 0.9)
+        store = _make_mock_store([dense])
+        store.get_by_ids.return_value = []
+        retriever = HybridRetriever(
+            store=store,
+            embedder=mock_embedder,
+            bm25_path=str(tmp_dir / "bm25"),
+        )
+        monkeypatch.setattr(retriever, "_get_bm25_index", lambda _collection: (object(), []))
+        monkeypatch.setattr(
+            retriever,
+            "_bm25_search",
+            lambda _query, _index, _ids, _collection: [("missing", 12.0)],
+        )
+
+        with caplog.at_level(logging.WARNING):
+            details = retriever.retrieve_with_details("missing lexical answer")
+
+        assert details["warnings"] == ["bm25_candidates_unmaterialized"]
+        assert details["diagnostics"]["bm25_unmaterialized_count"] == 1
+        assert details["diagnostics"]["bm25_unmaterialized_chunk_ids"] == ["missing"]
+        assert "Could not materialize 1 BM25 candidate" in caplog.text
+
+        from rag_lib.pipeline import RAGPipeline
+
+        pipeline = object.__new__(RAGPipeline)
+        pipeline._config = {
+            "retriever": {"n_candidates": 2, "n_results": 2, "max_context_tokens": 200}
+        }
+        pipeline._retriever = retriever
+        pipeline._reranker = None
+        pipeline._expander = None
+        trace = pipeline.inspect_query("missing lexical answer", max_context_tokens=200)
+        stage_event = next(
+            event for event in trace.events if event.event_type == "retrieval_stage1_completed"
+        )
+        assert stage_event.severity == "warning"
+        assert stage_event.payload["warnings"] == ["bm25_candidates_unmaterialized"]
+        assert stage_event.payload["bm25_unmaterialized_chunk_ids"] == ["missing"]
+        assert trace.diagnostics["warnings"] == ["bm25_candidates_unmaterialized"]
+
 
 class TestBudgetEnforcement:
     def test_prompt_respects_token_budget(self, mock_embedder, tmp_dir):
@@ -207,6 +302,7 @@ def _make_mock_store(chunks=None):
 
     store = MagicMock()
     store.search.return_value = chunks or []
+    store.get_by_ids.return_value = []
     store.count.return_value = len(chunks) if chunks else 0
     store.collection_metadata.return_value = {}
     return store
