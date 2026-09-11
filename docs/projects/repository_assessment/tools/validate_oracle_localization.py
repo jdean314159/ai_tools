@@ -1,4 +1,5 @@
 """Validate frozen inputs and completed evidence for the Ornith localization test."""
+
 from __future__ import annotations
 
 import argparse
@@ -275,7 +276,10 @@ def validate_generation_set(campaign_root: Path, generation_set: str) -> dict[st
             errors.append(f"{run['run_id']}: model/seed")
         raw = paths["raw"].read_bytes()
         transcript = [json.loads(line) for line in paths["transcript"].read_text().splitlines()]
-        if len(transcript) != 2 or [row.get("event") for row in transcript] != ["request", "response"]:
+        if len(transcript) != 2 or [row.get("event") for row in transcript] != [
+            "request",
+            "response",
+        ]:
             errors.append(f"{run['run_id']}: transcript shape")
             continue
         response = transcript[1]
@@ -326,9 +330,7 @@ def main() -> int:
         result["graders"] = grader_rows
         result["graders_valid"] = all(row["valid"] for row in grader_rows)
     if args.generation_set:
-        result["generation_set"] = validate_generation_set(
-            args.campaign_root, args.generation_set
-        )
+        result["generation_set"] = validate_generation_set(args.campaign_root, args.generation_set)
     result["valid"] = (
         result["inputs"]["valid"]
         and result.get("graders_valid", True)

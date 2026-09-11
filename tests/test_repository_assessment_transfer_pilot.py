@@ -50,11 +50,14 @@ def test_run_validation_checks_identity_hashes_and_budget(tmp_path: Path) -> Non
     transcript.write_text("{}\n", encoding="utf-8")
     report.write_text("No finding.\n", encoding="utf-8")
     metadata = {
-        **{field: target[field] for field in (
-            "target_commit",
-            "target_tree",
-            "target_archive_sha256",
-        )},
+        **{
+            field: target[field]
+            for field in (
+                "target_commit",
+                "target_tree",
+                "target_archive_sha256",
+            )
+        },
         "condition": "staged_scout_verifier_critic_synthesis",
         "seed": 17,
         "model": validator.MODEL_LABEL,

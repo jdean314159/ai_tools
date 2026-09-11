@@ -1,4 +1,5 @@
 """Run the frozen single-turn Ornith oracle-localization B/C matrix."""
+
 from __future__ import annotations
 
 import argparse
@@ -104,7 +105,9 @@ def run_one(
     output_dir: Path,
 ) -> dict[str, Any]:
     output_dir.mkdir(parents=False, exist_ok=False)
-    messages = render_messages(condition=run["condition"], item=item, oracle=oracle, prompts=prompts)
+    messages = render_messages(
+        condition=run["condition"], item=item, oracle=oracle, prompts=prompts
+    )
     request_record = {
         "at": utc_now(),
         "event": "request",

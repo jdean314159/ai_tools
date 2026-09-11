@@ -1,4 +1,5 @@
 """Build frozen inputs for the Ornith oracle-localization A/B/C test."""
+
 from __future__ import annotations
 
 import argparse
@@ -11,8 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_OUT = (
-    ROOT
-    / "docs/projects/repository_assessment/runs/2026-09-10-ornith-oracle-localization-abc"
+    ROOT / "docs/projects/repository_assessment/runs/2026-09-10-ornith-oracle-localization-abc"
 )
 SEEDS = (17, 31, 47)
 

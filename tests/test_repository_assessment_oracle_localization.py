@@ -8,10 +8,7 @@ import sys
 from llm_engines.contracts import ChatMessage, GenerationResponse, UsageStats
 
 
-TOOLS = (
-    Path(__file__).resolve().parents[1]
-    / "docs/projects/repository_assessment/tools"
-)
+TOOLS = Path(__file__).resolve().parents[1] / "docs/projects/repository_assessment/tools"
 
 
 def _load(name: str, filename: str):
@@ -106,7 +103,9 @@ def test_single_turn_runner_records_raw_usage_and_elapsed(tmp_path: Path) -> Non
         row for row in payloads["span-manifest.json"]["items"] if row["item_id"] == run["item_id"]
     )
     oracle = next(
-        row for row in payloads["oracle-manifest.json"]["oracles"] if row["pair_id"] == item["pair_id"]
+        row
+        for row in payloads["oracle-manifest.json"]["oracles"]
+        if row["pair_id"] == item["pair_id"]
     )
     raw = json.dumps(
         {
@@ -149,7 +148,9 @@ def test_single_turn_runner_records_raw_usage_and_elapsed(tmp_path: Path) -> Non
         output_dir=output,
     )
 
-    transcript = [json.loads(line) for line in (output / "transcript.jsonl").read_text().splitlines()]
+    transcript = [
+        json.loads(line) for line in (output / "transcript.jsonl").read_text().splitlines()
+    ]
     assert metadata["validity"] == "valid"
     assert transcript[1]["content"] == raw
     assert transcript[1]["usage"] == metadata["usage"]

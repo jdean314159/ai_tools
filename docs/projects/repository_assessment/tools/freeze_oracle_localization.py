@@ -1,4 +1,5 @@
 """Create the pre-generation freeze manifest for the Ornith localization test."""
+
 from __future__ import annotations
 
 import argparse

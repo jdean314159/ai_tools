@@ -245,9 +245,7 @@ def validate_campaign(campaign_root: Path, source_root: Path) -> dict[str, Any]:
                 }
             )
             semantic_invalidation = (
-                recorded.get("semantic_invalidation", {})
-                if isinstance(recorded, dict)
-                else {}
+                recorded.get("semantic_invalidation", {}) if isinstance(recorded, dict) else {}
             )
             if semantic_invalidation.get("invalid_test") != (
                 "test_shipped_engine_config_contains_no_private_deployment_address"

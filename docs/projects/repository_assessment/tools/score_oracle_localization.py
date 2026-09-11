@@ -1,4 +1,5 @@
 """Frozen explicit scorer for the Ornith oracle-localization A/B/C test."""
+
 from __future__ import annotations
 
 import argparse
@@ -84,7 +85,9 @@ def score_response(
     result["oracle_match"] = matched
     result["oracle_group_matches"] = groups
     if condition == "B":
-        result["localized_recall"] = kind == "defect" and parsed["verdict"] == "violation" and matched
+        result["localized_recall"] = (
+            kind == "defect" and parsed["verdict"] == "violation" and matched
+        )
         result["false_assertion"] = kind == "negative" and parsed["verdict"] == "violation"
     elif kind == "defect":
         result["correct_confirmation"] = parsed["verdict"] == "confirm" and matched
@@ -160,7 +163,9 @@ def run_controls(oracles: list[dict[str, Any]]) -> dict[str, Any]:
         },
     ]
     for row in rows:
-        row["passed"] = all(row["observed"].get(key) == value for key, value in row["expected"].items())
+        row["passed"] = all(
+            row["observed"].get(key) == value for key, value in row["expected"].items()
+        )
     return {
         "schema": "oracle-localization-scorer-controls/v1",
         "controls": rows,

@@ -87,6 +87,7 @@ def target_identity_from_args(args: argparse.Namespace) -> dict[str, str]:
         }
     )
 
+
 SCOUT_SYSTEM_PROMPT = """You are one package scout in a staged, read-only repository assessment.
 
 Your job is not to summarize the package. Find at most one real, currently actionable defect in
