@@ -52,6 +52,14 @@ class TestMockEngineConformance:
 class TestMockEngineFeatures:
     """MockEngine-specific behaviour (not part of the Protocol contract)."""
 
+    def test_seed_is_reported_not_honored(self, engine: MockEngine) -> None:
+        request = GenerationRequest(
+            messages=[ChatMessage(role="user", content="seed probe")],
+            seed=42,
+        )
+
+        assert engine.generate(request).seed_status == "not_honored"
+
     def test_call_count_increments(self, engine: MockEngine) -> None:
         req = GenerationRequest(messages=[ChatMessage(role="user", content="Hi")])
         engine.generate(req)

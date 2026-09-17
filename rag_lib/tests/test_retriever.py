@@ -151,6 +151,40 @@ class TestRRF:
         assert stage_event.payload["bm25_unmaterialized_chunk_ids"] == ["missing"]
         assert trace.diagnostics["warnings"] == ["bm25_candidates_unmaterialized"]
 
+    def test_bm25_scoring_failure_is_visible(self, mock_embedder, tmp_dir, monkeypatch):
+        dense = _make_chunk("dense result", "dense", 0.9)
+        retriever = HybridRetriever(
+            store=_make_mock_store([dense]),
+            embedder=mock_embedder,
+            bm25_path=str(tmp_dir / "bm25"),
+        )
+        monkeypatch.setattr(retriever, "_get_bm25_index", lambda _collection: (object(), []))
+
+        def fail_search(*_args):
+            raise RuntimeError("fabricated lexical failure")
+
+        monkeypatch.setattr(retriever, "_bm25_search", fail_search)
+
+        details = retriever.retrieve_with_details("query")
+
+        assert details["warnings"] == ["bm25_search_failed"]
+        assert details["diagnostics"]["bm25_count"] == 0
+        assert "fabricated lexical failure" in details["diagnostics"]["bm25_search_error"]
+        assert [chunk.chunk_id for chunk in details["fused_results"]] == ["dense"]
+
+    def test_retrieve_enforces_final_result_count(self, mock_embedder, tmp_dir, monkeypatch):
+        chunks = [_make_chunk(f"result {index}", f"c{index}", 1.0 - index / 10) for index in range(4)]
+        retriever = HybridRetriever(
+            store=_make_mock_store(chunks),
+            embedder=mock_embedder,
+            bm25_path=str(tmp_dir / "bm25"),
+            n_candidates=4,
+            n_results=2,
+        )
+        monkeypatch.setattr(retriever, "_get_bm25_index", lambda _collection: (None, []))
+
+        assert len(retriever.retrieve("query")) == 2
+
 
 class TestBudgetEnforcement:
     def test_prompt_respects_token_budget(self, mock_embedder, tmp_dir):

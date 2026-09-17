@@ -89,7 +89,14 @@ class HybridRetriever:
         elif bm25_only_ids:
             # Compatibility path for VectorStore implementations that predate
             # exact ID lookup. This uses the existing bounded collection scan.
-            materialized = self._load_all_chunks_from_store(collection)
+            try:
+                materialized = self._load_all_chunks_from_store(collection)
+            except Exception as exc:
+                logger.warning(
+                    "Cannot materialize BM25-only candidates for '%s' by scan: %s",
+                    collection,
+                    exc,
+                )
 
         chunk_map = {**dense_map, **{chunk.chunk_id: chunk for chunk in materialized}}
         results: list[StoredChunk] = []
@@ -141,8 +148,14 @@ class HybridRetriever:
             collection=collection,
         )
 
-        bm25_index, corpus_ids = self._get_bm25_index(collection)
-        bm25_scores = self._bm25_search(query, bm25_index, corpus_ids, collection)
+        bm25_error: str | None = None
+        try:
+            bm25_index, corpus_ids = self._get_bm25_index(collection)
+            bm25_scores = self._bm25_search(query, bm25_index, corpus_ids, collection)
+        except Exception as exc:
+            bm25_scores = []
+            bm25_error = f"{type(exc).__name__}: {exc}"
+            logger.warning("BM25 search failed for '%s': %s", collection, exc)
         bm25_results, missing_bm25_ids = self._bm25_results_to_chunks(
             bm25_scores,
             dense_results,
@@ -154,6 +167,8 @@ class HybridRetriever:
         dense_ids = {chunk.chunk_id for chunk in dense_results}
         bm25_ids = {cid for cid, _ in bm25_scores}
         warnings: list[str] = []
+        if bm25_error is not None:
+            warnings.append("bm25_search_failed")
         if missing_bm25_ids:
             warnings.append("bm25_candidates_unmaterialized")
             logger.warning(
@@ -180,6 +195,7 @@ class HybridRetriever:
                 "bm25_only_candidates": sum(1 for cid in bm25_ids if cid not in dense_ids),
                 "bm25_unmaterialized_count": len(missing_bm25_ids),
                 "bm25_unmaterialized_chunk_ids": missing_bm25_ids,
+                "bm25_search_error": bm25_error,
             },
         }
 
@@ -189,7 +205,7 @@ class HybridRetriever:
         collection: str = "default",
     ) -> list[StoredChunk]:
         details = self.retrieve_with_details(query, collection=collection)
-        return list(details.get("fused_results", []))
+        return list(details.get("fused_results", []))[: self._n_results]
 
     def assemble_prompt_with_selection(
         self,
@@ -363,6 +379,7 @@ class HybridRetriever:
             store_count = self._store.count(collection)
         except Exception as exc:
             logger.warning("Cannot validate BM25 count for '%s': %s", collection, exc)
+            return True
         else:
             if isinstance(store_count, int) and store_count != len(ids):
                 return True
@@ -371,7 +388,7 @@ class HybridRetriever:
             metadata = self._store.collection_metadata(collection)
         except Exception as exc:
             logger.warning("Cannot validate BM25 timestamp for '%s': %s", collection, exc)
-            return False
+            return True
         if not isinstance(metadata, Mapping):
             return False
 
@@ -388,17 +405,14 @@ class HybridRetriever:
 
     def _load_all_chunks_from_store(self, collection: str) -> list[StoredChunk]:
         """Retrieve all chunks from ChromaDB for BM25 index building."""
-        try:
-            # Use a broad search with a zero vector to get all chunks
-            dims = self._embedder.dimensions()
-            zero_vec = [0.0] * dims
-            count = self._store.count(collection)
-            if count == 0:
-                return []
-            return self._store.search(zero_vec, n_results=min(count, 10_000), collection=collection)
-        except Exception as exc:
-            logger.warning("Cannot load chunks from store for BM25: %s", exc)
+        # Storage failures propagate so callers can record lexical-channel
+        # degradation instead of treating a broken store as an empty corpus.
+        dims = self._embedder.dimensions()
+        zero_vec = [0.0] * dims
+        count = self._store.count(collection)
+        if count == 0:
             return []
+        return self._store.search(zero_vec, n_results=min(count, 10_000), collection=collection)
 
     def _bm25_search(
         self,
@@ -410,17 +424,13 @@ class HybridRetriever:
         """Return (chunk_id, score) pairs from BM25 search."""
         if index is None or not corpus_ids:
             return []
-        try:
-            scores = index.get_scores(query.lower().split())
-            ranked = sorted(
-                zip(corpus_ids, scores),
-                key=lambda x: x[1],
-                reverse=True,
-            )
-            return ranked[: self._n_candidates]
-        except Exception as exc:
-            logger.debug("BM25 search failed: %s", exc)
-            return []
+        scores = index.get_scores(query.lower().split())
+        ranked = sorted(
+            zip(corpus_ids, scores),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+        return ranked[: self._n_candidates]
 
     def _reciprocal_rank_fusion(
         self,

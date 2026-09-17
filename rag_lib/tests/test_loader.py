@@ -165,6 +165,8 @@ class TestTextLoading:
         doc = loader.load(txt)
         assert len(doc.file_hash) == 16
         assert all(c in "0123456789abcdef" for c in doc.file_hash)
+        assert len(doc.content_digest) == 64
+        assert doc.content_digest.startswith(doc.file_hash)
 
     def test_same_file_same_hash(self, tmp_path):
         loader = _make_loader()
@@ -200,3 +202,11 @@ class TestDirectoryLoading:
 
         docs = loader.load_directory(tmp_path)
         assert len(docs) == 1  # only good.txt
+
+    def test_strict_directory_load_rejects_skipped_supported_file(self, tmp_path):
+        loader = _make_loader()
+        (tmp_path / "good.txt").write_text("word " * 20)
+        (tmp_path / "bad.txt").write_text("x")
+
+        with pytest.raises(LoaderError, match="Failed to load.*bad.txt"):
+            loader.load_directory(tmp_path, strict=True)

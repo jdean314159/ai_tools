@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING, Any
 
 from .config import load_config, get
@@ -37,6 +37,22 @@ if TYPE_CHECKING:
     from .eval.ragas_runner import EvalReport
 
 logger = logging.getLogger(__name__)
+
+
+def _validated_source_id(source_id: str) -> str:
+    """Return a portable relative source id or fail before it reaches metadata."""
+
+    windows_path = PureWindowsPath(source_id)
+    if (
+        not source_id
+        or Path(source_id).is_absolute()
+        or windows_path.is_absolute()
+        or bool(windows_path.drive)
+    ):
+        raise ValueError("source_id must be a non-empty relative identifier")
+    if ".." in PurePosixPath(source_id.replace("\\", "/")).parts:
+        raise ValueError("source_id must not contain '..' path segments")
+    return source_id
 
 # llm_engines.contracts types — imported lazily so rag_lib core can be
 # imported without llm_engines installed (e.g. in unit tests with mocks)
@@ -251,11 +267,13 @@ class RAGPipeline:
         stage1_results = sorted(merged_map.values(), key=lambda c: c.score, reverse=True)[
             :n_candidates
         ]
-        reranked_results = stage1_results
+        n_results = self._config.get("retriever", {}).get("n_results", 5)
+        reranked_results = stage1_results[:n_results]
         if self._reranker is not None and stage1_results:
-            n_results = self._config.get("retriever", {}).get("n_results", 5)
             try:
-                reranked_results = self._reranker.rerank(query, stage1_results, k=n_results)
+                reranked_results = self._reranker.rerank(query, stage1_results, k=n_results)[
+                    :n_results
+                ]
                 events.append(
                     TraceEvent(
                         event_type="retrieval_reranked",
@@ -273,6 +291,7 @@ class RAGPipeline:
                 )
             except Exception as exc:
                 logger.warning("Reranker failed, using Stage 1 results: %s", exc)
+                reranked_results = stage1_results[:n_results]
                 events.append(
                     TraceEvent(
                         event_type="retrieval_rerank_failed",
@@ -349,53 +368,96 @@ class RAGPipeline:
         *,
         doc_type: str = "unknown",
         collection: str = "default",
+        source_id: str | None = None,
+        strict: bool = False,
     ) -> IngestResult:
         """Ingest a single document into the vector store.
 
         D14: Re-ingesting a modified file deletes old chunks first.
         Tables are extracted and converted to NL sentences before chunking.
+
+        Args:
+            path: Source artifact to load.
+            doc_type: Chunking strategy selector.
+            collection: Target collection.
+            source_id: Optional sanitized relative identifier stored instead of
+                the local filesystem path.
+            strict: Raise on any loading, processing, storage, or BM25 failure.
         """
         path = Path(path)
         errors: list[str] = []
+        safe_source_id = _validated_source_id(source_id) if source_id is not None else None
 
         # Load document
         try:
             doc: LoadedDocument = self._loader.load(path, doc_type=doc_type)
         except LoaderError as exc:
             logger.warning("Ingest failed for %s: %s", path.name, exc)
-            return IngestResult(
-                source_path=str(path),
+            result = IngestResult(
+                source_path=safe_source_id or str(path),
                 doc_type=doc_type,
                 chunks_stored=0,
                 tables_processed=0,
                 collection=collection,
                 errors=[str(exc)],
             )
+            if strict:
+                raise
+            return result
+
+        if safe_source_id is not None:
+            doc.source_path = safe_source_id
 
         # D14: delete existing chunks for this file before re-ingesting
-        deleted = self._store.delete_by_source(str(path), collection=collection)
+        try:
+            deleted = self._store.delete_by_source(doc.source_path, collection=collection)
+        except StorageError as exc:
+            message = f"Could not remove prior chunks: {exc}"
+            if strict:
+                raise RagLibError(message) from exc
+            return IngestResult(
+                source_path=doc.source_path,
+                doc_type=doc_type,
+                chunks_stored=0,
+                tables_processed=0,
+                collection=collection,
+                errors=[message],
+            )
         if deleted:
             logger.debug("Re-ingest: deleted %d old chunks from '%s'", deleted, path.name)
 
         # Process tables into NL sentences
         table_chunks, table_errors = self._process_tables(doc)
         errors.extend(table_errors)
+        if table_errors and strict:
+            raise RagLibError("; ".join(table_errors))
 
         # Chunk the prose
         try:
             prose_chunks = self._chunker.chunk(doc)
         except RagLibError as exc:
             logger.warning("Chunking failed for %s: %s", path.name, exc)
-            return IngestResult(
-                source_path=str(path),
+            result = IngestResult(
+                source_path=doc.source_path,
                 doc_type=doc_type,
                 chunks_stored=0,
                 tables_processed=len(table_chunks),
                 collection=collection,
                 errors=[str(exc)],
             )
+            if strict:
+                raise
+            return result
 
         all_chunks = prose_chunks + table_chunks
+        if safe_source_id is not None:
+            for chunk in all_chunks:
+                suffix = (
+                    f"table_{chunk.metadata.get('table_index', chunk.chunk_index)}"
+                    if chunk.metadata.get("is_table")
+                    else str(chunk.chunk_index)
+                )
+                chunk.source_id = f"{safe_source_id}:{suffix}"
 
         # Contextual enrichment — sets embed_text on each chunk (opt-in)
         if self._enricher is not None:
@@ -410,13 +472,26 @@ class RAGPipeline:
             )
 
         # Embed and store
-        chunks_stored = self._embed_and_store(all_chunks, doc.file_hash, collection)
+        chunks_stored, storage_error = self._embed_and_store(
+            all_chunks,
+            doc.file_hash,
+            collection,
+            source_digest=doc.content_digest,
+        )
+        if storage_error is not None:
+            errors.append(storage_error)
+            if strict:
+                raise RagLibError(storage_error)
 
         # Update BM25 index (D12: rebuild after every ingest)
-        self._update_bm25(collection)
+        bm25_error = self._update_bm25(collection)
+        if bm25_error is not None:
+            errors.append(bm25_error)
+            if strict:
+                raise RagLibError(bm25_error)
 
         result = IngestResult(
-            source_path=str(path),
+            source_path=doc.source_path,
             doc_type=doc_type,
             chunks_stored=chunks_stored,
             tables_processed=len(table_chunks),
@@ -440,6 +515,7 @@ class RAGPipeline:
         default_doc_type: str = "unknown",
         collection: str = "default",
         recursive: bool = True,
+        strict: bool = False,
     ) -> list[IngestResult]:
         """Ingest all supported files from a directory.
 
@@ -453,6 +529,7 @@ class RAGPipeline:
             default_doc_type: Used when no pattern matches.
             collection:      Target ChromaDB collection.
             recursive:       Walk subdirectories.
+            strict:          Fail on skipped inputs or ingestion-stage degradation.
         """
         # When no doc_type_map or fallback needed, use heuristic classifier
         effective_default = default_doc_type
@@ -461,6 +538,7 @@ class RAGPipeline:
             doc_type_map=doc_type_map,
             default_doc_type=effective_default,
             recursive=recursive,
+            strict=strict,
         )
 
         # Apply heuristic to docs that still have "unknown" doc_type
@@ -476,15 +554,35 @@ class RAGPipeline:
         results: list[IngestResult] = []
         for doc in docs:
             # D14: delete old chunks for each file
-            deleted = self._store.delete_by_source(doc.source_path, collection=collection)
+            try:
+                deleted = self._store.delete_by_source(doc.source_path, collection=collection)
+            except StorageError as exc:
+                message = f"Could not remove prior chunks: {exc}"
+                if strict:
+                    raise RagLibError(message) from exc
+                results.append(
+                    IngestResult(
+                        source_path=doc.source_path,
+                        doc_type=doc.doc_type,
+                        chunks_stored=0,
+                        tables_processed=0,
+                        collection=collection,
+                        errors=[message],
+                    )
+                )
+                continue
             if deleted:
                 logger.debug("Re-ingest: deleted %d old chunks from '%s'", deleted, doc.source_path)
 
             table_chunks, table_errors = self._process_tables(doc)
+            if table_errors and strict:
+                raise RagLibError("; ".join(table_errors))
 
             try:
                 prose_chunks = self._chunker.chunk(doc)
             except RagLibError as exc:
+                if strict:
+                    raise
                 results.append(
                     IngestResult(
                         source_path=doc.source_path,
@@ -509,7 +607,17 @@ class RAGPipeline:
                     doc_intro=doc_intro,
                     file_hash=doc.file_hash,
                 )
-            chunks_stored = self._embed_and_store(all_chunks, doc.file_hash, collection)
+            chunks_stored, storage_error = self._embed_and_store(
+                all_chunks,
+                doc.file_hash,
+                collection,
+                source_digest=doc.content_digest,
+            )
+            item_errors = list(table_errors)
+            if storage_error is not None:
+                item_errors.append(storage_error)
+                if strict:
+                    raise RagLibError(storage_error)
 
             results.append(
                 IngestResult(
@@ -518,12 +626,17 @@ class RAGPipeline:
                     chunks_stored=chunks_stored,
                     tables_processed=len(table_chunks),
                     collection=collection,
-                    errors=table_errors,
+                    errors=item_errors,
                 )
             )
 
         # Rebuild BM25 once after the full directory ingest (D12)
-        self._update_bm25(collection)
+        bm25_error = self._update_bm25(collection)
+        if bm25_error is not None:
+            if strict:
+                raise RagLibError(bm25_error)
+            for result in results:
+                result.errors.append(bm25_error)
 
         total_chunks = sum(r.chunks_stored for r in results)
         logger.info(
@@ -731,6 +844,7 @@ class RAGPipeline:
             path=storage_cfg.get("path", "~/.rag_lib/chroma"),
             collection_prefix=storage_cfg.get("collection_prefix", "rag_"),
             embed_model=self._embed_model,
+            embed_model_digest=embedder_cfg.get("model_digest"),
         )
 
         self._loader = DocumentLoader(
@@ -854,14 +968,18 @@ class RAGPipeline:
         chunks: list[Any],
         file_hash: str,
         collection: str,
-    ) -> int:
-        """Embed chunks and store in ChromaDB. Returns count stored."""
+        *,
+        source_digest: str = "",
+    ) -> tuple[int, str | None]:
+        """Embed and store chunks, returning count plus any explicit failure."""
         if not chunks:
-            return 0
+            return 0, "No chunks were available to embed and store"
 
         # Annotate file_hash for content-addressed IDs
         for chunk in chunks:
             chunk.metadata["file_hash"] = file_hash
+            if source_digest:
+                chunk.metadata["source_digest"] = f"sha256:{source_digest}"
 
         # Use embed_text (contextually enriched) if set; falls back to text
         texts = [c.embed_text if c.embed_text else c.text for c in chunks]
@@ -869,21 +987,23 @@ class RAGPipeline:
             embeddings = self._embedder.embed(texts, validate_tokens=True)
         except RagLibError as exc:
             logger.warning("Embedding failed: %s", exc)
-            return 0
+            return 0, f"Embedding failed: {exc}"
 
         try:
             self._store.add(chunks, embeddings, collection=collection)
         except StorageError as exc:
             logger.warning("Storage failed: %s", exc)
-            return 0
+            return 0, f"Storage failed: {exc}"
 
-        return len(chunks)
+        return len(chunks), None
 
-    def _update_bm25(self, collection: str) -> None:
-        """Rebuild BM25 index after ingestion (D12)."""
+    def _update_bm25(self, collection: str) -> str | None:
+        """Rebuild BM25 and return an explicit degradation message on failure."""
         try:
             all_chunks = self._retriever._load_all_chunks_from_store(collection)
             if all_chunks:
                 self._retriever.build_bm25_index(all_chunks, collection)
+            return None
         except Exception as exc:
             logger.warning("BM25 rebuild failed for '%s': %s", collection, exc)
+            return f"BM25 rebuild failed for '{collection}': {exc}"

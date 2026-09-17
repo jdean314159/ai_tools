@@ -25,6 +25,19 @@ from .contracts import ChatModel, GenerationRequest, GenerationResponse
 GENERATION_BODY_VERSION = 1
 RECORDER_VERSION = "1"
 
+# Temporary recorder capability boundary, not a claim about backend support.
+# Remove each path when the recorder gains a truthful capture path for that
+# fact; the regression test deliberately makes that capability change explicit.
+_UNSUPPORTED_EXECUTION_FACT_PATHS = (
+    "/body/model_identity/digest",
+    "/body/model_identity/quantization",
+    "/envelope/execution_environment/runtime_build",
+    "/envelope/execution_environment/tokenizer",
+    "/envelope/execution_environment/chat_template",
+    "/body/response/usage/queue_ms",
+    "/body/response/usage/prefill_ms",
+)
+
 
 @dataclass(frozen=True)
 class GenerationRecordingPolicy:
@@ -182,16 +195,8 @@ def build_generation_artifact(
     raw_payload = response_payload.pop("raw_provider_payload", None)
     omissions = _usage_omissions(response)
     omissions.extend(
-        Omission(field_path=path, reason="not_reported_by_backend")
-        for path in (
-            "/body/model_identity/digest",
-            "/body/model_identity/quantization",
-            "/envelope/execution_environment/runtime_build",
-            "/envelope/execution_environment/tokenizer",
-            "/envelope/execution_environment/chat_template",
-            "/body/response/usage/queue_ms",
-            "/body/response/usage/prefill_ms",
-        )
+        Omission(field_path=path, reason="unsupported_by_recorder")
+        for path in _UNSUPPORTED_EXECUTION_FACT_PATHS
     )
     if raw_payload is not None:
         if policy.include_raw_provider_payload:
@@ -207,7 +212,11 @@ def build_generation_artifact(
         omissions.append(
             Omission(
                 field_path="/body/response/raw_provider_payload",
-                reason="not_reported_by_backend",
+                # The normalized GenerationResponse carries no raw payload.
+                # That can reflect adapter capture policy (for example debug
+                # mode being disabled), so do not make a claim about what the
+                # provider returned.
+                reason="absent_in_source_format",
             )
         )
     body = {

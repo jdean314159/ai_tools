@@ -117,7 +117,33 @@ def test_partial_telemetry_is_omitted_not_zero() -> None:
     assert omissions["/body/response/usage/input_tokens"] == "not_reported_by_backend"
     assert omissions["/body/response/cache_stats"] == "not_reported_by_backend"
     assert artifact.body["response"]["usage"]["input_tokens"] is None
-    assert omissions["/body/model_identity/digest"] == "not_reported_by_backend"
+
+
+def test_uncaptured_execution_facts_are_recorder_limitations() -> None:
+    artifact = _artifact()
+    omissions = {item.field_path: item.reason for item in artifact.envelope.omissions}
+
+    unsupported_paths = {
+        "/body/model_identity/digest",
+        "/body/model_identity/quantization",
+        "/envelope/execution_environment/runtime_build",
+        "/envelope/execution_environment/tokenizer",
+        "/envelope/execution_environment/chat_template",
+        "/body/response/usage/queue_ms",
+        "/body/response/usage/prefill_ms",
+    }
+
+    assert {path for path, reason in omissions.items() if reason == "unsupported_by_recorder"} == (
+        unsupported_paths
+    )
+    assert all(omissions[path] != "not_reported_by_backend" for path in unsupported_paths)
+
+
+def test_absent_raw_payload_does_not_claim_backend_failed_to_report_it() -> None:
+    artifact = _artifact()
+    omissions = {item.field_path: item.reason for item in artifact.envelope.omissions}
+
+    assert omissions["/body/response/raw_provider_payload"] == "absent_in_source_format"
 
 
 def test_reported_cache_and_optimization_metadata_are_preserved() -> None:

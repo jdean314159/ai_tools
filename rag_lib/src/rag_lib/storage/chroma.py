@@ -16,6 +16,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import threading
 import time
 from pathlib import Path
@@ -35,6 +36,8 @@ class ChromaStorage:
         collection_prefix: Prefix added to all collection names.
         embed_model:      Name of the embedding model used to build vectors.
                           Stored in collection metadata and verified on each retrieve.
+        embed_model_digest: Optional exact model digest. A digest-pinned collection
+                            can only be reopened with the same digest.
         embed_dimensions: Dimension count of the embedding model. Stored at creation.
     """
 
@@ -43,12 +46,19 @@ class ChromaStorage:
         path: str | Path = "~/.rag_lib/chroma",
         collection_prefix: str = "rag_",
         embed_model: str = "nomic-embed-text-v2-moe",
+        embed_model_digest: str | None = None,
         embed_dimensions: int | None = None,
     ) -> None:
         self._path = Path(path).expanduser()
         self._path.mkdir(parents=True, exist_ok=True)
         self._prefix = collection_prefix
         self._embed_model = embed_model
+        if (
+            embed_model_digest is not None
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", embed_model_digest) is None
+        ):
+            raise StorageError("embed_model_digest must be 'sha256:' plus 64 lowercase hex chars")
+        self._embed_model_digest = embed_model_digest
         self._embed_dimensions = embed_dimensions
         self._lock = threading.Lock()
         self._client = self._make_client()
@@ -72,26 +82,44 @@ class ChromaStorage:
                 f"Chunk count ({len(chunks)}) != embedding count ({len(embeddings)})"
             )
 
-        coll = self._get_or_create_collection(collection)
+        dimensions = {len(embedding) for embedding in embeddings}
+        if len(dimensions) != 1:
+            raise StorageError("All embeddings in one add() call must have the same dimensions")
+        observed_dimensions = dimensions.pop()
+        if self._embed_dimensions is None:
+            self._embed_dimensions = observed_dimensions
+        elif observed_dimensions != self._embed_dimensions:
+            raise StorageError(
+                f"Embedding dimensions ({observed_dimensions}) do not match configured "
+                f"dimensions ({self._embed_dimensions})"
+            )
 
-        # Discover dimensions from first embedding if not yet known
-        if self._embed_dimensions is None and embeddings:
-            self._embed_dimensions = len(embeddings[0])
+        # Create only after dimensions are known so new collection metadata is complete.
+        coll = self._get_or_create_collection(collection)
 
         ids, docs, metas = [], [], []
         for chunk, emb in zip(chunks, embeddings):
             file_hash = chunk.metadata.get("file_hash", "0" * 16)
             cid = chunk.chunk_id(file_hash) if hasattr(chunk, "chunk_id") else chunk.source_id
+            stored_context = chunk.context_text[:4096]
+            context_truncated = len(stored_context) != len(chunk.context_text)
 
             meta = {
                 "source_id": chunk.source_id,
                 "doc_type": chunk.doc_type,
-                "context_text": chunk.context_text[:4096],  # ChromaDB metadata char limit
+                "context_text": stored_context,  # ChromaDB metadata char limit
+                "chunk_digest": "sha256:"
+                + hashlib.sha256(stored_context.encode("utf-8")).hexdigest(),
+                "context_truncated": context_truncated,
+                "context_original_chars": len(chunk.context_text),
+                "context_original_digest": "sha256:"
+                + hashlib.sha256(chunk.context_text.encode("utf-8")).hexdigest(),
                 "strategy": chunk.metadata.get("strategy", "unknown"),
                 "is_table": bool(chunk.metadata.get("is_table", False)),
                 "page": int(chunk.metadata.get("page", -1)),
                 "section": str(chunk.metadata.get("section", "")),
                 "file_hash": file_hash,
+                "source_digest": str(chunk.metadata.get("source_digest", "")),
             }
 
             ids.append(cid)
@@ -119,6 +147,11 @@ class ChromaStorage:
     ) -> list[StoredChunk]:
         """Return up to n_results chunks by cosine similarity (D13)."""
         coll = self._get_or_create_collection(collection)
+        if self._embed_dimensions is not None and len(query_vector) != self._embed_dimensions:
+            raise StorageError(
+                f"Query dimensions ({len(query_vector)}) do not match collection dimensions "
+                f"({self._embed_dimensions})"
+            )
         count = coll.count()
         if count == 0:
             return []
@@ -203,10 +236,13 @@ class ChromaStorage:
         collection: str = "default",
     ) -> int:
         """Delete all chunks from a specific source file (D14: re-ingest dedup)."""
+        full_name = f"{self._prefix}{collection}"
+        if full_name not in [item.name for item in self._client.list_collections()]:
+            return 0
         coll = self._get_or_create_collection(collection)
         try:
             results = coll.get(
-                where={"source_id": {"$regex": f"^{re.escape(file_path)}"}},
+                where={"source_id": {"$regex": f"^{re.escape(file_path)}:"}},
                 include=["metadatas"],
             )
         except Exception:
@@ -219,11 +255,10 @@ class ChromaStorage:
                         results.get("ids", []),
                         results.get("metadatas", []),
                     )
-                    if meta.get("source_id", "").startswith(file_path)
+                    if meta.get("source_id", "").startswith(f"{file_path}:")
                 ]
             except Exception as exc:
-                logger.warning("delete_by_source failed for '%s': %s", file_path, exc)
-                return 0
+                raise StorageError(f"delete_by_source failed for '{file_path}': {exc}") from exc
         else:
             ids_to_delete = results.get("ids", [])
 
@@ -264,8 +299,49 @@ class ChromaStorage:
         try:
             coll = self._get_or_create_collection(collection)
             return coll.count()
-        except Exception:
-            return 0
+        except StorageError:
+            raise
+        except Exception as exc:
+            raise StorageError(f"Cannot count collection '{collection}': {exc}") from exc
+
+    def collection_inventory(self, collection: str = "default") -> list[dict[str, Any]]:
+        """Return every chunk id and receipt-relevant metadata, with no prose.
+
+        Unlike ``get_sources()``, this is fail-closed: callers use it to build
+        durable post-ingestion receipts, so an unreadable collection cannot be
+        represented as an empty one.
+        """
+
+        try:
+            coll = self._get_or_create_collection(collection)
+            results = coll.get(include=["metadatas"])
+            ids = results.get("ids", [])
+            metadatas = results.get("metadatas", [])
+            if not isinstance(ids, list) or not isinstance(metadatas, list):
+                raise StorageError("Collection inventory returned invalid ids or metadata")
+            if len(ids) != len(metadatas):
+                raise StorageError("Collection inventory id/metadata counts differ")
+            inventory: list[dict[str, Any]] = []
+            for chunk_id, metadata in zip(ids, metadatas):
+                if not isinstance(chunk_id, str) or not chunk_id:
+                    raise StorageError("Collection inventory contains an invalid chunk id")
+                if not isinstance(metadata, dict):
+                    raise StorageError(
+                        f"Collection inventory metadata is missing for chunk '{chunk_id}'"
+                    )
+                inventory.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "source_id": metadata.get("source_id"),
+                        "source_digest": metadata.get("source_digest"),
+                        "chunk_digest": metadata.get("chunk_digest"),
+                    }
+                )
+            return sorted(inventory, key=lambda item: item["chunk_id"])
+        except StorageError:
+            raise
+        except Exception as exc:
+            raise StorageError(f"Cannot inventory collection '{collection}': {exc}") from exc
 
     def get_sources(self, collection: str = "default") -> list[str]:
         """Return unique source file paths in a collection."""
@@ -402,6 +478,26 @@ class ChromaStorage:
                     f"  2. Delete and rebuild: pipeline.delete_collection('{name}') "
                     "then re-ingest."
                 )
+            stored_digest = (coll.metadata or {}).get("embed_model_digest")
+            if stored_digest != self._embed_model_digest and (
+                stored_digest is not None or self._embed_model_digest is not None
+            ):
+                raise StorageError(
+                    f"Collection '{name}' embed_model_digest does not match the current "
+                    "embedding model. Reopen with the pinned digest or rebuild the collection."
+                )
+            stored_dimensions = (coll.metadata or {}).get("embed_dimensions")
+            if stored_dimensions is not None and self._embed_dimensions is None:
+                self._embed_dimensions = int(stored_dimensions)
+            if (
+                stored_dimensions is not None
+                and self._embed_dimensions is not None
+                and int(stored_dimensions) != self._embed_dimensions
+            ):
+                raise StorageError(
+                    f"Collection '{name}' was built with embed_dimensions={stored_dimensions} "
+                    f"but current embeddings use {self._embed_dimensions}"
+                )
         else:
             # D13: always create with cosine distance
             created_at = time.time()
@@ -412,6 +508,8 @@ class ChromaStorage:
             }
             if self._embed_dimensions is not None:
                 meta["embed_dimensions"] = self._embed_dimensions
+            if self._embed_model_digest is not None:
+                meta["embed_model_digest"] = self._embed_model_digest
 
             coll = self._client.create_collection(
                 name=full_name,
@@ -429,7 +527,3 @@ class ChromaStorage:
 
         self._collections[name] = coll
         return coll
-
-
-# Import here to avoid circular at module level
-import re  # noqa: E402 (used in delete_by_source)

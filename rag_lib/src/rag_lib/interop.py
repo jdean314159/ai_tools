@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
+import math
+import re
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any, Collection, Iterable, Mapping
 
 from llm_harness_core import (
     CapabilityDescriptor,
@@ -10,6 +13,11 @@ from llm_harness_core import (
     RetrievedDocument,
     TraceEvent,
 )
+
+
+_SAFE_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$")
+_RETRIEVAL_CHANNELS = frozenset({"dense", "bm25"})
+_CHANNEL_DIAGNOSTICS = frozenset({"bm25_search_failed", "bm25_candidates_unmaterialized"})
 
 
 def _doc_provenance(doc: RetrievedDocument) -> dict[str, Any]:
@@ -120,6 +128,144 @@ class RetrievalTrace:
         value = dict(result.value or {})
         value["diagnostics"] = dict(result.diagnostics)
         return value
+
+    def to_identifier_projection(
+        self,
+        *,
+        entry_id_by_source: Mapping[str, str],
+        allowed_entry_ids: Collection[str],
+        use_selected_results: bool = False,
+    ) -> dict[str, Any]:
+        """Return a fail-closed trace projection containing no source text or paths.
+
+        This is a building block for evaluator traces, not the complete M3 trace
+        schema. Callers must supply the frozen-corpus entry-id mapping and exact
+        allowlist. Unresolved, path-like, or out-of-allowlist identifiers are
+        rejected rather than copied into the projection.
+        """
+
+        allowed = frozenset(allowed_entry_ids)
+        if not allowed:
+            raise ValueError("allowed_entry_ids must not be empty")
+        invalid_allowed = sorted(
+            repr(entry_id)
+            for entry_id in allowed
+            if not isinstance(entry_id, str) or _SAFE_IDENTIFIER_RE.fullmatch(entry_id) is None
+        )
+        if invalid_allowed:
+            raise ValueError(f"allowed_entry_ids contains unsafe identifiers: {invalid_allowed!r}")
+
+        stage_events = [
+            event for event in self.events if event.event_type == "retrieval_stage1_completed"
+        ]
+        if not stage_events:
+            raise ValueError("retrieval trace has no Stage 1 channel execution evidence")
+        dense_count = 0
+        bm25_count = 0
+        channel_diagnostics: set[str] = set()
+        for event in stage_events:
+            payload = dict(event.payload)
+            for field_name in ("dense_count", "bm25_count"):
+                value = payload.get(field_name)
+                if type(value) is not int or value < 0:
+                    raise ValueError(f"retrieval Stage 1 event has invalid {field_name}: {value!r}")
+            dense_count += payload["dense_count"]
+            bm25_count += payload["bm25_count"]
+            warnings = payload.get("warnings", [])
+            if not isinstance(warnings, list) or any(
+                not isinstance(warning, str) for warning in warnings
+            ):
+                raise ValueError("retrieval Stage 1 event has invalid warnings")
+            unknown_warnings = set(warnings) - _CHANNEL_DIAGNOSTICS
+            if unknown_warnings:
+                raise ValueError(
+                    f"retrieval Stage 1 event has unsupported diagnostics: "
+                    f"{sorted(unknown_warnings)!r}"
+                )
+            channel_diagnostics.update(warnings)
+
+        channel_execution = {
+            "dense": {
+                "attempted": True,
+                "status": "completed",
+                "result_count": dense_count,
+                "diagnostic_codes": [],
+            },
+            "bm25": {
+                "attempted": True,
+                "status": "degraded" if channel_diagnostics else "completed",
+                "result_count": bm25_count,
+                "diagnostic_codes": sorted(channel_diagnostics),
+            },
+        }
+
+        documents = self.selected_results if use_selected_results else self.reranked_results
+        if not documents and not use_selected_results:
+            documents = self.fused_results
+
+        retrieved: list[dict[str, Any]] = []
+        for rank, doc in enumerate(documents, start=1):
+            metadata = dict(doc.metadata)
+            source_id = str(metadata.get("source_id") or doc.source)
+            source_base = source_id.rsplit(":", 1)[0] if ":" in source_id else source_id
+            entry_id = entry_id_by_source.get(source_id) or entry_id_by_source.get(source_base)
+            if entry_id is None:
+                raise ValueError(f"No corpus entry id mapped for retrieved chunk {doc.doc_id!r}")
+            if _SAFE_IDENTIFIER_RE.fullmatch(entry_id) is None:
+                raise ValueError(
+                    f"Unsafe corpus entry id mapped for retrieved chunk {doc.doc_id!r}"
+                )
+            if entry_id not in allowed:
+                raise ValueError(f"Corpus entry id is outside the allowed set: {entry_id!r}")
+            if not isinstance(doc.doc_id, str) or _SAFE_IDENTIFIER_RE.fullmatch(doc.doc_id) is None:
+                raise ValueError(f"Retrieved chunk has unsafe chunk id: {doc.doc_id!r}")
+            if metadata.get("context_truncated"):
+                raise ValueError(
+                    f"Retrieved chunk {doc.doc_id!r} has truncated model-visible context"
+                )
+            chunk_digest = metadata.get("chunk_digest")
+            if (
+                not isinstance(chunk_digest, str)
+                or re.fullmatch(r"sha256:[0-9a-f]{64}", chunk_digest) is None
+            ):
+                chunk_digest = "sha256:" + hashlib.sha256(doc.text.encode("utf-8")).hexdigest()
+            channels = metadata.get("retrieval_channels", ())
+            if not isinstance(channels, (list, tuple)) or not channels:
+                raise ValueError(
+                    f"Retrieved chunk {doc.doc_id!r} has no retrieval channel metadata"
+                )
+            if any(not isinstance(channel, str) for channel in channels):
+                raise ValueError(f"Retrieved chunk {doc.doc_id!r} has invalid retrieval channels")
+            if len(channels) != len(set(channels)) or not set(channels) <= _RETRIEVAL_CHANNELS:
+                raise ValueError(f"Retrieved chunk {doc.doc_id!r} has invalid retrieval channels")
+            dense_rank = metadata.get("dense_rank")
+            bm25_rank = metadata.get("bm25_rank")
+            for channel, channel_rank in (("dense", dense_rank), ("bm25", bm25_rank)):
+                if (channel in channels) != (type(channel_rank) is int and channel_rank >= 1):
+                    raise ValueError(
+                        f"Retrieved chunk {doc.doc_id!r} has inconsistent {channel} rank metadata"
+                    )
+            if not math.isfinite(doc.score):
+                raise ValueError(f"Retrieved chunk {doc.doc_id!r} has a non-finite score")
+            retrieved.append(
+                {
+                    "entry_id": entry_id,
+                    "chunk_id": doc.doc_id,
+                    "chunk_digest": chunk_digest,
+                    "rank": rank,
+                    "fused_score": format(doc.score, ".12g"),
+                    "dense_rank": dense_rank,
+                    "bm25_rank": bm25_rank,
+                    "retrieval_channels": list(channels),
+                }
+            )
+
+        return {
+            "projection_schema_version": "2",
+            "query_digest": "sha256:" + hashlib.sha256(self.query.encode("utf-8")).hexdigest(),
+            "channel_execution": channel_execution,
+            "retrieved": retrieved,
+        }
 
 
 def describe_rag_pipeline(pipeline: Any) -> CapabilityDescriptor:

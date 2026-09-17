@@ -66,6 +66,7 @@ class LoadedDocument:
     doc_type:    Set by caller or inferred from path/config.
     file_hash:   SHA256 of the file content (first 16 hex chars). Used for
                  content-addressed chunk IDs (D14).
+    content_digest: Full lowercase SHA256 digest of the original file bytes.
     metadata:    Page count, OCR flag, format, etc.
     """
 
@@ -75,6 +76,7 @@ class LoadedDocument:
     doc_type: str
     file_hash: str
     metadata: dict[str, Any] = field(default_factory=dict)
+    content_digest: str = ""
 
     @property
     def page_count(self) -> int:
@@ -132,7 +134,8 @@ class DocumentLoader:
             raise LoaderError(f"File not found: {path}")
 
         suffix = path.suffix.lower()
-        file_hash = self._hash_file(path)
+        content_digest = self._hash_file(path)
+        file_hash = content_digest[:16]
 
         try:
             if suffix == ".pdf":
@@ -169,6 +172,7 @@ class DocumentLoader:
 
         # Readability gate — runs for every format
         self._assert_readable(doc)
+        doc.content_digest = content_digest
         return doc
 
     def load_directory(
@@ -178,6 +182,7 @@ class DocumentLoader:
         doc_type_map: dict[str, str] | None = None,
         default_doc_type: str = "unknown",
         recursive: bool = True,
+        strict: bool = False,
     ) -> list[LoadedDocument]:
         """Load all supported files from a directory.
 
@@ -188,6 +193,7 @@ class DocumentLoader:
                              "thesis*.pdf": "thesis"}.
             default_doc_type: Used when no pattern matches.
             recursive:       Walk subdirectories.
+            strict:          Raise on the first supported file that cannot be loaded.
 
         Returns:
             List of successfully loaded documents. Files that fail readability
@@ -218,6 +224,8 @@ class DocumentLoader:
                 docs.append(doc)
                 logger.debug("Loaded: %s (%s)", fpath.name, doc_type)
             except LoaderError as exc:
+                if strict:
+                    raise LoaderError(f"Failed to load {fpath}: {exc}") from exc
                 logger.warning("Skipping %s: %s", fpath.name, exc)
                 skipped += 1
 
@@ -561,12 +569,12 @@ class DocumentLoader:
 
     @staticmethod
     def _hash_file(path: Path) -> str:
-        """SHA256 of file content, first 16 hex chars (D14)."""
+        """Full lowercase SHA256 digest of file content."""
         h = hashlib.sha256()
         try:
             with open(path, "rb") as f:
                 for chunk in iter(lambda: f.read(65536), b""):
                     h.update(chunk)
         except OSError:
-            return "0" * 16
-        return h.hexdigest()[:16]
+            return "0" * 64
+        return h.hexdigest()

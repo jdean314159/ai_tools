@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-09-10
+Last updated: 2026-09-17
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -44,6 +44,56 @@ targets and a new preregistration.
 For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
+
+### Latest completed work — M3 receipt and trace support
+
+The reliability-lab proposition audit found that `rag_lib`'s new
+identifier-only projection could still emit path-like caller-supplied entry and
+chunk identifiers, discarded the dense/BM25 execution diagnostics needed to
+distinguish zero lexical hits from lexical degradation, and used field names
+that differed from the authorized M3 trace contract.
+
+The owner authorized a bounded repair on 2026-09-17. Projection schema version
+2 now requires an exact caller-supplied entry allowlist; rejects unsafe entry
+and chunk ids, truncated contexts, unsupported channels, and channel/rank
+disagreement; uses the benchmark names `entry_id` and `fused_score`; and retains
+per-channel attempted, status, pre-fusion result count, and diagnostic codes.
+`ChromaStorage.collection_inventory()` adds a fail-closed, metadata-only full
+collection scan for an external post-ingestion receipt. It emits identifiers
+and digests, never document text.
+
+The sibling lab now owns the receipt producer and benchmark validator contract.
+No real corpus was ingested and no benchmark or model call was run. The full
+`rag_lib` suite passes 143/143; this is implementation-author verification,
+pending independent review.
+
+### Latest completed work — Spark speculative-decoding comparison
+
+A user-run Spark comparison held the Qwen3.8-27B UD-Q4_K_M target, prompt,
+sampling controls, context, cache types, and one-slot server configuration
+fixed while changing only the decoding condition among no speculation,
+embedded MTP, and a target-matched Q4_K_M DFlash 2 drafter. In five measured
+forced-512-token requests, median generation throughput was 13.291, 35.054,
+and 46.888 tokens/s respectively. DFlash 2 was 3.53 times the baseline and
+33.8% faster than MTP; aggregate draft acceptance was 62.22% for DFlash 2 and
+60.65% for MTP.
+
+One natural-stop request per condition produced the same 322-token decoded
+content and `stop` finish reason. Throughput was 13.462, 47.754, and 64.517
+tokens/s. The earlier forced-length responses diverged only in explanatory
+prose generated after the natural stopping point. This is one-prompt content
+identity, not a general exact-token or distributional-equivalence result.
+
+DFlash is now the provisional accelerator for new Spark campaigns when held
+fixed across every comparison arm. Qwen3-Coder uses the workload-derived
+provisional maximum 14; Qwen3.8 DFlash 2 uses its seven-token ceiling. Decoder
+mode, maximum draft length, target and drafter identities, llama.cpp build,
+prompt/template, sampling, caches, and run-level draft telemetry are part of
+the comparability contract. Existing campaigns are not retrospectively
+reinterpreted. Raw Spark responses, local model digests, and the llama.cpp
+commit were not retained in this checkout, so the result remains descriptive.
+See
+`docs/projects/llm_engines/SPARK-SPECULATIVE-DECODING-COMPARISON-2026-09-13.md`.
 
 ### Latest completed work — complete hybrid retrieval fusion
 

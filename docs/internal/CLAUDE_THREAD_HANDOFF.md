@@ -1,7 +1,10 @@
 # Fresh Claude thread handoff
 
-The current verification handoff is
+The current continuation handoff is
+[`CLAUDE_THREAD_HANDOFF_2026-09-14.md`](./CLAUDE_THREAD_HANDOFF_2026-09-14.md).
+It records the latest repository checkpoint, the Spark speculative-decoding
+comparison, and the boundary with the sibling reliability-lab work.
+
+The older independent-verification ledger remains at
 [`CLAUDE_VERIFICATION_HANDOFF_2026-09-01.md`](./CLAUDE_VERIFICATION_HANDOFF_2026-09-01.md).
-It carries the independent verification ledger, open findings, process rules,
-and a clearly separated Codex addendum for work after Claude's last inspected
-tree.
+Read it only when its historical verification scope is relevant.

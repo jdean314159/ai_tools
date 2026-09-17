@@ -7,6 +7,7 @@ All storage backends implement VectorStore.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
@@ -49,6 +50,15 @@ class StoredChunk:
     def section(self) -> str | None:
         return self.metadata.get("section")
 
+    @property
+    def chunk_digest(self) -> str:
+        """Full SHA256 of the exact context text exposed to generation."""
+
+        recorded = self.metadata.get("chunk_digest")
+        if isinstance(recorded, str) and recorded:
+            return recorded
+        return "sha256:" + hashlib.sha256(self.context_text.encode("utf-8")).hexdigest()
+
     def to_retrieved_document(
         self,
         *,
@@ -61,6 +71,7 @@ class StoredChunk:
         metadata.setdefault("chunk_id", self.chunk_id)
         metadata.setdefault("doc_type", self.doc_type)
         metadata.setdefault("source_id", self.source_id)
+        metadata.setdefault("chunk_digest", self.chunk_digest)
         if stage is not None:
             metadata["stage"] = stage
         if rank is not None:
@@ -121,4 +132,8 @@ class VectorStore(Protocol):
 
     def count(self, collection: str = "default") -> int:
         """Return the number of chunks in a collection."""
+        ...
+
+    def collection_inventory(self, collection: str = "default") -> list[dict[str, Any]]:
+        """Return a metadata-only full collection scan for external receipts."""
         ...

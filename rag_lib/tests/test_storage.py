@@ -44,6 +44,14 @@ class TestD13CosineDistance:
 
 
 class TestD11EmbedModelVersionGuard:
+    def test_invalid_model_digest_is_rejected(self, tmp_dir):
+        with pytest.raises(StorageError, match="embed_model_digest"):
+            ChromaStorage(
+                path=str(tmp_dir / "chroma"),
+                embed_model="model-x",
+                embed_model_digest="latest",
+            )
+
     def test_model_mismatch_raises_storage_error(self, tmp_dir):
         """D11: Changing embed_model after collection creation raises StorageError."""
         path = str(tmp_dir / "chroma")
@@ -65,6 +73,43 @@ class TestD11EmbedModelVersionGuard:
         store_b = ChromaStorage(path=path, embed_model="model-x")
         # Should not raise
         store_b._get_or_create_collection("mydata")
+
+    def test_digest_mismatch_raises_even_when_model_label_matches(self, tmp_dir):
+        path = str(tmp_dir / "chroma")
+        store_a = ChromaStorage(
+            path=path,
+            embed_model="model-x",
+            embed_model_digest="sha256:" + "a" * 64,
+        )
+        store_a._get_or_create_collection("mydata")
+        store_b = ChromaStorage(
+            path=path,
+            embed_model="model-x",
+            embed_model_digest="sha256:" + "b" * 64,
+        )
+
+        with pytest.raises(StorageError, match="embed_model_digest"):
+            store_b._get_or_create_collection("mydata")
+
+    def test_discovered_dimensions_are_stored_when_collection_is_created(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="model-x",
+        )
+
+        store.add([_make_chunk("small")], [[0.1, 0.2, 0.3]], collection="mydata")
+
+        assert store.collection_metadata("mydata")["embed_dimensions"] == 3
+
+    def test_add_rejects_embedding_dimension_mismatch(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="model-x",
+            embed_dimensions=3,
+        )
+
+        with pytest.raises(StorageError, match="dimensions"):
+            store.add([_make_chunk("small")], [[0.1, 0.2]], collection="mydata")
 
 
 class TestD14ContentAddressedIds:
@@ -118,6 +163,24 @@ class TestD14ContentAddressedIds:
         assert second["revision"] == 2
         assert second["updated_at"] >= first["updated_at"]
 
+    def test_delete_by_source_does_not_delete_prefix_collision(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="test-model",
+            embed_dimensions=768,
+        )
+        first = _make_chunk("first", "doc1", 0)
+        second = _make_chunk("second", "doc10", 0)
+        store.add(
+            [first, second],
+            [_fake_embedding("first"), _fake_embedding("second")],
+            collection="default",
+        )
+
+        assert store.delete_by_source("doc1", collection="default") == 1
+        assert store.count("default") == 1
+        assert store.get_sources("default") == ["doc10"]
+
 
 class TestAddAndSearch:
     def test_add_and_retrieve(self, tmp_dir):
@@ -152,6 +215,27 @@ class TestAddAndSearch:
         results = store.search(_fake_embedding("short text"), n_results=1)
         assert results[0].context_text == "short text [context]"
 
+    def test_context_truncation_is_explicit_and_digest_covers_returned_bytes(self, tmp_dir):
+        import hashlib
+
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="test-model",
+            embed_dimensions=768,
+        )
+        chunk = _make_chunk("short")
+        chunk.context_text = "x" * 5000
+        store.add([chunk], [_fake_embedding("short")], collection="default")
+
+        result = store.search(_fake_embedding("short"), n_results=1)[0]
+
+        assert result.metadata["context_truncated"] is True
+        assert result.metadata["context_original_chars"] == 5000
+        assert (
+            result.chunk_digest
+            == "sha256:" + hashlib.sha256(result.context_text.encode("utf-8")).hexdigest()
+        )
+
     def test_get_by_ids_materializes_chunks_in_requested_order(self, tmp_dir):
         store = ChromaStorage(
             path=str(tmp_dir / "chroma"),
@@ -174,6 +258,32 @@ class TestAddAndSearch:
         assert results[0].context_text == "second text [context]"
         assert results[0].source_id == "second.txt:0"
         assert results[0].metadata["strategy"] == "fixed_size"
+
+    def test_collection_inventory_is_complete_metadata_only_scan(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="test-model",
+            embed_dimensions=768,
+        )
+        first = _make_chunk("private first text", "entry-one", 0)
+        second = _make_chunk("private second text", "entry-two", 0)
+        first.metadata["source_digest"] = "sha256:" + "1" * 64
+        second.metadata["source_digest"] = "sha256:" + "2" * 64
+        store.add(
+            [first, second],
+            [_fake_embedding("private first text"), _fake_embedding("private second text")],
+        )
+
+        inventory = store.collection_inventory()
+
+        assert len(inventory) == store.count() == 2
+        assert all(
+            set(item) == {"chunk_id", "source_id", "source_digest", "chunk_digest"}
+            for item in inventory
+        )
+        assert {item["source_id"] for item in inventory} == {"entry-one:0", "entry-two:0"}
+        assert "private first text" not in repr(inventory)
+        assert "private second text" not in repr(inventory)
 
     def test_score_in_valid_range(self, tmp_dir):
         store = ChromaStorage(

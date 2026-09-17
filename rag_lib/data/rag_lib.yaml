@@ -11,6 +11,7 @@
 embedder:
   host: http://localhost:11434
   model: nomic-embed-text-v2-moe    # 8192-token context; multilingual; RTX 3090 friendly
+  # model_digest: sha256:<digest>    # recommended for frozen/evaluated corpora
   timeout: 120
   batch_size: 32
   keep_alive: 600                   # seconds; keep model warm during ingestion

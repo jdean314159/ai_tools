@@ -103,7 +103,8 @@ class MockEngine:
             ),
             model_name=self.model,
             backend=self.BACKEND,
-            seed_status="accepted" if request.seed is not None else "not_requested",
+            # MockEngine neither forwards nor applies a sampling seed.
+            seed_status="not_honored" if request.seed is not None else "not_requested",
         )
 
     # ------------------------------------------------------------------
