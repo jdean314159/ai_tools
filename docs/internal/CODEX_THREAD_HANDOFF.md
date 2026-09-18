@@ -1,5 +1,13 @@
 # Fresh Codex thread handoff
 
+> **Current cross-repository handover:** start with
+> `../llm-reliability-lab/docs/planning/CODEX-THREAD-HANDOVER-2026-09-18.md`
+> from the `ai_tools` repository root. It records the current M0/M1/M3 state,
+> exact September 18 implementation checkpoints, pending changes in both
+> repositories, and the governing authorization boundaries. The material below
+> is a historical September 9 repository-assessment handoff; do not treat its
+> selected-task language as current.
+
 - Prepared: 2026-09-09
 - Repository: the checkout containing this file (`git rev-parse --show-toplevel`)
 - Current focus: specify and record repository-assessment model comparisons
