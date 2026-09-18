@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 
 Single source of truth for the current `ai_tools` repo state. Use this file
 first when starting a new thread or resuming work after a handoff.
@@ -45,7 +45,7 @@ For a fresh Claude thread, read
 `docs/internal/CLAUDE_THREAD_HANDOFF.md` after this file. For a fresh Codex
 thread, read `docs/internal/CODEX_THREAD_HANDOFF.md`.
 
-### Latest completed work — M3 receipt and trace support
+### Latest completed work — M3 hybrid-state snapshot support
 
 The reliability-lab proposition audit found that `rag_lib`'s new
 identifier-only projection could still emit path-like caller-supplied entry and
@@ -63,9 +63,31 @@ collection scan for an external post-ingestion receipt. It emits identifiers
 and digests, never document text.
 
 The sibling lab now owns the receipt producer and benchmark validator contract.
-No real corpus was ingested and no benchmark or model call was run. The full
-`rag_lib` suite passes 143/143; this is implementation-author verification,
-pending independent review.
+Receipt schema version 2 extends the exact-nine membership scan with complete
+text-free inventories for stored dense-vector digests and the ordered BM25
+source corpus. `ChromaStorage.collection_state_inventory()` computes a specified
+IEEE-754 binary32 digest for every stored embedding without exporting vector
+values, while `HybridRetriever.lexical_state_inventory()` binds ordered chunk
+ids to exact UTF-8 text digests without exporting text. The lab issues a
+separate live-state verification for every run and seed; one unchanged receipt
+may be reused only when that verification matches.
+
+This establishes current hybrid-index state, not the model that originally
+served the embeddings. The configured model digest remains declared and
+unverified unless separate serving evidence exists. No real corpus was
+ingested and no benchmark, retrieval, or model call was run. The full `rag_lib`
+suite passes 148/148; this is implementation-author verification, pending
+independent review. The cross-package integration gate also passes 48 tests
+with one optional skip.
+
+Before a real reliability-lab runner is built, one package-boundary gap remains:
+`RAGPipeline` is the documented public API but does not yet compose
+`ChromaStorage.collection_state_inventory()` with
+`HybridRetriever.lexical_state_inventory()`. A runner would otherwise have to
+reach through private `_store` and `_retriever` attributes. Do not add that
+public surface until its return contract and fabricated reopen/mutation test
+are authorized. Embedding serving identity also remains unobserved; stored
+vectors are bound, while the configured model digest remains a declaration.
 
 ### Latest completed work — Spark speculative-decoding comparison
 

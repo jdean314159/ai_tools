@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 pytest.importorskip("chromadb")
-from rag_lib.storage.chroma import ChromaStorage
+from rag_lib.storage.chroma import ChromaStorage, _embedding_digest
 from rag_lib.errors import StorageError
 from rag_lib.ingestion.chunker import TextChunk
 
@@ -29,6 +29,13 @@ def _fake_embedding(text: str, dims: int = 768) -> list[float]:
 
     h = int(hashlib.md5(text.encode()).hexdigest(), 16)
     return [(h >> i & 0xFF) / 255.0 for i in range(dims)]
+
+
+def test_embedding_digest_has_language_independent_binary32_vector():
+    digest, dimensions = _embedding_digest([0.1, -0.0, 1.5])
+
+    assert dimensions == 3
+    assert digest == "sha256:987d0db0aa8fdffb48cc9e71ba51ec2f914516dd696ce21a9fee086e5a5bc308"
 
 
 class TestD13CosineDistance:
@@ -284,6 +291,48 @@ class TestAddAndSearch:
         assert {item["source_id"] for item in inventory} == {"entry-one:0", "entry-two:0"}
         assert "private first text" not in repr(inventory)
         assert "private second text" not in repr(inventory)
+
+    def test_collection_state_inventory_binds_dense_vectors_without_exposing_them(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="test-model",
+            embed_dimensions=3,
+        )
+        chunk = _make_chunk("private state text", "entry-one", 0)
+        chunk.metadata["source_digest"] = "sha256:" + "1" * 64
+        store.add([chunk], [[0.1, 0.2, 0.3]])
+
+        inventory = store.collection_state_inventory()
+
+        assert len(inventory) == 1
+        assert set(inventory[0]) == {
+            "chunk_id",
+            "source_id",
+            "source_digest",
+            "chunk_digest",
+            "embedding_digest",
+            "embedding_dimensions",
+        }
+        assert inventory[0]["embedding_digest"].startswith("sha256:")
+        assert inventory[0]["embedding_dimensions"] == 3
+        assert "private state text" not in repr(inventory)
+        assert "0.1" not in repr(inventory)
+
+    def test_collection_state_inventory_changes_when_vector_changes(self, tmp_dir):
+        store = ChromaStorage(
+            path=str(tmp_dir / "chroma"),
+            embed_model="test-model",
+            embed_dimensions=3,
+        )
+        chunk = _make_chunk("same text", "entry-one", 0)
+        chunk.metadata["source_digest"] = "sha256:" + "1" * 64
+        store.add([chunk], [[0.1, 0.2, 0.3]])
+        before = store.collection_state_inventory()[0]["embedding_digest"]
+
+        store.add([chunk], [[0.1, 0.2, 0.4]])
+        after = store.collection_state_inventory()[0]["embedding_digest"]
+
+        assert before != after
 
     def test_score_in_valid_range(self, tmp_dir):
         store = ChromaStorage(

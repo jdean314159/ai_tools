@@ -137,3 +137,7 @@ class VectorStore(Protocol):
     def collection_inventory(self, collection: str = "default") -> list[dict[str, Any]]:
         """Return a metadata-only full collection scan for external receipts."""
         ...
+
+    def collection_state_inventory(self, collection: str = "default") -> list[dict[str, Any]]:
+        """Return receipt metadata plus digests of every stored dense vector."""
+        ...

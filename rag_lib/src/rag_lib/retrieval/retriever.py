@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import replace
+import hashlib
 import json
 import logging
 import time
@@ -309,6 +310,45 @@ class HybridRetriever:
             json.dump({"corpus": corpus, "ids": ids, "built_at": built_at}, f)
         tmp_path.replace(json_path)
         logger.debug("BM25 index persisted for collection '%s' (%d docs)", collection, len(corpus))
+
+    def lexical_state_inventory(self, collection: str = "default") -> dict[str, Any]:
+        """Return a text-free digest inventory of the active BM25 source state.
+
+        Calling this method loads or rebuilds a stale lexical index through the
+        same path retrieval uses. Records preserve corpus order because equal
+        BM25 scores retain that order during ranking.
+        """
+
+        index, ids = self._get_bm25_index(collection)
+        if index is None or not ids:
+            return {
+                "digest_method": "utf8-corpus-order-v1",
+                "tokenization": "unicode-lower-whitespace-split-v1",
+                "records": [],
+            }
+        corpus = self._bm25_corpus.get(collection)
+        if not isinstance(corpus, list) or len(corpus) != len(ids):
+            raise RagLibError("BM25 corpus and id counts differ")
+        if len(set(ids)) != len(ids):
+            raise RagLibError("BM25 state contains duplicate chunk ids")
+        records: list[dict[str, Any]] = []
+        for position, (chunk_id, text) in enumerate(zip(ids, corpus)):
+            if not isinstance(chunk_id, str) or not chunk_id:
+                raise RagLibError("BM25 state contains an invalid chunk id")
+            if not isinstance(text, str):
+                raise RagLibError("BM25 state contains a non-text corpus value")
+            records.append(
+                {
+                    "position": position,
+                    "chunk_id": chunk_id,
+                    "text_digest": "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                }
+            )
+        return {
+            "digest_method": "utf8-corpus-order-v1",
+            "tokenization": "unicode-lower-whitespace-split-v1",
+            "records": records,
+        }
 
     # ------------------------------------------------------------------
     # Internal

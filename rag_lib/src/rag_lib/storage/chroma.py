@@ -15,8 +15,10 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import os
 import re
+import struct
 import threading
 import time
 from pathlib import Path
@@ -26,6 +28,35 @@ from .base import StoredChunk
 from ..errors import StorageError
 
 logger = logging.getLogger(__name__)
+
+_EMBEDDING_DIGEST_DOMAIN = b"M3-EMBEDDING-F32BE-V1\x00"
+
+
+def _embedding_digest(values: Any) -> tuple[str, int]:
+    """Digest one observed vector as finite IEEE-754 binary32, big-endian."""
+
+    try:
+        components = list(values)
+    except TypeError as exc:
+        raise StorageError("Collection state contains a non-sequence embedding") from exc
+    if not components:
+        raise StorageError("Collection state contains an empty embedding")
+    payload = bytearray(_EMBEDDING_DIGEST_DOMAIN)
+    payload.extend(struct.pack(">Q", len(components)))
+    for component in components:
+        if isinstance(component, bool):
+            raise StorageError("Collection state embedding contains a boolean")
+        try:
+            value = float(component)
+        except (TypeError, ValueError) as exc:
+            raise StorageError("Collection state embedding contains a non-number") from exc
+        if not math.isfinite(value):
+            raise StorageError("Collection state embedding contains a non-finite value")
+        try:
+            payload.extend(struct.pack(">f", value))
+        except (OverflowError, struct.error) as exc:
+            raise StorageError("Collection state embedding is outside binary32 range") from exc
+    return "sha256:" + hashlib.sha256(payload).hexdigest(), len(components)
 
 
 class ChromaStorage:
@@ -342,6 +373,56 @@ class ChromaStorage:
             raise
         except Exception as exc:
             raise StorageError(f"Cannot inventory collection '{collection}': {exc}") from exc
+
+    def collection_state_inventory(self, collection: str = "default") -> list[dict[str, Any]]:
+        """Return the full receipt inventory including dense-vector digests.
+
+        Vector values are not returned. Each is projected to a stable digest of
+        its finite IEEE-754 binary32 representation so callers can bind a
+        snapshot without retaining embeddings or source prose.
+        """
+
+        try:
+            coll = self._get_or_create_collection(collection)
+            results = coll.get(include=["metadatas", "embeddings"])
+            ids = results.get("ids", [])
+            metadatas = results.get("metadatas", [])
+            embeddings = results.get("embeddings")
+            if not isinstance(ids, list) or not isinstance(metadatas, list):
+                raise StorageError("Collection state returned invalid ids or metadata")
+            if embeddings is None:
+                raise StorageError("Collection state did not return embeddings")
+            try:
+                embedding_rows = list(embeddings)
+            except TypeError as exc:
+                raise StorageError("Collection state returned invalid embeddings") from exc
+            if len(ids) != len(metadatas) or len(ids) != len(embedding_rows):
+                raise StorageError("Collection state id/metadata/embedding counts differ")
+
+            inventory: list[dict[str, Any]] = []
+            for chunk_id, metadata, embedding in zip(ids, metadatas, embedding_rows):
+                if not isinstance(chunk_id, str) or not chunk_id:
+                    raise StorageError("Collection state contains an invalid chunk id")
+                if not isinstance(metadata, dict):
+                    raise StorageError(
+                        f"Collection state metadata is missing for chunk '{chunk_id}'"
+                    )
+                embedding_digest, dimensions = _embedding_digest(embedding)
+                inventory.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "source_id": metadata.get("source_id"),
+                        "source_digest": metadata.get("source_digest"),
+                        "chunk_digest": metadata.get("chunk_digest"),
+                        "embedding_digest": embedding_digest,
+                        "embedding_dimensions": dimensions,
+                    }
+                )
+            return sorted(inventory, key=lambda item: item["chunk_id"])
+        except StorageError:
+            raise
+        except Exception as exc:
+            raise StorageError(f"Cannot inventory collection state '{collection}': {exc}") from exc
 
     def get_sources(self, collection: str = "default") -> list[str]:
         """Return unique source file paths in a collection."""

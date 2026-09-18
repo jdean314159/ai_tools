@@ -173,7 +173,9 @@ class TestRRF:
         assert [chunk.chunk_id for chunk in details["fused_results"]] == ["dense"]
 
     def test_retrieve_enforces_final_result_count(self, mock_embedder, tmp_dir, monkeypatch):
-        chunks = [_make_chunk(f"result {index}", f"c{index}", 1.0 - index / 10) for index in range(4)]
+        chunks = [
+            _make_chunk(f"result {index}", f"c{index}", 1.0 - index / 10) for index in range(4)
+        ]
         retriever = HybridRetriever(
             store=_make_mock_store(chunks),
             embedder=mock_embedder,
@@ -258,6 +260,49 @@ class TestBM25Persistence:
         assert data["corpus"] == ["test content"]
         assert data["ids"] == ["c1"]
         assert not (tmp_dir / "bm25" / "mytest.pkl").exists()
+
+    def test_lexical_state_inventory_is_ordered_and_text_free(self, mock_embedder, tmp_dir):
+        pytest.importorskip("rank_bm25")
+        chunks = [
+            _make_chunk("private alpha", "c2"),
+            _make_chunk("private beta", "c1"),
+        ]
+        store = _make_mock_store(chunks)
+        retriever = HybridRetriever(
+            store=store,
+            embedder=mock_embedder,
+            bm25_path=str(tmp_dir / "bm25"),
+        )
+        retriever.build_bm25_index(chunks, collection="test")
+
+        state = retriever.lexical_state_inventory("test")
+
+        assert state["digest_method"] == "utf8-corpus-order-v1"
+        assert state["tokenization"] == "unicode-lower-whitespace-split-v1"
+        assert [record["chunk_id"] for record in state["records"]] == ["c2", "c1"]
+        assert [record["position"] for record in state["records"]] == [0, 1]
+        assert all(record["text_digest"].startswith("sha256:") for record in state["records"])
+        assert "private alpha" not in repr(state)
+        assert "private beta" not in repr(state)
+
+    def test_lexical_state_inventory_changes_when_corpus_changes(self, mock_embedder, tmp_dir):
+        pytest.importorskip("rank_bm25")
+        first = _make_chunk("first content", "c1")
+        store = _make_mock_store([first])
+        retriever = HybridRetriever(
+            store=store,
+            embedder=mock_embedder,
+            bm25_path=str(tmp_dir / "bm25"),
+        )
+        retriever.build_bm25_index([first], collection="test")
+        before = retriever.lexical_state_inventory("test")
+
+        changed = _make_chunk("changed content", "c1")
+        store.search.return_value = [changed]
+        retriever.build_bm25_index([changed], collection="test")
+        after = retriever.lexical_state_inventory("test")
+
+        assert before["records"][0]["text_digest"] != after["records"][0]["text_digest"]
 
     def test_bm25_loads_from_disk(self, mock_embedder, tmp_dir):
         pytest.importorskip("rank_bm25")
