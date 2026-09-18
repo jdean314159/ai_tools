@@ -28,6 +28,12 @@ python scripts/check_publication_hygiene.py
 Must pass cleanly. The script checks for build artifacts in the git index,
 required root documents, and legacy file patterns. Run it before pushing.
 
+New committed fixtures, run artifacts, and serialized traces must not contain
+workstation-absolute paths. Record repository-relative paths, basenames, or
+explicit redacted placeholders instead. If an absolute path is evidentially
+necessary, keep the raw artifact outside the public repository and retain a
+non-sensitive digest plus a disclosed redaction.
+
 ## Architecture decisions
 
 Significant decisions are recorded in [`adr/`](./adr/) using the existing ADR
